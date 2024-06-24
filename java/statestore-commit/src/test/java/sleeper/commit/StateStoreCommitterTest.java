@@ -24,6 +24,7 @@ import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -49,7 +50,9 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StateStoreCommitterTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
@@ -108,15 +111,18 @@ public class StateStoreCommitterTest {
                 .tableId("test-table")
                 .files(List.of("input.parquet"))
                 .build();
+        Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
+        Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
         IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
                 .ingestJob(ingestJob)
                 .taskId("test-task-id")
                 .jobRunId("test-job-run-id")
                 .fileReferences(List.of(outputFile))
+                .writtenTime(writtenTime)
                 .build();
 
-        Instant startTime = Instant.parse("2024-06-14T15:34:00Z");
-        ingestJobStatusStore.jobStarted(ingestJobStarted("test-task-id", ingestJob, startTime));
+        ingestJobStatusStore.jobStarted(ingestJobStarted(ingestJob, startTime)
+                .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
         // When
         committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
@@ -124,7 +130,11 @@ public class StateStoreCommitterTest {
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
         assertThat(ingestJobStatusStore.getAllJobs("test-table"))
-                .containsExactly(startedIngestJob(ingestJob, "test-task-id", startTime));
+                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task-id")
+                        .startedStatus(ingestStartedStatus(ingestJob, startTime))
+                        .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
+                        .build()));
     }
 
     @Test
@@ -146,7 +156,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committer() {
-        return new StateStoreCommitter(compactionJobStatusStore, stateStoreByTableId::get);
+        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get);
     }
 
     private StateStore createTable(String tableId) {

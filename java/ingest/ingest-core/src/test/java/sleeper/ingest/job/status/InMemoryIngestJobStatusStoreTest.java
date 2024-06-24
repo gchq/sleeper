@@ -19,10 +19,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
@@ -35,7 +40,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -477,6 +486,149 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run", "test-run");
+        }
+    }
+
+    @Nested
+    @DisplayName("Report files committed by job")
+    class ReportFileCommits {
+
+        @Test
+        void shouldReportJobInProgressWithOneCommit() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(fileFactory.rootFile("file.parquet", 123)));
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
+                                    .fileCount(1)
+                                    .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportJobAddedOneFileWithTwoReferences() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key", new LongType()))
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123L)
+                    .buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
+                    fileFactory.partitionFile("L", "file.parquet", 50),
+                    fileFactory.partitionFile("R", "file.parquet", 50)));
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
+                                    .fileCount(1)
+                                    .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportJobAddedTwoFiles() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
+                    fileFactory.rootFile("file1.parquet", 123),
+                    fileFactory.rootFile("file2.parquet", 456)));
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
+                                    .fileCount(2)
+                                    .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportJobFinishedButUncommitted() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
+                    fileFactory.rootFile("file1.parquet", 123)));
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary)
+                    .jobRunId(jobRunId).taskId(taskId)
+                    .filesAddedByJob(filesAdded).committedBySeparateFileUpdates(true)
+                    .build());
+
+            // Then
+            assertThat(store.getAllJobs(tableId))
+                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                            .taskId(taskId)
+                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                                    .build())
+                            .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                                    .numFilesWrittenByJob(1).committedBySeparateFileUpdates(true)
+                                    .build())
+                            .build()));
+            assertThat(store.streamTableRecords(tableId))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
         }
     }
 

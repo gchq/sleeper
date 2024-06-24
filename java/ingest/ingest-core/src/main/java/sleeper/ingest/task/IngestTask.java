@@ -39,6 +39,7 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
  */
 public class IngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
+    private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
@@ -47,8 +48,10 @@ public class IngestTask {
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
+    public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
+            MessageReceiver messageReceiver, IngestJobHandler ingester,
             IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+        this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
@@ -92,21 +95,27 @@ public class IngestTask {
             try (MessageHandle message = messageOpt.get()) {
                 IngestJob job = message.getJob();
                 LOGGER.info("IngestJob is: {}", job);
+                String jobRunId = jobRunIdSupplier.get();
                 Instant jobStartTime = timeSupplier.get();
                 try {
-                    jobStatusStore.jobStarted(ingestJobStarted(taskId, job, jobStartTime));
-                    IngestResult result = ingester.ingest(job);
+                    jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
+                            .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
+                    IngestResult result = ingester.ingest(job, jobRunId);
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                    jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
+                    jobStatusStore.jobFinished(ingestJobFinished(job, summary)
+                            .taskId(taskId).jobRunId(jobRunId)
+                            .committedBySeparateFileUpdates(true)
+                            .fileReferencesAddedByJob(result.getFileReferenceList())
+                            .build());
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
                 } catch (Exception e) {
                     Instant jobFinishTime = timeSupplier.get();
                     jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .taskId(taskId).failure(e)
+                            .taskId(taskId).jobRunId(jobRunId).failure(e)
                             .build());
                     LOGGER.error("Failed processing ingest job, terminating task", e);
                     message.failed();

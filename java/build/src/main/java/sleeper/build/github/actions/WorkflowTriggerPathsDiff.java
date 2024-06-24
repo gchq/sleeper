@@ -58,7 +58,7 @@ public class WorkflowTriggerPathsDiff {
 
     public void report(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
         if (!missingEntries.isEmpty()) {
-            out.println("Found missing on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
+            out.println("Found missing trigger paths at " + project.workflowPathInRepository(chunk) + ":");
             missingEntries.forEach(out::println);
             out.println();
             out.println("Expected entries:");
@@ -66,7 +66,7 @@ public class WorkflowTriggerPathsDiff {
             out.println();
         }
         if (!extraEntries.isEmpty()) {
-            out.println("Found extra on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
+            out.println("Found extra trigger paths at " + project.workflowPathInRepository(chunk) + ":");
             extraEntries.forEach(out::println);
             out.println();
         }
@@ -101,7 +101,8 @@ public class WorkflowTriggerPathsDiff {
             return false;
         }
         WorkflowTriggerPathsDiff that = (WorkflowTriggerPathsDiff) o;
-        return expected.equals(that.expected) && actual.equals(that.actual) && missingEntries.equals(that.missingEntries) && extraEntries.equals(that.extraEntries);
+        return expected.equals(that.expected) && actual.equals(that.actual)
+                && missingEntries.equals(that.missingEntries) && extraEntries.equals(that.extraEntries);
     }
 
     @Override

@@ -34,7 +34,7 @@ public interface AthenaProperty {
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = Index.propertyBuilder("sleeper.athena.handler.memory")
-            .description("The amount of memory (GB) the athena composite handler has.")
+            .description("The amount of memory (MB) the athena composite handler has.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();

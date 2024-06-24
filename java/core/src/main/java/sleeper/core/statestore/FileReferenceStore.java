@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -61,8 +60,7 @@ public interface FileReferenceStore {
      * @throws StateStoreException        if the update fails for another reason
      */
     default void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences.stream())
-                .collect(Collectors.toUnmodifiableList()));
+        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences));
     }
 
     /**

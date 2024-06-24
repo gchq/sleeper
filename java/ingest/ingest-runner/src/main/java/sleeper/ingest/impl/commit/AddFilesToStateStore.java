@@ -19,11 +19,14 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +41,19 @@ public interface AddFilesToStateStore {
 
     static AddFilesToStateStore synchronous(StateStore stateStore) {
         return stateStore::addFiles;
+    }
+
+    static AddFilesToStateStore synchronous(
+            StateStore stateStore, IngestJobStatusStore statusStore,
+            Consumer<IngestJobAddedFilesEvent.Builder> statusUpdateConfig) {
+        return references -> {
+            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+            stateStore.addFilesWithReferences(files);
+            IngestJobAddedFilesEvent.Builder statusUpdateBuilder = IngestJobAddedFilesEvent.builder()
+                    .files(files);
+            statusUpdateConfig.accept(statusUpdateBuilder);
+            statusStore.jobAddedFiles(statusUpdateBuilder.build());
+        };
     }
 
     static AddFilesToStateStore bySqs(

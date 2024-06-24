@@ -103,6 +103,14 @@ public class DynamoDBAttributes {
         return Integer.parseInt(string);
     }
 
+    public static Integer getNullableIntAttribute(Map<String, AttributeValue> item, String name) {
+        String string = getNumberAttribute(item, name);
+        if (string == null) {
+            return null;
+        }
+        return Integer.parseInt(string);
+    }
+
     public static long getLongAttribute(Map<String, AttributeValue> item, String name, long defaultValue) {
         String string = getNumberAttribute(item, name);
         if (string == null) {

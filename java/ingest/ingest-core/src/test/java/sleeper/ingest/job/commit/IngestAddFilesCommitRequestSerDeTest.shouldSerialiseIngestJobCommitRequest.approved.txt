@@ -28,6 +28,7 @@
         "countApproximate": false,
         "onlyContainsDataForThisPartition": true
       }
-    ]
+    ],
+    "writtenTime": 1718895301000
   }
 }

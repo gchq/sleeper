@@ -84,6 +84,7 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .taskId("test-task")
                 .jobRunId("test-job-run")
                 .fileReferences(List.of(file1, file2))
+                .writtenTime(Instant.parse("2024-06-20T15:57:01Z"))
                 .build();
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
