@@ -31,7 +31,7 @@ public class IngestJobFinishedEvent {
     private final String jobId;
     private final String tableId;
     private final RecordsProcessedSummary summary;
-    private final Integer numFilesAddedByJob;
+    private final int numFilesAddedByJob;
     private final boolean committedBySeparateFileUpdates;
     private final String jobRunId;
     private final String taskId;
@@ -40,7 +40,7 @@ public class IngestJobFinishedEvent {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        numFilesAddedByJob = builder.numFilesAddedByJob;
+        numFilesAddedByJob = Objects.requireNonNull(builder.numFilesAddedByJob, "numFilesAddedByJob must not be null");
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -73,7 +73,7 @@ public class IngestJobFinishedEvent {
         return summary;
     }
 
-    public Integer getNumFilesAddedByJob() {
+    public int getNumFilesAddedByJob() {
         return numFilesAddedByJob;
     }
 
