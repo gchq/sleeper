@@ -138,7 +138,7 @@ public interface CommonProperty {
             .defaultValue("1.4.0")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.task.runner.memory")
-            .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
+            .description("The amount of memory in MB for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
@@ -248,7 +248,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.batch.table.lambdas.memory")
-            .description("The amount of memory for lambdas that create batches of tables to run some operation against, " +
+            .description("The amount of memory in MB for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("1024")
             .validationPredicate(Utils::isPositiveInteger)
@@ -262,7 +262,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.statestore.committer.lambda.memory")
-            .description("The amount of memory for the lambda that commits state store updates.")
+            .description("The amount of memory in MB for the lambda that commits state store updates.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
