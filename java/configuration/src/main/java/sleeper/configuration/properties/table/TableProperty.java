@@ -383,8 +383,8 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
             .defaultProperty(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC)
-            .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
-                    "asynchronously. If false, ingest tasks will commit new files synchronously.")
+            .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
+                    "asynchronously. If false, bulk import will commit new files at the end of the job synchronously.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
 
     // Ingest batcher
