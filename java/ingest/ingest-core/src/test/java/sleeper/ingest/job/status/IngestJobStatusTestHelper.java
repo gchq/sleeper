@@ -128,19 +128,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates an ingest job status for a job that was validated and finished.
-     *
-     * @param  job            the ingest job
-     * @param  taskId         the ingest task ID
-     * @param  validationTime the validation time
-     * @param  summary        the records processed summary
-     * @return                an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus finishedIngestJobWithValidation(IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
-        return jobStatus(job, acceptedRunWhichFinished(job, taskId, validationTime, summary));
-    }
-
-    /**
      * Creates a process run for an ingest job that was validated and started.
      *
      * @param  job            the ingest job
@@ -172,7 +159,7 @@ public class IngestJobStatusTestHelper {
      * @return                a {@link ProcessRun}
      */
     public static ProcessRun acceptedRunWhichFinished(
-            IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
+            IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.builder()
                 .taskId(taskId)
                 .startedStatus(IngestJobAcceptedStatus.from(job,
@@ -183,7 +170,8 @@ public class IngestJobStatusTestHelper {
                                 .startTime(summary.getStartTime())
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(IngestJobFinishedStatus
-                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build())
+                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                        .numFilesWrittenByJob(numFilesWrittenByJob).build())
                 .build();
     }
 

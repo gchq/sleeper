@@ -433,12 +433,12 @@ public class InMemoryIngestJobStatusStoreTest {
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
             store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
-                            validationTime, summary)));
+                            validationTime, summary, 2)));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run", "test-run");

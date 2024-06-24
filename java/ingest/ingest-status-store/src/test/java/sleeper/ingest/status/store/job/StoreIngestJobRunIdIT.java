@@ -130,13 +130,13 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // When
         store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
         store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
-                        validationTime, summary)));
+                        validationTime, summary, 2)));
     }
 
     @Test
