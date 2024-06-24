@@ -224,7 +224,7 @@ It is possible to run variations on this system-test by editing the system test 
 sleeper deployment
 cd test/deployAll
 editor system-test-instance.properties
-./buildDeployTest.sh  ${ID} ${VPC} ${SUBNET}
+./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```
 
 To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).
