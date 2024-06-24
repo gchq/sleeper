@@ -85,7 +85,7 @@ larger bulk of data. They take time to run and can be costly to run frequently.
 This command will build the system and run the default, quick system test suite:
 
 ```bash
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <csv-list-of-subnets>
+./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets>
 ```
 
 The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The quick test suite
@@ -103,14 +103,14 @@ You can run specific tests like this:
 
 ```bash
 ./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <csv-list-of-subnets> CompactionPerformanceIT,IngestPerformanceIT
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
 ```
 
 You can run a specific test suite like this:
 
 ```bash
 ./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <csv-list-of-subnets> NightlyPerformanceSystemTestSuite
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> NightlyPerformanceSystemTestSuite
 ```
 
 This can also be used with NightlyFunctionalSystemTestSuite.
@@ -126,7 +126,7 @@ test stack, and `sleeper.system.test.instances.force.redeploy` to redeploy Sleep
 You can add Maven arguments to a system test script like this:
 
 ```bash
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <csv-list-of-subnets> \
+./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
   -Dsleeper.system.test.force.redeploy=true \
   -Dsleeper.system.test.instances.force.redeploy=true
 ```
@@ -171,12 +171,12 @@ the test suite will write reports in separate files. Here are some examples:
 
 ```bash
 # Set an output directory for reports
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <csv-list-of-subnets> IngestPerformanceIT \
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> IngestPerformanceIT \
   -Dsleeper.system.test.output.dir=/tmp/sleeper/output
 less /tmp/sleeper/output/IngestPerformanceIT.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
 
 # Redirect output to a file
-./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <csv-list-of-subnets> &> test.log &
+./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> &> test.log &
 less -R test.log # The -R option presents colours correctly. When it opens, use shift+F to follow output as it's written to the file.
 ```
 
