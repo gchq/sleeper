@@ -12,7 +12,7 @@
         "updates": [
           {
             "startTime": "2022-10-12T10:02:00.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-12T10:02:00.123Z"
           }
         ]
@@ -22,7 +22,7 @@
         "updates": [
           {
             "startTime": "2022-10-12T10:01:15.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-12T10:01:15.123Z"
           },
           {
@@ -40,7 +40,7 @@
                 "timeInProcessInSeconds": 30.0
               }
             },
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-10-12T10:01:45.123Z"
           }
         ]
@@ -50,7 +50,7 @@
         "updates": [
           {
             "startTime": "2022-10-12T10:01:00.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-12T10:01:00.123Z"
           },
           {
@@ -68,7 +68,7 @@
                 "timeInProcessInSeconds": 30.0
               }
             },
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-10-12T10:01:30.123Z"
           }
         ]
@@ -88,7 +88,7 @@
         "updates": [
           {
             "startTime": "2022-10-11T10:02:00.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-11T10:02:00.123Z"
           }
         ]
@@ -98,7 +98,7 @@
         "updates": [
           {
             "startTime": "2022-10-11T10:01:00.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-11T10:01:00.123Z"
           },
           {
@@ -112,7 +112,7 @@
               "startTime": "2022-10-11T10:01:00.001Z",
               "timeInProcessInSeconds": 30.0
             },
-            "type": "ProcessFailedStatus",
+            "type": "FAILED",
             "updateTime": "2022-10-11T10:01:30.123Z"
           }
         ]
@@ -132,7 +132,7 @@
         "updates": [
           {
             "startTime": "2022-10-10T10:01:15.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-10T10:01:15.123Z"
           },
           {
@@ -146,7 +146,7 @@
               "startTime": "2022-10-10T10:01:15.001Z",
               "timeInProcessInSeconds": 30.0
             },
-            "type": "ProcessFailedStatus",
+            "type": "FAILED",
             "updateTime": "2022-10-10T10:01:45.123Z"
           }
         ]
@@ -156,7 +156,7 @@
         "updates": [
           {
             "startTime": "2022-10-10T10:01:00.001Z",
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-10T10:01:00.123Z"
           },
           {
@@ -174,7 +174,7 @@
                 "timeInProcessInSeconds": 20.0
               }
             },
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-10-10T10:01:20.123Z"
           }
         ]
