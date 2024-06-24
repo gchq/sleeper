@@ -37,13 +37,22 @@ public class TransactionLogTransactionDeleter {
     /**
      * Finds transactions that are old enough to be deleted and deletes them.
      *
+     * @param filesLogStore      the files transaction log store
+     * @param partitionsLogStore the partitions transaction log store
+     * @param latestSnapshots    the latest snapshot metadata
+     */
+    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, LatestSnapshots latestSnapshots) {
+        latestSnapshots.getFilesSnapshot().ifPresent(snapshot -> deleteWithLatestSnapshot(filesLogStore, snapshot));
+        latestSnapshots.getPartitionsSnapshot().ifPresent(snapshot -> deleteWithLatestSnapshot(partitionsLogStore, snapshot));
+    }
+
+    /**
+     * Finds transactions that are old enough to be deleted and deletes them.
+     *
      * @param logStore       the transaction log store
      * @param latestSnapshot the latest snapshot metadata, or null if there is no snapshot
      */
-    public void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
-        if (latestSnapshot == null) {
-            return;
-        }
+    private void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
         long numBehindToDelete = tableProperties.getLong(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE);
         Duration timeBehindToDelete = Duration.ofMinutes(tableProperties.getLong(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE));
         long latestNumber = latestSnapshot.getTransactionNumber() - numBehindToDelete;

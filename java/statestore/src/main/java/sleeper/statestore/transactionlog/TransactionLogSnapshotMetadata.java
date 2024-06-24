@@ -64,6 +64,19 @@ public class TransactionLogSnapshotMetadata {
         return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber);
     }
 
+    /**
+     * Creates metadata about a snapshot of partitions. Generates a path to the Arrow file in which the snapshot will be
+     * stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @param  createdTime       the time the snapshot was created
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forPartitions(String basePath, long transactionNumber, Instant createdTime) {
+        return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber, createdTime);
+    }
+
     public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber) {
         this(path, type, transactionNumber, null);
     }

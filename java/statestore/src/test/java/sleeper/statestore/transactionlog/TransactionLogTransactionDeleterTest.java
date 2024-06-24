@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -30,6 +31,7 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.table.TableStatus;
 
 import java.time.Instant;
@@ -71,7 +73,7 @@ public class TransactionLogTransactionDeleterTest {
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
         // When
-        deleteOldFilesTransactions();
+        deleteOldTransactions();
 
         // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
@@ -94,7 +96,7 @@ public class TransactionLogTransactionDeleterTest {
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
         // When
-        deleteOldFilesTransactions();
+        deleteOldTransactions();
 
         // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
@@ -120,7 +122,7 @@ public class TransactionLogTransactionDeleterTest {
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
         // When
-        deleteOldFilesTransactions();
+        deleteOldTransactions();
 
         // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
@@ -144,7 +146,7 @@ public class TransactionLogTransactionDeleterTest {
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
         // When
-        deleteOldFilesTransactions();
+        deleteOldTransactions();
 
         // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
@@ -153,6 +155,32 @@ public class TransactionLogTransactionDeleterTest {
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
                         new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+    }
+
+    @Test
+    void shouldDeleteOldPartitionTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
+        // Given we have two partitions transactions
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root");
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.initialise(partitions.buildList()));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> partitions
+                .splitToNewChildren("root", "L", "R", "m")
+                .applySplit(stateStore, "root"));
+        // And we have a snapshot at the head of the partitions log
+        setLatestPartitionsSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        // And we configure to delete any transactions more than one before the latest snapshot
+        tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
+        tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
+
+        // When
+        deleteOldTransactions();
+
+        // Then
+        PartitionTree partitionTree = partitions.buildTree();
+        assertThat(partitionsLogStore.readTransactionsAfter(0))
+                .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
+                        new SplitPartitionTransaction(partitionTree.getRootPartition(), List.of(
+                                partitionTree.getPartition("L"),
+                                partitionTree.getPartition("R")))));
     }
 
     private void setupAtTime(Instant time, SetupFunction setup) throws Exception {
@@ -165,9 +193,13 @@ public class TransactionLogTransactionDeleterTest {
         latestSnapshots = new LatestSnapshots(TransactionLogSnapshotMetadata.forFiles("", transactionNumber, createdTime), null);
     }
 
-    private void deleteOldFilesTransactions() {
+    private void setLatestPartitionsSnapshotAt(int transactionNumber, Instant createdTime) {
+        latestSnapshots = new LatestSnapshots(null, TransactionLogSnapshotMetadata.forPartitions("", transactionNumber, createdTime));
+    }
+
+    private void deleteOldTransactions() {
         new TransactionLogTransactionDeleter(tableProperties)
-                .deleteWithLatestSnapshot(filesLogStore, latestSnapshots.getFilesSnapshot().orElse(null));
+                .deleteWithLatestSnapshots(filesLogStore, partitionsLogStore, latestSnapshots);
     }
 
     /**
