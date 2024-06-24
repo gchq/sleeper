@@ -34,6 +34,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.IngestStatusStoreException;
+import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -61,6 +62,7 @@ import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDA
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.VALIDATION_RESULT;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobAddedFilesUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFailedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
@@ -115,6 +117,15 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
             save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
+    public void jobAddedFiles(IngestJobAddedFilesEvent event) {
+        try {
+            save(createJobAddedFilesUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed saving added files event for job " + event.getJobId(), e);
         }
     }
 
