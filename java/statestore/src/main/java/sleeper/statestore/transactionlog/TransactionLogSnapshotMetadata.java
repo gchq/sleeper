@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.transactionlog;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -24,6 +25,7 @@ public class TransactionLogSnapshotMetadata {
     private final String path;
     private final SnapshotType type;
     private final long transactionNumber;
+    private final Instant createdTime;
 
     /**
      * Creates metadata about a snapshot of files. Generates a path to the Arrow file in which the snapshot will be
@@ -35,6 +37,19 @@ public class TransactionLogSnapshotMetadata {
      */
     public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber) {
         return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber);
+    }
+
+    /**
+     * Creates metadata about a snapshot of files. Generates a path to the Arrow file in which the snapshot will be
+     * stored.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @param  createdTime       the time the snapshot was created
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber, Instant createdTime) {
+        return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber), SnapshotType.FILES, transactionNumber, createdTime);
     }
 
     /**
@@ -50,9 +65,14 @@ public class TransactionLogSnapshotMetadata {
     }
 
     public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber) {
+        this(path, type, transactionNumber, null);
+    }
+
+    public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber, Instant createdTime) {
         this.path = path;
         this.type = type;
         this.transactionNumber = transactionNumber;
+        this.createdTime = createdTime;
     }
 
     public String getPath() {
@@ -67,6 +87,10 @@ public class TransactionLogSnapshotMetadata {
         return transactionNumber;
     }
 
+    public Instant getCreatedTime() {
+        return createdTime;
+    }
+
     private static String getFilesPath(String basePath, long transactionNumber) {
         return basePath + "/statestore/snapshots/" + transactionNumber + "-files.arrow";
     }
@@ -77,7 +101,7 @@ public class TransactionLogSnapshotMetadata {
 
     @Override
     public int hashCode() {
-        return Objects.hash(path, type, transactionNumber);
+        return Objects.hash(path, type, transactionNumber, createdTime);
     }
 
     @Override
@@ -89,11 +113,11 @@ public class TransactionLogSnapshotMetadata {
             return false;
         }
         TransactionLogSnapshotMetadata other = (TransactionLogSnapshotMetadata) obj;
-        return Objects.equals(path, other.path) && type == other.type && transactionNumber == other.transactionNumber;
+        return Objects.equals(path, other.path) && type == other.type && transactionNumber == other.transactionNumber && Objects.equals(createdTime, other.createdTime);
     }
 
     @Override
     public String toString() {
-        return "TransactionLogSnapshot{path=" + path + ", type=" + type + ", transactionNumber=" + transactionNumber + "}";
+        return "TransactionLogSnapshot{path=" + path + ", type=" + type + ", transactionNumber=" + transactionNumber + ", createdTime=" + createdTime + "}";
     }
 }

@@ -18,6 +18,10 @@ package sleeper.statestore.transactionlog;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 
+import java.time.Duration;
+import java.time.Instant;
+
+import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 
 /**
@@ -37,8 +41,11 @@ public class TransactionLogTransactionDeleter {
      * @param latestSnapshot the latest snapshot metadata, or null if there is no snapshot
      */
     public void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
-        int minBehindToDelete = tableProperties.getInt(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE);
-        logStore.deleteTransactionsAtOrBefore(latestSnapshot.getTransactionNumber() - minBehindToDelete, null);
+        long numBehindToDelete = tableProperties.getLong(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE);
+        Duration timeBehindToDelete = Duration.ofMinutes(tableProperties.getLong(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE));
+        long latestNumber = latestSnapshot.getTransactionNumber() - numBehindToDelete;
+        Instant latestTime = latestSnapshot.getCreatedTime().minus(timeBehindToDelete);
+        logStore.deleteTransactionsAtOrBefore(latestNumber, latestTime);
     }
 
 }

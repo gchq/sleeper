@@ -57,7 +57,8 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber, Instant updateTime) {
         transactions = transactions.stream()
-                .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)
+                .filter(transaction -> transaction.getTransactionNumber() > transactionNumber
+                        || transaction.getUpdateTime().isAfter(updateTime))
                 .collect(Collectors.toList());
     }
 
