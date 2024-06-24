@@ -76,7 +76,7 @@
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
-        <woodstox.version>6.6.2</woodstox.version>
+        <woodstox.version>7.0.0</woodstox.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
         <ivy.version>2.5.2</ivy.version>
         <!--
