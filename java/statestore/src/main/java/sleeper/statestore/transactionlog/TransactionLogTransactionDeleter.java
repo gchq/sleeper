@@ -41,6 +41,9 @@ public class TransactionLogTransactionDeleter {
      * @param latestSnapshot the latest snapshot metadata, or null if there is no snapshot
      */
     public void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
+        if (latestSnapshot == null) {
+            return;
+        }
         long numBehindToDelete = tableProperties.getLong(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE);
         Duration timeBehindToDelete = Duration.ofMinutes(tableProperties.getLong(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE));
         long latestNumber = latestSnapshot.getTransactionNumber() - numBehindToDelete;

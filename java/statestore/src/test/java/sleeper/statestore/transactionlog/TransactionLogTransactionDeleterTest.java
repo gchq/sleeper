@@ -65,15 +65,15 @@ public class TransactionLogTransactionDeleterTest {
         setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
         // And we have a snapshot at the head of the file log
-        setOnlyFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        setLatestFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
-        // When we delete old transactions
+        // When
         deleteOldFilesTransactions();
 
-        // Then only one transaction remains
+        // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
@@ -88,15 +88,65 @@ public class TransactionLogTransactionDeleterTest {
         setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
         // And we have a snapshot at the head of the file log
-        setOnlyFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        setLatestFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
 
-        // When we delete old transactions
+        // When
         deleteOldFilesTransactions();
 
-        // Then only one transaction remains
+        // Then
+        assertThat(filesLogStore.readTransactionsAfter(0))
+                .containsExactly(
+                        new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
+                        new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+    }
+
+    @Test
+    void shouldNotDeleteOldTransactionWhenOldEnoughButNotFarEnoughBehind() throws Exception {
+        // Given we have two file transactions
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
+        FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
+        FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        // And we have a snapshot at the head of the file log
+        setLatestFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        // And we configure to delete any transactions more than one before the latest snapshot
+        tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 2);
+        tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
+
+        // When
+        deleteOldFilesTransactions();
+
+        // Then
+        assertThat(filesLogStore.readTransactionsAfter(0))
+                .containsExactly(
+                        new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:00Z"),
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
+                        new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+    }
+
+    @Test
+    void shouldNotDeleteTransactionsWhenNoSnapshotExistsYet() throws Exception {
+        // Given we have two file transactions
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
+        FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
+        FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
+        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        // And we configure to delete any transactions more than one before the latest snapshot
+        tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
+        tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
+
+        // When
+        deleteOldFilesTransactions();
+
+        // Then
         assertThat(filesLogStore.readTransactionsAfter(0))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
@@ -111,7 +161,7 @@ public class TransactionLogTransactionDeleterTest {
         setup.run();
     }
 
-    private void setOnlyFilesSnapshotAt(int transactionNumber, Instant createdTime) {
+    private void setLatestFilesSnapshotAt(int transactionNumber, Instant createdTime) {
         latestSnapshots = new LatestSnapshots(TransactionLogSnapshotMetadata.forFiles("", transactionNumber, createdTime), null);
     }
 
