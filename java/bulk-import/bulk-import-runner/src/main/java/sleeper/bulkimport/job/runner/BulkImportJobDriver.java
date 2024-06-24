@@ -23,6 +23,9 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -40,6 +43,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -50,9 +54,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
@@ -85,23 +91,6 @@ public class BulkImportJobDriver {
         this.statusStore = statusStore;
         this.getTime = getTime;
         this.addFilesAsync = addFilesAsync;
-    }
-
-    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, conf);
-        IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
-        return from(jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider, statusStore, Instant::now);
-    }
-
-    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore statusStore,
-            Supplier<Instant> getTime) {
-        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
-                jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, statusStore, getTime, null);
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -181,6 +170,7 @@ public class BulkImportJobDriver {
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         Configuration configuration;
         if (bulkImportMode.equals("EKS")) {
             configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
@@ -201,8 +191,14 @@ public class BulkImportJobDriver {
             }
 
             BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
-            BulkImportJobDriver driver = BulkImportJobDriver.from(
-                    runner, instanceProperties, s3Client, dynamoClient, configuration);
+
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration);
+            IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
+            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, instanceProperties);
+            BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
+                    runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+                    tablePropertiesProvider, stateStoreProvider, statusStore, Instant::now, addFilesAsync);
             driver.run(bulkImportJob, jobRunId, taskId);
         } finally {
             s3Client.shutdown();
@@ -250,5 +246,16 @@ public class BulkImportJobDriver {
 
     public interface AddFilesAsynchronously {
         void submit(IngestAddFilesCommitRequest request);
+    }
+
+    public static AddFilesAsynchronously submitFilesToCommitQueue(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
+        return request -> {
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                    .withMessageBody(serDe.toJson(request))
+                    .withMessageGroupId(request.getTableId())
+                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
+        };
     }
 }
