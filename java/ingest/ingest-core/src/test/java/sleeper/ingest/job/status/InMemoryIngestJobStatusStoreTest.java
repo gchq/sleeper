@@ -40,7 +40,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
@@ -56,6 +55,9 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhi
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
@@ -514,13 +516,8 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(jobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
-                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                                    .build())
-                            .statusUpdate(IngestJobAddedFilesStatus.builder()
-                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
-                                    .fileCount(1)
-                                    .build())
+                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -551,13 +548,8 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(jobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
-                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                                    .build())
-                            .statusUpdate(IngestJobAddedFilesStatus.builder()
-                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
-                                    .fileCount(1)
-                                    .build())
+                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -585,13 +577,8 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(jobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
-                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                                    .build())
-                            .statusUpdate(IngestJobAddedFilesStatus.builder()
-                                    .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
-                                    .fileCount(2)
-                                    .build())
+                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -621,12 +608,8 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(jobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
-                                    .job(job).startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                                    .build())
-                            .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                                    .numFilesWrittenByJob(1).committedBySeparateFileUpdates(true)
-                                    .build())
+                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .statusUpdate(ingestFinishedStatusUncommitted(job, summary, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
