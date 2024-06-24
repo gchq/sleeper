@@ -17,9 +17,14 @@ package sleeper.statestore.transactionlog;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.StateStore;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
+
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogTransactionDeleterIT extends TransactionLogStateStoreOneTableTestBase {
+    private final Schema schema = schemaWithKey("key", new StringType());
+
     @Test
     void shouldDeleteOldTransactions() throws Exception {
         // Given
@@ -27,9 +32,9 @@ public class TransactionLogTransactionDeleterIT extends TransactionLogStateStore
             stateStore.initialise();
             stateStore.addFile(factory.rootFile("file1.parquet", 100L));
         });
-        StateStore stateStore = stateStore(builder -> builder.minTransactionsBehindToDeleteOldTransactions(1));
-        stateStore.addFile(factory.rootFile("file2.parquet", 123L));
-        stateStore.addFile(factory.rootFile("file3.parquet", 456L));
-        stateStore.addFile(factory.rootFile("file4.parquet", 789L));
+        initialiseWithSchema(schema);
+        store.addFile(factory.rootFile("file2.parquet", 123L));
+        store.addFile(factory.rootFile("file3.parquet", 456L));
+        store.addFile(factory.rootFile("file4.parquet", 789L));
     }
 }
