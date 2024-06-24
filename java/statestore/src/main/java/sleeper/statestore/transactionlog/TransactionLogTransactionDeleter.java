@@ -18,6 +18,8 @@ package sleeper.statestore.transactionlog;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 
+import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_MIN_BEHIND_TO_DELETE;
+
 /**
  * Given a state store, finds transactions that are old enough to be deleted and deletes them.
  */
@@ -35,6 +37,8 @@ public class TransactionLogTransactionDeleter {
      * @param latestSnapshot the latest snapshot metadata, or null if there is no snapshot
      */
     public void deleteWithLatestSnapshot(TransactionLogStore logStore, TransactionLogSnapshotMetadata latestSnapshot) {
+        int minBehindToDelete = tableProperties.getInt(TRANSACTION_LOG_MIN_BEHIND_TO_DELETE);
+        logStore.deleteTransactionsAtOrBefore(latestSnapshot.getTransactionNumber() - minBehindToDelete, null);
     }
 
 }

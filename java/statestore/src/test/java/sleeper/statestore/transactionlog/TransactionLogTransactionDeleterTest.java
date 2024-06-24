@@ -16,7 +16,6 @@
 package sleeper.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -64,7 +63,6 @@ public class TransactionLogTransactionDeleterTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldDeleteOldTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
         // Given we have two file transactions
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
