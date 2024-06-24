@@ -132,14 +132,14 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesAddedByJob(2).build();
+        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, int numFilesAdded) {
         return ingestJobFinished(job, defaultSummary(startedTime, finishedTime))
                 .committedBySeparateFileUpdates(true)
-                .numFilesAddedByJob(numFilesAdded)
+                .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)
                 .build();
     }

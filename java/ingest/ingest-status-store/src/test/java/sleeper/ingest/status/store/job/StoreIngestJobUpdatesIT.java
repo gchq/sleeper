@@ -88,8 +88,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         // When
         store.jobStarted(ingestJobStarted(taskId1, job, startTime1));
         store.jobStarted(ingestJobStarted(taskId2, job, startTime2));
-        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesAddedByJob(1).build());
-        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesAddedByJob(2).build());
+        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
+        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())

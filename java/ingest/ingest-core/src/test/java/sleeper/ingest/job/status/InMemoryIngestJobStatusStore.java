@@ -89,7 +89,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
                         .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
                                 defaultUpdateTime(summary.getFinishTime()), summary)
                                 .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
-                                .numFilesWrittenByJob(event.getNumFilesAddedByJob())
+                                .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
                                 .build())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
