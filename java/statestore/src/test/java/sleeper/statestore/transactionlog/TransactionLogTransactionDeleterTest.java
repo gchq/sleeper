@@ -78,7 +78,7 @@ public class TransactionLogTransactionDeleterTest {
         tableProperties.setNumber(TRANSACTION_LOG_MIN_BEHIND_TO_DELETE, 1);
 
         // When we delete old transactions
-        deleter().delete();
+        deleteOldFilesTransactions();
 
         // Then only one transaction remains
         assertThat(filesLogStore.readTransactionsAfter(0))
@@ -90,7 +90,8 @@ public class TransactionLogTransactionDeleterTest {
         latestSnapshots = new LatestSnapshots(TransactionLogSnapshotMetadata.forFiles("", transactionNumber), null);
     }
 
-    private TransactionLogTransactionDeleter deleter() {
-        return new TransactionLogTransactionDeleter(filesLogStore, partitionsLogStore, () -> latestSnapshots);
+    private void deleteOldFilesTransactions() {
+        new TransactionLogTransactionDeleter(filesLogStore, tableProperties)
+                .deleteWithLatestSnapshot(latestSnapshots.getFilesSnapshot().orElse(null));
     }
 }
