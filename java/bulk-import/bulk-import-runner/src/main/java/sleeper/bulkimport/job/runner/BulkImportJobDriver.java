@@ -203,6 +203,7 @@ public class BulkImportJobDriver {
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
+            sqsClient.shutdown();
         }
     }
 
