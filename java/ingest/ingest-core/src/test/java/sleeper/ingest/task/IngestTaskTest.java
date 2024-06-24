@@ -26,7 +26,7 @@ import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusType;
+import sleeper.ingest.job.status.IngestJobUpdateType;
 import sleeper.ingest.task.IngestTask.MessageHandle;
 import sleeper.ingest.task.IngestTask.MessageReceiver;
 
@@ -48,9 +48,9 @@ import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAnd
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_ID;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusType.FAILED;
-import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
-import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.ingest.job.status.IngestJobUpdateType.FAILED;
+import static sleeper.ingest.job.status.IngestJobUpdateType.FINISHED;
+import static sleeper.ingest.job.status.IngestJobUpdateType.STARTED;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
@@ -356,9 +356,9 @@ public class IngestTaskTest {
             assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
                             ProcessStatusUpdateRecord::getJobRunId,
-                            record -> IngestJobStatusType.statusTypeOfUpdate(record.getStatusUpdate()))
+                            record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
-                            tuple("test-job-run", IN_PROGRESS),
+                            tuple("test-job-run", STARTED),
                             tuple("test-job-run", FINISHED));
         }
 
@@ -381,9 +381,9 @@ public class IngestTaskTest {
             assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
                             ProcessStatusUpdateRecord::getJobRunId,
-                            record -> IngestJobStatusType.statusTypeOfUpdate(record.getStatusUpdate()))
+                            record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
-                            tuple("test-job-run", IN_PROGRESS),
+                            tuple("test-job-run", STARTED),
                             tuple("test-job-run", FAILED));
         }
     }
