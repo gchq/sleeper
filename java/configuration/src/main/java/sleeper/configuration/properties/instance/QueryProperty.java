@@ -29,7 +29,7 @@ public interface QueryProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.query.processor.memory")
-            .description("The memory in MB for the lambda that executes queries.")
+            .description("The amount of memory in MB for the lambda that executes queries.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
