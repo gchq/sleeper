@@ -425,7 +425,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
-        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+        return IngestJobStatusTestHelper.ingestAcceptedStatus(job, validationTime);
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
@@ -433,32 +433,20 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
-        return IngestJobStartedStatus.withStartOfRun(false).job(job)
-                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                .build();
+        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job, startTime);
     }
 
     private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {
-        return IngestJobAddedFilesStatus.builder()
-                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
-                .fileCount(fileCount)
-                .build();
+        return IngestJobStatusTestHelper.ingestAddedFilesStatus(writtenTime, fileCount);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return finishedStatusUpdateBuilder(startTime, finishTime).build();
+        return IngestJobStatusTestHelper.ingestFinishedStatus(job, summary(startTime, finishTime), 2);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
-        return finishedStatusUpdateBuilder(startTime, finishTime)
-                .committedBySeparateFileUpdates(true)
-                .numFilesWrittenByJob(numFilesAddedByJob)
-                .build();
-    }
-
-    private IngestJobFinishedStatus.Builder finishedStatusUpdateBuilder(Instant startTime, Instant finishTime) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
+        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(job, summary(startTime, finishTime), numFilesAddedByJob);
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
