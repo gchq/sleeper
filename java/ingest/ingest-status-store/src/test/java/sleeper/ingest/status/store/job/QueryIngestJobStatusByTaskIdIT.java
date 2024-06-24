@@ -40,8 +40,8 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(searchingTaskId, job1, startedTime1));
-        store.jobStarted(ingestJobStarted("another-task", job2, startedTime2));
+        store.jobStarted(ingestJobStarted(job1, startedTime1).taskId(searchingTaskId).build());
+        store.jobStarted(ingestJobStarted(job2, startedTime2).taskId("another-task").build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
@@ -61,9 +61,9 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime3 = Instant.parse("2022-12-14T13:53:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(taskId1, job, startedTime1));
-        store.jobStarted(ingestJobStarted(searchingTaskId, job, startedTime2));
-        store.jobStarted(ingestJobStarted(taskId3, job, startedTime3));
+        store.jobStarted(ingestJobStarted(job, startedTime1).taskId(taskId1).build());
+        store.jobStarted(ingestJobStarted(job, startedTime2).taskId(searchingTaskId).build());
+        store.jobStarted(ingestJobStarted(job, startedTime3).taskId(taskId3).build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))

@@ -145,7 +145,7 @@ public class InMemoryIngestByQueue {
                 .ingest(tableProperties, sourceFiles.streamRecords(filesWithFs).iterator());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
 
-        jobStore.jobStarted(ingestJobStarted(taskId, job, startTime));
+        jobStore.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
         jobStore.jobFinished(ingestJobFinished(job,
                 new RecordsProcessedSummary(
                         result.asRecordsProcessed(),

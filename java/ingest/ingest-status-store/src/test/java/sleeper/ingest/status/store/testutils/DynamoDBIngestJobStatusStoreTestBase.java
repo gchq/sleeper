@@ -117,7 +117,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return ingestJobStarted(DEFAULT_TASK_ID, job, startedTime);
+        return ingestJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {

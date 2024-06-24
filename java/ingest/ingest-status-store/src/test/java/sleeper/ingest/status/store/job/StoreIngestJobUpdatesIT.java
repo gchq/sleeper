@@ -86,8 +86,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         String taskId2 = "second-task";
 
         // When
-        store.jobStarted(ingestJobStarted(taskId1, job, startTime1));
-        store.jobStarted(ingestJobStarted(taskId2, job, startTime2));
+        store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId1).build());
+        store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId2).build());
         store.jobFinished(ingestJobFinished(job, defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
         store.jobFinished(ingestJobFinished(job, defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
 

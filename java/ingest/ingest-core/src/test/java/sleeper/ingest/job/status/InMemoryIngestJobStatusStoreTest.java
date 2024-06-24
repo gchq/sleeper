@@ -77,7 +77,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", table);
 
-            store.jobStarted(ingestJobStarted(taskId, job, startTime));
+            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
@@ -88,7 +88,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
 
-            store.jobStarted(ingestJobStarted(taskId, job, startTime));
+            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
@@ -102,7 +102,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-            store.jobStarted(ingestJobStarted(taskId, job, startTime));
+            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job, summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
@@ -134,9 +134,9 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-            store.jobStarted(ingestJobStarted(taskId, job, startTime1));
+            store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(taskId, job, startTime2));
+            store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -157,9 +157,9 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-            store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
+            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job1, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
+            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job2, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -183,9 +183,9 @@ public class InMemoryIngestJobStatusStoreTest {
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
             // When
-            store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
+            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job1, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
+            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
             store.jobFinished(ingestJobFinished(job2, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
@@ -212,8 +212,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
             // When
-            store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
-            store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
+            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
+            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
