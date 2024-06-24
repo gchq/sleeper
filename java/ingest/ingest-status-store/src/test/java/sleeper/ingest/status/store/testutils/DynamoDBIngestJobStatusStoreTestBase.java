@@ -132,7 +132,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(DEFAULT_TASK_ID, job, summary);
+        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesAddedByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
@@ -176,7 +176,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, RecordsProcessedSummary summary) {
-        return finishedIngestJob(job, DEFAULT_TASK_ID, summary);
+        return finishedIngestJob(job, DEFAULT_TASK_ID, summary, 2);
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
@@ -207,7 +207,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static ProcessRun defaultJobFinishedRun(IngestJob job, RecordsProcessedSummary summary) {
-        return finishedIngestRun(job, DEFAULT_TASK_ID, summary);
+        return finishedIngestRun(job, DEFAULT_TASK_ID, summary, 2);
     }
 
     protected IngestJobStatus getJobStatus(String jobId) {

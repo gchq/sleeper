@@ -197,7 +197,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private IngestJobStatus finishedStatus(Instant startTime, Instant finishTime) {
-        return finishedIngestJob(job, "test-task-id", summary(startTime, finishTime, 100, 100));
+        return finishedIngestJob(job, "test-task-id", summary(startTime, finishTime, 100, 100), 2);
     }
 
     private IngestJobStatus statusFromUpdates(ProcessStatusUpdate... updates) {
@@ -210,6 +210,7 @@ public class IngestJobStatusInPeriodTest {
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
         return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
-                summary(startedTime, finishedTime, 100, 100)).build();
+                summary(startedTime, finishedTime, 100, 100))
+                .numFilesWrittenByJob(2).build();
     }
 }

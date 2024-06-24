@@ -53,18 +53,6 @@ public class IngestJobFinishedEvent {
     /**
      * Creates an instance of this class.
      *
-     * @param  taskId  the task ID
-     * @param  job     the ingest job
-     * @param  summary the records processed summary
-     * @return         an instance of this class
-     */
-    public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(taskId).build();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
      * @param  job     the ingest job
      * @param  summary the records processed summary
      * @return         an instance of this class

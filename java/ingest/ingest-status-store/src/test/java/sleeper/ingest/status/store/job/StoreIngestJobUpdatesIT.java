@@ -88,15 +88,15 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         // When
         store.jobStarted(ingestJobStarted(taskId1, job, startTime1));
         store.jobStarted(ingestJobStarted(taskId2, job, startTime2));
-        store.jobFinished(ingestJobFinished(taskId1, job, defaultSummary(startTime1, finishTime1)));
-        store.jobFinished(ingestJobFinished(taskId2, job, defaultSummary(startTime2, finishTime2)));
+        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesAddedByJob(1).build());
+        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesAddedByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2)),
-                        finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1))));
+                        finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2), 2),
+                        finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1), 1)));
     }
 
     @Test

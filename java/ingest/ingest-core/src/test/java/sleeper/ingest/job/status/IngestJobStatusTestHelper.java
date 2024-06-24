@@ -79,13 +79,14 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job status for a job that has finished.
      *
-     * @param  job     the ingest job
-     * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
-     * @return         an {@link IngestJobStatus}
+     * @param  job                  the ingest job
+     * @param  taskId               the ingest task ID
+     * @param  summary              the records processed summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      an {@link IngestJobStatus}
      */
-    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary) {
-        return jobStatus(job, finishedIngestRun(job, taskId, summary));
+    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return jobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
     }
 
     /**
@@ -324,9 +325,24 @@ public class IngestJobStatusTestHelper {
      */
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
+        return finishedIngestRun(job, taskId, summary, 1);
+    }
+
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  job                  the ingest job
+     * @param  taskId               the ingest task ID
+     * @param  summary              the records processed summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      a {@link ProcessRun}
+     */
+    public static ProcessRun finishedIngestRun(
+            IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.finished(taskId,
                 ingestStartedStatus(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
-                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build());
+                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
     }
 
     /**
@@ -342,9 +358,7 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.finished(taskId,
                 ingestStartedStatus(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
-                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                        .committedBySeparateFileUpdates(true).numFilesWrittenByJob(numFilesWrittenByJob)
-                        .build());
+                ingestFinishedStatusUncommitted(job, summary, numFilesWrittenByJob));
     }
 
     /**

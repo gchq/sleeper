@@ -85,9 +85,9 @@ public class IngestJobStatusReporterTestData {
         Instant startTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
 
         return Arrays.asList(
-                finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
+                finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300), 2),
                 startedIngestJob(job3, task(2), startTime3),
-                finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
+                finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
                 failedIngestJob(job1, task(1),
                         new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
@@ -98,8 +98,8 @@ public class IngestJobStatusReporterTestData {
 
         return Collections.singletonList(jobStatus(job,
                 startedIngestRun(job, task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
-                finishedIngestRun(job, task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200)),
-                finishedIngestRun(job, task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200))));
+                finishedIngestRun(job, task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200), 2),
+                finishedIngestRun(job, task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200), 1)));
     }
 
     public static List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
@@ -109,10 +109,10 @@ public class IngestJobStatusReporterTestData {
         Instant startTime4 = Instant.parse("2022-10-13T14:02:10Z");
 
         return Arrays.asList(
-                finishedIngestJob(createJob(4, 1), "task-id", summary(startTime4, Duration.ofMillis(123_456), 1_234_000L, 1_234_000L)),
-                finishedIngestJob(createJob(3, 1), "task-id", summary(startTime3, Duration.ofMinutes(1), 1_000_600L, 500_300L)),
-                finishedIngestJob(createJob(2, 1), "task-id", summary(startTime2, Duration.ofHours(2), 1_000_600L, 500_300L)),
-                finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000)));
+                finishedIngestJob(createJob(4, 1), "task-id", summary(startTime4, Duration.ofMillis(123_456), 1_234_000L, 1_234_000L), 4),
+                finishedIngestJob(createJob(3, 1), "task-id", summary(startTime3, Duration.ofMinutes(1), 1_000_600L, 500_300L), 3),
+                finishedIngestJob(createJob(2, 1), "task-id", summary(startTime2, Duration.ofHours(2), 1_000_600L, 500_300L), 2),
+                finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000), 1));
     }
 
     public static List<IngestJobStatus> acceptedJob() {
