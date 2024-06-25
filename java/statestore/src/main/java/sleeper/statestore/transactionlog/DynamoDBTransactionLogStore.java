@@ -22,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +135,12 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .forEach(item -> {
-                    LOGGER.info("Deleting transaction {}", item);
+                    long itemTransactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
+                    if (item.get(BODY_S3_KEY) != null) {
+                        LOGGER.info("Deleting transaction body in S3 for transaction number {} and table {}", itemTransactionNumber, sleeperTableId);
+                        s3.deleteObject(new DeleteObjectRequest(dataBucket, item.get(BODY_S3_KEY).getS()));
+                    }
+                    LOGGER.info("Deleting transaction from DynamoDB for transaction number {} and table {}", itemTransactionNumber, sleeperTableId);
                     dynamo.deleteItem(logTableName, getKey(item));
                 });
     }

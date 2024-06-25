@@ -23,7 +23,6 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -231,7 +230,6 @@ public class TransactionLogTransactionDeleterIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldDeleteOldTransactionStoredInS3() throws Exception {
         // Given we have two partition transactions, with the first being too large to fit in DynamoDB
         List<String> leafIds = IntStream.range(0, 1000)
@@ -244,8 +242,7 @@ public class TransactionLogTransactionDeleterIT {
                 new PartitionsBuilder(schema).rootFirst("root")
                         .leavesWithSplits(leafIds, splitPoints)
                         .anyTreeJoiningAllLeaves().buildList()));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.initialise(
-                new PartitionsBuilder(schema).rootFirst("root").buildList()));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.initialise());
         // And we have a snapshot at the head of the partitions log
         setLatestPartitionsSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
@@ -255,14 +252,15 @@ public class TransactionLogTransactionDeleterIT {
         // When
         deleteOldTransactions();
 
-        // Then
+        // Then the second transaction should be the only transaction in the log store
         assertThat(partitionsLogStore.readTransactionsAfter(0))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new InitialisePartitionsTransaction(partitions.buildList())));
-        assertThat(streamFilesInS3()).isEmpty();
+        // And the data bucket should be empty
+        assertThat(streamFilesInDataBucket()).isEmpty();
     }
 
-    private Stream<String> streamFilesInS3() {
+    private Stream<String> streamFilesInDataBucket() {
         return s3Client.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TABLE_ID)))
