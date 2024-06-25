@@ -225,8 +225,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
      */
     public LatestSnapshots getLatestSnapshotsBefore(Instant time) {
         return new LatestSnapshots(
-                getLatestSnapshotBefore(SnapshotType.FILES, time.toEpochMilli()).orElse(null),
-                getLatestSnapshotBefore(SnapshotType.PARTITIONS, time.toEpochMilli()).orElse(null));
+                getLatestSnapshotBefore(SnapshotType.FILES, time).orElse(null),
+                getLatestSnapshotBefore(SnapshotType.PARTITIONS, time).orElse(null));
     }
 
     /**
@@ -237,28 +237,30 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
      */
     public Stream<TransactionLogSnapshotMetadata> getExpiredSnapshots(Instant expiryDate) {
         LatestSnapshots latestSnapshots = getLatestSnapshots();
+        long latestFilesTransactionNumber = latestSnapshots.getFilesSnapshot()
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                .orElse(0L);
+        long latestPartitionsTransactionNumber = latestSnapshots.getPartitionsSnapshot()
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                .orElse(0L);
         return Stream.concat(
-                getExpiredSnapshotsExcludingLatest(latestSnapshots.getFilesSnapshot()
-                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.FILES, expiryDate.toEpochMilli()),
-                getExpiredSnapshotsExcludingLatest(latestSnapshots.getPartitionsSnapshot()
-                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate.toEpochMilli()));
+                getExpiredSnapshotsExcludingLatest(latestFilesTransactionNumber, SnapshotType.FILES, expiryDate),
+                getExpiredSnapshotsExcludingLatest(latestPartitionsTransactionNumber, SnapshotType.PARTITIONS, expiryDate));
     }
 
-    private Stream<TransactionLogSnapshotMetadata> getExpiredSnapshotsExcludingLatest(long latestSnapshotNumber, SnapshotType type, long time) {
+    private Stream<TransactionLogSnapshotMetadata> getExpiredSnapshotsExcludingLatest(long latestSnapshotNumber, SnapshotType type, Instant time) {
         return getSnapshotsBefore(type, time, request -> {
         }).filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
     }
 
-    private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(SnapshotType type, long time) {
+    private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(SnapshotType type, Instant time) {
         return getSnapshotsBefore(type, time, request -> request
                 .withScanIndexForward(false)
                 .withLimit(1))
                 .findFirst();
     }
 
-    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, long time, Consumer<QueryRequest> config) {
+    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest> config) {
         QueryRequest request = new QueryRequest()
                 .withTableName(allSnapshotsTable)
                 .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
@@ -268,7 +270,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                         "#UpdateTime", UPDATE_TIME))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id_and_type", tableAndType(sleeperTableId, type))
-                        .number(":expiry_time", time)
+                        .number(":expiry_time", time.toEpochMilli())
                         .build());
         config.accept(request);
         return streamPagedItems(dynamo, request)
