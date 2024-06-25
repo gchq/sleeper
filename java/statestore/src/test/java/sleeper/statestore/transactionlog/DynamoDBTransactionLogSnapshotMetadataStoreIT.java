@@ -275,7 +275,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
     class GetLatestSnapshotsWithMinAge {
 
         @Test
-        void shouldGetLatestSnapshotsThatAreOldEnough() throws Exception {
+        void shouldGetLatestSnapshotsWhenAllAreOldEnough() throws Exception {
             // Given
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:25:00Z"),
@@ -293,7 +293,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
         }
 
         @Test
-        void shouldGetLatestSnapshotsThatAreOldEnoughWhenSomeAreTooRecent() throws Exception {
+        void shouldGetLatestSnapshotsWhenSomeAreTooRecent() throws Exception {
             // Given
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
                     Instant.parse("2024-04-24T15:25:00Z"),
