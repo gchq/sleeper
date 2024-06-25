@@ -33,6 +33,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
     public static final int DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS = 10;
     public static final WaitRange DEFAULT_RETRY_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(0.2, 30);
+    public static final long DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = 10;
     public static final Duration DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS = Duration.ofMinutes(1);
     public static final Duration DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS = Duration.ZERO;
 
@@ -77,7 +78,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
-        private long minTransactionsAheadToLoadSnapshot = 1;
+        private long minTransactionsAheadToLoadSnapshot = DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
         private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();

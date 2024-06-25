@@ -55,6 +55,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -294,10 +295,10 @@ public interface TableProperty extends SleeperProperty {
                     "update the state, this will be ignored and the state will be brought completely up to date.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
+    TableProperty MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.table.metadata.snapshot.load.min.transactions.ahead")
+            .defaultProperty(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT)
+            .description("The minimum number of transactions that a snapshot must be ahead of the local " +
+                    "state, before we load the snapshot instead of updating from the transaction log.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.expiry.days")
@@ -307,12 +308,29 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.number.behind.latest.snapshot")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE)
-            .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
+            .description("The minimum number of transactions that a transaction must be behind the latest snapshot " +
+                    "before being deleted. This is the number of transactions that will be kept and protected from " +
+                    "deletion, whenever old transactions are deleted. This includes the transaction that the latest " +
+                    "snapshot was created against. Any transactions after the snapshot will never be deleted as they " +
+                    "are still in active use.\n" +
+                    "Note that there's a chance that a previous snapshot may still be read, as the latest snapshot " +
+                    "may have only just been written. This should be set to expect that the transactions after the " +
+                    "previous snapshot will still be available.\n" +
+                    "There's also a property which determines whether a process will load the latest snapshot or " +
+                    "instead seek through the transaction log, if it's not too far behind:\n" +
+                    "sleeper.table.metadata.snapshot.load.min.transactions.ahead\n" +
+                    "We also need to preserve those transactions before a snapshot, and prevent them being deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.mins.behind.latest.snapshot")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE)
             .description("The minimum number of minutes that a transaction must exist for before the latest snapshot in order to be deleted.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
+            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
+            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
+                    "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

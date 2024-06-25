@@ -31,6 +31,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
@@ -74,6 +75,7 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
                 .schema(tableProperties.getSchema())
                 .timeBetweenSnapshotChecks(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)))
                 .timeBetweenTransactionChecks(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)))
+                .minTransactionsAheadToLoadSnapshot(tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT))
                 .maxAddTransactionAttempts(tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS))
                 .retryBackoff(new ExponentialBackoffWithJitter(WaitRange.firstAndMaxWaitCeilingSecs(
                         tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
