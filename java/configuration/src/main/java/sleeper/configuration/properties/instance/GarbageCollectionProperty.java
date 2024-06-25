@@ -28,7 +28,7 @@ public interface GarbageCollectionProperty {
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
-            .description("The memory in MB for the lambda function used to perform garbage collection.")
+            .description("The amount of memory in MB for the lambda function used to perform garbage collection.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();

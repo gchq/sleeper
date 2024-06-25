@@ -11,12 +11,12 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-13T12:01:10.123Z",
             "startTime": "2022-10-13T12:01:10Z"
           },
           {
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-10-13T14:01:10.123Z",
             "summary": {
               "recordsProcessed": {
@@ -49,12 +49,12 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "CompactionJobStartedStatus",
+            "type": "IN_PROGRESS",
             "updateTime": "2022-10-13T12:00:10.123Z",
             "startTime": "2022-10-13T12:00:10Z"
           },
           {
-            "type": "ProcessFinishedStatus",
+            "type": "FINISHED",
             "updateTime": "2022-10-13T12:00:10.123Z",
             "summary": {
               "recordsProcessed": {

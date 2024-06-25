@@ -18,7 +18,6 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -67,12 +66,31 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
+    public void jobAddedFiles(IngestJobAddedFilesEvent event) {
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                .writtenTime(event.getWrittenTime())
+                                .updateTime(defaultUpdateTime(event.getWrittenTime()))
+                                .fileCount(event.getFileCount())
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
         existingJobRecords(event.getTableId(), event.getJobId())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                        .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
+                                defaultUpdateTime(summary.getFinishTime()), summary)
+                                .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
+                                .numFilesWrittenByJob(event.getNumFilesAddedByJob())
+                                .build())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -98,7 +116,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return streamAllJobs()
-                .filter(status -> status.getFurthestStatusType().equals(REJECTED))
+                .filter(status -> IngestJobStatusType.statusTypeOfFurthestRunOfJob(status).equals(REJECTED))
                 .collect(Collectors.toList());
     }
 

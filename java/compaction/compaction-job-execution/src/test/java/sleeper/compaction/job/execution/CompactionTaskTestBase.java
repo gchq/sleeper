@@ -142,7 +142,7 @@ public class CompactionTaskTestBase {
             StateStoreProvider stateStoreProvider) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider,
-                new CompactionJobCommitter(jobStore, tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId))),
+                new CompactionJobCommitter(jobStore, stateStoreProvider.byTableId(tablePropertiesProvider)),
                 commitRequestsOnQueue::add);
         CompactionAlgorithmSelector selector = job -> compactor;
         new CompactionTask(instanceProperties,

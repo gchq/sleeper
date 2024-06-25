@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
+import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -67,7 +68,8 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(instanceProperties, s3, dynamo, hadoopConfig),
-                ingestJobStatusStore, s3, platformExecutor, Instant::now);
+                ingestJobStatusStore, new BulkImportJobWriterToS3(instanceProperties, s3),
+                platformExecutor, Instant::now);
         propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))

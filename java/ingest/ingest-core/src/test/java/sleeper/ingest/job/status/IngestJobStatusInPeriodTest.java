@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.ingest.job.IngestJob;
 
@@ -206,11 +205,11 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private ProcessStatusUpdate startedRun(Instant startedTime) {
-        return IngestJobStatusTestHelper.startAndUpdateTime(job, startedTime, defaultUpdateTime(startedTime));
+        return IngestJobStatusTestHelper.ingestStartedStatus(job, startedTime, defaultUpdateTime(startedTime));
     }
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
-        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
-                summary(startedTime, finishedTime, 100, 100));
+        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
+                summary(startedTime, finishedTime, 100, 100)).build();
     }
 }

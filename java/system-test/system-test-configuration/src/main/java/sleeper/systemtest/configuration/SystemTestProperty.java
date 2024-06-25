@@ -70,7 +70,7 @@ public interface SystemTestProperty extends InstanceProperty {
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("1024").runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
-            .description("The amount of memory for the containers that write random data, in MiB.\n" +
+            .description("The memory for the containers that write random data, in MiB.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("4096").runCdkDeployWhenChanged(true).build();

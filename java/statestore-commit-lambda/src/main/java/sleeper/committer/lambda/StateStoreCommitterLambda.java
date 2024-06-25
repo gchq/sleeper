@@ -29,16 +29,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.commit.CompactionJobCommitter.GetStateStore;
+import sleeper.commit.StateStoreCommitRequest;
+import sleeper.commit.StateStoreCommitRequestDeserialiser;
+import sleeper.commit.StateStoreCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -54,15 +53,15 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
-    private final CompactionJobCommitter compactionJobCommitter;
-    private final CompactionJobCommitRequestSerDe serDe = new CompactionJobCommitRequestSerDe();
+    private final StateStoreCommitter committer;
+    private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
 
     public StateStoreCommitterLambda() {
         this(connectToAws());
     }
 
-    public StateStoreCommitterLambda(CompactionJobCommitter compactionJobCommitter) {
-        this.compactionJobCommitter = compactionJobCommitter;
+    public StateStoreCommitterLambda(StateStoreCommitter committer) {
+        this.committer = committer;
     }
 
     @Override
@@ -71,13 +70,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         for (SQSMessage message : event.getRecords()) {
+            LOGGER.info("Found message: {}", message.getBody());
+            StateStoreCommitRequest request = serDe.fromJson(message.getBody());
             try {
-                LOGGER.info("Found message: {}", message.getBody());
-                CompactionJobCommitRequest request = serDe.fromJson(message.getBody());
-                compactionJobCommitter.apply(request);
-                LOGGER.info("Successfully committed compaction job {}", request.getJob());
+                committer.apply(request);
             } catch (RuntimeException | StateStoreException e) {
-                LOGGER.error("Failed committing compaction job", e);
+                LOGGER.error("Failed commit request", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
         }
@@ -87,7 +85,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return new SQSBatchResponse(batchItemFailures);
     }
 
-    private static CompactionJobCommitter connectToAws() {
+    private static StateStoreCommitter connectToAws() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -98,14 +96,9 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new CompactionJobCommitter(
-                statusStore, stateStoreProviderForCommitter(tablePropertiesProvider, stateStoreProvider));
+        return new StateStoreCommitter(
+                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                stateStoreProvider.byTableId(tablePropertiesProvider));
     }
-
-    private static GetStateStore stateStoreProviderForCommitter(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return tableId -> stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
-    }
-
 }

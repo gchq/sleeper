@@ -18,6 +18,7 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.ingest.job.IngestJob;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -191,9 +192,29 @@ public class IngestJobFailedEvent {
             return this;
         }
 
+        /**
+         * Sets the failure reasons from the given exception.
+         *
+         * @param  failure the failure
+         * @return         the builder
+         */
+        public Builder failure(Exception failure) {
+            return failureReasons(getFailureReasons(failure));
+        }
+
         public IngestJobFailedEvent build() {
             return new IngestJobFailedEvent(this);
         }
 
+    }
+
+    private static List<String> getFailureReasons(Exception e) {
+        List<String> reasons = new ArrayList<>();
+        Throwable failure = e;
+        while (failure != null) {
+            reasons.add(failure.getMessage());
+            failure = failure.getCause();
+        }
+        return reasons;
     }
 }

@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toSet;
 import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 
@@ -146,16 +145,9 @@ public class IngestJobStatus {
         }
     }
 
-    public IngestJobStatusType getFurthestStatusType() {
-        return runStatusTypes()
-                .max(comparing(IngestJobStatusType::getOrder))
-                .orElseThrow();
-    }
-
     private Stream<IngestJobStatusType> runStatusTypes() {
         return jobRuns.getRunsLatestFirst().stream()
-                .map(ProcessRun::getLatestUpdate)
-                .map(IngestJobStatusType::of);
+                .map(IngestJobStatusType::statusTypeOfJobRun);
     }
 
     @Override

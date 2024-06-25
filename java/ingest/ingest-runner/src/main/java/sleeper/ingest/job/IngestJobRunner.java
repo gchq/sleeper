@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.job;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -34,18 +35,24 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.commit.AddFilesToStateStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -53,24 +60,40 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 public class IngestJobRunner implements IngestJobHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
 
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String fs;
     private final Configuration hadoopConfiguration;
+    private final String taskId;
+    private final StateStoreProvider stateStoreProvider;
+    private final IngestJobStatusStore statusStore;
+    private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
     private final PropertiesReloader propertiesReloader;
+    private final Supplier<Instant> timeSupplier;
 
     public IngestJobRunner(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
+            IngestJobStatusStore statusStore,
+            String taskId,
             String localDir,
             S3AsyncClient s3AsyncClient,
-            Configuration hadoopConfiguration) {
+            AmazonSQS sqsClient,
+            Configuration hadoopConfiguration,
+            Supplier<Instant> timeSupplier) {
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
+        this.taskId = taskId;
+        this.stateStoreProvider = stateStoreProvider;
+        this.statusStore = statusStore;
+        this.sqsClient = sqsClient;
+        this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
                 .localDir(localDir)
@@ -82,7 +105,7 @@ public class IngestJobRunner implements IngestJobHandler {
     }
 
     @Override
-    public IngestResult ingest(IngestJob job) throws IteratorCreationException, StateStoreException, IOException {
+    public IngestResult ingest(IngestJob job, String jobRunId) throws IteratorCreationException, StateStoreException, IOException {
         propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Schema schema = tableProperties.getSchema();
@@ -117,8 +140,23 @@ public class IngestJobRunner implements IngestJobHandler {
         CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
 
         // Run the ingest
-        IngestResult result = ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, concatenatingIterator);
+        IngestResult result;
+        try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+                .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
+                .build()) {
+            result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
+        }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
         return result;
+    }
+
+    private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
+        if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
+            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+        } else {
+            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
+                    updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+        }
     }
 }
