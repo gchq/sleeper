@@ -19,8 +19,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -42,18 +45,25 @@ import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -92,6 +102,7 @@ public class TransactionLogTransactionDeleterIT {
                 .sleeperTable(tableStatus).schema(schema)
                 .filesLogStore(filesLogStore).partitionsLogStore(partitionsLogStore)
                 .build();
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     @Test
@@ -217,6 +228,46 @@ public class TransactionLogTransactionDeleterIT {
                         new SplitPartitionTransaction(partitionTree.getRootPartition(), List.of(
                                 partitionTree.getPartition("L"),
                                 partitionTree.getPartition("R")))));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldDeleteOldTransactionStoredInS3() throws Exception {
+        // Given we have two partition transactions, with the first being too large to fit in DynamoDB
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(Collectors.toList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> "split" + i)
+                .collect(Collectors.toList());
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.initialise(
+                new PartitionsBuilder(schema).rootFirst("root")
+                        .leavesWithSplits(leafIds, splitPoints)
+                        .anyTreeJoiningAllLeaves().buildList()));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.initialise(
+                new PartitionsBuilder(schema).rootFirst("root").buildList()));
+        // And we have a snapshot at the head of the partitions log
+        setLatestPartitionsSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        // And we configure to delete any transactions more than one before the latest snapshot
+        tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
+        tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
+
+        // When
+        deleteOldTransactions();
+
+        // Then
+        assertThat(partitionsLogStore.readTransactionsAfter(0))
+                .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
+                        new InitialisePartitionsTransaction(partitions.buildList())));
+        assertThat(streamFilesInS3()).isEmpty();
+    }
+
+    private Stream<String> streamFilesInS3() {
+        return s3Client.listObjects(new ListObjectsRequest()
+                .withBucketName(instanceProperties.get(DATA_BUCKET))
+                .withPrefix(tableProperties.get(TABLE_ID)))
+                .getObjectSummaries().stream()
+                .map(S3ObjectSummary::getKey);
     }
 
     private void setupAtTime(Instant time, SetupFunction setup) throws Exception {
