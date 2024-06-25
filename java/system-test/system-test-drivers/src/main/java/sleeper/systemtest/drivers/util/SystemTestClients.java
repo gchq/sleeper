@@ -34,6 +34,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -45,6 +46,7 @@ import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.AssumeSleeperRole;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
@@ -66,6 +68,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
+    private Configuration configuration;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
@@ -84,6 +87,7 @@ public class SystemTestClients {
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
+        configuration = HadoopConfigurationProvider.getConfigurationForClient();
     }
 
     public SystemTestClients(AssumeSleeperRole assumeRole) {
@@ -103,6 +107,7 @@ public class SystemTestClients {
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
         cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
         authEnvVars = assumeRole.authEnvVars();
+        configuration = assumeRole.setS3ACredentials(new Configuration());
     }
 
     public AmazonS3 getS3() {
@@ -167,6 +172,10 @@ public class SystemTestClients {
 
     public Map<String, String> getAuthEnvVars() {
         return authEnvVars;
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
