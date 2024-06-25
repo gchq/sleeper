@@ -37,7 +37,7 @@ public class DeployNewTestInstance {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
+            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDir = Path.of(args[0]);
