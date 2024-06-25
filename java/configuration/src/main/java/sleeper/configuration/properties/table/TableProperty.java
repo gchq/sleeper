@@ -324,7 +324,8 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.mins.behind.latest.snapshot")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE)
-            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot in order to be deleted.")
+            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot " +
+                    "in order to be deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
