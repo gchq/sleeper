@@ -119,6 +119,26 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .map(this::readTransaction);
     }
 
+    @Override
+    public void deleteTransactionsAtOrBefore(long transactionNumber, Instant updateTime) {
+        streamPagedItems(dynamo, new QueryRequest()
+                .withTableName(logTableName)
+                .withConsistentRead(true)
+                .withKeyConditionExpression("#TableId = :table_id AND #Number <= :number")
+                .withFilterExpression("#UpdateTime <= :updateTime")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER, "#UpdateTime", UPDATE_TIME))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .number(":number", transactionNumber)
+                        .number(":updateTime", updateTime.toEpochMilli())
+                        .build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .forEach(item -> {
+                    LOGGER.info("Deleting transaction {}", item);
+                    dynamo.deleteItem(logTableName, getKey(item));
+                });
+    }
+
     private void setBodyDirectlyOrInS3IfTooBig(DynamoDBRecordBuilder builder, TransactionLogEntry entry, String body) {
         // Max DynamoDB item size is 400KB. Leave some space for the rest of the item.
         // DynamoDB uses UTF-8 encoding for strings.
@@ -161,4 +181,8 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
         }
     }
 
+    private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        return Map.of(TABLE_ID, item.get(TABLE_ID),
+                TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
+    }
 }

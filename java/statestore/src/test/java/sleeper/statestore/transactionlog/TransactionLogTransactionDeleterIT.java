@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -94,7 +93,6 @@ public class TransactionLogTransactionDeleterIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldDeleteOldTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
         // Given we have two file transactions
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
