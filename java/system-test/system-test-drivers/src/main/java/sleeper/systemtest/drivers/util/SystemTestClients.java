@@ -68,7 +68,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
-    private Configuration configuration;
+    private final Configuration configuration;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
