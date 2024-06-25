@@ -66,6 +66,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -306,11 +307,14 @@ public interface TableProperty extends SleeperProperty {
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TRANSACTION_LOG_SNAPSHOT_MIN_AGE_TO_DELETE_TRANSACTIONS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age")
-            .description("The minimum age of a snapshot in order to allow deletion of transactions leading up to it. " +
-                    "When deleting old transactions, there's a chance that processes may still read transactions " +
-                    "starting from an older snapshot. We need to avoid deletion of any transactions associated with " +
-                    "a snapshot that may still be used as the starting point for reading the log.")
+    TableProperty TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age")
+            .description("The minimum age in minutes of a snapshot in order to allow deletion of transactions " +
+                    "leading up to it. When deleting old transactions, there's a chance that processes may still " +
+                    "read transactions starting from an older snapshot. We need to avoid deletion of any " +
+                    "transactions associated with a snapshot that may still be used as the starting point for " +
+                    "reading the log.")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS)
+            .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.number.behind.latest.snapshot")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE)

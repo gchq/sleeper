@@ -141,6 +141,17 @@ public interface DefaultProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index
+            .propertyBuilder("sleeper.default.metadata.transactionlog.delete.behind.snapshot.min.age.minutes")
+            .description("The minimum age in minutes of a snapshot in order to allow deletion of transactions " +
+                    "leading up to it. When deleting old transactions, there's a chance that processes may still " +
+                    "read transactions starting from an older snapshot. We need to avoid deletion of any " +
+                    "transactions associated with a snapshot that may still be used as the starting point for " +
+                    "reading the log.")
+            .defaultValue("2")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT)
+            .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.number.behind.latest.snapshot")
             .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
             .defaultValue("200")

@@ -20,6 +20,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
@@ -29,9 +30,11 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
  */
 public class TransactionLogTransactionDeleter {
     private final TableProperties tableProperties;
+    private final Supplier<Instant> timeSupplier;
 
-    public TransactionLogTransactionDeleter(TableProperties tableProperties) {
+    public TransactionLogTransactionDeleter(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
         this.tableProperties = tableProperties;
+        this.timeSupplier = timeSupplier;
     }
 
     /**
@@ -39,9 +42,10 @@ public class TransactionLogTransactionDeleter {
      *
      * @param filesLogStore      the files transaction log store
      * @param partitionsLogStore the partitions transaction log store
-     * @param latestSnapshots    the latest snapshot metadata
+     * @param getLatestSnapshots the method to find the latest snapshots
      */
-    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, LatestSnapshots latestSnapshots) {
+    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, GetLatestSnapshotsBefore getLatestSnapshots) {
+        LatestSnapshots latestSnapshots = getLatestSnapshots.getLatestSnapshotsBefore(timeSupplier.get());
         latestSnapshots.getFilesSnapshot().ifPresent(snapshot -> deleteWithLatestSnapshot(filesLogStore, snapshot));
         latestSnapshots.getPartitionsSnapshot().ifPresent(snapshot -> deleteWithLatestSnapshot(partitionsLogStore, snapshot));
     }
@@ -58,6 +62,20 @@ public class TransactionLogTransactionDeleter {
         long latestNumber = latestSnapshot.getTransactionNumber() - numBehindToDelete;
         Instant latestTime = latestSnapshot.getCreatedTime().minus(timeBehindToDelete);
         logStore.deleteTransactionsAtOrBefore(latestNumber, latestTime);
+    }
+
+    /**
+     * Retrieves the latest snapshots with a minimum age.
+     */
+    public interface GetLatestSnapshotsBefore {
+
+        /**
+         * Get the latest snapshots with a minimum age.
+         *
+         * @param  time the maximum created time
+         * @return      the latest snapshots
+         */
+        LatestSnapshots getLatestSnapshotsBefore(Instant time);
     }
 
 }
