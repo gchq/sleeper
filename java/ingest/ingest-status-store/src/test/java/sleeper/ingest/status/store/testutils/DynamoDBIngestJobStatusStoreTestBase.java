@@ -82,7 +82,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
-    private final Schema schema = createSchema();
+    protected final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
@@ -186,6 +186,22 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
+                        .build())
+                .build());
+    }
+
+    protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
+        return jobStatus(job, ProcessRun.builder()
+                .taskId(DEFAULT_TASK_ID)
+                .startedStatus(ingestStartedStatus(job, startedTime))
+                .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
+                        .committedBySeparateFileUpdates(true)
+                        .numFilesWrittenByJob(numFiles)
+                        .build())
+                .statusUpdate(IngestJobAddedFilesStatus.builder()
+                        .writtenTime(writtenTime)
+                        .updateTime(defaultUpdateTime(writtenTime))
+                        .fileCount(numFiles)
                         .build())
                 .build());
     }
