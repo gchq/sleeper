@@ -257,12 +257,12 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
-    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.attempts")
+    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
             .description("The number of attempts to make when applying a transaction to the state store.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
+    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.first.retry.wait.ceiling.ms")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS)
             .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
@@ -271,7 +271,7 @@ public interface TableProperty extends SleeperProperty {
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
+    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.max.retry.wait.ceiling.ms")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS)
             .description("The maximum amount of time to wait before any retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
@@ -280,14 +280,14 @@ public interface TableProperty extends SleeperProperty {
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.time.between.snapshot.checks.secs")
+    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.time.between.snapshot.checks.secs")
             .defaultProperty(DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
                     "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.time.between.transaction.checks.ms")
+    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.time.between.transaction.checks.ms")
             .defaultProperty(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS)
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
                     "checking for new transactions. The state visible to an instance of the state store can be out " +
@@ -296,7 +296,7 @@ public interface TableProperty extends SleeperProperty {
                     "update the state, this will be ignored and the state will be brought completely up to date.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.table.metadata.snapshot.load.min.transactions.ahead")
+    TableProperty MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.load.min.transactions.ahead")
             .defaultProperty(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT)
             .description("The minimum number of transactions that a snapshot must be ahead of the local " +
                     "state, before we load the snapshot instead of updating from the transaction log.")
