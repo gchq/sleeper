@@ -16,7 +16,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.79.0
       - name: Install cargo cross
         run: cargo install cross
       - name: Get current date
