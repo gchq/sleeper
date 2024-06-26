@@ -307,7 +307,7 @@ public interface TableProperty extends SleeperProperty {
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age")
+    TableProperty TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age.minutes")
             .description("The minimum age in minutes of a snapshot in order to allow deletion of transactions " +
                     "leading up to it. When deleting old transactions, there's a chance that processes may still " +
                     "read transactions starting from an older snapshot. We need to avoid deletion of any " +
