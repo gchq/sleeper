@@ -33,12 +33,9 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter.GetLatestSnapshotsBefore;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -59,7 +56,7 @@ public class TransactionLogTransactionDeleterTest {
             .sleeperTable(tableStatus).schema(schema)
             .filesLogStore(filesLogStore).partitionsLogStore(partitionsLogStore)
             .build();
-    private final List<TransactionLogSnapshotMetadata> snapshots = new ArrayList<>();
+    private final InMemoryTransactionLogSnapshotMetadataStore snapshots = new InMemoryTransactionLogSnapshotMetadataStore();
 
     @Test
     void shouldDeleteOldTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
@@ -70,7 +67,7 @@ public class TransactionLogTransactionDeleterTest {
         setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
         // And we have a snapshot at the head of the file log
-        addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        snapshots.addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
@@ -93,7 +90,7 @@ public class TransactionLogTransactionDeleterTest {
         setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
         // And we have a snapshot at the head of the file log
-        addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        snapshots.addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
@@ -119,7 +116,7 @@ public class TransactionLogTransactionDeleterTest {
         setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
         // And we have a snapshot at the head of the file log
-        addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        snapshots.addFilesSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 2);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
@@ -169,7 +166,7 @@ public class TransactionLogTransactionDeleterTest {
                 .splitToNewChildren("root", "L", "R", "m")
                 .applySplit(stateStore, "root"));
         // And we have a snapshot at the head of the partitions log
-        addPartitionsSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
+        snapshots.addPartitionsSnapshotAt(2, Instant.parse("2024-06-24T15:46:30Z"));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE, 1);
@@ -192,34 +189,9 @@ public class TransactionLogTransactionDeleterTest {
         setup.run();
     }
 
-    private void addFilesSnapshotAt(int transactionNumber, Instant createdTime) {
-        snapshots.add(TransactionLogSnapshotMetadata.forFiles("", transactionNumber, createdTime));
-    }
-
-    private void addPartitionsSnapshotAt(int transactionNumber, Instant createdTime) {
-        snapshots.add(TransactionLogSnapshotMetadata.forPartitions("", transactionNumber, createdTime));
-    }
-
     private void deleteOldTransactionsAt(Instant time) {
         new TransactionLogTransactionDeleter(tableProperties, List.of(time).iterator()::next)
-                .deleteWithLatestSnapshots(filesLogStore, partitionsLogStore, getLatestSnapshots());
-    }
-
-    private GetLatestSnapshotsBefore getLatestSnapshots() {
-        return maxCreatedTime -> {
-            TransactionLogSnapshotMetadata latestFilesSnapshot = getLatestSnapshotBefore(
-                    maxCreatedTime, SnapshotType.FILES).orElse(null);
-            TransactionLogSnapshotMetadata latestPartitionsSnapshot = getLatestSnapshotBefore(
-                    maxCreatedTime, SnapshotType.PARTITIONS).orElse(null);
-            return new LatestSnapshots(latestFilesSnapshot, latestPartitionsSnapshot);
-        };
-    }
-
-    private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(Instant maxCreatedTime, SnapshotType type) {
-        return snapshots.stream()
-                .filter(snapshot -> snapshot.getType() == type)
-                .filter(snapshot -> snapshot.getCreatedTime().isBefore(maxCreatedTime))
-                .findFirst();
+                .deleteWithLatestSnapshots(filesLogStore, partitionsLogStore, snapshots);
     }
 
     /**
