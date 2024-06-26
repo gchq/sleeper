@@ -40,6 +40,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhi
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobUncommitted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
@@ -92,19 +93,40 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> mixedJobStatuses() {
-        IngestJob job1 = createJob(2, 1);
-        Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
+        IngestJob job1 = createJob(1, 1);
+        Instant startTime1 = Instant.parse("2022-09-21T13:34:12.001Z");
 
-        IngestJob job2 = createJob(3, 2);
-        Instant startTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
+        IngestJob job2 = createJob(2, 2);
+        Instant startTime2 = Instant.parse("2022-09-22T13:34:12.001Z");
 
-        IngestJob job3 = createJob(5, 3);
-        Instant startTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
+        IngestJob job3 = createJob(3, 3);
+        Instant startTime3 = Instant.parse("2022-09-23T13:34:12.001Z");
 
-        IngestJob job4 = createJob(6, 4);
-        Instant startTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
+        IngestJob job4 = createJob(4, 4);
+        Instant startTime4 = Instant.parse("2022-09-24T13:34:12.001Z");
+
+        IngestJob job5 = createJob(5, 5);
+        Instant startTime5 = Instant.parse("2022-09-25T13:34:12.001Z");
+
+        IngestJob job6 = createJob(6, 6);
+        Instant startTime6 = Instant.parse("2022-09-26T13:34:12.001Z");
+
+        IngestJob job7 = createJob(7, 7);
+        Instant startTime7 = Instant.parse("2022-09-27T13:34:12.001Z");
 
         return Arrays.asList(
+                jobStatus(job7, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job7, startTime7))
+                        .statusUpdate(ingestAddedFilesStatus(startTime7.plus(Duration.ofSeconds(55)), 2))
+                        .finishedStatus(ingestFinishedStatusUncommitted(job7, summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
+                        .build()),
+                jobStatus(job6, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job6, startTime6))
+                        .statusUpdate(ingestAddedFilesStatus(startTime6.plus(Duration.ofMinutes(1)), 1))
+                        .build()),
+                finishedIngestJobUncommitted(job5, task(3), summary(startTime5, Duration.ofMinutes(1), 600, 300), 3),
                 finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300), 2),
                 startedIngestJob(job3, task(2), startTime3),
                 finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
