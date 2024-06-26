@@ -17,6 +17,7 @@
 package sleeper.clients.status.report.ingest.job;
 
 import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
@@ -40,6 +41,9 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJo
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
@@ -63,7 +67,23 @@ public class IngestJobStatusReporterTestData {
         IngestJob job3 = createJob(3, 3);
         Instant startTime3 = Instant.parse("2022-09-20T13:34:12.001Z");
 
+        IngestJob job4 = createJob(4, 4);
+        Instant startTime4 = Instant.parse("2022-09-21T13:34:12.001Z");
+
+        IngestJob job5 = createJob(5, 5);
+        Instant startTime5 = Instant.parse("2022-09-22T13:34:12.001Z");
+
         return Arrays.asList(
+                jobStatus(job5, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job5, startTime5))
+                        .statusUpdate(ingestAddedFilesStatus(startTime5.plus(Duration.ofMinutes(1)), 2))
+                        .build()),
+                jobStatus(job4, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job4, startTime4))
+                        .finishedStatus(ingestFinishedStatusUncommitted(job4, summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
+                        .build()),
                 jobStatus(job3, failedIngestRun(job3, task(2),
                         new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
                         List.of("Unexpected failure", "Some IO problem"))),
