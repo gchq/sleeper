@@ -16,14 +16,18 @@
 package sleeper.statestore.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
@@ -32,15 +36,21 @@ import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -51,9 +61,10 @@ import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
 
 public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestBase {
 
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final TransactionLogStore fileLogStore = fileLogStore();
+    private final TransactionLogStore partitionLogStore = partitionLogStore();
 
     @Test
     void shouldAddFirstTransaction() throws Exception {
@@ -147,7 +158,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.initialise();
 
         // When
-        List<TransactionLogEntry> entries = partitionLogStore().readTransactionsAfter(0).collect(toUnmodifiableList());
+        List<TransactionLogEntry> entries = partitionLogStore.readTransactionsAfter(0).collect(toUnmodifiableList());
 
         // Then
         assertThat(entries)
@@ -206,6 +217,58 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         assertThat(fileLogStore.readTransactionsAfter(0)).isEmpty();
     }
 
+    @Test
+    void shouldDeleteTransactionStoredInS3() throws Exception {
+        // Given a transaction too large to fit in a DynamoDB item
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(Collectors.toList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> "split" + i)
+                .collect(Collectors.toList());
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixPartitionUpdateTime(updateTime);
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .leavesWithSplits(leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildList());
+
+        // When
+        partitionLogStore.deleteTransactionsAtOrBefore(1);
+
+        // Then
+        assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
+        assertThat(streamFilesInDataBucket()).isEmpty();
+    }
+
+    @Test
+    void shouldNotDeleteTransactionStoredInS3() throws Exception {
+        // Given a transaction too large to fit in a DynamoDB item
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(Collectors.toList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> "split" + i)
+                .collect(Collectors.toList());
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .leavesWithSplits(leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildList();
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixPartitionUpdateTime(updateTime);
+        stateStore.initialise(partitions);
+
+        // When
+        partitionLogStore.deleteTransactionsAtOrBefore(0);
+
+        // Then
+        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
+                new TransactionLogEntry(1, updateTime, new InitialisePartitionsTransaction(partitions)));
+        assertThat(streamFilesInDataBucket()).hasSize(1);
+    }
+
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
         return new TransactionLogEntry(number, DEFAULT_UPDATE_TIME, transaction);
     }
@@ -220,5 +283,13 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         return new DynamoDBTransactionLogStore(
                 instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
+    }
+
+    private Stream<String> streamFilesInDataBucket() {
+        return s3Client.listObjects(new ListObjectsRequest()
+                .withBucketName(instanceProperties.get(DATA_BUCKET))
+                .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
+                .getObjectSummaries().stream()
+                .map(S3ObjectSummary::getKey);
     }
 }
