@@ -323,13 +323,13 @@ public interface TableProperty extends SleeperProperty {
                     "deletion, whenever old transactions are deleted. This includes the transaction that the latest " +
                     "snapshot was created against. Any transactions after the snapshot will never be deleted as they " +
                     "are still in active use.\n" +
-                    "Note that there's a chance that a previous snapshot may still be read, as the latest snapshot " +
-                    "may have only just been written. This should be set to expect that the transactions after the " +
-                    "previous snapshot will still be available.\n" +
-                    "There's also a property which determines whether a process will load the latest snapshot or " +
-                    "instead seek through the transaction log, if it's not too far behind:\n" +
+                    "This should be configured in relation to the property which determines whether a process will " +
+                    "load the latest snapshot or instead seek through the transaction log, since we need to preserve " +
+                    "transactions that may still be read:\n" +
                     "sleeper.table.metadata.snapshot.load.min.transactions.ahead\n" +
-                    "We also need to preserve those transactions before a snapshot, and prevent them being deleted.")
+                    "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
+                    "minimum age for it to count for this:\n" +
+                    "sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age\n")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.mins.behind.latest.snapshot")
