@@ -38,7 +38,7 @@ jobs:
         run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Cache Maven dependencies & CVEs database
         uses: actions/cache/save@v3

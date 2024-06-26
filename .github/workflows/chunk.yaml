@@ -4,6 +4,10 @@ on:
       chunkId:
         required: true
         type: string
+      skipRust:
+        default: true
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -37,7 +41,7 @@ jobs:
             -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
             >> $GITHUB_OUTPUT
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -DskipRust=${{ inputs.skipRust }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Test
         id: test
