@@ -194,7 +194,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     /**
-     * A class to track which transactions have been deleted, for logging.
+     * Tracks and logs which transactions have been deleted.
      */
     private static class DeletedLogger {
         private long minTransactionNumber = Long.MAX_VALUE;
