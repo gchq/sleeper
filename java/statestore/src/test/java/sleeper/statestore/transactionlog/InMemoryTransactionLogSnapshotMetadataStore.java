@@ -35,7 +35,7 @@ public class InMemoryTransactionLogSnapshotMetadataStore implements GetLatestSna
      * @param createdTime       the created time
      */
     public void addFilesSnapshotAt(int transactionNumber, Instant createdTime) {
-        snapshots.add(TransactionLogSnapshotMetadata.forFiles("", transactionNumber, createdTime));
+        snapshots.add(0, TransactionLogSnapshotMetadata.forFiles("", transactionNumber, createdTime));
     }
 
     /**
@@ -45,7 +45,7 @@ public class InMemoryTransactionLogSnapshotMetadataStore implements GetLatestSna
      * @param createdTime       the created time
      */
     public void addPartitionsSnapshotAt(int transactionNumber, Instant createdTime) {
-        snapshots.add(TransactionLogSnapshotMetadata.forPartitions("", transactionNumber, createdTime));
+        snapshots.add(0, TransactionLogSnapshotMetadata.forPartitions("", transactionNumber, createdTime));
     }
 
     @Override
