@@ -35,6 +35,7 @@ import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransactio
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -45,12 +46,12 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TABLE_ID;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
 
 public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestBase {
 
-    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-04-09T14:01:01Z");
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final TransactionLogStore fileLogStore = fileLogStore();
@@ -153,6 +154,57 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         assertThat(entries)
                 .extracting(TransactionLogEntry::getUpdateTime)
                 .containsExactly(updateTime);
+    }
+
+    @Test
+    void shouldDeleteTransactionsAtOrBeforeNumber() throws Exception {
+        // Given
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixFileUpdateTime(updateTime);
+        stateStore.clearFileData();
+        stateStore.clearFileData();
+
+        // When
+        fileLogStore().deleteTransactionsAtOrBefore(1, updateTime.plus(Duration.ofMinutes(1)));
+
+        // Then
+        assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
+                new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
+    }
+
+    @Test
+    void shouldNotDeleteTransactionsWhenNoneAtOrBeforeNumber() throws Exception {
+        // Given
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixFileUpdateTime(updateTime);
+        stateStore.clearFileData();
+        stateStore.clearFileData();
+
+        // When
+        fileLogStore().deleteTransactionsAtOrBefore(0, updateTime.plus(Duration.ofMinutes(1)));
+
+        // Then
+        assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
+                new TransactionLogEntry(1, updateTime, new ClearFilesTransaction()),
+                new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
+    }
+
+    @Test
+    void shouldDeleteAllTransactionsWhenAllAtOrBeforeNumber() throws Exception {
+        // Given
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixFileUpdateTime(updateTime);
+        stateStore.clearFileData();
+        stateStore.clearFileData();
+
+        // When
+        fileLogStore().deleteTransactionsAtOrBefore(2, updateTime.plus(Duration.ofMinutes(1)));
+
+        // Then
+        assertThat(fileLogStore().readTransactionsAfter(0)).isEmpty();
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
