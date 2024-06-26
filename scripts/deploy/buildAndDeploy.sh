@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <subnet> <table-name>"
+  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <table-name>"
   exit 1
 fi
 

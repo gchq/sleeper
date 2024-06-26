@@ -52,7 +52,7 @@ public interface PartitionSplittingProperty {
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.memory")
-            .description("The memory for the lambda function used to split partitions.")
+            .description("The amount of memory in MB for the lambda function used to split partitions.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();

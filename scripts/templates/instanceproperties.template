@@ -114,7 +114,8 @@ sleeper.fs.s3a.upload.block.size=32M
 # The version of Fargate to use.
 sleeper.fargate.version=1.4.0
 
-# The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.
+# The amount of memory in MB for the lambda that creates ECS tasks to execute compaction and ingest
+# jobs.
 sleeper.task.runner.memory=1024
 
 # The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest
@@ -180,15 +181,15 @@ sleeper.tables.index.dynamo.consistent.reads=true
 # properties to be reloaded from S3.
 sleeper.cache.table.properties.provider.timeout.minutes=60
 
-# The amount of memory for lambdas that create batches of tables to run some operation against, eg.
-# create compaction jobs, run garbage collection, perform partition splitting.
+# The amount of memory in MB for lambdas that create batches of tables to run some operation against,
+# eg. create compaction jobs, run garbage collection, perform partition splitting.
 sleeper.batch.table.lambdas.memory=1024
 
 # The timeout in seconds for lambdas that create batches of tables to run some operation against, eg.
 # create compaction jobs, run garbage collection, perform partition splitting.
 sleeper.batch.table.lambdas.timeout.seconds=60
 
-# The amount of memory for the lambda that commits state store updates.
+# The amount of memory in MB for the lambda that commits state store updates.
 sleeper.statestore.committer.lambda.memory=1024
 
 # The timeout for the lambda that commits state store updates in seconds.
@@ -226,7 +227,7 @@ sleeper.ingest.fs.s3a.experimental.input.fadvise=sequential
 # options.
 sleeper.ingest.task.cpu=2048
 
-# The amount of memory used by Fargate tasks that perform ingest jobs.
+# The amount of memory in MB used by Fargate tasks that perform ingest jobs.
 # Note that only certain combinations of CPU and memory are valid.
 # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
 # options.
@@ -757,7 +758,7 @@ sleeper.partition.splitting.finder.memory=2048
 # The timeout in seconds for the lambda function used to identify partitions that need to be split.
 sleeper.partition.splitting.finder.timeout.seconds=900
 
-# The memory for the lambda function used to split partitions.
+# The amount of memory in MB for the lambda function used to split partitions.
 sleeper.partition.splitting.memory=2048
 
 # The timeout in seconds for the lambda function used to split partitions.
@@ -773,7 +774,7 @@ sleeper.default.partition.splitting.threshold=1000000000
 # The frequency in minutes with which the garbage collector lambda is run.
 sleeper.gc.period.minutes=15
 
-# The memory in MB for the lambda function used to perform garbage collection.
+# The amount of memory in MB for the lambda function used to perform garbage collection.
 sleeper.gc.memory=1024
 
 # The number of tables to perform garbage collection for in a single invocation. This will be the
@@ -841,7 +842,7 @@ sleeper.compaction.task.max.consecutive.failures=3
 # The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
 sleeper.compaction.job.creation.period.minutes=1
 
-# The amount of memory for the lambda that creates compaction jobs.
+# The amount of memory in MB for the lambda that creates compaction jobs.
 sleeper.compaction.job.creation.memory=1024
 
 # The timeout for the lambda that creates compaction jobs in seconds.
@@ -869,7 +870,7 @@ sleeper.compaction.task.cpu.architecture=X86_64
 # options.
 sleeper.compaction.task.arm.cpu=1024
 
-# The memory for a compaction task using an ARM64 architecture.
+# The amount of memory in MB for a compaction task using an ARM64 architecture.
 # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
 # options.
 sleeper.compaction.task.arm.memory=4096
@@ -879,7 +880,7 @@ sleeper.compaction.task.arm.memory=4096
 # options.
 sleeper.compaction.task.x86.cpu=1024
 
-# The memory for a compaction task using an x86_64 architecture.
+# The amount of memory in MB for a compaction task using an x86_64 architecture.
 # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
 # options.
 sleeper.compaction.task.x86.memory=4096
@@ -1035,7 +1036,7 @@ sleeper.athena.spill.bucket.ageoff.days=1
 # You can choose to remove one if you don't need them. Both are deployed by default.
 sleeper.athena.handler.classes=sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
 
-# The amount of memory (GB) the athena composite handler has.
+# The amount of memory (MB) the athena composite handler has.
 sleeper.athena.handler.memory=4096
 
 # The timeout in seconds for the athena composite handler.
