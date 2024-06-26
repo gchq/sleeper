@@ -165,10 +165,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(1);
+        fileLogStore.deleteTransactionsAtOrBefore(1);
 
         // Then
-        assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
+        assertThat(fileLogStore.readTransactionsAfter(0)).containsExactly(
                 new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
     }
 
@@ -182,10 +182,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(0);
+        fileLogStore.deleteTransactionsAtOrBefore(0);
 
         // Then
-        assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
+        assertThat(fileLogStore.readTransactionsAfter(0)).containsExactly(
                 new TransactionLogEntry(1, updateTime, new ClearFilesTransaction()),
                 new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
     }
@@ -200,10 +200,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(2);
+        fileLogStore.deleteTransactionsAtOrBefore(2);
 
         // Then
-        assertThat(fileLogStore().readTransactionsAfter(0)).isEmpty();
+        assertThat(fileLogStore.readTransactionsAfter(0)).isEmpty();
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
