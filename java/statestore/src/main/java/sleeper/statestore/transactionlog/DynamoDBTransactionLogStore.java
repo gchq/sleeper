@@ -121,17 +121,15 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void deleteTransactionsAtOrBefore(long transactionNumber, Instant updateTime) {
+    public void deleteTransactionsAtOrBefore(long transactionNumber) {
         streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(logTableName)
                 .withConsistentRead(true)
                 .withKeyConditionExpression("#TableId = :table_id AND #Number <= :number")
-                .withFilterExpression("#UpdateTime <= :updateTime")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER, "#UpdateTime", UPDATE_TIME))
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTableId)
                         .number(":number", transactionNumber)
-                        .number(":updateTime", updateTime.toEpochMilli())
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .forEach(item -> {

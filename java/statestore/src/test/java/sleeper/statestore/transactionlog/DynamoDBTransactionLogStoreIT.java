@@ -35,7 +35,6 @@ import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransactio
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -166,7 +165,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(1, updateTime.plus(Duration.ofMinutes(1)));
+        fileLogStore().deleteTransactionsAtOrBefore(1);
 
         // Then
         assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
@@ -183,7 +182,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(0, updateTime.plus(Duration.ofMinutes(1)));
+        fileLogStore().deleteTransactionsAtOrBefore(0);
 
         // Then
         assertThat(fileLogStore().readTransactionsAfter(0)).containsExactly(
@@ -201,7 +200,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.clearFileData();
 
         // When
-        fileLogStore().deleteTransactionsAtOrBefore(2, updateTime.plus(Duration.ofMinutes(1)));
+        fileLogStore().deleteTransactionsAtOrBefore(2);
 
         // Then
         assertThat(fileLogStore().readTransactionsAfter(0)).isEmpty();

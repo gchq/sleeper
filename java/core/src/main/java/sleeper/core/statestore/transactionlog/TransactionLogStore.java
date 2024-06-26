@@ -46,6 +46,5 @@ public interface TransactionLogStore {
      *
      * @param transactionNumber the transaction number
      */
-    default void deleteTransactionsAtOrBefore(long transactionNumber) {
-    }
+    void deleteTransactionsAtOrBefore(long transactionNumber);
 }
