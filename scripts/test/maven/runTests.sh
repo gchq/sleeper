@@ -20,7 +20,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <vpc> <subnet> <results-bucket>"
+  echo "Usage: $0 <vpc> <csv-list-of-subnets> <results-bucket>"
   exit 1
 fi
 
@@ -55,7 +55,7 @@ runMavenQuickSystemTests() {
 
     echo -n "$END_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     echo -e "Test run complete \nSee $OUTPUT_DIR/$TEST_NAME.log for results"
-     
+
     echo "-------------------------------------------------------------------------------"
     echo "Tearing down instance \"$SHORT_ID\" and \"$SHORT_ID-main\""
     echo "-------------------------------------------------------------------------------"
@@ -67,7 +67,7 @@ runMavenQuickSystemTests() {
     echo "-------------------------------------------------------------------------------"
     java -cp "${SYSTEM_TEST_JAR}" \
         "sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput" "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
-    
+
     echo "Upload complete"
 }
 

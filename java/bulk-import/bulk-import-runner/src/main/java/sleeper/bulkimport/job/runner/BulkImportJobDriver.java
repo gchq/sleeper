@@ -23,6 +23,9 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
@@ -38,6 +42,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -48,9 +54,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
@@ -67,38 +76,25 @@ public class BulkImportJobDriver {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
+    private final AddFilesAsynchronously addFilesAsync;
     private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore statusStore,
+            AddFilesAsynchronously addFilesAsync,
             Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
+        this.addFilesAsync = addFilesAsync;
         this.getTime = getTime;
     }
 
-    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, conf);
-        IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
-        return from(jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider, statusStore, Instant::now);
-    }
-
-    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore statusStore,
-            Supplier<Instant> getTime) {
-        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
-                jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, statusStore, getTime);
-    }
-
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
@@ -114,10 +110,21 @@ public class BulkImportJobDriver {
             throw e;
         }
 
+        boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
-            stateStoreProvider.getStateStore(tablePropertiesProvider.getByName(job.getTableName()))
-                    .addFiles(output.fileReferences());
-            LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+            if (asyncCommit) {
+                addFilesAsync.submit(IngestAddFilesCommitRequest.builder()
+                        .ingestJob(job.toIngestJob())
+                        .fileReferences(output.fileReferences())
+                        .jobRunId(jobRunId).taskId(taskId)
+                        .writtenTime(getTime.get())
+                        .build());
+                LOGGER.info("Submitted {} files to statestore committer for job {}", output.numFiles(), job.getId());
+            } else {
+                stateStoreProvider.getStateStore(tableProperties)
+                        .addFiles(output.fileReferences());
+                LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+            }
         } catch (RuntimeException | StateStoreException e) {
             statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
@@ -131,9 +138,13 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
-        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
-                .jobRunId(jobRunId).taskId(taskId).build());
+
+        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(),
+                new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .jobRunId(jobRunId).taskId(taskId)
+                .fileReferencesAddedByJob(output.fileReferences())
+                .committedBySeparateFileUpdates(asyncCommit)
+                .build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
@@ -159,6 +170,7 @@ public class BulkImportJobDriver {
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         Configuration configuration;
         if (bulkImportMode.equals("EKS")) {
             configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
@@ -179,12 +191,19 @@ public class BulkImportJobDriver {
             }
 
             BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
-            BulkImportJobDriver driver = BulkImportJobDriver.from(
-                    runner, instanceProperties, s3Client, dynamoClient, configuration);
+
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration);
+            IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
+            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, instanceProperties);
+            BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
+                    runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+                    tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
+            sqsClient.shutdown();
         }
     }
 
@@ -224,5 +243,20 @@ public class BulkImportJobDriver {
         } finally {
             sts.shutdown();
         }
+    }
+
+    public interface AddFilesAsynchronously {
+        void submit(IngestAddFilesCommitRequest request);
+    }
+
+    public static AddFilesAsynchronously submitFilesToCommitQueue(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
+        return request -> {
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                    .withMessageBody(serDe.toJson(request))
+                    .withMessageGroupId(request.getTableId())
+                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
+        };
     }
 }

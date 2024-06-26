@@ -18,7 +18,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.79.0
       - name: Install cargo cross
         run: cargo install cross
       - name: Cache dependencies
@@ -32,7 +32,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Validate properties templates are up to date
         working-directory: ./java

@@ -28,6 +28,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -45,13 +46,15 @@ import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver implements QueryDriver {
     private final SystemTestInstanceContext instance;
+    private final Configuration configuration;
 
-    public DirectQueryDriver(SystemTestInstanceContext instance) {
+    public DirectQueryDriver(SystemTestInstanceContext instance, Configuration configuration) {
         this.instance = instance;
+        this.configuration = configuration;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
-        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients.getConfiguration()));
     }
 
     public List<Record> run(Query query) {
@@ -79,7 +82,7 @@ public class DirectQueryDriver implements QueryDriver {
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         try {
             QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                    stateStore, new Configuration(), Executors.newSingleThreadExecutor());
+                    stateStore, configuration, Executors.newSingleThreadExecutor());
             executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
             return executor;
         } catch (StateStoreException e) {

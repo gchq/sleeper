@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.query;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,18 +56,20 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private final AmazonS3 s3Client;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
+    private final Configuration configuration;
 
     public SQSQueryDriver(
-            SystemTestInstanceContext instance, AmazonSQS sqsClient, AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client) {
+            SystemTestInstanceContext instance, AmazonSQS sqsClient, AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client, Configuration configuration) {
         this.instance = instance;
         this.sqsClient = sqsClient;
         this.dynamoDBClient = dynamoDBClient;
         this.s3Client = s3Client;
+        this.configuration = configuration;
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         return new QueryAllTablesSendAndWaitDriver(instance,
-                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
+                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3(), clients.getConfiguration()));
     }
 
     @Override
@@ -111,7 +114,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
                 instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                 "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, configuration))
                 .collect(Collectors.toUnmodifiableList());
     }
 }

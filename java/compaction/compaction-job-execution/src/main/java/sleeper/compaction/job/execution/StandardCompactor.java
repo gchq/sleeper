@@ -103,8 +103,8 @@ public class StandardCompactor implements CompactionRunner {
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
-        // update the state store, it will overwrite the existing output file writte
-        //  by the previous run
+        // update the state store, it will overwrite the existing output file written
+        // by the previous run
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
