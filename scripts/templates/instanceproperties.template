@@ -1216,3 +1216,7 @@ sleeper.default.compaction.job.commit.async=true
 # If true, ingest tasks will add files via requests sent to the state store committer lambda
 # asynchronously. If false, ingest tasks will commit new files synchronously.
 sleeper.default.ingest.job.files.commit.async=false
+
+# If true, bulk import will add files via requests sent to the state store committer lambda
+# asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
+sleeper.default.bulk.import.job.files.commit.async=false

@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.DEFAU
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -413,6 +414,11 @@ public interface TableProperty extends SleeperProperty {
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
+    TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
+            .defaultProperty(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC)
+            .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
+                    "asynchronously. If false, bulk import will commit new files at the end of the job synchronously.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
 
     // Ingest batcher

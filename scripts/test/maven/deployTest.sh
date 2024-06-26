@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <shortId> <vpc> <subnet> <optional-maven-params>"
+  echo "Usage: $0 <shortId> <vpc> <csv-list-of-subnets> <optional-maven-params>"
   exit 1
 fi
 
