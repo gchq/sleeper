@@ -26,7 +26,7 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
 import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 
 /**
- * Given a state store, finds transactions that are old enough to be deleted and deletes them.
+ * Given a transaction log state store, finds transactions that are old enough to be deleted and deletes them.
  */
 public class TransactionLogTransactionDeleter {
     private final TableProperties tableProperties;
