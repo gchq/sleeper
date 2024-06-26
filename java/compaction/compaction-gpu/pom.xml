@@ -143,6 +143,7 @@
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>
                         io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                    <protoSourceRoot>${project.basedir}/proto</protoSourceRoot>
                 </configuration>
                 <executions>
                     <execution>
