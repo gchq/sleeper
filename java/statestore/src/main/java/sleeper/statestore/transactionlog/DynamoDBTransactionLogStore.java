@@ -22,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +120,29 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .map(this::readTransaction);
     }
 
+    @Override
+    public void deleteTransactionsAtOrBefore(long transactionNumber) {
+        streamPagedItems(dynamo, new QueryRequest()
+                .withTableName(logTableName)
+                .withConsistentRead(true)
+                .withKeyConditionExpression("#TableId = :table_id AND #Number <= :number")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTableId)
+                        .number(":number", transactionNumber)
+                        .build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .forEach(item -> {
+                    long itemTransactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
+                    if (item.get(BODY_S3_KEY) != null) {
+                        LOGGER.info("Deleting transaction body in S3 for transaction number {} and table {}", itemTransactionNumber, sleeperTableId);
+                        s3.deleteObject(new DeleteObjectRequest(dataBucket, item.get(BODY_S3_KEY).getS()));
+                    }
+                    LOGGER.info("Deleting transaction from DynamoDB for transaction number {} and table {}", itemTransactionNumber, sleeperTableId);
+                    dynamo.deleteItem(logTableName, getKey(item));
+                });
+    }
+
     private void setBodyDirectlyOrInS3IfTooBig(DynamoDBRecordBuilder builder, TransactionLogEntry entry, String body) {
         // Max DynamoDB item size is 400KB. Leave some space for the rest of the item.
         // DynamoDB uses UTF-8 encoding for strings.
@@ -161,4 +185,8 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
         }
     }
 
+    private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        return Map.of(TABLE_ID, item.get(TABLE_ID),
+                TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
+    }
 }

@@ -34,7 +34,6 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -284,59 +283,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private Map<String, AttributeValue> getKeyFromSnapshot(TransactionLogSnapshotMetadata snapshot) {
         return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, new AttributeValue().withS(tableAndType(sleeperTableId, snapshot.getType())),
                 TRANSACTION_NUMBER, new AttributeValue().withN(snapshot.getTransactionNumber() + ""));
-    }
-
-    /**
-     * Metadata about the latest snapshots in a Sleeper table.
-     */
-    public static class LatestSnapshots {
-        private final TransactionLogSnapshotMetadata filesSnapshot;
-        private final TransactionLogSnapshotMetadata partitionsSnapshot;
-
-        /**
-         * Builds metadata for the state where no snapshots have been made for a Sleeper table.
-         *
-         * @return the metadata
-         */
-        public static LatestSnapshots empty() {
-            return new LatestSnapshots(null, null);
-        }
-
-        public LatestSnapshots(TransactionLogSnapshotMetadata filesSnapshot, TransactionLogSnapshotMetadata partitionsSnapshot) {
-            this.filesSnapshot = filesSnapshot;
-            this.partitionsSnapshot = partitionsSnapshot;
-        }
-
-        public Optional<TransactionLogSnapshotMetadata> getFilesSnapshot() {
-            return Optional.ofNullable(filesSnapshot);
-        }
-
-        public Optional<TransactionLogSnapshotMetadata> getPartitionsSnapshot() {
-            return Optional.ofNullable(partitionsSnapshot);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(filesSnapshot, partitionsSnapshot);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof LatestSnapshots)) {
-                return false;
-            }
-            LatestSnapshots other = (LatestSnapshots) obj;
-            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
-        }
-
-        @Override
-        public String toString() {
-            return "LatestSnapshots{filesSnapshot=" + filesSnapshot + ", partitionsSnapshot=" + partitionsSnapshot + "}";
-        }
-
     }
 
 }
