@@ -31,4 +31,6 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Running compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient DEFAULT "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.status.update.CreateCompactionJobsClient DEFAULT "$@"
