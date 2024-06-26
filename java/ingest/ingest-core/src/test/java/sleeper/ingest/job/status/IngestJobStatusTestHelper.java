@@ -408,6 +408,17 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates an ingest job accepted status.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @return                an ingest job accepted status
+     */
+    public static IngestJobAcceptedStatus ingestAcceptedStatus(IngestJob job, Instant validationTime) {
+        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+    }
+
+    /**
      * Creates an ingest job started status.
      *
      * @param  job       the ingest job
@@ -433,6 +444,19 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates an ingest job started status.
+     *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an ingest job started status
+     */
+    public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
+        return IngestJobStartedStatus.withStartOfRun(false).job(job)
+                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                .build();
+    }
+
+    /**
      * Creates an ingest job file added status.
      *
      * @param  writtenTime the written time
@@ -441,6 +465,36 @@ public class IngestJobStatusTestHelper {
      */
     public static IngestJobAddedFilesStatus ingestAddedFilesStatus(Instant writtenTime, int fileCount) {
         return IngestJobAddedFilesStatus.builder().writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).fileCount(fileCount).build();
+    }
+
+    /**
+     * Creates an ingest job finished status where files are committed.
+     *
+     * @param  job                  the ingest job
+     * @param  summary              the summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      an ingest job started status
+     */
+    public static IngestJobFinishedStatus ingestFinishedStatus(IngestJob job, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                .committedBySeparateFileUpdates(false)
+                .numFilesWrittenByJob(numFilesWrittenByJob)
+                .build();
+    }
+
+    /**
+     * Creates an ingest job finished status where files are uncommitted.
+     *
+     * @param  job                  the ingest job
+     * @param  summary              the summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      an ingest job started status
+     */
+    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(IngestJob job, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                .committedBySeparateFileUpdates(true)
+                .numFilesWrittenByJob(numFilesWrittenByJob)
+                .build();
     }
 
     /**

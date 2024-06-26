@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"
+  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
   exit 1
 fi
 

@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import java.time.Instant;
 import java.util.stream.Stream;
 
 /**
@@ -43,12 +42,10 @@ public interface TransactionLogStore {
     Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
 
     /**
-     * Deletes transactions from the log that are at or before the provided transaction number and older than the
-     * provided update time.
+     * Deletes transactions from the log that are at or before the provided transaction number.
      *
      * @param transactionNumber the transaction number
-     * @param updateTime        the update time
      */
-    default void deleteTransactionsAtOrBefore(long transactionNumber, Instant updateTime) {
+    default void deleteTransactionsAtOrBefore(long transactionNumber) {
     }
 }
