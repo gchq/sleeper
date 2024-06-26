@@ -26,7 +26,6 @@ use std::{
 };
 
 use aws_types::region::Region;
-use bytes::Bytes;
 use color_eyre::eyre::eyre;
 use futures::{stream::BoxStream, Future};
 use log::info;
@@ -35,8 +34,8 @@ use object_store::{
     aws::{AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
     path::Path,
-    CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartId,
-    ObjectMeta, ObjectStore, PutOptions, PutResult, Result,
+    CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
+    ObjectMeta, ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result,
 };
 use url::Url;
 
@@ -200,7 +199,7 @@ impl ObjectStore for LoggingObjectStore {
     fn put<'life0, 'life1, 'async_trait>(
         &'life0 self,
         location: &'life1 Path,
-        bytes: Bytes,
+        bytes: PutPayload,
     ) -> ::core::pin::Pin<
         Box<
             dyn ::core::future::Future<Output = Result<PutResult>>
@@ -214,31 +213,6 @@ impl ObjectStore for LoggingObjectStore {
         Self: 'async_trait,
     {
         self.store.put(location, bytes)
-    }
-
-    fn put_multipart<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-    ) -> Pin<
-        Box<
-            (dyn futures::Future<
-                Output = std::result::Result<
-                    (
-                        std::string::String,
-                        Box<(dyn tokio::io::AsyncWrite + std::marker::Send + Unpin + 'static)>,
-                    ),
-                    object_store::Error,
-                >,
-            > + std::marker::Send
-                 + 'async_trait),
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.put_multipart(location)
     }
 
     fn get_opts<'life0, 'life1, 'async_trait>(
@@ -361,31 +335,40 @@ impl ObjectStore for LoggingObjectStore {
     fn put_opts<'life0, 'life1, 'async_trait>(
         &'life0 self,
         location: &'life1 Path,
-        bytes: Bytes,
+        payload: PutPayload,
         opts: PutOptions,
-    ) -> Pin<Box<dyn Future<Output = Result<PutResult>> + Send + 'async_trait>>
-    where
-        Self: 'async_trait,
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-    {
-        self.store.put_opts(location, bytes, opts)
-    }
-
-    fn abort_multipart<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-        multipart_id: &'life2 MultipartId,
     ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
+        Box<
+            dyn ::core::future::Future<Output = Result<PutResult>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
     >
     where
         'life0: 'async_trait,
         'life1: 'async_trait,
-        'life2: 'async_trait,
         Self: 'async_trait,
     {
-        self.store.abort_multipart(location, multipart_id)
+        self.store.put_opts(location, payload, opts)
+    }
+
+    fn put_multipart_opts<'life0, 'life1, 'async_trait>(
+        &'life0 self,
+        location: &'life1 Path,
+        opts: PutMultipartOpts,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<Box<dyn MultipartUpload>>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait,
+    {
+        self.store.put_multipart_opts(location, opts)
     }
 }
 
