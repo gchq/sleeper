@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,10 +54,9 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void deleteTransactionsAtOrBefore(long transactionNumber, Instant updateTime) {
+    public void deleteTransactionsAtOrBefore(long transactionNumber) {
         transactions = transactions.stream()
-                .filter(transaction -> transaction.getTransactionNumber() > transactionNumber
-                        || transaction.getUpdateTime().isAfter(updateTime))
+                .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)
                 .collect(Collectors.toList());
     }
 

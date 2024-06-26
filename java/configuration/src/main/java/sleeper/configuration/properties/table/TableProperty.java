@@ -63,7 +63,6 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
@@ -330,12 +329,6 @@ public interface TableProperty extends SleeperProperty {
                     "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
                     "minimum age for it to count for this:\n" +
                     "sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age\n")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
-    TableProperty TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.mins.behind.latest.snapshot")
-            .defaultProperty(DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE)
-            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot " +
-                    "in order to be deleted.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")

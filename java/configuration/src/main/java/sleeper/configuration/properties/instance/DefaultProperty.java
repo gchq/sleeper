@@ -153,14 +153,19 @@ public interface DefaultProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.number.behind.latest.snapshot")
-            .description("The minimum number of transactions that a transaction must be behind the latest snapshot before being deleted.")
+            .description("The minimum number of transactions that a transaction must be behind the latest snapshot " +
+                    "before being deleted. This is the number of transactions that will be kept and protected from " +
+                    "deletion, whenever old transactions are deleted. This includes the transaction that the latest " +
+                    "snapshot was created against. Any transactions after the snapshot will never be deleted as they " +
+                    "are still in active use.\n" +
+                    "This should be configured in relation to the property which determines whether a process will " +
+                    "load the latest snapshot or instead seek through the transaction log, since we need to preserve " +
+                    "transactions that may still be read:\n" +
+                    "sleeper.default.metadata.snapshot.load.min.transactions.ahead\n" +
+                    "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
+                    "minimum age for it to count for this:\n" +
+                    "sleeper.default.metadata.transactionlog.delete.behind.snapshot.min.age\n")
             .defaultValue("200")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.DEFAULT)
-            .build();
-    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_MINUTES_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.mins.behind.latest.snapshot")
-            .description("The minimum number of minutes that a transaction must exist for before the latest snapshot in order to be deleted.")
-            .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
