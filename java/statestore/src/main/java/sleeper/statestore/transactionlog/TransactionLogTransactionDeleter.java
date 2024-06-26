@@ -31,21 +31,23 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
 public class TransactionLogTransactionDeleter {
     private final TableProperties tableProperties;
     private final GetLatestSnapshotsBefore getLatestSnapshots;
+    private final TransactionLogStore filesLogStore;
+    private final TransactionLogStore partitionsLogStore;
     private final Supplier<Instant> timeSupplier;
 
-    public TransactionLogTransactionDeleter(TableProperties tableProperties, GetLatestSnapshotsBefore getLatestSnapshots, Supplier<Instant> timeSupplier) {
+    public TransactionLogTransactionDeleter(TableProperties tableProperties, GetLatestSnapshotsBefore getLatestSnapshots,
+            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, Supplier<Instant> timeSupplier) {
         this.tableProperties = tableProperties;
         this.getLatestSnapshots = getLatestSnapshots;
+        this.filesLogStore = filesLogStore;
+        this.partitionsLogStore = partitionsLogStore;
         this.timeSupplier = timeSupplier;
     }
 
     /**
      * Finds transactions that are old enough to be deleted and deletes them.
-     *
-     * @param filesLogStore      the files transaction log store
-     * @param partitionsLogStore the partitions transaction log store
      */
-    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore) {
+    public void deleteOldTransactions() {
         Duration minSnapshotAge = Duration.ofMinutes(tableProperties.getLong(TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS));
         Instant maxSnapshotTime = timeSupplier.get().minus(minSnapshotAge);
         LatestSnapshots latestSnapshots = getLatestSnapshots.getLatestSnapshotsBefore(maxSnapshotTime);
