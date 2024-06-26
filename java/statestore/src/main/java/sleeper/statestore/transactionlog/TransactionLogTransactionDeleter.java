@@ -30,10 +30,12 @@ import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_L
  */
 public class TransactionLogTransactionDeleter {
     private final TableProperties tableProperties;
+    private final GetLatestSnapshotsBefore getLatestSnapshots;
     private final Supplier<Instant> timeSupplier;
 
-    public TransactionLogTransactionDeleter(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
+    public TransactionLogTransactionDeleter(TableProperties tableProperties, GetLatestSnapshotsBefore getLatestSnapshots, Supplier<Instant> timeSupplier) {
         this.tableProperties = tableProperties;
+        this.getLatestSnapshots = getLatestSnapshots;
         this.timeSupplier = timeSupplier;
     }
 
@@ -42,9 +44,8 @@ public class TransactionLogTransactionDeleter {
      *
      * @param filesLogStore      the files transaction log store
      * @param partitionsLogStore the partitions transaction log store
-     * @param getLatestSnapshots the method to find the latest snapshots
      */
-    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, GetLatestSnapshotsBefore getLatestSnapshots) {
+    public void deleteWithLatestSnapshots(TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore) {
         Duration minSnapshotAge = Duration.ofMinutes(tableProperties.getLong(TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS));
         Instant maxSnapshotTime = timeSupplier.get().minus(minSnapshotAge);
         LatestSnapshots latestSnapshots = getLatestSnapshots.getLatestSnapshotsBefore(maxSnapshotTime);
