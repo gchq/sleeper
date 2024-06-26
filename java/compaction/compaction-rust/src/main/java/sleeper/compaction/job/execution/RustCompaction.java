@@ -77,8 +77,7 @@ public class RustCompaction implements CompactionRunner {
                 .getRegion();
 
         // Obtain native library. This throws an exception if native library can't be
-        // loaded and
-        // linked
+        // loaded and linked
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 

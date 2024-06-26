@@ -247,7 +247,7 @@ public interface TableProperty extends SleeperProperty {
 
     TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
             .defaultProperty(DEFAULT_COMPACTION_METHOD)
-            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
+            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
                     "experimental.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
