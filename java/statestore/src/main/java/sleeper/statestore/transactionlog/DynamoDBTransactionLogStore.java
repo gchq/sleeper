@@ -210,13 +210,13 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
                 numDeletedFromS3++;
             }
             if (numDeletedFromDynamo % 100 == 0) {
-                LOGGER.info("Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {}",
+                LOGGER.info("Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {} inclusive",
                         numDeletedFromDynamo, numDeletedFromS3, minTransactionNumber, maxTransactionNumber);
             }
         }
 
         public void finish() {
-            LOGGER.info("Finished deletion. Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {}",
+            LOGGER.info("Finished deletion. Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {} inclusive",
                     numDeletedFromDynamo, numDeletedFromS3, minTransactionNumber, maxTransactionNumber);
         }
     }
