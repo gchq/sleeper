@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -64,11 +63,11 @@ public class WaitForJobsStatus {
     }
 
     public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forGeneric(store::getJob, WaitForJobsStatus::readIngestStatus, jobIds, now);
+        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
     public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forGeneric(store::getJob, WaitForJobsStatus::readCompactionStatus, jobIds, now);
+        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
     public boolean areAllJobsFinished() {
@@ -79,34 +78,16 @@ public class WaitForJobsStatus {
         return GSON.toJson(this);
     }
 
-    private static <T, S> WaitForJobsStatus forGeneric(
-            JobStatusStore<T> store,
-            Function<T, Status> readStatus,
+    private static WaitForJobsStatus forJobStore(
+            JobStatusStore store,
             Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
         jobIds.stream().parallel()
                 .map(jobId -> store.getJob(jobId)
-                        .map(readStatus)
-                        .orElseGet(Status::none))
+                        .orElseGet(JobStatus::none))
                 .collect(Collectors.toUnmodifiableList())
                 .forEach(builder::addJob);
         return builder.build();
-    }
-
-    private static Status readIngestStatus(IngestJobStatus status) {
-        IngestJobStatusType statusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(status);
-        return new Status(status.getJobRuns(), statusType.toString(), statusType == IngestJobStatusType.FINISHED,
-                run -> IngestJobStatusType.statusTypeOfJobRun(run) == IngestJobStatusType.FINISHED);
-    }
-
-    private static Status readCompactionStatus(CompactionJobStatus status) {
-        CompactionJobStatusType statusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(status);
-        return new Status(status.getJobRuns(), statusType.toString(), statusType == CompactionJobStatusType.FINISHED,
-                run -> CompactionJobStatusType.statusTypeOfJobRun(run) == CompactionJobStatusType.FINISHED);
-    }
-
-    interface JobStatusStore<T> {
-        Optional<T> getJob(String jobId);
     }
 
     private static JsonSerializer<Instant> instantSerializer() {
@@ -117,21 +98,41 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private static class Status {
+    private interface JobStatusStore {
+        Optional<JobStatus> getJob(String jobId);
+    }
+
+    private static class JobStatus {
         private final List<ProcessRun> runsLatestFirst;
         private final String furthestStatusType;
         private final boolean finished;
         private final Predicate<ProcessRun> isRunFinished;
 
-        Status(List<ProcessRun> runsLatestFirst, String furthestStatusType, boolean finished, Predicate<ProcessRun> isRunFinished) {
-            this.runsLatestFirst = runsLatestFirst;
-            this.furthestStatusType = furthestStatusType;
-            this.finished = finished;
-            this.isRunFinished = isRunFinished;
+        JobStatus(IngestJobStatus status) {
+            IngestJobStatusType statusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(status);
+            this.runsLatestFirst = status.getJobRuns();
+            this.furthestStatusType = statusType.toString();
+            this.finished = statusType == IngestJobStatusType.FINISHED;
+            this.isRunFinished = run -> IngestJobStatusType.statusTypeOfJobRun(run) == IngestJobStatusType.FINISHED;
         }
 
-        static Status none() {
-            return new Status(List.of(), "NONE", false, run -> false);
+        JobStatus(CompactionJobStatus status) {
+            CompactionJobStatusType statusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(status);
+            this.runsLatestFirst = status.getJobRuns();
+            this.furthestStatusType = statusType.toString();
+            this.finished = statusType == CompactionJobStatusType.FINISHED;
+            this.isRunFinished = run -> CompactionJobStatusType.statusTypeOfJobRun(run) == CompactionJobStatusType.FINISHED;
+        }
+
+        JobStatus() {
+            runsLatestFirst = List.of();
+            furthestStatusType = "NONE";
+            finished = false;
+            isRunFinished = run -> false;
+        }
+
+        static JobStatus none() {
+            return new JobStatus();
         }
     }
 
@@ -147,7 +148,7 @@ public class WaitForJobsStatus {
             this.now = now;
         }
 
-        public void addJob(Status status) {
+        public void addJob(JobStatus status) {
             List<ProcessRun> runsLatestFirst = status.runsLatestFirst;
             if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
