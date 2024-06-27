@@ -101,19 +101,19 @@ public class CompactionJobStatus {
     }
 
     public boolean isAnyRunInProgress() {
-        return runStatusTypes().anyMatch(status -> status == IN_PROGRESS);
+        return runStatusTypes.contains(IN_PROGRESS);
     }
 
     public boolean isAnyRunSuccessful() {
-        return runStatusTypes().anyMatch(status -> status == FINISHED);
+        return runStatusTypes.contains(FINISHED);
     }
 
     public boolean isAnyRunFailed() {
-        return runStatusTypes().anyMatch(status -> status == FAILED);
+        return runStatusTypes.contains(FAILED);
     }
 
     public boolean isAwaitingRetry() {
-        return isStarted() && runStatusTypes().allMatch(status -> status == FAILED);
+        return runStatusTypes.contains(FAILED) && runStatusTypes.size() == 1;
     }
 
     public Instant getExpiryDate() {
@@ -148,10 +148,6 @@ public class CompactionJobStatus {
 
     public CompactionJobStatusType getFurthestRunStatusType() {
         return furthestRunStatusType;
-    }
-
-    private Stream<CompactionJobStatusType> runStatusTypes() {
-        return runStatusTypes.stream();
     }
 
     public static final class Builder {
