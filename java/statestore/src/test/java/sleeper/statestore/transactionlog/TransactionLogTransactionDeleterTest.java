@@ -257,8 +257,8 @@ public class TransactionLogTransactionDeleterTest {
     }
 
     private void deleteOldTransactionsAt(Instant time) {
-        new TransactionLogTransactionDeleter(tableProperties, List.of(time).iterator()::next)
-                .deleteWithLatestSnapshots(filesLogStore, partitionsLogStore, snapshots);
+        new TransactionLogTransactionDeleter(tableProperties, snapshots, filesLogStore, partitionsLogStore, List.of(time).iterator()::next)
+                .deleteOldTransactions();
     }
 
     /**

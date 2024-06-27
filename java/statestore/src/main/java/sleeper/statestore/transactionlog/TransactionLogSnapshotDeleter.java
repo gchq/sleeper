@@ -63,7 +63,7 @@ public class TransactionLogSnapshotDeleter {
      */
     public void deleteSnapshots(Instant currentTime) {
         Instant expiryDate = currentTime.minus(expiryInDays);
-        metadataStore.getSnapshotsBefore(expiryDate)
+        metadataStore.getExpiredSnapshots(expiryDate)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {

@@ -237,8 +237,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
     }
 
     @Nested
-    @DisplayName("Get oldest snapshots")
-    class GetOldestSnapshots {
+    @DisplayName("Get expired snapshots")
+    class GetExpiredSnapshots {
         @Test
         void shouldGetSnapshotsThatAreOldEnough() throws Exception {
             // Given
@@ -253,19 +253,60 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
             snapshotStore.saveSnapshot(filesSnapshot(4));
 
             // When / Then
-            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-25T16:30:00Z")))
+            assertThat(snapshotStore.getExpiredSnapshots(Instant.parse("2024-04-25T16:30:00Z")))
                     .containsExactly(filesSnapshot(1), filesSnapshot(2));
         }
 
         @Test
-        void shouldIgnoreLatestSnapshotIfItIsOldEnough() throws Exception {
+        void shouldIgnoreLatestSnapshotEvenIfItIsOldEnough() throws Exception {
             // Given
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(() -> Instant.parse("2024-04-24T15:45:00Z"));
             snapshotStore.saveSnapshot(filesSnapshot(1));
 
             // When / Then
-            assertThat(snapshotStore.getSnapshotsBefore(Instant.parse("2024-04-25T16:00:00Z")))
+            assertThat(snapshotStore.getExpiredSnapshots(Instant.parse("2024-04-25T16:00:00Z")))
                     .isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Get latest snapshots with a minimum age")
+    class GetLatestSnapshotsWithMinAge {
+
+        @Test
+        void shouldGetLatestSnapshotsWhenAllAreOldEnough() throws Exception {
+            // Given
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
+                    Instant.parse("2024-04-24T15:25:00Z"),
+                    Instant.parse("2024-04-24T15:35:00Z"),
+                    Instant.parse("2024-04-24T15:45:00Z"),
+                    Instant.parse("2024-04-24T15:55:00Z")).iterator()::next);
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+            snapshotStore.saveSnapshot(partitionsSnapshot(1));
+            snapshotStore.saveSnapshot(filesSnapshot(2));
+            snapshotStore.saveSnapshot(partitionsSnapshot(2));
+
+            // When / Then
+            assertThat(snapshotStore.getLatestSnapshotsBefore(Instant.parse("2024-04-24T16:00:00Z")))
+                    .isEqualTo(new LatestSnapshots(filesSnapshot(2), partitionsSnapshot(2)));
+        }
+
+        @Test
+        void shouldGetLatestSnapshotsWhenSomeAreTooRecent() throws Exception {
+            // Given
+            DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(List.of(
+                    Instant.parse("2024-04-24T15:25:00Z"),
+                    Instant.parse("2024-04-24T15:35:00Z"),
+                    Instant.parse("2024-04-24T15:45:00Z"),
+                    Instant.parse("2024-04-24T15:55:00Z")).iterator()::next);
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+            snapshotStore.saveSnapshot(partitionsSnapshot(1));
+            snapshotStore.saveSnapshot(filesSnapshot(2));
+            snapshotStore.saveSnapshot(partitionsSnapshot(2));
+
+            // When / Then
+            assertThat(snapshotStore.getLatestSnapshotsBefore(Instant.parse("2024-04-24T15:40:00Z")))
+                    .isEqualTo(new LatestSnapshots(filesSnapshot(1), partitionsSnapshot(1)));
         }
     }
 
