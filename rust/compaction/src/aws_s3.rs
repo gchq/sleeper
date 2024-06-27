@@ -349,6 +349,10 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
         Self: 'async_trait,
     {
+        info!(
+            "PUT request {} bytes",
+            payload.content_length().to_formatted_string(&Locale::en)
+        );
         self.store.put_opts(location, payload, opts)
     }
 
@@ -368,6 +372,7 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
         Self: 'async_trait,
     {
+        info!("PUT MULTIPART request to {}", location);
         self.store.put_multipart_opts(location, opts)
     }
 }
