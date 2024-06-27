@@ -65,7 +65,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -98,7 +98,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack,
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreResources statusStore,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
@@ -151,7 +151,7 @@ public final class EksBulkImportStack extends NestedStack {
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
-        statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
+        statusStore.grantWriteJobEvent(bulkImportJobStarter.getRole());
         coreStacks.grantReadIngestSources(bulkImportJobStarter.getRole());
         coreStacks.grantReadConfigAndPartitions(bulkImportJobStarter);
 
@@ -212,7 +212,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
-        statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
+        statusStore.grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

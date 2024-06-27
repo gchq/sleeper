@@ -100,12 +100,12 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            StateStoreUpdateStack stateStoreUpdateStack,
-            IngestStatusStoreStack statusStoreStack,
+            StateStoreCommitterStack stateStoreUpdateStack,
+            IngestStatusStoreResources statusStore,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStoreStack.getResources();
+        this.statusStore = statusStore;
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -123,7 +123,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, stateStoreUpdateStack.getCommitQueue());
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
@@ -187,8 +187,7 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
-            Queue ingestJobQueue,
-            Queue stateStoreCommitQueue) {
+            Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -228,7 +227,6 @@ public class IngestStack extends NestedStack {
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
-        stateStoreCommitQueue.grantSendMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))

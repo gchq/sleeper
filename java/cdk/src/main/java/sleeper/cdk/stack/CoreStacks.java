@@ -29,14 +29,17 @@ public class CoreStacks {
     private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
+    private final StateStoreCommitterStack stateStoreCommitterStack;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+            ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
+            StateStoreCommitterStack stateStoreCommitterStack) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
+        this.stateStoreCommitterStack = stateStoreCommitterStack;
     }
 
     public void grantReadInstanceConfig(IGrantable grantee) {
@@ -82,6 +85,7 @@ public class CoreStacks {
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
         policiesStack.grantReadIngestSources(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
@@ -103,6 +107,7 @@ public class CoreStacks {
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
     public void grantSplitPartitions(IGrantable grantee) {

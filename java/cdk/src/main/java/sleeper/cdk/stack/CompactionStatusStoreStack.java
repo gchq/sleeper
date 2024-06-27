@@ -24,9 +24,9 @@ public class CompactionStatusStoreStack extends NestedStack {
     private final CompactionStatusStoreResources resources;
 
     public CompactionStatusStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
-        resources = CompactionStatusStoreResources.from(this, instanceProperties, coreStacks);
+        resources = CompactionStatusStoreResources.from(this, instanceProperties, policiesStack);
     }
 
     public CompactionStatusStoreResources getResources() {
