@@ -6,7 +6,7 @@ functionality and will only work with small volumes of data, but will allow you 
 ingest, and run reports and scripts against the instance.
 
 These instructions will assume you start in the project root directory and you have the required dependencies
-(see [the deployment guide](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+(see [the deployment guide](11-dev-guide.md#install-prerequisite-software) for how to set that up).
 
 ## Launch LocalStack container
 
