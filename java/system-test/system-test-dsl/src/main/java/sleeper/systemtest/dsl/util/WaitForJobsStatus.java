@@ -109,7 +109,7 @@ public class WaitForJobsStatus {
         private final Predicate<ProcessRun> isRunFinished;
 
         JobStatus(IngestJobStatus status) {
-            IngestJobStatusType statusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(status);
+            IngestJobStatusType statusType = status.getFurthestRunStatusType();
             this.runsLatestFirst = status.getJobRuns();
             this.furthestStatusType = statusType.toString();
             this.finished = statusType == IngestJobStatusType.FINISHED;

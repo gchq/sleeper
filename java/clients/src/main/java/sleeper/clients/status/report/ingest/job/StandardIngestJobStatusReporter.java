@@ -122,7 +122,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", IngestJobStatusType.statusTypeOfFurthestRunOfJob(status));
+        out.printf("State: %s%n", status.getFurthestRunStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
             printProcessJobRun(run);

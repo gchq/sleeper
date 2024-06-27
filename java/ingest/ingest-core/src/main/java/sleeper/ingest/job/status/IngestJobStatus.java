@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 
 /**
@@ -38,11 +38,17 @@ import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 public class IngestJobStatus {
     private final String jobId;
     private final ProcessRuns jobRuns;
+    private final Set<IngestJobStatusType> runStatusTypes;
+    private final IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
+        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
+                .map(IngestJobStatusType::statusTypeOfJobRun)
+                .collect(toUnmodifiableSet());
+        furthestRunStatusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
     }
 
@@ -115,9 +121,8 @@ public class IngestJobStatus {
      * @return true if the job is unfinished
      */
     public boolean isUnfinishedOrAnyRunInProgress() {
-        Set<IngestJobStatusType> runStatuses = runStatusTypes().collect(toSet());
-        return runStatuses.stream().anyMatch(IngestJobStatusType::isRunInProgress)
-                || runStatuses.stream().noneMatch(IngestJobStatusType::isEndOfJob);
+        return runStatusTypes().anyMatch(IngestJobStatusType::isRunInProgress)
+                || runStatusTypes().noneMatch(IngestJobStatusType::isEndOfJob);
     }
 
     public boolean isAnyRunSuccessful() {
@@ -137,17 +142,20 @@ public class IngestJobStatus {
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (jobRuns.isFinishedAndNoRunsInProgress()) {
+        if (isUnfinishedOrAnyRunInProgress()) {
+            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
+        } else {
             return timeWindowQuery.isFinishedProcessInWindow(
                     jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
-        } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
         }
     }
 
+    public IngestJobStatusType getFurthestRunStatusType() {
+        return furthestRunStatusType;
+    }
+
     private Stream<IngestJobStatusType> runStatusTypes() {
-        return jobRuns.getRunsLatestFirst().stream()
-                .map(IngestJobStatusType::statusTypeOfJobRun);
+        return runStatusTypes.stream();
     }
 
     @Override
