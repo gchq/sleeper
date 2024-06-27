@@ -29,6 +29,7 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
 import sleeper.ingest.job.status.IngestJobFilesWrittenAndAdded;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.updatePrinters;
 import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
@@ -128,21 +130,22 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printProcessJobRun(ProcessRun run) {
-        runReporter.printProcessJobRunWithUpdatePrinter(run,
-                printUpdateType(IngestJobValidatedStatus.class, this::printValidation));
+        runReporter.printProcessJobRunWithUpdatePrinter(run, updatePrinters(
+                printUpdateType(IngestJobValidatedStatus.class, this::printValidation),
+                printUpdateType(IngestJobAddedFilesStatus.class, this::printAddedFiles)));
         if (IngestJobStatusType.statusTypeOfJobRun(run) == IN_PROGRESS) {
             out.println("Not finished");
         }
     }
 
-    private void printValidation(IngestJobValidatedStatus status) {
-        out.printf("Validation Time: %s%n", status.getStartTime());
-        out.printf("Validation Update Time: %s%n", status.getUpdateTime());
-        if (status.isValid()) {
+    private void printValidation(IngestJobValidatedStatus update) {
+        out.printf("Validation Time: %s%n", update.getStartTime());
+        out.printf("Validation Update Time: %s%n", update.getUpdateTime());
+        if (update.isValid()) {
             out.println("Job was accepted");
         } else {
             out.println("Job was rejected with reasons:");
-            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) update;
             rejectedStatus.getFailureReasons().forEach(reason -> out.printf("- %s%n", reason));
             if (rejectedStatus.getJsonMessage() != null) {
                 out.println();
@@ -151,6 +154,11 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                 out.println();
             }
         }
+    }
+
+    private void printAddedFiles(IngestJobAddedFilesStatus update) {
+        out.printf("%s files written at: %s%n", update.getFileCount(), update.getWrittenTime());
+        out.printf("Files added to table at: %s%n", update.getUpdateTime());
     }
 
     private String prettyPrintJsonString(String json) {
