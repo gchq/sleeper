@@ -110,7 +110,7 @@ public class IngestJobFinishedEvent {
 
     @Override
     public String toString() {
-        return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesWrittenByJob + ", committedWhenAllFilesAdded="
+        return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedWhenAllFilesAdded="
                 + committedBySeparateFileUpdates + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
     }
 
