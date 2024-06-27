@@ -207,7 +207,7 @@ public class CompactionJobStatusInPeriodTest {
     }
 
     @Test
-    public void shouldBeInAfterPeriodWhenFirstRunIsInProgressAndSecondRunIsFinished() {
+    public void shouldBeInPeriodWhenFirstRunIsInProgressAndSecondRunIsFinishedBeforePeriodBegins() {
         // Given
         Instant createTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant run1StartTime = Instant.parse("2022-09-23T11:45:00.000Z");
