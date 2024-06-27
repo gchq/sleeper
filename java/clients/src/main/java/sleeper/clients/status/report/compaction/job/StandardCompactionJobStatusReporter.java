@@ -105,7 +105,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
         out.printf("State: %s%n", jobStatus.getFurthestStatusType());
-        out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
+        out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
         out.println("--------------------------");

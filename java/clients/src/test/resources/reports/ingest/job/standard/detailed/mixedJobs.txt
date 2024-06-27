@@ -6,25 +6,25 @@ State: FINISHED
 Number of input files: 7
 
 Run on task task3333-3333-3333-3333-333333333333
-Start Time: 2022-09-27T13:34:12.001Z
-Start Update Time: 2022-09-27T13:34:12.123Z
+Start time: 2022-09-27T13:34:12.001Z
+Start update time: 2022-09-27T13:34:12.123Z
 2 files written at: 2022-09-27T13:35:07.001Z
 Files added to table at: 2022-09-27T13:35:07.123Z
-Finish Time: 2022-09-27T13:35:12.001Z
-Finish Update Time: 2022-09-27T13:35:12.123Z
+Finish time: 2022-09-27T13:35:12.001Z
+Finish update time: 2022-09-27T13:35:12.123Z
 Duration: 1m
-Records Read: 600
-Records Written: 300
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 5.00
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
 ------------------------
 Details for job job66666-6666-6666-6666-666666666666:
 State: IN_PROGRESS
 Number of input files: 6
 
 Run on task task3333-3333-3333-3333-333333333333
-Start Time: 2022-09-26T13:34:12.001Z
-Start Update Time: 2022-09-26T13:34:12.123Z
+Start time: 2022-09-26T13:34:12.001Z
+Start update time: 2022-09-26T13:34:12.123Z
 1 files written at: 2022-09-26T13:35:12.001Z
 Files added to table at: 2022-09-26T13:35:12.123Z
 Not finished
@@ -34,38 +34,38 @@ State: UNCOMMITTED
 Number of input files: 5
 
 Run on task task3333-3333-3333-3333-333333333333
-Start Time: 2022-09-25T13:34:12.001Z
-Start Update Time: 2022-09-25T13:34:12.123Z
-Finish Time: 2022-09-25T13:35:12.001Z
-Finish Update Time: 2022-09-25T13:35:12.123Z
+Start time: 2022-09-25T13:34:12.001Z
+Start update time: 2022-09-25T13:34:12.123Z
+Finish time: 2022-09-25T13:35:12.001Z
+Finish update time: 2022-09-25T13:35:12.123Z
 Duration: 1m
-Records Read: 600
-Records Written: 300
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 5.00
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
 ------------------------
 Details for job job44444-4444-4444-4444-444444444444:
 State: FINISHED
 Number of input files: 4
 
 Run on task task2222-2222-2222-2222-222222222222
-Start Time: 2022-09-24T13:34:12.001Z
-Start Update Time: 2022-09-24T13:34:12.123Z
-Finish Time: 2022-09-24T13:35:12.001Z
-Finish Update Time: 2022-09-24T13:35:12.123Z
+Start time: 2022-09-24T13:34:12.001Z
+Start update time: 2022-09-24T13:34:12.123Z
+Finish time: 2022-09-24T13:35:12.001Z
+Finish update time: 2022-09-24T13:35:12.123Z
 Duration: 1m
-Records Read: 600
-Records Written: 300
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 5.00
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
 ------------------------
 Details for job job33333-3333-3333-3333-333333333333:
 State: IN_PROGRESS
 Number of input files: 3
 
 Run on task task2222-2222-2222-2222-222222222222
-Start Time: 2022-09-23T13:34:12.001Z
-Start Update Time: 2022-09-23T13:34:12.123Z
+Start time: 2022-09-23T13:34:12.001Z
+Start update time: 2022-09-23T13:34:12.123Z
 Not finished
 ------------------------
 Details for job job22222-2222-2222-2222-222222222222:
@@ -73,25 +73,25 @@ State: FINISHED
 Number of input files: 2
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-09-22T13:34:12.001Z
-Start Update Time: 2022-09-22T13:34:12.123Z
-Finish Time: 2022-09-22T13:35:12.001Z
-Finish Update Time: 2022-09-22T13:35:12.123Z
+Start time: 2022-09-22T13:34:12.001Z
+Start update time: 2022-09-22T13:34:12.123Z
+Finish time: 2022-09-22T13:35:12.001Z
+Finish update time: 2022-09-22T13:35:12.123Z
 Duration: 1m
-Records Read: 600
-Records Written: 300
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 5.00
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
 ------------------------
 Details for job job11111-1111-1111-1111-111111111111:
 State: FAILED
 Number of input files: 1
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-09-21T13:34:12.001Z
-Start Update Time: 2022-09-21T13:34:12.123Z
-Finish Time: 2022-09-21T13:35:12.001Z
-Finish Update Time: 2022-09-21T13:35:12.123Z
+Start time: 2022-09-21T13:34:12.001Z
+Start update time: 2022-09-21T13:34:12.123Z
+Finish time: 2022-09-21T13:35:12.001Z
+Finish update time: 2022-09-21T13:35:12.123Z
 Duration: 1m
 Run failed, reasons:
 - Something went wrong

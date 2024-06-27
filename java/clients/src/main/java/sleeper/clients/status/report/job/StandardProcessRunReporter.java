@@ -130,20 +130,20 @@ public class StandardProcessRunReporter {
     }
 
     public void printProcessStarted(ProcessRunStartedUpdate update) {
-        out.printf("Start Time: %s%n", update.getStartTime());
-        out.printf("Start Update Time: %s%n", update.getUpdateTime());
+        out.printf("Start time: %s%n", update.getStartTime());
+        out.printf("Start update time: %s%n", update.getUpdateTime());
     }
 
     public void printProcessFinished(ProcessRunFinishedUpdate update) {
         RecordsProcessedSummary summary = update.getSummary();
-        out.printf("Finish Time: %s%n", summary.getFinishTime());
-        out.printf("Finish Update Time: %s%n", update.getUpdateTime());
+        out.printf("Finish time: %s%n", summary.getFinishTime());
+        out.printf("Finish update time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
         if (update.isSuccessful()) {
-            out.printf("Records Read: %s%n", getRecordsRead(summary));
-            out.printf("Records Written: %s%n", getRecordsWritten(summary));
-            out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
-            out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+            out.printf("Records read: %s%n", getRecordsRead(summary));
+            out.printf("Records written: %s%n", getRecordsWritten(summary));
+            out.printf("Read rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
+            out.printf("Write rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
         } else {
             out.println("Run failed, reasons:");
             update.getFailureReasons()

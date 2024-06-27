@@ -139,8 +139,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printValidation(IngestJobValidatedStatus update) {
-        out.printf("Validation Time: %s%n", update.getStartTime());
-        out.printf("Validation Update Time: %s%n", update.getUpdateTime());
+        out.printf("Validation time: %s%n", update.getStartTime());
+        out.printf("Validation update time: %s%n", update.getUpdateTime());
         if (update.isValid()) {
             out.println("Job was accepted");
         } else {
