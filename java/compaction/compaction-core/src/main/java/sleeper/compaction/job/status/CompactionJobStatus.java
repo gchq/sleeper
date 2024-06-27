@@ -30,12 +30,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toSet;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
-import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
 
 public class CompactionJobStatus {
 
@@ -143,16 +141,9 @@ public class CompactionJobStatus {
         return jobRuns.getLatestRun();
     }
 
-    public CompactionJobStatusType getFurthestStatusType() {
-        return runStatusTypes()
-                .max(comparing(CompactionJobStatusType::getOrder))
-                .orElse(PENDING);
-    }
-
     private Stream<CompactionJobStatusType> runStatusTypes() {
         return jobRuns.getRunsLatestFirst().stream()
-                .map(ProcessRun::getLatestUpdate)
-                .map(CompactionJobStatusType::of);
+                .map(CompactionJobStatusType::statusTypeOfJobRun);
     }
 
     public static final class Builder {

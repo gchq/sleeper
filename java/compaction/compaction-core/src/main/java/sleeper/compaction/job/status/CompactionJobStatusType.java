@@ -17,10 +17,13 @@ package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessRun;
 
-import java.util.stream.Stream;
-
+/**
+ * Defines the states a compaction job can be in. Uses an order to find which run of the job determines the state of the
+ * job as a whole, as a job can be run multiple times. If there is a run of the job which is in progress or successful,
+ * any failed runs will be ignored for computing the status of the job.
+ */
 public enum CompactionJobStatusType {
     PENDING(CompactionJobCreatedStatus.class, 1),
     FAILED(ProcessFailedStatus.class, 2),
@@ -35,13 +38,44 @@ public enum CompactionJobStatusType {
         this.order = order;
     }
 
-    public int getOrder() {
-        return order;
+    /**
+     * Gets the furthest status type for any run of a compaction job.
+     *
+     * @param  job the job
+     * @return     the status type
+     */
+    public static CompactionJobStatusType statusTypeOfFurthestRunOfJob(CompactionJobStatus job) {
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
+        for (ProcessRun run : job.getJobRuns()) {
+            furthestStatus.setIfFurther(statusTypeOfJobRun(run));
+        }
+        return furthestStatus.get();
     }
 
-    public static CompactionJobStatusType of(ProcessStatusUpdate update) {
-        return Stream.of(values())
-                .filter(type -> type.statusUpdateClass.isInstance(update))
-                .findFirst().orElseThrow();
+    /**
+     * Gets the status type for a run of a compaction job.
+     *
+     * @param  run the run
+     * @return     the status type
+     */
+    public static CompactionJobStatusType statusTypeOfJobRun(ProcessRun run) {
+        return CompactionJobUpdateType.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
+    }
+
+    /**
+     * Tracks the furthest status in a job. An in progress or finished run will supersede a failed one.
+     */
+    private static class FurthestStatusTracker {
+        private CompactionJobStatusType furthestStatus = PENDING;
+
+        public void setIfFurther(CompactionJobStatusType newStatus) {
+            if (furthestStatus == null || furthestStatus.order < newStatus.order) {
+                furthestStatus = newStatus;
+            }
+        }
+
+        public CompactionJobStatusType get() {
+            return furthestStatus;
+        }
     }
 }
