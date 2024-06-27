@@ -42,7 +42,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -67,13 +66,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     public CommonEmrBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, BulkImportBucketStack importBucketStack, IngestStatusStoreStack statusStoreStack) {
+            CoreStacks coreStacks, BulkImportBucketStack importBucketStack, IngestStatusStoreResources statusStore) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
-        IngestStatusStoreResources statusStore = statusStoreStack.getResources();
         statusStore.grantWriteJobEvent(ec2Role);
         statusStore.grantWriteJobEvent(emrRole);
     }

@@ -160,12 +160,12 @@ public class CompactionStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            CompactionStatusStoreStack statusStoreStack,
-            StateStoreUpdateStack stateStoreUpdateStack,
+            CompactionStatusStoreResources statusStore,
+            StateStoreCommitterStack stateStoreUpdateStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStoreStack.getResources();
+        this.statusStore = statusStore;
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
@@ -190,7 +190,7 @@ public class CompactionStack extends NestedStack {
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, errorMetrics, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue, stateStoreUpdateStack.getCommitQueue());
+        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
 
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
@@ -352,7 +352,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private void ecsClusterForCompactionTasks(
-            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue, Queue jobCommitQueue) {
+            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -387,7 +387,6 @@ public class CompactionStack extends NestedStack {
                     .build());
 
             compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
-            jobCommitQueue.grantSendMessages(taskDef.getTaskRole());
         };
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
