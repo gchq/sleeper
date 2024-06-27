@@ -126,7 +126,7 @@ public class IngestJobStatus {
     }
 
     public boolean isAnyRunSuccessful() {
-        return runStatusTypes().anyMatch(status -> status == FINISHED);
+        return runStatusTypes.contains(FINISHED);
     }
 
     public boolean isAnyRunInProgress() {
