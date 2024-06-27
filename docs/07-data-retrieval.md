@@ -54,7 +54,7 @@ send the appropriate message to the query SQS queue.
 
 If you chose the S3 option, then the results will be written to Parquet files in a directory called `query-<query-id>`
 in the bucket `sleeper-<instance-id>-query-results`. They can then manually be retrieved from there. If you specified
-SQS then the results are written to the SQS queue named `<instance-id>--QueryResultsQ`. To poll the results queue and
+SQS then the results are written to the SQS queue named `<instance-id>-QueryResultsQ`. To poll the results queue and
 print the results when they are available use:
 
 ```bash
