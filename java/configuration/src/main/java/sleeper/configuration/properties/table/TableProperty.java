@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -63,7 +64,9 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -254,12 +257,12 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
-    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.attempts")
+    TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
             .description("The number of attempts to make when applying a transaction to the state store.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.first.retry.wait.ceiling.ms")
+    TableProperty ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.first.retry.wait.ceiling.ms")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS)
             .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
@@ -268,7 +271,7 @@ public interface TableProperty extends SleeperProperty {
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.add.transaction.max.retry.wait.ceiling.ms")
+    TableProperty ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.add.transaction.max.retry.wait.ceiling.ms")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS)
             .description("The maximum amount of time to wait before any retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
@@ -277,14 +280,14 @@ public interface TableProperty extends SleeperProperty {
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.time.between.snapshot.checks.secs")
+    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.time.between.snapshot.checks.secs")
             .defaultProperty(DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
                     "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.time.between.transaction.checks.ms")
+    TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.time.between.transaction.checks.ms")
             .defaultProperty(DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS)
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
                     "checking for new transactions. The state visible to an instance of the state store can be out " +
@@ -293,15 +296,46 @@ public interface TableProperty extends SleeperProperty {
                     "update the state, this will be ignored and the state will be brought completely up to date.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
+    TableProperty MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.load.min.transactions.ahead")
+            .defaultProperty(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT)
+            .description("The minimum number of transactions that a snapshot must be ahead of the local " +
+                    "state, before we load the snapshot instead of updating from the transaction log.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.snapshot.expiry.days")
             .defaultProperty(DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS)
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age.minutes")
+            .description("The minimum age in minutes of a snapshot in order to allow deletion of transactions " +
+                    "leading up to it. When deleting old transactions, there's a chance that processes may still " +
+                    "read transactions starting from an older snapshot. We need to avoid deletion of any " +
+                    "transactions associated with a snapshot that may still be used as the starting point for " +
+                    "reading the log.")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS)
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.table.metadata.transactionlog.delete.number.behind.latest.snapshot")
+            .defaultProperty(DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE)
+            .description("The minimum number of transactions that a transaction must be behind the latest snapshot " +
+                    "before being deleted. This is the number of transactions that will be kept and protected from " +
+                    "deletion, whenever old transactions are deleted. This includes the transaction that the latest " +
+                    "snapshot was created against. Any transactions after the snapshot will never be deleted as they " +
+                    "are still in active use.\n" +
+                    "This should be configured in relation to the property which determines whether a process will " +
+                    "load the latest snapshot or instead seek through the transaction log, since we need to preserve " +
+                    "transactions that may still be read:\n" +
+                    "sleeper.table.metadata.snapshot.load.min.transactions.ahead\n" +
+                    "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
+                    "minimum age for it to count for this:\n" +
+                    "sleeper.table.metadata.transactionlog.delete.behind.snapshot.min.age\n")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
+            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
+            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
+                    "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

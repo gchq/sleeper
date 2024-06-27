@@ -307,7 +307,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema)
+                .minTransactionsAheadToLoadSnapshot(1);
         config.accept(builder);
         return stateStore(builder);
     }
