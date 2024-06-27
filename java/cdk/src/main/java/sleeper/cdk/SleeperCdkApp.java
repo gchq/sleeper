@@ -155,14 +155,10 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {
-            compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
-                    instanceProperties, policiesStack).getResources();
-        }
-        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
-                    instanceProperties, policiesStack).getResources();
-        }
+        compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
+                instanceProperties, policiesStack).getResources();
+        ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
+                instanceProperties, policiesStack).getResources();
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
