@@ -136,10 +136,6 @@ public class StateStoreCommitterStack extends NestedStack {
         ingestStatusStore.grantWriteJobEvent(handlerFunction);
     }
 
-    public Queue getCommitQueue() {
-        return commitQueue;
-    }
-
     public void grantSendCommits(IGrantable grantee) {
         commitQueue.grantSendMessages(grantee);
     }
