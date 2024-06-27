@@ -10,6 +10,9 @@ key2, or ranges for key1.
 The methods below describe how queries can be executed using scripts. See the docs on the [Python API](08-python-api.md)
 for details of how to execute them from Python.
 
+These instructions will assume you start in the project root directory and you have the required dependencies
+(see [the deployment guide](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+
 ## Running queries directly using the Java client
 
 The simplest way to retrieve data is to use the `query.sh` script. This simply calls the Java
@@ -17,7 +20,7 @@ class `sleeper.clients.QueryClient`. This class retrieves data directly from S3 
 
 ```bash
 INSTANCE_ID=myInstanceId
-sleeper deployment utility/query.sh ${INSTANCE_ID}
+./scripts/utility/query.sh ${INSTANCE_ID}
 ```
 
 This will give you the option of running either an "exact" query which allows you to type in either the exact key that
@@ -38,7 +41,7 @@ to SQS which could cost a lot of money.
 
 ```bash
 INSTANCE_ID=myInstanceId
-sleeper deployment utility/lambdaQuery.sh ${INSTANCE_ID}
+./scripts/utility/lambdaQuery.sh ${INSTANCE_ID}
 ```
 
 This will first ask you to choose whether you want the results to be sent to an S3 bucket or an SQS queue. If you
@@ -55,7 +58,7 @@ SQS then the results are written to the SQS queue named `<instance-id>--QueryRes
 print the results when they are available use:
 
 ```bash
-sleeper deployment java -cp jars/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
+java -cp jars/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
 ```
 
 This will print the results to standard out as they appear on the queue.
@@ -68,7 +71,7 @@ This can be done using:
 
 ```bash
 INSTANCE_ID=myInstanceId
-sleeper deployment utility/webSocketQuery.sh ${INSTANCE_ID}
+./scripts/utility/webSocketQuery.sh ${INSTANCE_ID}
 ```
 
 The results will be returned directly to the client.
@@ -196,11 +199,11 @@ export `<instance-id>-QueryLambdaRoleArn`) permission to write to the above S3 b
 
 ## Keep Lambda Warm Optional Stack
 
-Lambdas inherently have a startup time usually refer to as cold start. 
-This can add a significant delay thus increasing a queries execution time. 
+Lambdas inherently have a startup time usually refer to as cold start. This can add a significant delay thus increasing
+a queries execution time.
 
 To address this issue the KeepLambdaWarmStack can be enabled. This will create an Event Rule running every 5 minutes which
-triggers the query lambdas thus ensuring its in a warm state. Enabling this will incur extra charges since the Lambdas are running every 5 minutes. 
+triggers the query lambdas thus ensuring its in a warm state. Enabling this will incur extra charges since the Lambdas are running every 5 minutes.
 
 This can be enabled by adding `KeepLambdaWarmStack` to the optional stacks. It is not enabled by default.
 
