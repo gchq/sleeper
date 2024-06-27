@@ -32,7 +32,7 @@ public class TimeWindowQuery {
     private final Duration maxRuntime;
 
     public TimeWindowQuery(Instant windowStartTime, Instant windowEndTime) {
-        this(windowStartTime, windowEndTime, null);
+        this(windowStartTime, windowEndTime, Duration.ofDays(1));
     }
 
     public TimeWindowQuery(Instant windowStartTime, Instant windowEndTime, Duration maxRuntime) {

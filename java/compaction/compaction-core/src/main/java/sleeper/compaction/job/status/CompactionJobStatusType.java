@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+
+import java.util.Collection;
 
 /**
  * Defines the states a compaction job can be in. Uses an order to find which run of the job determines the state of the
@@ -25,29 +25,27 @@ import sleeper.core.record.process.status.ProcessRun;
  * any failed runs will be ignored for computing the status of the job.
  */
 public enum CompactionJobStatusType {
-    PENDING(CompactionJobCreatedStatus.class, 1),
-    FAILED(ProcessFailedStatus.class, 2),
-    IN_PROGRESS(CompactionJobStartedStatus.class, 3),
-    FINISHED(ProcessFinishedStatus.class, 4);
+    PENDING(1),
+    FAILED(2),
+    IN_PROGRESS(3),
+    FINISHED(4);
 
-    private final Class<?> statusUpdateClass;
     private final int order;
 
-    CompactionJobStatusType(Class<?> statusUpdateClass, int order) {
-        this.statusUpdateClass = statusUpdateClass;
+    CompactionJobStatusType(int order) {
         this.order = order;
     }
 
     /**
      * Gets the furthest status type for any run of a compaction job.
      *
-     * @param  job the job
-     * @return     the status type
+     * @param  runStatusTypes the status types of runs in the job
+     * @return                the status type
      */
-    public static CompactionJobStatusType statusTypeOfFurthestRunOfJob(CompactionJobStatus job) {
+    public static CompactionJobStatusType statusTypeOfFurthestRunOfJob(Collection<CompactionJobStatusType> runStatusTypes) {
         FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
-        for (ProcessRun run : job.getJobRuns()) {
-            furthestStatus.setIfFurther(statusTypeOfJobRun(run));
+        for (CompactionJobStatusType runStatusType : runStatusTypes) {
+            furthestStatus.setIfFurther(runStatusType);
         }
         return furthestStatus.get();
     }

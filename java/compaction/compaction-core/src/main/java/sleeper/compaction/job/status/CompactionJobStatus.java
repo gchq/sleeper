@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
@@ -40,12 +40,18 @@ public class CompactionJobStatus {
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
     private final ProcessRuns jobRuns;
+    private final Set<CompactionJobStatusType> runStatusTypes;
+    private final CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
         jobRuns = builder.jobRuns;
+        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
+                .map(CompactionJobStatusType::statusTypeOfJobRun)
+                .collect(toUnmodifiableSet());
+        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
     }
 
@@ -91,8 +97,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isUnstartedOrInProgress() {
-        Set<CompactionJobStatusType> runStatuses = runStatusTypes().collect(toSet());
-        return !isStarted() || runStatuses.contains(IN_PROGRESS) || !runStatuses.contains(FINISHED);
+        return !isStarted() || runStatusTypes.contains(IN_PROGRESS) || !runStatusTypes.contains(FINISHED);
     }
 
     public boolean isAnyRunInProgress() {
@@ -125,11 +130,11 @@ public class CompactionJobStatus {
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (jobRuns.isFinishedAndNoRunsInProgress()) {
+        if (isUnstartedOrInProgress()) {
+            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
+        } else {
             return timeWindowQuery.isFinishedProcessInWindow(
                     createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
-        } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
         }
     }
 
@@ -141,9 +146,12 @@ public class CompactionJobStatus {
         return jobRuns.getLatestRun();
     }
 
+    public CompactionJobStatusType getFurthestRunStatusType() {
+        return furthestRunStatusType;
+    }
+
     private Stream<CompactionJobStatusType> runStatusTypes() {
-        return jobRuns.getRunsLatestFirst().stream()
-                .map(CompactionJobStatusType::statusTypeOfJobRun);
+        return runStatusTypes.stream();
     }
 
     public static final class Builder {
