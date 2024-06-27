@@ -152,7 +152,13 @@ zones). Multiple subnet ids can be specified with commas in between, e.g. `subne
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-While connected to your EC2 instance run:
+Before you can run any scripts, you need to build the project. You can do this by running the following script:
+
+```bash
+sleeper builder sleeper/scripts/build/buildForTest.sh
+```
+
+Then you can deploy the syste test instance by running the following command:
 
 ```bash
 sleeper builder sleeper/scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
