@@ -90,9 +90,7 @@ public class SleeperCdkApp extends Stack {
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
-    private IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.none();
     private CompactionStack compactionStack;
-    private CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.none();
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
@@ -155,19 +153,20 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
+        IngestStatusStoreResources ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
                 instanceProperties, policiesStack).getResources();
-        ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
+        CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
                 instanceProperties, policiesStack).getResources();
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
                 configBucketStack, tableIndexStack,
-                stateStoreStacks, compactionStatusStore, ingestStatusStore,
+                stateStoreStacks, ingestStatusStore, compactionStatusStore,
                 topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
-                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack, stateStoreCommitterStack);
+                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
@@ -185,7 +184,7 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, coreStacks, bulkImportBucketStack, ingestStatusStore);
+                    instanceProperties, coreStacks, bulkImportBucketStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
@@ -195,7 +194,6 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    ingestStatusStore,
                     errorMetrics);
 
             // Stack to created EMR studio to be used to access EMR Serverless
@@ -211,7 +209,6 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks,
-                    ingestStatusStore,
                     errorMetrics);
         }
 
@@ -223,7 +220,6 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks,
-                    ingestStatusStore,
                     errorMetrics);
         }
 
@@ -234,7 +230,6 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    ingestStatusStore,
                     errorMetrics);
         }
 
@@ -254,8 +249,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    compactionStatusStore,
-                    stateStoreCommitterStack,
                     errorMetrics);
         }
 
@@ -297,8 +290,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    stateStoreCommitterStack,
-                    ingestStatusStore,
                     errorMetrics);
         }
 

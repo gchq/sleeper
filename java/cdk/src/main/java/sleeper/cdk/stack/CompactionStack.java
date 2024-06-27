@@ -151,7 +151,6 @@ public class CompactionStack extends NestedStack {
     private Queue compactionJobQ;
     private Queue compactionDLQ;
     private final InstanceProperties instanceProperties;
-    private final CompactionStatusStoreResources statusStore;
 
     public CompactionStack(
             Construct scope,
@@ -160,12 +159,9 @@ public class CompactionStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            CompactionStatusStoreResources statusStore,
-            StateStoreCommitterStack stateStoreUpdateStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStore;
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
@@ -295,14 +291,10 @@ public class CompactionStack extends NestedStack {
         // - Read through tables in trigger, send batches
         // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
         jobCreationQueue.grantSendMessages(triggerFunction);
-        coreStacks.grantReadTablesStatus(triggerFunction);
         coreStacks.grantCreateCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
-        statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
         coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
-        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
-        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicyForGrants());
         coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicyForGrants());
         compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
 
@@ -377,8 +369,6 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
-            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()

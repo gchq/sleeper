@@ -35,7 +35,6 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -52,18 +51,16 @@ public class CommonEmrBulkImportHelper {
     private final Construct scope;
     private final String platform;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
     private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
             Construct scope, String platform, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, List<IMetric> errorMetrics) {
+            CoreStacks coreStacks, List<IMetric> errorMetrics) {
         this.scope = scope;
         this.platform = platform;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
-        this.statusStoreResources = ingestStatusStoreResources;
         this.errorMetrics = errorMetrics;
         if (platform.length() > 16) {
             throw new IllegalArgumentException("platform must be at most 16 characters to create short enough resource names");
@@ -133,10 +130,8 @@ public class CommonEmrBulkImportHelper {
                 .logGroup(createLambdaLogGroup(scope, "BulkImport" + platform + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        coreStacks.grantReadConfigAndPartitions(function);
+        coreStacks.grantValidateBulkImport(function.getRole());
         importBucket.grantReadWrite(function);
-        coreStacks.grantReadIngestSources(function.getRole());
-        statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)

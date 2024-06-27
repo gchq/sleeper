@@ -28,7 +28,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -54,12 +53,11 @@ public class EmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "NonPersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
+                this, "NonPersistentEMR", instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);
@@ -81,8 +79,7 @@ public class EmrBulkImportStack extends NestedStack {
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList(
                         "elasticmapreduce:RunJobFlow",
-                        "elasticmapreduce:AddTags"
-                ))
+                        "elasticmapreduce:AddTags"))
                 .effect(Effect.ALLOW)
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
