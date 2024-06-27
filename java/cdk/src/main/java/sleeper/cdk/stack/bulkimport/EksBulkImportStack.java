@@ -150,7 +150,7 @@ public final class EksBulkImportStack extends NestedStack {
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
-        coreStacks.grantValidateBulkImport(bulkImportJobStarter.getRole());
+        coreStacks.grantValidateBulkImport(Objects.requireNonNull(bulkImportJobStarter.getRole()));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
