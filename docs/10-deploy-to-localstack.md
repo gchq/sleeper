@@ -5,24 +5,15 @@ You can run a LocalStack container locally and deploy an instance of Sleeper to 
 functionality and will only work with small volumes of data, but will allow you to perform a queue-based standard
 ingest, and run reports and scripts against the instance.
 
-## Prerequesites
-
-The easiest way to run the LocalStack deployment commands is to use the Sleeper CLI, along with the deployment docker
-image. You can get to a command line inside the deployment image by running the following command:
-
-```shell
-sleeper deployment
-```
-
-This will put you in the `scripts` directory with all of the tools required to run Sleeper on LocalStack installed.
-All commands that follow will assume you are working inside the sleeper-deployment docker container.
+These instructions will assume you start in the project root directory and you have the required dependencies
+(see [the deployment guide](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
 
 ## Launch LocalStack container
 
 To launch the LocalStack container, you can run the following command:
 
 ```shell
-./deploy/localstack/startContainer.sh
+./scripts/deploy/localstack/startContainer.sh
 ```
 
 This will also output commands you can use to point Sleeper scripts to your LocalStack container.
@@ -52,7 +43,7 @@ unset AWS_ENDPOINT_URL
 To deploy an instance of Sleeper to your LocalStack container, you can run the following command:
 
 ```shell
-./deploy/localstack/deploy.sh <instance-id>
+./scripts/deploy/localstack/deploy.sh <instance-id>
 ```
 
 Note that you will not be able to run this command unless you have the AWS_ENDPOINT_URL environment variable
@@ -65,7 +56,7 @@ Once the instance is deployed, you can launch the admin client to view the insta
 instance, as well as running partition and file status reports.
 
 ```shell
-./utility/adminClient.sh <instance-id>
+./scripts/utility/adminClient.sh <instance-id>
 ```
 
 ## Standard ingest
@@ -73,17 +64,17 @@ instance, as well as running partition and file status reports.
 You can generate some random data for your instance by running the following command:
 
 ```shell
-./deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-records>
+./scripts/deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-records>
 ```
 
-This will place randomly generated parquet files in the `./deploy/localstack/output` directory. The number of files
+This will place randomly generated parquet files in the `scripts/deploy/localstack/output` directory. The number of files
 generated will depend on the number of records that you pass into the script. By default only 1 file is generated.
 
 You can then use these files to ingest some data into the `system-test` table in your instance by running the
 following command:
 
 ```shell
-./deploy/localstack/ingestFiles.sh <instance-id> <table-name> <file1.parquet> <file2.parquet> <file3.parquet> ....
+./scripts/deploy/localstack/ingestFiles.sh <instance-id> <table-name> <file1.parquet> <file2.parquet> <file3.parquet> ....
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
@@ -97,7 +88,7 @@ You can skip the step of having to run `ingestFiles.sh` after generating some pa
 following command:
 
 ```shell
-./deploy/localstack/ingestRandomData.sh <instance-id> <table-name> <optional-number-of-records>
+./scripts/deploy/localstack/ingestRandomData.sh <instance-id> <table-name> <optional-number-of-records>
 ```
 
 Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
@@ -106,10 +97,10 @@ Note: If you do not provide a number of records in the data generation scripts, 
 
 To create compaction jobs for files that you have ingested, you can run the following command:
 ```shell
-./deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
+./scripts/deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
 ```
 
-This script will run the `CreateJobs` class (which would normally run periodically in a lambda), and put the created 
+This script will run the `CreateJobs` class (which would normally run periodically in a lambda), and put the created
 jobs on the compaction job SQS queue.
 
 Note that by default the `SizeRatioCompactionStrategy` will be used to determine whether a compaction job will be
@@ -118,15 +109,15 @@ created for a collection of files in the same partition. You can either change t
 or you can skip this strategy and force creation of compaction jobs, by using the `--all` flag when calling the script:
 
 ```shell
-./deploy/localstack/createCompactionJobs.sh my-instance --all
+./scripts/deploy/localstack/createCompactionJobs.sh my-instance --all
 ```
 
-To run these compaction jobs, you need to launch a compaction task. These would normally be run in ECS tasks, launched 
-by a lambda periodically based on how many compaction jobs are waiting. The following script will build the docker 
+To run these compaction jobs, you need to launch a compaction task. These would normally be run in ECS tasks, launched
+by a lambda periodically based on how many compaction jobs are waiting. The following script will build the docker
 image that the ECS tasks use, and run a docker container using the built image.
 
 ```shell
-./deploy/localstack/runCompactionTask.sh my-instance --all
+./scripts/deploy/localstack/runCompactionTask.sh my-instance --all
 ```
 
 You can view the statistic for jobs and tasks by using the `compactionJobStatusReport.sh` and
@@ -134,9 +125,9 @@ You can view the statistic for jobs and tasks by using the `compactionJobStatusR
 
 ```shell
 # To view all jobs
-./utility/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
+./scripts/utility/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
 # To view all tasks
-./utility/compactionTaskStatusReport.sh <instance-id> standard -a
+./scripts/utility/compactionTaskStatusReport.sh <instance-id> standard -a
 ```
 
 
@@ -147,7 +138,7 @@ To query the data in your Sleeper instance, you can run the following utility sc
 web socket queries do not work against a Sleeper instance deployed against LocalStack.
 
 ```shell
-./utility/query.sh <instance-id>
+./scripts/utility/query.sh <instance-id>
 ```
 
 ## Tear down instance
@@ -155,7 +146,7 @@ web socket queries do not work against a Sleeper instance deployed against Local
 You can tear down an existing instance by running the following command:
 
 ```shell
-./deploy/localstack/tearDown.sh <instance-id>
+./scripts/deploy/localstack/tearDown.sh <instance-id>
 ```
 
 ## Stop LocalStack container
@@ -163,5 +154,5 @@ You can tear down an existing instance by running the following command:
 To stop the LocalStack container, you can run the following command:
 
 ```shell
-./deploy/localstack/stopContainer.sh
+./scripts/deploy/localstack/stopContainer.sh
 ```
