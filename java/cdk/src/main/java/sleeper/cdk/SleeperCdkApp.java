@@ -90,9 +90,9 @@ public class SleeperCdkApp extends Stack {
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
-    private IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.none();
+    private IngestStatusStoreResources ingestStatusStore;
     private CompactionStack compactionStack;
-    private CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.none();
+    private CompactionStatusStoreResources compactionStatusStore;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
