@@ -16,11 +16,16 @@
 
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.sqs.IQueue;
+
+import javax.annotation.Nullable;
+
+import java.util.Objects;
 
 public class CoreStacks {
 
@@ -79,7 +84,13 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void grantValidateBulkImport(IRole grantee) {
+    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
+    // This means SpotBugs complains if we pass that role into attachToRole.
+    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
+    // even though attachToRole really requires the role to be non-null.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
+    public void grantValidateBulkImport(@Nullable IRole nullableRole) {
+        IRole grantee = Objects.requireNonNull(nullableRole);
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
@@ -130,7 +141,13 @@ public class CoreStacks {
         dataStack.grantRead(grantee);
     }
 
-    public void grantReadIngestSources(IRole grantee) {
+    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
+    // This means SpotBugs complains if we pass that role into attachToRole.
+    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
+    // even though attachToRole really requires the role to be non-null.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
+    public void grantReadIngestSources(@Nullable IRole nullableRole) {
+        IRole grantee = Objects.requireNonNull(nullableRole);
         policiesStack.grantReadIngestSources(grantee);
     }
 

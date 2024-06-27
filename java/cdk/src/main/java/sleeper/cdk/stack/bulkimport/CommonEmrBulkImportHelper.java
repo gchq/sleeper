@@ -40,7 +40,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -131,7 +130,7 @@ public class CommonEmrBulkImportHelper {
                 .logGroup(createLambdaLogGroup(scope, "BulkImport" + platform + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        coreStacks.grantValidateBulkImport(Objects.requireNonNull(function.getRole()));
+        coreStacks.grantValidateBulkImport(function.getRole());
         importBucket.grantReadWrite(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
