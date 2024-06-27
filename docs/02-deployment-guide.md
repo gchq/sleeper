@@ -139,7 +139,8 @@ Note that any property in the templates with "changeme" will be overwritten auto
 You can use the automated script like this:
 
 ```bash
-sleeper deployment
+sleeper builder
+cd sleeper/scripts
 editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
@@ -161,8 +162,9 @@ directory.
 The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
 dependencies or build Sleeper yourself.
 
-The `sleeper deployment` command gets you a shell inside a Docker container as though you were in the scripts directory
-of the Sleeper Git repository. The rest of the repository will not be present.
+The `sleeper builder` command gets you a shell inside a Docker container with the Sleeper Git repository checked out to
+the `sleeper` directory. This docker container will have all the dependencies required to build and deploy an
+instance of Sleeper.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
@@ -176,7 +178,7 @@ if you run the Docker container multiple times you will still have details of th
 If you add a command on the end, you can run a specific script like this:
 
 ```shell
-sleeper deployment test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 ### Manual Deployment
@@ -185,11 +187,10 @@ For Sleeper to be deployed manually, some resources have to be uploaded to AWS f
 the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
-These instructions will assume you're using a development environment, so see [the dev guide](11-dev-guide.md) for how
-to set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
-the CLI configured and authenticated with AWS.
+These instructions will assume you start in the project root directory and you're using a development environment
+(see [the dev guide](11-dev-guide.md) for how to set that up).
 
-This guide assumes you start in the project root directory. First build the system:
+First build the system:
 
 ```bash
 ./scripts/build/buildForTest.sh
@@ -428,13 +429,16 @@ Note that the system test stacks do not need to be specified. They will be inclu
 
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
 
+These instructions will assume you start in the project root directory and you're using a development environment
+(see [the dev guide](11-dev-guide.md) for how to set that up).
+
 #### Update Existing Instance
 
 The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
 that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
-sleeper deployment deploy/deployExisting.sh <instance-id>
+./scripts/deploy/deployExisting.sh <instance-id>
 ```
 
 #### Add Table
@@ -443,7 +447,7 @@ The `addTable.sh` script can be used to add a new table to sleeper. This will cr
 properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
 
 ```bash
-sleeper deployment deploy/addTable.sh <instance-id> <new-table-id>
+./scripts/deploy/addTable.sh <instance-id> <new-table-id>
 ```
 
 ## Tear Down
