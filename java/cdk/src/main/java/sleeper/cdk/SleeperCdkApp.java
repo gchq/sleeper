@@ -255,7 +255,6 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     coreStacks,
                     compactionStatusStore,
-                    stateStoreCommitterStack,
                     errorMetrics);
         }
 
@@ -297,7 +296,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    stateStoreCommitterStack,
                     ingestStatusStore,
                     errorMetrics);
         }

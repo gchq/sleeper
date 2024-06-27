@@ -161,7 +161,6 @@ public class CompactionStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             CompactionStatusStoreResources statusStore,
-            StateStoreCommitterStack stateStoreUpdateStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;

@@ -100,7 +100,6 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            StateStoreCommitterStack stateStoreUpdateStack,
             IngestStatusStoreResources statusStore,
             List<IMetric> errorMetrics) {
         super(scope, id);
