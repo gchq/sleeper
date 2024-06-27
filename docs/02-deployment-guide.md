@@ -9,6 +9,8 @@ You will need to get your environment set up correctly so that you can deploy a 
 interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information
 below provides more detail on how to use it.
 
+
+
 ### Configure AWS
 
 The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
@@ -122,6 +124,43 @@ Parameters after the environment ID will be passed to a `cdk destroy` command.
 
 ## Deployment
 
+### Install Prerequisite Software
+
+When running commands inside your EC2 environment, you will need the following software:
+
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
+* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* [Java 11/17](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
+
+You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When
+you have Nix installed, an easy way to get a development environment is to run `nix-shell` at the root of the Sleeper
+Git repository. This will start a shell with all the Sleeper dependencies installed, without installing them in your
+system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
+again whenever you want to work with Sleeper.
+
+You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
+the repository from the Nix shell. Here's an example to get the latest release:
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
+nix-shell ./shell.nix
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+git checkout --track origin/main
+```
+
+If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
+the dependencies pre-installed. Note that as part of the setup the EC2 will automatically clone the Sleeper Git
+repository to the `sleeper` folder in the builder image home directory:
+
+```bash
+sleeper builder
+cd sleeper
+```
 There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
 
 ### Automated Deployment
@@ -181,6 +220,10 @@ If you add a command on the end, you can run a specific script like this:
 sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
+There is also a [Nix shell](https://nixos.org/) file at the root of the repository, which can give you a shell with all dependencies required
+to build, deploy, and interact with instances.
+To enter the Nix shell you can run the following command
+
 ### Manual Deployment
 
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first:
@@ -188,7 +231,7 @@ the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
 These instructions will assume you start in the project root directory and you're using a development environment
-(see [the dev guide](11-dev-guide.md) for how to set that up).
+(see [Installing prerequesite software](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
 
 First build the system:
 
@@ -430,7 +473,7 @@ Note that the system test stacks do not need to be specified. They will be inclu
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
 
 These instructions will assume you start in the project root directory and you're using a development environment
-(see [the dev guide](11-dev-guide.md) for how to set that up).
+(see [Installing prerequesite software](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
 
 #### Update Existing Instance
 
