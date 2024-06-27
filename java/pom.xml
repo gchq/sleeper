@@ -114,7 +114,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.6</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.26.9</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.26.10</aws-java-sdk-v2.version>
         <aws-crt.version>0.29.25</aws-crt.version>
         <aws-lambda-java-events.version>3.11.6</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
