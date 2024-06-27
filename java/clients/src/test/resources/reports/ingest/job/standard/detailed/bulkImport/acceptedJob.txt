@@ -5,7 +5,7 @@ Details for job job11111-1111-1111-1111-111111111111:
 State: ACCEPTED
 Number of input files: 2
 
-Validation Time: 2023-06-05T17:20:00Z
-Validation Update Time: 2023-06-05T17:20:00.123Z
+Validation time: 2023-06-05T17:20:00Z
+Validation update time: 2023-06-05T17:20:00.123Z
 Job was accepted
 ------------------------
