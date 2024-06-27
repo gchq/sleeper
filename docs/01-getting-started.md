@@ -218,7 +218,7 @@ It is possible to run variations on this system-test by editing the system test 
 
 ```bash
 sleeper builder
-cd  sleeper/scripts/test/deployAll
+cd sleeper/scripts/test/deployAll
 editor system-test-instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```
