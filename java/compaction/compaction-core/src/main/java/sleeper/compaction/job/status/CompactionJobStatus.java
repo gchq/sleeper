@@ -40,8 +40,8 @@ public class CompactionJobStatus {
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
     private final ProcessRuns jobRuns;
-    private final Set<CompactionJobStatusType> runStatusTypes;
-    private final CompactionJobStatusType furthestRunStatusType;
+    private final transient Set<CompactionJobStatusType> runStatusTypes;
+    private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {

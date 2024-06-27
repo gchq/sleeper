@@ -38,8 +38,8 @@ import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
 public class IngestJobStatus {
     private final String jobId;
     private final ProcessRuns jobRuns;
-    private final Set<IngestJobStatusType> runStatusTypes;
-    private final IngestJobStatusType furthestRunStatusType;
+    private final transient Set<IngestJobStatusType> runStatusTypes;
+    private final transient IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private IngestJobStatus(Builder builder) {
