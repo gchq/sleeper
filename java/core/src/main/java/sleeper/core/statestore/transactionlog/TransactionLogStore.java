@@ -41,4 +41,11 @@ public interface TransactionLogStore {
      */
     Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
 
+    /**
+     * Deletes transactions from the log that are at or before the provided transaction number.
+     *
+     * @param transactionNumber the transaction number
+     */
+    default void deleteTransactionsAtOrBefore(long transactionNumber) {
+    }
 }
