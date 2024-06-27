@@ -60,8 +60,8 @@ public class StateStoreCommitterStack extends NestedStack {
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
-            CompactionStatusStoreResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore,
+            CompactionStatusStoreResources compactionStatusStore,
             Topic topic,
             List<IMetric> errorMetrics) {
         super(scope, id);
