@@ -23,15 +23,22 @@ use crate::{
     details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{
+    datatypes::{Field, FieldRef},
+    util::pretty::pretty_format_batches,
+};
 use datafusion::{
+    common::{
+        tree_node::{Transformed, TreeNode},
+        DFSchema, DFSchemaRef,
+    },
     config::FormatOptions,
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::{LogicalPlanBuilder, ScalarUDF},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
         accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
@@ -178,7 +185,7 @@ async fn collect_stats(
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
     let (session_state, logical_plan) = frame.into_parts();
-    let logical_plan = LogicalPlanBuilder::copy_to(
+    let mut logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
         output_path.as_str().into(),
         FormatOptions::PARQUET(pqo),
@@ -186,11 +193,44 @@ async fn collect_stats(
         Vec::new(),
     )?
     .build()?;
+
+    // Use a tree-node walker to change the schema in the projection node
+    // to eliminate nullable columns
+    logical_plan = logical_plan
+        .transform(|node| {
+            if let LogicalPlan::Projection(mut projection) = node {
+                projection.schema = non_null_schema(&projection.schema)?;
+                return Ok(Transformed::yes(LogicalPlan::Projection(projection)));
+            }
+            Ok(Transformed::no(node))
+        })?
+        .data;
+
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::default();
     accept(physical_plan.as_ref(), &mut stats)?;
     Ok(stats)
+}
+
+/// Copies a schema, but sets all the fields to "non-nullable".
+///
+/// Sleeper will never use optional row key fields, but the user of UDFs
+/// gets converted to an optional column.
+fn non_null_schema(schema: &DFSchema) -> Result<DFSchemaRef, DataFusionError> {
+    let fields = schema
+        .iter()
+        .map(|(tr, f)| {
+            (
+                tr.cloned(),
+                FieldRef::new(Field::new(f.name(), f.data_type().clone(), false)),
+            )
+        })
+        .collect::<Vec<_>>();
+    Ok(DFSchemaRef::new(DFSchema::new_with_metadata(
+        fields,
+        schema.metadata().clone(),
+    )?))
 }
 
 /// Simple struct used for storing the collected statistics from an execution plan.
