@@ -30,6 +30,7 @@ public enum CompactionJobUpdateType {
     CREATED(1, CompactionJobCreatedStatus.class, CompactionJobStatusType.PENDING),
     STARTED(2, CompactionJobStartedStatus.class, CompactionJobStatusType.IN_PROGRESS),
     FINISHED(3, CompactionJobFinishedStatus.class, CompactionJobStatusType.FINISHED),
+    COMMITTED(3, CompactionJobCommittedStatus.class, CompactionJobStatusType.FINISHED),
     FAILED(4, ProcessFailedStatus.class, CompactionJobStatusType.FAILED);
 
     private final int order;
