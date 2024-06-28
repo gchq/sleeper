@@ -291,6 +291,7 @@ public class CompactionStack extends NestedStack {
         // - Read through tables in trigger, send batches
         // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
         jobCreationQueue.grantSendMessages(triggerFunction);
+        coreStacks.grantReadTablesStatus(triggerFunction);
         coreStacks.grantCreateCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
