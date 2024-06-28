@@ -85,13 +85,13 @@ public interface DefaultProperty {
             .defaultValue("v2")
             .validationPredicate(List.of("v1", "v2")::contains)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.add.transaction.max.attempts")
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.add.transaction.max.attempts")
             .description("The number of attempts to make when applying a transaction to the state store. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.transactionlog.metadata.add.transaction.first.retry.wait.ceiling.ms")
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.add.transaction.first.retry.wait.ceiling.ms")
             .description("The maximum amount of time to wait before the first retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
                     "period between 0 and this value. This ceiling will increase exponentially on further retries. " +
@@ -101,7 +101,7 @@ public interface DefaultProperty {
             .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getFirstWaitCeiling().toMillis())
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.transactionlog.metadata.add.transaction.max.retry.wait.ceiling.ms")
+    UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.add.transaction.max.retry.wait.ceiling.ms")
             .description("The maximum amount of time to wait before any retry when applying a transaction to " +
                     "the state store. Full jitter will be applied so that the actual wait time will be a random " +
                     "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
@@ -111,15 +111,15 @@ public interface DefaultProperty {
             .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getMaxWaitCeiling().toMillis())
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.time.between.snapshot.checks.secs")
+    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.time.between.snapshot.checks.secs")
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
-                    "instance property `sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes`. " +
+                    "instance property `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes`. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS.toSeconds())
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.time.between.transaction.checks.ms")
+    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.time.between.transaction.checks.ms")
             .description("The number of milliseconds to wait after we've updated from the transaction log before " +
                     "checking for new transactions. The state visible to an instance of the state store can be out " +
                     "of date by this amount. This can avoid excessive queries by the same process, but can result in " +
@@ -129,20 +129,20 @@ public interface DefaultProperty {
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS.toMillis())
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.default.metadata.transactionlog.snapshot.load.min.transactions.ahead")
+    UserDefinedInstanceProperty DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT = Index.propertyBuilder("sleeper.default.statestore.transactionlog.snapshot.load.min.transactions.ahead")
             .description("The minimum number of transactions that a snapshot must be ahead of the local " +
                     "state, before we load the snapshot instead of updating from the transaction log.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT)
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.default.metadata.transactionlog.snapshot.expiry.days")
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.snapshot.expiry.days")
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .defaultValue("2")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index
-            .propertyBuilder("sleeper.default.metadata.transactionlog.delete.behind.snapshot.min.age.minutes")
+            .propertyBuilder("sleeper.default.statestore.transactionlog.delete.behind.snapshot.min.age.minutes")
             .description("The minimum age in minutes of a snapshot in order to allow deletion of transactions " +
                     "leading up to it. When deleting old transactions, there's a chance that processes may still " +
                     "read transactions starting from an older snapshot. We need to avoid deletion of any " +
@@ -152,7 +152,7 @@ public interface DefaultProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
             .build();
-    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.metadata.transactionlog.delete.number.behind.latest.snapshot")
+    UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.statestore.transactionlog.delete.number.behind.latest.snapshot")
             .description("The minimum number of transactions that a transaction must be behind the latest snapshot " +
                     "before being deleted. This is the number of transactions that will be kept and protected from " +
                     "deletion, whenever old transactions are deleted. This includes the transaction that the latest " +
@@ -161,10 +161,10 @@ public interface DefaultProperty {
                     "This should be configured in relation to the property which determines whether a process will " +
                     "load the latest snapshot or instead seek through the transaction log, since we need to preserve " +
                     "transactions that may still be read:\n" +
-                    "sleeper.default.metadata.snapshot.load.min.transactions.ahead\n" +
+                    "sleeper.default.statestore.snapshot.load.min.transactions.ahead\n" +
                     "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
                     "minimum age for it to count for this:\n" +
-                    "sleeper.default.metadata.transactionlog.delete.behind.snapshot.min.age\n")
+                    "sleeper.default.statestore.transactionlog.delete.behind.snapshot.min.age\n")
             .defaultValue("200")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT)
