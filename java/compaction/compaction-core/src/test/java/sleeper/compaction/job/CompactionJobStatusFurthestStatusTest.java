@@ -52,7 +52,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(PENDING);
     }
 
     @Test
@@ -69,7 +69,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started, failed);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FAILED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FAILED);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, finished, started2, failed);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -144,6 +144,6 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, failed, started2);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
     }
 }

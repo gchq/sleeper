@@ -63,10 +63,6 @@ public class ProcessRuns {
         return !latestFirst.isEmpty();
     }
 
-    public boolean isFinishedAndNoRunsInProgress() {
-        return !latestFirst.isEmpty() && latestFirst.stream().allMatch(ProcessRun::isFinished);
-    }
-
     /**
      * Checks if any process run was assigned to the provided task ID.
      *

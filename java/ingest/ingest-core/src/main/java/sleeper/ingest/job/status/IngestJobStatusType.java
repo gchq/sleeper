@@ -18,6 +18,8 @@ package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessRun;
 
+import java.util.Collection;
+
 /**
  * Defines the states an ingest job can be in. Uses an order to find which run of the job determines the state of the
  * job as a whole, as a job can be run multiple times. If there is a run of the job which is in progress or successful,
@@ -48,13 +50,13 @@ public enum IngestJobStatusType {
     /**
      * Gets the furthest status type for any run of an ingest job.
      *
-     * @param  job the job
-     * @return     the status type
+     * @param  runStatusTypes the status types of runs in the job
+     * @return                the status type
      */
-    public static IngestJobStatusType statusTypeOfFurthestRunOfJob(IngestJobStatus job) {
+    public static IngestJobStatusType statusTypeOfFurthestRunOfJob(Collection<IngestJobStatusType> runStatusTypes) {
         FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
-        for (ProcessRun run : job.getJobRuns()) {
-            furthestStatus.setIfFurther(statusTypeOfJobRun(run));
+        for (IngestJobStatusType runStatusType : runStatusTypes) {
+            furthestStatus.setIfFurther(runStatusType);
         }
         return furthestStatus.get();
     }

@@ -37,6 +37,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
@@ -67,15 +68,16 @@ public class WaitForJobsStatusTest {
 
         // Then
         assertThat(status).hasToString("{\n" +
-                "  \"countByLastStatus\": {\n" +
-                "    \"IngestJobAcceptedStatus\": 1,\n" +
-                "    \"IngestJobFinishedStatus\": 1,\n" +
-                "    \"IngestJobStartedStatus\": 1\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"ACCEPTED\": 1,\n" +
+                "    \"FINISHED\": 1,\n" +
+                "    \"IN_PROGRESS\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 2,\n" +
                 "  \"firstInProgressStartTime\": \"2022-09-22T13:33:10Z\",\n" +
                 "  \"longestInProgressDuration\": \"PT50S\"\n" +
                 "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
     }
 
     @Test
@@ -103,16 +105,17 @@ public class WaitForJobsStatusTest {
 
         // Then
         assertThat(status).hasToString("{\n" +
-                "  \"countByLastStatus\": {\n" +
-                "    \"CompactionJobStartedStatus\": 1,\n" +
-                "    \"None\": 1,\n" +
-                "    \"ProcessFinishedStatus\": 1\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"FINISHED\": 1,\n" +
+                "    \"IN_PROGRESS\": 1,\n" +
+                "    \"PENDING\": 1\n" +
                 "  },\n" +
                 "  \"numUnstarted\": 1,\n" +
                 "  \"numUnfinished\": 2,\n" +
                 "  \"firstInProgressStartTime\": \"2023-09-18T14:48:01Z\",\n" +
                 "  \"longestInProgressDuration\": \"PT2M\"\n" +
                 "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
     }
 
     @Test
@@ -132,8 +135,8 @@ public class WaitForJobsStatusTest {
 
         // Then
         assertThat(status).hasToString("{\n" +
-                "  \"countByLastStatus\": {\n" +
-                "    \"ProcessFinishedStatus\": 1\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"FINISHED\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 0\n" +
                 "}");
@@ -157,8 +160,8 @@ public class WaitForJobsStatusTest {
 
         // Then
         assertThat(status).hasToString("{\n" +
-                "  \"countByLastStatus\": {\n" +
-                "    \"ProcessFinishedStatus\": 1\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"FINISHED\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 0\n" +
                 "}");
@@ -187,13 +190,40 @@ public class WaitForJobsStatusTest {
 
         // Then
         assertThat(status).hasToString("{\n" +
-                "  \"countByLastStatus\": {\n" +
-                "    \"CompactionJobStartedStatus\": 1,\n" +
-                "    \"ProcessFinishedStatus\": 1\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"FINISHED\": 1,\n" +
+                "    \"IN_PROGRESS\": 1\n" +
                 "  },\n" +
                 "  \"numUnfinished\": 1,\n" +
                 "  \"firstInProgressStartTime\": \"2023-09-18T14:51:00Z\",\n" +
                 "  \"longestInProgressDuration\": \"PT1M\"\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
+    }
+
+    @Test
+    void shouldReportIngestJobUnfinishedWhenUncommitted() {
+        // Given
+        IngestJobStatusStore store = new InMemoryIngestJobStatusStore();
+        IngestJob job = createJobWithTableAndFiles("test-job", table, "test.parquet");
+        store.jobStarted(ingestJobStarted(job, Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+        store.jobFinished(ingestJobFinished(job, summary(Instant.parse("2024-06-27T09:40:00Z"), Duration.ofMinutes(2), 100L, 100L))
+                .jobRunId("test-run").taskId("test-task").numFilesWrittenByJob(2)
+                .committedBySeparateFileUpdates(true).build());
+
+        // When
+        WaitForJobsStatus status = WaitForJobsStatus.forIngest(store,
+                List.of("test-job"),
+                Instant.parse("2024-06-27T09:43:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"UNCOMMITTED\": 1\n" +
+                "  },\n" +
+                "  \"numUnfinished\": 1,\n" +
+                "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT3M\"\n" +
                 "}");
         assertThat(status.areAllJobsFinished()).isFalse();
     }
