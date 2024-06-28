@@ -31,12 +31,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -138,11 +138,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobFailed(CompactionJob job, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    public void jobFailed(CompactionJobFailedEvent event) {
         try {
-            save(createJobFailedUpdate(runTime, taskId, failureReasons, jobUpdateBuilder(job)));
+            save(createJobFailedUpdate(event.getRunTime(), event.getTaskId(), event.getFailureReasons(), jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving failed event for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
         }
     }
 

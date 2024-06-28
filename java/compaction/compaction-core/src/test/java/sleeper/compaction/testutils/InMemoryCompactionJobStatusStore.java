@@ -18,6 +18,7 @@ package sleeper.compaction.testutils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
@@ -89,12 +90,13 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobFailed(CompactionJob job, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    public void jobFailed(CompactionJobFailedEvent event) {
+        ProcessRunTime runTime = event.getRunTime();
         Instant eventTime = runTime.getFinishTime();
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId())
                 .statusUpdate(ProcessFailedStatus.timeAndReasons(
-                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, failureReasons))
+                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, event.getFailureReasons()))
                 .build());
     }
 
