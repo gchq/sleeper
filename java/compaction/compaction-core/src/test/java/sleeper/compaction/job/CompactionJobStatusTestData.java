@@ -47,30 +47,30 @@ public class CompactionJobStatusTestData {
     }
 
     public static ProcessRun startedCompactionRun(String taskId, Instant startTime) {
-        return ProcessRun.started(taskId, startedCompactionStatus(startTime));
+        return ProcessRun.started(taskId, compactionStartedStatus(startTime));
     }
 
     public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                startedCompactionStatus(summary.getStartTime()),
-                finishedCompactionStatus(summary));
+                compactionStartedStatus(summary.getStartTime()),
+                compactionFinishedStatus(summary));
     }
 
     public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
-                startedCompactionStatus(runTime.getStartTime()),
-                failedCompactionStatus(runTime, failureReasons));
+                compactionStartedStatus(runTime.getStartTime()),
+                compactionFailedStatus(runTime, failureReasons));
     }
 
-    public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
+    public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
-    public static ProcessFinishedStatus finishedCompactionStatus(RecordsProcessedSummary summary) {
+    public static ProcessFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
         return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
     }
 
-    public static ProcessFailedStatus failedCompactionStatus(ProcessRunTime runTime, List<String> failureReasons) {
+    public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 

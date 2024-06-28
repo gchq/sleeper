@@ -28,8 +28,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusListFromUpdates;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
@@ -45,14 +45,14 @@ class CompactionJobStatusFromRecordsTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2")
                 .inputFilesCount(12)
                 .build();
-        CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobStartedStatus started2 = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
@@ -73,7 +73,7 @@ class CompactionJobStatusFromRecordsTest {
     @Test
     void shouldIgnoreJobWithNoCreatedUpdate() {
         // Given
-        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
 
         // When
@@ -92,7 +92,7 @@ class CompactionJobStatusFromRecordsTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
 
         // When
