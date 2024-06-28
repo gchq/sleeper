@@ -194,10 +194,6 @@ If you add a command on the end, you can run a specific script like this:
 sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
-There is also a [Nix shell](https://nixos.org/) file at the root of the repository, which can give you a shell with all dependencies required
-to build, deploy, and interact with instances.
-To enter the Nix shell you can run the following command
-
 ### Manual Deployment
 
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first:
