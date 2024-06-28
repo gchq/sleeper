@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -108,7 +109,7 @@ public class CompactionJobCommitterTestBase {
     }
 
     protected CompactionJobCommitRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
-        statusStore.jobStarted(job, summary.getStartTime(), taskId);
+        statusStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
         return new CompactionJobCommitRequest(job, taskId, summary);
     }
 

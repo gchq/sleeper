@@ -28,6 +28,7 @@ import java.time.Period;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -111,7 +112,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
@@ -137,7 +138,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);
-        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 

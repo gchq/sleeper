@@ -63,6 +63,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
@@ -156,7 +157,7 @@ public class InMemoryCompaction {
         for (CompactionJob job : queuedJobsById.values()) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
-            jobStore.jobStarted(job, summary.getStartTime(), taskId);
+            jobStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
             jobStore.jobFinished(job, summary, taskId);
         }
         queuedJobsById.clear();

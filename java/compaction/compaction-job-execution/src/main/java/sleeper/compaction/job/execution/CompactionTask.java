@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -160,7 +161,7 @@ public class CompactionTask {
 
     private RecordsProcessedSummary compact(CompactionJob job, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-        jobStatusStore.jobStarted(job, jobStartTime, taskId);
+        jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).build());
         propertiesReloader.reloadIfNeeded();
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
