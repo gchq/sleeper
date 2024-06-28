@@ -31,9 +31,9 @@ public interface IngestStatusStoreResources {
     default void grantWriteTaskEvent(IGrantable grantee) {
     }
 
-    static IngestStatusStoreResources from(Construct scope, InstanceProperties properties, CoreStacks coreStacks) {
+    static IngestStatusStoreResources from(Construct scope, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestStatusStoreResources(scope, properties, coreStacks);
+            return new DynamoDBIngestStatusStoreResources(scope, properties, policiesStack);
         } else {
             return none();
         }

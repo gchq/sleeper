@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -47,18 +48,21 @@ import static sleeper.configuration.properties.instance.CommonProperty.STATESTOR
 import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
-public class StateStoreUpdateStack extends NestedStack {
+public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
     private final Queue commitQueue;
 
-    public StateStoreUpdateStack(
+    public StateStoreCommitterStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            ConfigBucketStack configBucketStack,
+            TableIndexStack tableIndexStack,
+            StateStoreStacks stateStoreStacks,
+            IngestStatusStoreResources ingestStatusStore,
+            CompactionStatusStoreResources compactionStatusStore,
             Topic topic,
-            CoreStacks coreStacks,
-            CompactionStatusStoreStack compactionStatusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -66,8 +70,9 @@ public class StateStoreUpdateStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
-        lambdaToCommitStateStoreUpdates(coreStacks, topic, errorMetrics, jarsBucket, committerJar,
-                compactionStatusStoreStack.getResources());
+        lambdaToCommitStateStoreUpdates(committerJar,
+                configBucketStack, tableIndexStack, stateStoreStacks,
+                compactionStatusStore, ingestStatusStore);
     }
 
     private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
@@ -101,14 +106,16 @@ public class StateStoreUpdateStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode jobCommitterJar, CompactionStatusStoreResources compactionStatusStoreResources) {
+            LambdaCode committerJar, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+            StateStoreStacks stateStoreStacks,
+            CompactionStatusStoreResources compactionStatusStore,
+            IngestStatusStoreResources ingestStatusStore) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
 
-        IFunction handlerFunction = jobCommitterJar.buildFunction(this, "StateStoreCommitter", builder -> builder
+        IFunction handlerFunction = committerJar.buildFunction(this, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .runtime(JAVA_11)
@@ -122,12 +129,14 @@ public class StateStoreUpdateStack extends NestedStack {
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .build());
 
-        coreStacks.grantRunCompactionJobs(handlerFunction);
-        jarsBucket.grantRead(handlerFunction);
-        compactionStatusStoreResources.grantWriteJobEvent(handlerFunction);
+        configBucketStack.grantRead(handlerFunction);
+        tableIndexStack.grantRead(handlerFunction);
+        stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
+        compactionStatusStore.grantWriteJobEvent(handlerFunction);
+        ingestStatusStore.grantWriteJobEvent(handlerFunction);
     }
 
-    public Queue getCommitQueue() {
-        return commitQueue;
+    public void grantSendCommits(IGrantable grantee) {
+        commitQueue.grantSendMessages(grantee);
     }
 }

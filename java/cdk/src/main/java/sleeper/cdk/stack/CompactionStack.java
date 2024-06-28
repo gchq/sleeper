@@ -151,7 +151,6 @@ public class CompactionStack extends NestedStack {
     private Queue compactionJobQ;
     private Queue compactionDLQ;
     private final InstanceProperties instanceProperties;
-    private final CompactionStatusStoreResources statusStore;
 
     public CompactionStack(
             Construct scope,
@@ -160,12 +159,9 @@ public class CompactionStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            CompactionStatusStoreStack statusStoreStack,
-            StateStoreUpdateStack stateStoreUpdateStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStoreStack.getResources();
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
@@ -190,7 +186,7 @@ public class CompactionStack extends NestedStack {
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, errorMetrics, jarsBucket, jobCreatorJar, compactionJobsQueue);
 
         // ECS cluster for compaction tasks
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue, stateStoreUpdateStack.getCommitQueue());
+        ecsClusterForCompactionTasks(coreStacks, jarsBucket, taskCreatorJar, compactionJobsQueue);
 
         // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, taskCreatorJar, compactionJobsQueue);
@@ -298,11 +294,8 @@ public class CompactionStack extends NestedStack {
         coreStacks.grantReadTablesStatus(triggerFunction);
         coreStacks.grantCreateCompactionJobs(handlerFunction);
         jarsBucket.grantRead(handlerFunction);
-        statusStore.grantWriteJobEvent(handlerFunction);
         compactionJobsQueue.grantSendMessages(handlerFunction);
         coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
-        statusStore.grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
-        coreStacks.grantReadTablesStatus(coreStacks.getInvokeCompactionPolicyForGrants());
         coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicyForGrants());
         compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
 
@@ -352,7 +345,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private void ecsClusterForCompactionTasks(
-            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue, Queue jobCommitQueue) {
+            CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -377,8 +370,6 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            statusStore.grantWriteJobEvent(taskDef.getTaskRole());
-            statusStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
@@ -387,7 +378,6 @@ public class CompactionStack extends NestedStack {
                     .build());
 
             compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
-            jobCommitQueue.grantSendMessages(taskDef.getTaskRole());
         };
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
