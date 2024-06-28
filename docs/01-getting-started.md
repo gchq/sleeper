@@ -122,14 +122,12 @@ tail /var/log/cloud-init-output.log
 Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. Reconnect to the EC2
 with `sleeper environment connect`.
 
-You can access a local copy of the Sleeper Git repository by running `sleeper builder` in the EC2. That will get you a
-shell inside a Docker container inside the EC2, with the dependencies for building Sleeper. You can run all the deployment
-scripts there as explained below. If you run it outside of the EC2, you'll get the same thing but in your local
-Docker host. Use the one in the EC2 to avoid the deployment being slow uploading jars and Docker images.
-
-The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
-That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
-for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
+During the `cloud-init` step, the Sleeper Git repository will be cloned, and you can access it by running
+`sleeper builder` in the EC2. This will get you a shell inside a Docker container inside the EC2, with the dependencies
+for building Sleeper. You can run all the deployment scripts there as explained below. If you run it outside of the
+EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the deployment being
+slow uploading jars and Docker images. Additionally, the whole working directory will be persisted between executions
+of `sleeper builder`.
 
 If you want someone else to be able to access the same environment EC2, they can run `sleeper environment add <id>`
 with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
