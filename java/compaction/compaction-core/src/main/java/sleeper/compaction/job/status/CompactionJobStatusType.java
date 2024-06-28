@@ -28,7 +28,8 @@ public enum CompactionJobStatusType {
     PENDING(1),
     FAILED(2),
     IN_PROGRESS(3),
-    FINISHED(4);
+    UNCOMMITTED(4),
+    FINISHED(5);
 
     private final int order;
 
