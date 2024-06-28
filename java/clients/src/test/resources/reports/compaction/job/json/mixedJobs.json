@@ -52,6 +52,7 @@
           {
             "type": "FINISHED",
             "updateTime": "2022-09-19T13:35:12.123Z",
+            "committedBySeparateUpdate": false,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,
