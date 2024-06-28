@@ -200,10 +200,11 @@ For Sleeper to be deployed manually, some resources have to be uploaded to AWS f
 the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
-These instructions will assume you start in the project root directory and you're using a development environment
-(see [Installing prerequesite software](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+These instructions will assume you're using a development environment, so see [the dev guide](11-dev-guide.md) for how
+to set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
+the CLI configured and authenticated with AWS.
 
-First build the system:
+This guide assumes you start in the project root directory. First build the system:
 
 ```bash
 ./scripts/build/buildForTest.sh
