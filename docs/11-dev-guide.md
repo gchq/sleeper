@@ -11,9 +11,6 @@ copy that you built yourself.
 
 ### Install Prerequisite Software
 
-Information about the prerequesite software and how to get an environment with these prerequesites already installed can
-be found in the [deployment guide](02-deployment-guide.md#install-prerequisite-software)
-
 When running commands inside your EC2 environment, you will need the following software:
 
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1

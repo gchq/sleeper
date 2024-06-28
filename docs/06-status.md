@@ -5,7 +5,7 @@ There are two main ways to check the status of the system: use the metrics in th
 or use the provided scripts to get a textual summary of various aspects of the system.
 
 These instructions will assume you start in the project root directory and you have the required dependencies
-(see [the deployment guide](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
 
 ## CloudWatch metrics
 

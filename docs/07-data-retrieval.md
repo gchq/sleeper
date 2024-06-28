@@ -11,7 +11,7 @@ The methods below describe how queries can be executed using scripts. See the do
 for details of how to execute them from Python.
 
 These instructions will assume you start in the project root directory and you have the required dependencies
-(see [the deployment guide](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
 
 ## Running queries directly using the Java client
 

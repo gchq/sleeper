@@ -444,7 +444,7 @@ Note that the system test stacks do not need to be specified. They will be inclu
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
 
 These instructions will assume you start in the project root directory and you're using a development environment
-(see [Installing prerequesite software](02-deployment-guide.md#install-prerequisite-software) for how to set that up).
+(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
 
 #### Update Existing Instance
 
