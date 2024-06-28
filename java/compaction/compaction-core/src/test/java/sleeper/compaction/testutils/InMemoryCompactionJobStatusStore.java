@@ -18,6 +18,7 @@ package sleeper.compaction.testutils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -67,11 +68,11 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+    public void jobStarted(CompactionJobStartedEvent event) {
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
-                        startTime, getUpdateTimeOrDefault(() -> defaultUpdateTime(startTime))))
+                        event.getStartTime(), getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getStartTime()))))
                 .build());
     }
 
@@ -110,7 +111,11 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     private void add(CompactionJob job, ProcessStatusUpdateRecord record) {
-        TableJobs table = tableIdToJobs.computeIfAbsent(job.getTableId(), id -> new TableJobs());
+        add(job.getTableId(), record);
+    }
+
+    private void add(String tableId, ProcessStatusUpdateRecord record) {
+        TableJobs table = tableIdToJobs.computeIfAbsent(tableId, id -> new TableJobs());
         table.jobIdToUpdateRecords
                 .computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
                 .add(record);

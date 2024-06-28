@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -119,11 +120,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
+    public void jobStarted(CompactionJobStartedEvent event) {
         try {
-            save(createJobStartedUpdate(startTime, taskId, jobUpdateBuilder(job)));
+            save(createJobStartedUpdate(event.getStartTime(), event.getTaskId(), jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving started event for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
         }
     }
 
@@ -181,9 +182,13 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {
+        return jobUpdateBuilder(job.getTableId(), job.getId());
+    }
+
+    private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {
         Instant timeNow = getTimeNow.get();
         Instant expiry = timeNow.plus(timeToLiveInSeconds, ChronoUnit.SECONDS);
-        return DynamoDBCompactionJobStatusFormat.jobUpdateBuilder(job, timeNow, expiry);
+        return DynamoDBCompactionJobStatusFormat.jobUpdateBuilder(tableId, jobId, timeNow, expiry);
     }
 
     @Override

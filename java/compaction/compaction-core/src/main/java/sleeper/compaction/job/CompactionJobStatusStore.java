@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -25,6 +26,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+
 public interface CompactionJobStatusStore {
 
     CompactionJobStatusStore NONE = new CompactionJobStatusStore() {
@@ -33,7 +36,11 @@ public interface CompactionJobStatusStore {
     default void jobCreated(CompactionJob job) {
     }
 
+    default void jobStarted(CompactionJobStartedEvent event) {
+    }
+
     default void jobStarted(CompactionJob job, Instant startTime, String taskId) {
+        jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
     }
 
     default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
