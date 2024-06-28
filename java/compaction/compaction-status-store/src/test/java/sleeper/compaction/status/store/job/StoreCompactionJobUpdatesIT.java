@@ -32,6 +32,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
@@ -67,7 +68,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -109,13 +110,15 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
         RecordsProcessed processed = new RecordsProcessed(100L, 100L);
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(processed, startTime1, finishTime1);
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(processed, startTime2, finishTime2);
 
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startTime1).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, startTime2).taskId(DEFAULT_TASK_ID_2).build());
-        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
-        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID_2);
+        store.jobFinished(compactionJobFinished(job, summary1).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, summary2).taskId(DEFAULT_TASK_ID_2).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -143,7 +146,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job, summary, DEFAULT_TASK_ID);
+        store.jobFinished(compactionJobFinished(job, summary).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())

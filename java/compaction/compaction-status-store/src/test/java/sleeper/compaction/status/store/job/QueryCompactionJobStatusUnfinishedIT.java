@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobStatusStoreTestBase {
@@ -72,7 +73,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job1);
         store.jobCreated(job2);
         store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job2, defaultSummary(), DEFAULT_TASK_ID);
+        store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -115,7 +116,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job);
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then

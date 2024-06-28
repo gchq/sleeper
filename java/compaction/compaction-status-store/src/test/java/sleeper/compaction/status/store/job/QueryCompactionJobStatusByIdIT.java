@@ -27,6 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
@@ -65,7 +66,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId("test-task").build());
-        store.jobFinished(job, defaultSummary(), "test-task");
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId("test-task").build());
 
         // Then
         assertThat(getJobStatus(job.getId()))

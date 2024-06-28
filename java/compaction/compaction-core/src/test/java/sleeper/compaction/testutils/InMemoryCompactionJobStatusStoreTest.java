@@ -36,6 +36,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -136,7 +137,7 @@ class InMemoryCompactionJobStatusStoreTest {
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job, createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
-            store.jobFinished(job, summary, taskId);
+            store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
@@ -359,7 +360,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(job, summary, taskId);
+        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
         return job;
     }
 

@@ -32,6 +32,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
@@ -86,8 +87,9 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job, new RecordsProcessedSummary(
-                new RecordsProcessed(60L, 60L), startedTime, finishedTime), DEFAULT_TASK_ID);
+        store.jobFinished(compactionJobFinished(job, new RecordsProcessedSummary(
+                new RecordsProcessed(60L, 60L), startedTime, finishedTime))
+                .taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
