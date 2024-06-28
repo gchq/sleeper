@@ -11,7 +11,7 @@ copy that you built yourself.
 
 ### Install Prerequisite Software
 
-When running commands inside your EC2 environment, you will need the following software:
+You will need the following software:
 
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
@@ -42,14 +42,7 @@ If you're working with the Sleeper CLI, you can use `sleeper builder` to get a s
 the dependencies pre-installed. **Note that due to a bug in the GitHub container repository you need to build the
 builder image from scratch**, so it's much easer to use Nix. If you do want to build the builder image from scratch, see the [Sleeper CLI](11-dev-guide.md#sleeper-cli) section below
 
-As part of the EC2 setup it will automatically clone the Sleeper Git repository to the `sleeper` folder in the builder image home directory:
-
-```bash
-sleeper builder
-cd sleeper
-```
-
-If you are running commands without using an EC2 environment, you will need to clone the repository as an extra step.
+You will need to clone the repository as an extra step.
 
 ```bash
 git clone https://github.com/gchq/sleeper.git
