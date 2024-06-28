@@ -16,6 +16,7 @@
 
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
@@ -73,6 +74,10 @@ public class CompactionJobStatusTestData {
     public static CompactionJobFinishedStatus compactionFinishedStatusUncommitted(RecordsProcessedSummary summary) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
                 .committedBySeparateUpdate(true).build();
+    }
+
+    public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {
+        return CompactionJobCommittedStatus.committedAt(committedTime);
     }
 
     public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {

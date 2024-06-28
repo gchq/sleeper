@@ -32,12 +32,14 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
@@ -349,6 +351,7 @@ class InMemoryCompactionJobStatusStoreTest {
     @Nested
     @DisplayName("Track asynchronous commit")
     class TrackAsynchronousCommit {
+
         @Test
         void shouldTrackJobFinishedInTaskButNotYetCommitted() {
             // Given
@@ -366,6 +369,27 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatusUncommitted(summary)))));
+        }
+
+        @Test
+        void shouldTrackJobFinishedAndCommitted() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            Instant committedTime = Instant.parse("2023-03-29T12:30:00Z");
+            RecordsProcessedSummary summary = summary(
+                    startedTime, Duration.ofMinutes(1), 100, 100);
+            String taskId = "test-task";
+            CompactionJob job = addFinishedJobCommitted(createdTime, summary, committedTime, taskId);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    compactionStartedStatus(startedTime),
+                                    compactionFinishedStatusUncommitted(summary),
+                                    compactionCommittedStatus(committedTime)))));
         }
     }
 
@@ -394,6 +418,13 @@ class InMemoryCompactionJobStatusStoreTest {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
         store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).committedBySeparateUpdate(true).build());
+        return job;
+    }
+
+    private CompactionJob addFinishedJobCommitted(Instant createdTime, RecordsProcessedSummary summary, Instant committedTime, String taskId) {
+        CompactionJob job = addFinishedJobUncommitted(createdTime, summary, taskId);
+        store.fixUpdateTime(committedTime);
+        store.jobCommitted(compactionJobCommitted(job).taskId(taskId).build());
         return job;
     }
 
