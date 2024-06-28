@@ -28,12 +28,12 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
-    private final boolean committedToStateStore;
+    private final boolean committedBySeparateUpdate;
 
     private CompactionJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        committedToStateStore = builder.committedToStateStore;
+        committedBySeparateUpdate = builder.committedBySeparateUpdate;
     }
 
     /**
@@ -61,13 +61,13 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
         return summary;
     }
 
-    public boolean isCommittedToStateStore() {
-        return committedToStateStore;
+    public boolean isCommittedBySeparateUpdate() {
+        return committedBySeparateUpdate;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, committedToStateStore);
+        return Objects.hash(updateTime, summary, committedBySeparateUpdate);
     }
 
     @Override
@@ -79,18 +79,18 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
             return false;
         }
         CompactionJobFinishedStatus other = (CompactionJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && committedToStateStore == other.committedToStateStore;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && committedBySeparateUpdate == other.committedBySeparateUpdate;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", committedToStateStore=" + committedToStateStore + "}";
+        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", committedBySeparateUpdate=" + committedBySeparateUpdate + "}";
     }
 
     public static class Builder {
         private Instant updateTime;
         private RecordsProcessedSummary summary;
-        private boolean committedToStateStore;
+        private boolean committedBySeparateUpdate;
 
         private Builder() {
         }
@@ -105,8 +105,8 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
             return this;
         }
 
-        public Builder committedToStateStore(boolean committedToStateStore) {
-            this.committedToStateStore = committedToStateStore;
+        public Builder committedBySeparateUpdate(boolean committedBySeparateUpdate) {
+            this.committedBySeparateUpdate = committedBySeparateUpdate;
             return this;
         }
 
