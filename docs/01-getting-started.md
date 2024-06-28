@@ -160,7 +160,7 @@ Before you can run any scripts, you need to build the project. You can do this b
 sleeper builder sleeper/scripts/build/buildForTest.sh
 ```
 
-Then you can deploy the syste test instance by running the following command:
+Then you can deploy the system test instance by running the following command:
 
 ```bash
 sleeper builder sleeper/scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
