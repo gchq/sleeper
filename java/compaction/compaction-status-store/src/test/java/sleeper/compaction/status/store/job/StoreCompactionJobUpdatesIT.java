@@ -32,6 +32,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -89,7 +90,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(job, defaultRunTime(), DEFAULT_TASK_ID, failureReasons);
+        store.jobFailed(compactionJobFailed(job, defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -172,7 +173,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(job, runTime, DEFAULT_TASK_ID, failureReasons);
+        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())

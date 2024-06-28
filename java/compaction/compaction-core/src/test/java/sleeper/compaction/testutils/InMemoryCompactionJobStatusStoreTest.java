@@ -36,6 +36,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -367,7 +368,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJob job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
-        store.jobFailed(job, runTime, taskId, failureReasons);
+        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }

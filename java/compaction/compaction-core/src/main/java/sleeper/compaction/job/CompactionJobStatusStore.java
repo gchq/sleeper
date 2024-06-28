@@ -19,15 +19,12 @@ import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.ProcessRunTime;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 
 public interface CompactionJobStatusStore {
 
@@ -44,10 +41,6 @@ public interface CompactionJobStatusStore {
     }
 
     default void jobFailed(CompactionJobFailedEvent event) {
-    }
-
-    default void jobFailed(CompactionJob compactionJob, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
-        jobFailed(compactionJobFailed(compactionJob, runTime).failureReasons(failureReasons).taskId(taskId).build());
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {
