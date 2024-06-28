@@ -20,13 +20,13 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
@@ -84,8 +84,9 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         Instant eventTime = summary.getFinishTime();
         add(event.getTableId(), ProcessStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId())
-                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
-                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary))
+                .statusUpdate(CompactionJobFinishedStatus.updateTimeAndSummary(
+                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary)
+                        .committedBySeparateUpdate(event.isCommittedBySeparateUpdate()).build())
                 .build());
     }
 

@@ -19,9 +19,9 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 
 import java.time.Duration;
@@ -85,7 +85,7 @@ public class CompactionJobRunTest {
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);

@@ -18,24 +18,25 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 
 public class CompactionJobStatusFurthestStatusTest {
 
@@ -81,7 +82,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 200L, 100L));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
@@ -117,7 +118,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        ProcessFinishedStatus finished = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started1, Duration.ofSeconds(30), 200L, 100L));
         CompactionJobStartedStatus started2 = compactionStartedStatus(Instant.parse("2023-03-22T15:37:01Z"));
         ProcessFailedStatus failed = failedStatus(started2, Duration.ofSeconds(30), List.of("Some failure"));
 

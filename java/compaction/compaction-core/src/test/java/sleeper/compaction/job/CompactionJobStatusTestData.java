@@ -17,12 +17,12 @@
 package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
@@ -66,8 +66,8 @@ public class CompactionJobStatusTestData {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
-    public static ProcessFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
-        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
+    public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
+        return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
     }
 
     public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {
