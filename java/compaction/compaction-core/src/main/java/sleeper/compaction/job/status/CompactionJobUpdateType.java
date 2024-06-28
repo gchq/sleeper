@@ -16,7 +16,6 @@
 package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
@@ -30,7 +29,7 @@ import java.util.stream.Stream;
 public enum CompactionJobUpdateType {
     CREATED(1, CompactionJobCreatedStatus.class, CompactionJobStatusType.PENDING),
     STARTED(2, CompactionJobStartedStatus.class, CompactionJobStatusType.IN_PROGRESS),
-    FINISHED(3, ProcessFinishedStatus.class, CompactionJobStatusType.FINISHED),
+    FINISHED(3, CompactionJobFinishedStatus.class, CompactionJobStatusType.FINISHED),
     FAILED(4, ProcessFailedStatus.class, CompactionJobStatusType.FAILED);
 
     private final int order;
