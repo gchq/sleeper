@@ -26,18 +26,18 @@ import java.util.Objects;
 public class CompactionJobFinishedEvent {
     private final String jobId;
     private final String tableId;
-    private final RecordsProcessedSummary summary;
-    private final boolean committedBySeparateUpdate;
     private final String taskId;
     private final String jobRunId;
+    private final RecordsProcessedSummary summary;
+    private final boolean committedBySeparateUpdate;
 
     private CompactionJobFinishedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        jobRunId = builder.jobRunId;
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         committedBySeparateUpdate = builder.committedBySeparateUpdate;
-        jobRunId = builder.jobRunId;
-        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
 
     /**
@@ -63,14 +63,6 @@ public class CompactionJobFinishedEvent {
         return tableId;
     }
 
-    public RecordsProcessedSummary getSummary() {
-        return summary;
-    }
-
-    public boolean isCommittedBySeparateUpdate() {
-        return committedBySeparateUpdate;
-    }
-
     public String getTaskId() {
         return taskId;
     }
@@ -79,9 +71,17 @@ public class CompactionJobFinishedEvent {
         return jobRunId;
     }
 
+    public RecordsProcessedSummary getSummary() {
+        return summary;
+    }
+
+    public boolean isCommittedBySeparateUpdate() {
+        return committedBySeparateUpdate;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, summary, committedBySeparateUpdate, taskId, jobRunId);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, summary, committedBySeparateUpdate);
     }
 
     @Override
@@ -93,14 +93,14 @@ public class CompactionJobFinishedEvent {
             return false;
         }
         CompactionJobFinishedEvent other = (CompactionJobFinishedEvent) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(summary, other.summary) && committedBySeparateUpdate == other.committedBySeparateUpdate
-                && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
+                && Objects.equals(summary, other.summary) && committedBySeparateUpdate == other.committedBySeparateUpdate;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", committedBySeparateUpdate=" + committedBySeparateUpdate + ", taskId=" + taskId
-                + ", jobRunId=" + jobRunId + "}";
+        return "CompactionJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", summary=" + summary + ", committedBySeparateUpdate="
+                + committedBySeparateUpdate + "}";
     }
 
     /**

@@ -28,18 +28,18 @@ import java.util.Objects;
 public class CompactionJobFailedEvent {
     private final String jobId;
     private final String tableId;
-    private final ProcessRunTime runTime;
-    private final List<String> failureReasons;
     private final String taskId;
     private final String jobRunId;
+    private final ProcessRunTime runTime;
+    private final List<String> failureReasons;
 
     private CompactionJobFailedEvent(Builder builder) {
-        this.jobId = builder.jobId;
-        this.tableId = builder.tableId;
-        this.jobRunId = builder.jobRunId;
-        this.taskId = builder.taskId;
-        this.runTime = builder.runTime;
-        this.failureReasons = builder.failureReasons;
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        jobRunId = builder.jobRunId;
+        runTime = Objects.requireNonNull(builder.runTime, "runTime must not be null");
+        failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }
 
     /**
@@ -65,14 +65,6 @@ public class CompactionJobFailedEvent {
         return tableId;
     }
 
-    public ProcessRunTime getRunTime() {
-        return runTime;
-    }
-
-    public List<String> getFailureReasons() {
-        return failureReasons;
-    }
-
     public String getTaskId() {
         return taskId;
     }
@@ -81,9 +73,17 @@ public class CompactionJobFailedEvent {
         return jobRunId;
     }
 
+    public ProcessRunTime getRunTime() {
+        return runTime;
+    }
+
+    public List<String> getFailureReasons() {
+        return failureReasons;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, runTime, failureReasons, taskId, jobRunId);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, runTime, failureReasons);
     }
 
     @Override
@@ -95,13 +95,13 @@ public class CompactionJobFailedEvent {
             return false;
         }
         CompactionJobFailedEvent other = (CompactionJobFailedEvent) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons)
-                && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
+                && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", runTime=" + runTime + ", failureReasons=" + failureReasons + ", taskId=" + taskId + ", jobRunId=" + jobRunId
+        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", runTime=" + runTime + ", failureReasons=" + failureReasons
                 + "}";
     }
 
