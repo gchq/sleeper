@@ -18,6 +18,7 @@ package sleeper.compaction.testutils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -77,10 +78,11 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+    public void jobFinished(CompactionJobFinishedEvent event) {
+        RecordsProcessedSummary summary = event.getSummary();
         Instant eventTime = summary.getFinishTime();
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId())
                 .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary))
                 .build());
