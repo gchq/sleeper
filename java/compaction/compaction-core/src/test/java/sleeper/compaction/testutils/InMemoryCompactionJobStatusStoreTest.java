@@ -27,6 +27,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -352,10 +353,10 @@ class InMemoryCompactionJobStatusStoreTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
+            RecordsProcessedSummary summary = summary(
+                    startedTime, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
-            CompactionJob job = addFinishedJobUncommitted(createdTime,
-                    summary(startedTime, finishedTime, 100, 100), taskId);
+            CompactionJob job = addFinishedJobUncommitted(createdTime, summary, taskId);
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
@@ -363,7 +364,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100))))));
+                                    compactionFinishedStatus(summary)))));
         }
     }
 
