@@ -272,7 +272,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.bulk.import.job.files.commit.async")
             .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, bulk import will commit new files at the end of the job synchronously.")
-            .defaultValue("false")
+            .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 

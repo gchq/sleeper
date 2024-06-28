@@ -31,6 +31,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobUncommitted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
 
@@ -79,6 +80,20 @@ public class IngestJobStatusInPeriodTest {
             assertThat(unfinishedStatus(jobStartTime)
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isFalse();
+        }
+
+        @Test
+        public void shouldIncludeFinishedButUncommittedJobWhenFinishedBeforeWindow() {
+            // Given
+            Instant jobStartTime = Instant.parse("2022-09-23T11:44:30.000Z");
+            Instant jobFinishedTime = Instant.parse("2022-09-23T11:45:30.000Z");
+            Instant windowStartTime = Instant.parse("2022-09-23T11:46:00.000Z");
+            Instant windowEndTime = Instant.parse("2022-09-23T11:47:00.000Z");
+
+            // When / Then
+            assertThat(finishedStatusUncommitted(jobStartTime, jobFinishedTime)
+                    .isInPeriod(windowStartTime, windowEndTime))
+                    .isTrue();
         }
     }
 
@@ -198,6 +213,10 @@ public class IngestJobStatusInPeriodTest {
 
     private IngestJobStatus finishedStatus(Instant startTime, Instant finishTime) {
         return finishedIngestJob(job, "test-task-id", summary(startTime, finishTime, 100, 100), 2);
+    }
+
+    private IngestJobStatus finishedStatusUncommitted(Instant startTime, Instant finishTime) {
+        return finishedIngestJobUncommitted(job, "test-task-id", summary(startTime, finishTime, 100, 100), 2);
     }
 
     private IngestJobStatus statusFromUpdates(ProcessStatusUpdate... updates) {

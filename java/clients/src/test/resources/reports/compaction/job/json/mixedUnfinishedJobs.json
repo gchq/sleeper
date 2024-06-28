@@ -12,7 +12,7 @@
         "updates": [
           {
             "startTime": "2022-09-20T13:34:12.001Z",
-            "type": "IN_PROGRESS",
+            "type": "STARTED",
             "updateTime": "2022-09-20T13:34:12.123Z"
           },
           {
@@ -45,7 +45,7 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "IN_PROGRESS",
+            "type": "STARTED",
             "updateTime": "2022-09-18T13:34:12.123Z",
             "startTime": "2022-09-18T13:34:12.001Z"
           }
