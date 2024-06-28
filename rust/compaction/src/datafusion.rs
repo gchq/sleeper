@@ -44,6 +44,7 @@ use datafusion::{
         accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
         ExecutionPlanVisitor,
     },
+    physical_planner::{DefaultPhysicalPlanner, PhysicalPlanner},
     prelude::*,
 };
 use log::{error, info};
@@ -196,7 +197,10 @@ async fn collect_stats(
 
     // Use a tree-node walker to change the schema in the projection node
     // to eliminate nullable columns
-    logical_plan = logical_plan
+    logical_plan = session_state
+        // Run the query optimizer
+        .optimize(&logical_plan)?
+        // Fix schema to remove nullable columns
         .transform(|node| {
             if let LogicalPlan::Projection(mut projection) = node {
                 projection.schema = non_null_schema(&projection.schema)?;
@@ -206,7 +210,12 @@ async fn collect_stats(
         })?
         .data;
 
-    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
+    // Convert optimised plan to physical plan
+    let query_planner = DefaultPhysicalPlanner::default();
+    let physical_plan = query_planner
+        .create_physical_plan(&logical_plan, &session_state)
+        .await?;
+
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::default();
     accept(physical_plan.as_ref(), &mut stats)?;
