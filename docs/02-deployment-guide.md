@@ -174,9 +174,10 @@ directory.
 The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
 dependencies or build Sleeper yourself.
 
-The `sleeper builder` command gets you a shell inside a Docker container with the Sleeper Git repository checked out to
-the `sleeper` directory. This docker container will have all the dependencies required to build and deploy an
-instance of Sleeper.
+The `sleeper builder` command gets you a shell inside a Docker container. This docker container will have all the
+dependencies required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2,
+the Sleeper Git repository will be cloned into the working directory of the container. If you are not using an environment
+EC2, you will need to manually clone the repository.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
