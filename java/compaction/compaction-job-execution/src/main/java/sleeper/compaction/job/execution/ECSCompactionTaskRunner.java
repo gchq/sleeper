@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.execution.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -148,7 +148,7 @@ public class ECSCompactionTaskRunner {
         return new CompactionJobCommitter(jobStatusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
     }
 
-    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    private static CompactionJobCommitterOrSendToLambda.CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
             String tableId = request.getJob().getTableId();

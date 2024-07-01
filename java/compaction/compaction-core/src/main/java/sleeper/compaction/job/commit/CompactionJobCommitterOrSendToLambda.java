@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.job.commit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 
@@ -49,7 +47,7 @@ public class CompactionJobCommitterOrSendToLambda {
         }
     }
 
-    interface CommitQueueSender {
+    public interface CommitQueueSender {
         void send(CompactionJobCommitRequest commitRequest);
     }
 }
