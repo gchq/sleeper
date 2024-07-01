@@ -142,10 +142,6 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public Optional<ProcessRun> getLatestRun() {
-        return jobRuns.getLatestRun();
-    }
-
     public CompactionJobStatusType getFurthestRunStatusType() {
         return furthestRunStatusType;
     }

@@ -15,6 +15,8 @@
  */
 package sleeper.core.record.process;
 
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+
 import java.time.Duration;
 import java.time.Instant;
 
@@ -24,6 +26,19 @@ import java.time.Instant;
 public class RecordsProcessedSummaryTestHelper {
 
     private RecordsProcessedSummaryTestHelper() {
+    }
+
+    /**
+     * Creates a record processed summary.
+     *
+     * @param  startedUpdate  the started status update
+     * @param  duration       the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link RecordsProcessedSummary}
+     */
+    public static RecordsProcessedSummary summary(ProcessRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
+        return summary(startedUpdate.getStartTime(), duration, recordsRead, recordsWritten);
     }
 
     /**

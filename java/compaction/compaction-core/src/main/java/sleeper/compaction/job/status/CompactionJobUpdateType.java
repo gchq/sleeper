@@ -16,11 +16,8 @@
 package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
-
-import java.util.stream.Stream;
 
 /**
  * Defines the types of updates during a compaction job. Can also find the furthest update in a run of a compaction job,
@@ -28,18 +25,18 @@ import java.util.stream.Stream;
  * any other update.
  */
 public enum CompactionJobUpdateType {
-    CREATED(1, CompactionJobCreatedStatus.class, CompactionJobStatusType.PENDING),
-    STARTED(2, CompactionJobStartedStatus.class, CompactionJobStatusType.IN_PROGRESS),
-    FINISHED(3, ProcessFinishedStatus.class, CompactionJobStatusType.FINISHED),
-    FAILED(4, ProcessFailedStatus.class, CompactionJobStatusType.FAILED);
+    CREATED(1, CompactionJobStatusType.PENDING),
+    STARTED(2, CompactionJobStatusType.IN_PROGRESS),
+    FINISHED_WHEN_COMMITTED(3, CompactionJobStatusType.UNCOMMITTED),
+    FINISHED(4, CompactionJobStatusType.FINISHED),
+    COMMITTED(5, CompactionJobStatusType.FINISHED),
+    FAILED(6, CompactionJobStatusType.FAILED);
 
     private final int order;
-    private final Class<?> statusUpdateClass;
     private final CompactionJobStatusType jobStatusTypeAfterUpdate;
 
-    CompactionJobUpdateType(int order, Class<?> statusUpdateClass, CompactionJobStatusType jobStatusTypeAfterUpdate) {
+    CompactionJobUpdateType(int order, CompactionJobStatusType jobStatusTypeAfterUpdate) {
         this.order = order;
-        this.statusUpdateClass = statusUpdateClass;
         this.jobStatusTypeAfterUpdate = jobStatusTypeAfterUpdate;
     }
 
@@ -58,9 +55,20 @@ public enum CompactionJobUpdateType {
     }
 
     public static CompactionJobUpdateType typeOfUpdate(ProcessStatusUpdate update) {
-        return Stream.of(values())
-                .filter(type -> type.statusUpdateClass.isInstance(update))
-                .findFirst().orElseThrow();
+        if (update instanceof CompactionJobCreatedStatus) {
+            return CREATED;
+        } else if (update instanceof CompactionJobStartedStatus) {
+            return STARTED;
+        } else if (update instanceof CompactionJobFinishedStatus) {
+            CompactionJobFinishedStatus finishedUpdate = (CompactionJobFinishedStatus) update;
+            return finishedUpdate.isCommittedBySeparateUpdate() ? FINISHED_WHEN_COMMITTED : FINISHED;
+        } else if (update instanceof CompactionJobCommittedStatus) {
+            return COMMITTED;
+        } else if (update instanceof ProcessFailedStatus) {
+            return FAILED;
+        } else {
+            throw new IllegalArgumentException("Unrecognised update type: " + update.getClass().getSimpleName());
+        }
     }
 
     public CompactionJobStatusType getJobStatusTypeAfterUpdate() {

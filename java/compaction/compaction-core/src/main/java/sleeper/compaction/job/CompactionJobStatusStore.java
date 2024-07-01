@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
@@ -38,6 +39,9 @@ public interface CompactionJobStatusStore {
     }
 
     default void jobFinished(CompactionJobFinishedEvent event) {
+    }
+
+    default void jobCommitted(CompactionJobCommittedEvent event) {
     }
 
     default void jobFailed(CompactionJobFailedEvent event) {

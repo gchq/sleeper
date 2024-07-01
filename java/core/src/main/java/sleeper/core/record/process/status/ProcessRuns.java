@@ -18,6 +18,7 @@ package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -74,12 +75,12 @@ public class ProcessRuns {
     }
 
     /**
-     * Gets the latest update time from the most recently started run.
+     * Gets the latest update time from any run.
      *
      * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> lastTime() {
-        return getLatestRun().map(ProcessRun::getLatestUpdateTime);
+        return latestFirst.stream().map(ProcessRun::getLatestUpdateTime).max(Comparator.naturalOrder());
     }
 
     /**
