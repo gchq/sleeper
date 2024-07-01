@@ -100,7 +100,7 @@ public class CompactionJobStartedEvent {
     }
 
     /**
-     * Builder for ingest job started event objects.
+     * Builder for compaction job started events.
      */
     public static final class Builder {
         private String jobId;
@@ -113,9 +113,9 @@ public class CompactionJobStartedEvent {
         }
 
         /**
-         * Sets the ingest job ID, table ID, and file count using the provided ingest job.
+         * Sets the compaction job ID and table ID using the provided compaction job.
          *
-         * @param  job the ingest job
+         * @param  job the compaction job
          * @return     the builder
          */
         public Builder job(CompactionJob job) {
@@ -124,9 +124,9 @@ public class CompactionJobStartedEvent {
         }
 
         /**
-         * Sets the ingest job ID.
+         * Sets the compaction job ID.
          *
-         * @param  jobId the ingest job ID
+         * @param  jobId the compaction job ID
          * @return       the builder
          */
         public Builder jobId(String jobId) {
