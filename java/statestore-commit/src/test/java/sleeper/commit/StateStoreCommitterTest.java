@@ -15,6 +15,8 @@
  */
 package sleeper.commit;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -65,96 +67,106 @@ public class StateStoreCommitterTest {
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
 
-    @Test
-    void shouldApplyCompactionCommitRequest() throws Exception {
-        // Given
-        StateStore stateStore = createTable("test-table");
-        FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-        CompactionJob job = CompactionJob.builder()
-                .tableId("test-table")
-                .jobId("test-job")
-                .inputFiles(List.of("input.parquet"))
-                .outputFile("output.parquet")
-                .partitionId("root")
-                .build();
-        Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
-        Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-        RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
-        CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
+    @Nested
+    @DisplayName("Commit a compaction job")
+    class CommitCompaction {
 
-        stateStore.addFile(inputFile);
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
-                "test-job", "root", List.of("input.parquet"))));
-        compactionJobStatusStore.jobCreated(job, createdTime);
-        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
+        @Test
+        void shouldApplyCompactionCommitRequest() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+            CompactionJob job = CompactionJob.builder()
+                    .tableId("test-table")
+                    .jobId("test-job")
+                    .inputFiles(List.of("input.parquet"))
+                    .outputFile("output.parquet")
+                    .partitionId("root")
+                    .build();
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
 
-        // When
-        committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
+            stateStore.addFile(inputFile);
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
+                    "test-job", "root", List.of("input.parquet"))));
+            compactionJobStatusStore.jobCreated(job, createdTime);
+            compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
 
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-        assertThat(compactionJobStatusStore.getAllJobs("test-table"))
-                .containsExactly(jobStatusFrom(records()
-                        .fromUpdates(forJobOnTask("test-job", null,
-                                CompactionJobCreatedStatus.from(job, createdTime)))
-                        .fromUpdates(forJobRunOnTask("test-job", "test-job-run", "test-task",
-                                compactionStartedStatus(startTime),
-                                compactionFinishedStatus(summary)))));
+            // When
+            committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            assertThat(compactionJobStatusStore.getAllJobs("test-table"))
+                    .containsExactly(jobStatusFrom(records()
+                            .fromUpdates(forJobOnTask("test-job", null,
+                                    CompactionJobCreatedStatus.from(job, createdTime)))
+                            .fromUpdates(forJobRunOnTask("test-job", "test-job-run", "test-task",
+                                    compactionStartedStatus(startTime),
+                                    compactionFinishedStatus(summary)))));
+        }
     }
 
-    @Test
-    void shouldApplyIngestJobAddFilesCommitRequest() throws Exception {
-        // Given we have a commit request during an ingest job, which may still be in progress
-        StateStore stateStore = createTable("test-table");
-        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-        IngestJob ingestJob = IngestJob.builder()
-                .id("test-job")
-                .tableId("test-table")
-                .files(List.of("input.parquet"))
-                .build();
-        Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
-        Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
-        IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                .ingestJob(ingestJob)
-                .taskId("test-task-id")
-                .jobRunId("test-job-run-id")
-                .fileReferences(List.of(outputFile))
-                .writtenTime(writtenTime)
-                .build();
+    @Nested
+    @DisplayName("Add files during ingest")
+    class AddFiles {
 
-        ingestJobStatusStore.jobStarted(ingestJobStarted(ingestJob, startTime)
-                .taskId("test-task-id").jobRunId("test-job-run-id").build());
+        @Test
+        void shouldApplyIngestJobAddFilesCommitRequest() throws Exception {
+            // Given we have a commit request during an ingest job, which may still be in progress
+            StateStore stateStore = createTable("test-table");
+            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+            IngestJob ingestJob = IngestJob.builder()
+                    .id("test-job")
+                    .tableId("test-table")
+                    .files(List.of("input.parquet"))
+                    .build();
+            Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
+            Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .ingestJob(ingestJob)
+                    .taskId("test-task-id")
+                    .jobRunId("test-job-run-id")
+                    .fileReferences(List.of(outputFile))
+                    .writtenTime(writtenTime)
+                    .build();
 
-        // When
-        committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+            ingestJobStatusStore.jobStarted(ingestJobStarted(ingestJob, startTime)
+                    .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-        assertThat(ingestJobStatusStore.getAllJobs("test-table"))
-                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
-                        .taskId("test-task-id")
-                        .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                        .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
-                        .build()));
-    }
+            // When
+            committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
 
-    @Test
-    void shouldApplyIngestStreamAddFilesCommitRequest() throws Exception {
-        // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
-        StateStore stateStore = createTable("test-table");
-        FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-        IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                .tableId("test-table")
-                .fileReferences(List.of(outputFile))
-                .build();
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                            .taskId("test-task-id")
+                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
+                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
+                            .build()));
+        }
 
-        // When
-        committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+        @Test
+        void shouldApplyIngestStreamAddFilesCommitRequest() throws Exception {
+            // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
+            StateStore stateStore = createTable("test-table");
+            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .tableId("test-table")
+                    .fileReferences(List.of(outputFile))
+                    .build();
 
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-        assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            // When
+            committer().apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+        }
     }
 
     private StateStoreCommitter committer() {
