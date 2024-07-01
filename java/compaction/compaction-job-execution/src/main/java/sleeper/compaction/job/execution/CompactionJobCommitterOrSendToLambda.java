@@ -15,23 +15,14 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 
-import java.util.UUID;
-
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitterOrSendToLambda {
@@ -41,15 +32,7 @@ public class CompactionJobCommitterOrSendToLambda {
     private final CompactionJobCommitter jobCommitter;
     private final CommitQueueSender jobCommitQueueSender;
 
-    public CompactionJobCommitterOrSendToLambda(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        this(tablePropertiesProvider,
-                committer(tablePropertiesProvider, stateStoreProvider, jobStatusStore),
-                sendToSqs(instanceProperties, sqsClient));
-    }
-
-    protected CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
+    public CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
             CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.jobCommitter = jobCommitter;
@@ -68,23 +51,5 @@ public class CompactionJobCommitterOrSendToLambda {
 
     interface CommitQueueSender {
         void send(CompactionJobCommitRequest commitRequest);
-    }
-
-    private static CompactionJobCommitter committer(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore) {
-        return new CompactionJobCommitter(jobStatusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
-    }
-
-    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        return request -> {
-            String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-            String tableId = request.getJob().getTableId();
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(queueUrl)
-                    .withMessageDeduplicationId(UUID.randomUUID().toString())
-                    .withMessageGroupId(tableId)
-                    .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request)));
-        };
     }
 }
