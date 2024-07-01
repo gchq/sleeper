@@ -23,7 +23,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statestore-snapshot-lambda</artifactId>
+    <artifactId>statestore-lambda</artifactId>
 
     <dependencies>
         <dependency>
@@ -55,6 +55,21 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore-commit</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-status-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

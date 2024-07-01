@@ -70,7 +70,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE_SNAPSHOT, jarsBucket);
+        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
         createSnapshotCreationLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         createSnapshotDeletionLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
@@ -85,7 +85,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
                 .runtime(Runtime.JAVA_11)
-                .handler("sleeper.statestore.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
+                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -95,7 +95,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
                 .runtime(Runtime.JAVA_11)
-                .handler("sleeper.statestore.TransactionLogSnapshotCreationLambda::handleRequest")
+                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
@@ -153,7 +153,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
                 .runtime(Runtime.JAVA_11)
-                .handler("sleeper.statestore.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
+                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -163,7 +163,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
                 .runtime(Runtime.JAVA_11)
-                .handler("sleeper.statestore.TransactionLogSnapshotDeletionLambda::handleRequest")
+                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))

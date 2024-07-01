@@ -452,7 +452,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private CompactionTask createTask(
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
-        DefaultSelector compactSortedFiles = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
+        DefaultSelector selector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
@@ -460,7 +460,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
                 waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
-                committer, jobStatusStore, taskStatusStore, compactSortedFiles, taskId,
+                committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;

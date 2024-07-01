@@ -125,13 +125,6 @@
             <destName>lambda-jobSpecCreationLambda-${project.version}.jar</destName>
         </file>
         <file>
-            <source>
-                ${project.basedir}/../statestore-commit-lambda/target/statestore-commit-lambda-${project.version}-utility.jar
-            </source>
-            <outputDirectory>scripts/jars</outputDirectory>
-            <destName>lambda-statestoreCommitterLambda-${project.version}.jar</destName>
-        </file>
-        <file>
             <source>${project.basedir}/../garbage-collector/target/garbage-collector-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
@@ -219,10 +212,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../statestore-snapshot-lambda/target/statestore-snapshot-lambda-${project.version}-utility.jar
+                ${project.basedir}/../statestore-lambda/target/statestore-lambda-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>statestore-snapshot-lambda-${project.version}.jar</destName>
+            <destName>statestore-lambda-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>

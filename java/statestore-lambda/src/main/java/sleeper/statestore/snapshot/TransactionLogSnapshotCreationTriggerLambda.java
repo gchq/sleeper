@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.statestore.snapshot;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -41,14 +41,13 @@ import java.time.Instant;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
- * A lambda that periodically creates batches of tables and sends them to a queue to delete old transaction log
- * snapshots.
+ * A lambda that periodically creates batches of tables and sends them to a queue to create transaction log snapshots.
  */
-public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
+public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationTriggerLambda.class);
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
@@ -56,7 +55,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
     private final AmazonDynamoDB dynamoClient;
     private final AmazonSQS sqsClient;
 
-    public TransactionLogSnapshotDeletionTriggerLambda() {
+    public TransactionLogSnapshotCreationTriggerLambda() {
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
         this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
@@ -68,7 +67,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
     public Void handleRequest(ScheduledEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda triggered at {}, started at {}", event.getTime(), startTime);
-        String queueUrl = instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL);
+        String queueUrl = instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL);
         InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, streamOnlineTransactionLogTables());
 
         Instant finishTime = Instant.now();
