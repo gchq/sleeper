@@ -29,7 +29,7 @@ RUN echo 'deb https://apt.corretto.aws stable main' | tee /etc/apt/sources.list.
 RUN wget https://apt.llvm.org/llvm.sh && chmod u+x llvm.sh && ./llvm.sh 18 all
 
 # The above line will run an apt update so now we install Java
-RUN apt-get install -y java-17-amazon-corretto-jdk make cmake gcc-13 g++-13
+RUN apt-get install -y java-17-amazon-corretto-jdk make cmake gcc-13 g++-13 maven
 
 # Install AWS CLI
 RUN pip3 install awscli

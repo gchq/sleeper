@@ -1,8 +1,8 @@
 {
     "name": "Nvidia RAPIDS dev container",
     "build": {
-        "dockerfile": "../java/compaction-gpu/docker/rapids.docker",
-        "target": "builder"
+        "dockerfile": "../../java/compaction/compaction-gpu/docker/rapids.docker",
+        "target": "devcontainer"
     },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
