@@ -18,6 +18,9 @@ package sleeper.compaction.testutils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -67,31 +70,33 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+    public void jobStarted(CompactionJobStartedEvent event) {
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
-                        startTime, getUpdateTimeOrDefault(() -> defaultUpdateTime(startTime))))
+                        event.getStartTime(), getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getStartTime()))))
                 .build());
     }
 
     @Override
-    public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+    public void jobFinished(CompactionJobFinishedEvent event) {
+        RecordsProcessedSummary summary = event.getSummary();
         Instant eventTime = summary.getFinishTime();
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId())
                 .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary))
                 .build());
     }
 
     @Override
-    public void jobFailed(CompactionJob job, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    public void jobFailed(CompactionJobFailedEvent event) {
+        ProcessRunTime runTime = event.getRunTime();
         Instant eventTime = runTime.getFinishTime();
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId()).taskId(taskId)
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId()).taskId(event.getTaskId())
                 .statusUpdate(ProcessFailedStatus.timeAndReasons(
-                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, failureReasons))
+                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, event.getFailureReasons()))
                 .build());
     }
 
@@ -110,7 +115,11 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     private void add(CompactionJob job, ProcessStatusUpdateRecord record) {
-        TableJobs table = tableIdToJobs.computeIfAbsent(job.getTableId(), id -> new TableJobs());
+        add(job.getTableId(), record);
+    }
+
+    private void add(String tableId, ProcessStatusUpdateRecord record) {
+        TableJobs table = tableIdToJobs.computeIfAbsent(tableId, id -> new TableJobs());
         table.jobIdToUpdateRecords
                 .computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
                 .add(record);

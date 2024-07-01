@@ -26,7 +26,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,8 +44,6 @@ public class DynamoDBTransactionLogSnapshotStore {
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final SnapshotMetadataSaver metadataSaver;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
-    private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
     private final Configuration configuration;
     private final String basePath;
 
@@ -68,8 +65,6 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.latestMetadataLoader = latestMetadataLoader;
         this.metadataSaver = metadataSaver;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
     }

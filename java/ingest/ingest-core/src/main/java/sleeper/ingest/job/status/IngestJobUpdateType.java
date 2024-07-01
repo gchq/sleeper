@@ -63,7 +63,9 @@ public enum IngestJobUpdateType {
      */
     public IngestJobStatusType statusTypeAfterThisInRun(ProcessRun run) {
         if (this == FINISHED_WHEN_FILES_COMMITTED) {
-            return haveAllFilesBeenAdded(run) ? IngestJobStatusType.FINISHED : IngestJobStatusType.UNCOMMITTED;
+            return IngestJobFilesWrittenAndAdded.from(run).haveAllFilesBeenAdded()
+                    ? IngestJobStatusType.FINISHED
+                    : IngestJobStatusType.UNCOMMITTED;
         } else {
             return jobStatusTypeAfterUpdate;
         }
@@ -115,20 +117,4 @@ public enum IngestJobUpdateType {
             return furthestType;
         }
     }
-
-    private static boolean haveAllFilesBeenAdded(ProcessRun run) {
-        int filesWritten = 0;
-        int filesAdded = 0;
-        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
-            if (update instanceof IngestJobAddedFilesStatus) {
-                IngestJobAddedFilesStatus addedFiles = (IngestJobAddedFilesStatus) update;
-                filesAdded += addedFiles.getFileCount();
-            } else if (update instanceof IngestJobFinishedStatus) {
-                IngestJobFinishedStatus finishedStatus = (IngestJobFinishedStatus) update;
-                filesWritten = finishedStatus.getNumFilesWrittenByJob();
-            }
-        }
-        return filesAdded == filesWritten;
-    }
-
 }

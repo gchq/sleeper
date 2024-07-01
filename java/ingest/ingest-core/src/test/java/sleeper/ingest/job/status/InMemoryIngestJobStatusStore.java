@@ -89,7 +89,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
                         .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
                                 defaultUpdateTime(summary.getFinishTime()), summary)
                                 .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
-                                .numFilesWrittenByJob(event.getNumFilesAddedByJob())
+                                .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
                                 .build())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
@@ -116,7 +116,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return streamAllJobs()
-                .filter(status -> IngestJobStatusType.statusTypeOfFurthestRunOfJob(status).equals(REJECTED))
+                .filter(status -> status.getFurthestRunStatusType().equals(REJECTED))
                 .collect(Collectors.toList());
     }
 

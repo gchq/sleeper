@@ -21,9 +21,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStateStoreTestBase {
 
@@ -61,4 +67,18 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
+    protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties);
+        config.accept(builder);
+        return stateStore(builder);
+    }
+
+    protected void createSnapshotWithFreshStateAtTransactionNumber(
+            long transactionNumber, SetupStateStore setupState) throws Exception {
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
+                tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
+        snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
+        snapshotStore.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
+    }
 }

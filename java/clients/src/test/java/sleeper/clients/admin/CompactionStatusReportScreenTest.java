@@ -51,6 +51,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -69,7 +70,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
             statusStore.jobCreated(exampleJob);
             statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
-            statusStore.jobStarted(exampleJob, Instant.parse("2023-03-15T17:53:12.001Z"), "test-task-1");
+            statusStore.jobStarted(compactionJobStarted(exampleJob, Instant.parse("2023-03-15T17:53:12.001Z")).taskId("test-task-1").build());
         }
 
         @Test

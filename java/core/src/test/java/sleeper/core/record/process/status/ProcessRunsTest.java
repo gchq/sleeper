@@ -60,7 +60,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, null));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -77,7 +76,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, finished));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -95,7 +93,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, finished2, List.of(started, finished1, finished2)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
     }
 
@@ -118,7 +115,6 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started2, null),
                             tuple(DEFAULT_TASK_ID, started1, null));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -138,7 +134,6 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started2, finished2),
                             tuple(DEFAULT_TASK_ID, started1, finished1));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -162,7 +157,6 @@ class ProcessRunsTest {
                             tuple(TASK_ID_1, started3, null),
                             tuple(TASK_ID_2, started2, null),
                             tuple(TASK_ID_1, started1, null));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -184,7 +178,6 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple(TASK_ID_2, started2, finished2),
                             tuple(TASK_ID_1, started1, finished1));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -206,7 +199,6 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple(TASK_ID_2, started2, finished2),
                             tuple(TASK_ID_1, started1, finished1));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -225,7 +217,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple(TASK_ID_1, List.of(started)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -244,7 +235,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple(TASK_ID_1, List.of(started)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
     }
 
@@ -274,7 +264,6 @@ class ProcessRunsTest {
                     .containsExactly(
                             tuple("some-task", List.of(validated2, started2)),
                             tuple("some-task", List.of(validated1, started1)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -295,7 +284,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple("some-task", started, finished2, List.of(started, finished1, finished2)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -357,7 +345,6 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple("some-task", List.of(started)));
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
     }
 
@@ -522,7 +509,6 @@ class ProcessRunsTest {
             assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, status));
             assertThat(runs.isStarted()).isTrue();
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
 
         @Test
@@ -541,7 +527,6 @@ class ProcessRunsTest {
                     ProcessRun.started(DEFAULT_TASK_ID, started),
                     ProcessRun.started(DEFAULT_TASK_ID, startedAndFinished));
             assertThat(runs.isStarted()).isTrue();
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isFalse();
         }
 
         @Test
@@ -561,7 +546,6 @@ class ProcessRunsTest {
                     ProcessRun.finished(DEFAULT_TASK_ID, started, finished),
                     ProcessRun.started(DEFAULT_TASK_ID, startedAndFinished));
             assertThat(runs.isStarted()).isTrue();
-            assertThat(runs.isFinishedAndNoRunsInProgress()).isTrue();
         }
     }
 

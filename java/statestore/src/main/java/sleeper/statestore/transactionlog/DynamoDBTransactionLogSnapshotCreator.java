@@ -30,7 +30,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore.LatestSnapshots;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 

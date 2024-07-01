@@ -34,8 +34,8 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -217,24 +217,50 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     /**
-     * Retrieves metadata of snapshots older than an expiry date. Note that this excludes latest snapshots.
+     * Retrieves the latest snapshots older than a time. Note that this excludes latest snapshots.
+     *
+     * @param  time the time used to decide which snapshots to retrieve
+     * @return      the latest snapshots that were last updated before the provided time
+     */
+    public LatestSnapshots getLatestSnapshotsBefore(Instant time) {
+        return new LatestSnapshots(
+                getLatestSnapshotBefore(SnapshotType.FILES, time).orElse(null),
+                getLatestSnapshotBefore(SnapshotType.PARTITIONS, time).orElse(null));
+    }
+
+    /**
+     * Retrieves metadata of snapshots older than an expiry date, excluding the latest snapshots.
      *
      * @param  expiryDate the time used to decide which snapshots to retrieve
      * @return            a stream of snapshots that were last updated before the provided time
      */
-    public Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(Instant expiryDate) {
+    public Stream<TransactionLogSnapshotMetadata> getExpiredSnapshots(Instant expiryDate) {
         LatestSnapshots latestSnapshots = getLatestSnapshots();
+        long latestFilesTransactionNumber = latestSnapshots.getFilesSnapshot()
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                .orElse(0L);
+        long latestPartitionsTransactionNumber = latestSnapshots.getPartitionsSnapshot()
+                .map(TransactionLogSnapshotMetadata::getTransactionNumber)
+                .orElse(0L);
         return Stream.concat(
-                getSnapshotsBefore(latestSnapshots.getFilesSnapshot()
-                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.FILES, expiryDate.toEpochMilli()),
-                getSnapshotsBefore(latestSnapshots.getPartitionsSnapshot()
-                        .map(TransactionLogSnapshotMetadata::getTransactionNumber)
-                        .orElse(0L), SnapshotType.PARTITIONS, expiryDate.toEpochMilli()));
+                getExpiredSnapshotsExcludingLatest(latestFilesTransactionNumber, SnapshotType.FILES, expiryDate),
+                getExpiredSnapshotsExcludingLatest(latestPartitionsTransactionNumber, SnapshotType.PARTITIONS, expiryDate));
     }
 
-    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(long latestSnapshotNumber, SnapshotType type, long time) {
-        return streamPagedItems(dynamo, new QueryRequest()
+    private Stream<TransactionLogSnapshotMetadata> getExpiredSnapshotsExcludingLatest(long latestSnapshotNumber, SnapshotType type, Instant time) {
+        return getSnapshotsBefore(type, time, request -> {
+        }).filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
+    }
+
+    private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(SnapshotType type, Instant time) {
+        return getSnapshotsBefore(type, time, request -> request
+                .withScanIndexForward(false)
+                .withLimit(1))
+                .findFirst();
+    }
+
+    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest> config) {
+        QueryRequest request = new QueryRequest()
                 .withTableName(allSnapshotsTable)
                 .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
                 .withFilterExpression("#UpdateTime < :expiry_time")
@@ -243,10 +269,11 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                         "#UpdateTime", UPDATE_TIME))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id_and_type", tableAndType(sleeperTableId, type))
-                        .number(":expiry_time", time)
-                        .build()))
-                .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem)
-                .filter(snapshot -> snapshot.getTransactionNumber() != latestSnapshotNumber);
+                        .number(":expiry_time", time.toEpochMilli())
+                        .build());
+        config.accept(request);
+        return streamPagedItems(dynamo, request)
+                .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
     void deleteSnapshot(TransactionLogSnapshotMetadata snapshot) {
@@ -256,59 +283,6 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private Map<String, AttributeValue> getKeyFromSnapshot(TransactionLogSnapshotMetadata snapshot) {
         return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, new AttributeValue().withS(tableAndType(sleeperTableId, snapshot.getType())),
                 TRANSACTION_NUMBER, new AttributeValue().withN(snapshot.getTransactionNumber() + ""));
-    }
-
-    /**
-     * Metadata about the latest snapshots in a Sleeper table.
-     */
-    public static class LatestSnapshots {
-        private final TransactionLogSnapshotMetadata filesSnapshot;
-        private final TransactionLogSnapshotMetadata partitionsSnapshot;
-
-        /**
-         * Builds metadata for the state where no snapshots have been made for a Sleeper table.
-         *
-         * @return the metadata
-         */
-        public static LatestSnapshots empty() {
-            return new LatestSnapshots(null, null);
-        }
-
-        public LatestSnapshots(TransactionLogSnapshotMetadata filesSnapshot, TransactionLogSnapshotMetadata partitionsSnapshot) {
-            this.filesSnapshot = filesSnapshot;
-            this.partitionsSnapshot = partitionsSnapshot;
-        }
-
-        public Optional<TransactionLogSnapshotMetadata> getFilesSnapshot() {
-            return Optional.ofNullable(filesSnapshot);
-        }
-
-        public Optional<TransactionLogSnapshotMetadata> getPartitionsSnapshot() {
-            return Optional.ofNullable(partitionsSnapshot);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(filesSnapshot, partitionsSnapshot);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof LatestSnapshots)) {
-                return false;
-            }
-            LatestSnapshots other = (LatestSnapshots) obj;
-            return Objects.equals(filesSnapshot, other.filesSnapshot) && Objects.equals(partitionsSnapshot, other.partitionsSnapshot);
-        }
-
-        @Override
-        public String toString() {
-            return "LatestSnapshots{filesSnapshot=" + filesSnapshot + ", partitionsSnapshot=" + partitionsSnapshot + "}";
-        }
-
     }
 
 }

@@ -91,7 +91,6 @@ public class IngestStack extends NestedStack {
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreResources statusStore;
 
     public IngestStack(
             Construct scope,
@@ -100,12 +99,9 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
-            StateStoreUpdateStack stateStoreUpdateStack,
-            IngestStatusStoreStack statusStoreStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStoreStack.getResources();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -123,7 +119,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, stateStoreUpdateStack.getCommitQueue());
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
@@ -187,8 +183,7 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
-            Queue ingestJobQueue,
-            Queue stateStoreCommitQueue) {
+            Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -225,10 +220,7 @@ public class IngestStack extends NestedStack {
 
         coreStacks.grantIngest(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
-        statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
-        statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
-        stateStoreCommitQueue.grantSendMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
@@ -273,8 +265,6 @@ public class IngestStack extends NestedStack {
         // Grant this function permission to query the queue for number of messages
         ingestJobQueue.grantSendMessages(handler);
         ingestJobQueue.grant(handler, "sqs:GetQueueAttributes");
-        statusStore.grantWriteJobEvent(handler);
-        statusStore.grantWriteTaskEvent(handler);
         coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc

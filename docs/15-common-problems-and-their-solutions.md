@@ -1,6 +1,9 @@
 Common problems and their solutions
 ===================================
 
+These instructions will assume you start in the project root directory and Sleeper has been built
+(see [the developer guide](11-dev-guide.md) for how to set that up).
+
 ## EOFException when using client classes
 
 An exception of the following form might be due to a change in schema:
@@ -48,13 +51,13 @@ all data in the table. If you want to change the table schema make sure you chan
 the schema in the table properties before running this script:
 
 ```bash
-sleeper deployment utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
+./scripts/utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
 ```
 
 e.g.
 
 ```bash
-sleeper deployment utility/reinitialiseTable.sh my-sleeper-config-bucket my-sleeper-table true /tmp/split-points.txt false
+./scripts/utility/reinitialiseTable.sh my-sleeper-config-bucket my-sleeper-table true /tmp/split-points.txt false
 ```
 
 Alternatively you can use a more manual approach. This may be better if you want to significantly change the table
@@ -70,7 +73,7 @@ For a table with a Dynamo DB state store:
 - Reinitialise the state store:
 
 ```bash
-sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
+java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 For a table with an S3 state store:
@@ -83,7 +86,7 @@ For a table with an S3 state store:
 - Reinitialise the state store:
 
 ```bash
-sleeper deployment java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
+java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 ## Why is adding a table to an existing Sleeper instance so slow?

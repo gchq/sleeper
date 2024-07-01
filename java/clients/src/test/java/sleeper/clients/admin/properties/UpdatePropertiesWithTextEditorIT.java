@@ -219,7 +219,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // When
             UpdatePropertiesRequest<TableProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
-                    before, "sleeper.table.metadata.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
+                    before, "sleeper.table.statestore.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
 
             // Then
             assertThat(updatePropertiesRequest.getUpdatedProperties())

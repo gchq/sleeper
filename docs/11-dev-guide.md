@@ -40,9 +40,11 @@ cd sleeper
 git checkout --track origin/main
 ```
 
-If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
-the dependencies pre-installed. You'll need to clone the Git repository, and this will be persisted between executions
-of `sleeper builder`. Use the commands below:
+If you're working with the Sleeper CLI as described in the [getting started guide](01-getting-started.md), you can
+use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed.
+
+If you run `sleeper builder` in an environment EC2 instance, you'll have the Git repository checked out at `/sleeper`.
+If you run `sleeper builder` locally, you'll need to clone the repository. You can use the commands below to do this:
 
 ```bash
 sleeper builder
@@ -50,10 +52,11 @@ git clone https://github.com/gchq/sleeper.git
 cd sleeper
 ```
 
+Everything in the repository will be persisted between executions of `sleeper builder`.
+
 ## Building
 
-Provided script (recommended) - this builds the code and copies the jars
-into the scripts directory so that the scripts work.
+Provided script (recommended) - this builds the code and copies the jars into the scripts directory so that the scripts work.
 
 ```bash
 ./scripts/build/buildForTest.sh
@@ -160,7 +163,7 @@ with the first word capitalised and a full stop. For example:
 ```java
 /**
  * Processes a foo and a bar.
- * 
+ *
  * @param foo the foo
  * @param bar This is the bar. It must not be null or an empty string.
  */

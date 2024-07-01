@@ -38,7 +38,6 @@ import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
@@ -86,11 +85,10 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources,
             List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "PersistentEMR", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
+                this, "PersistentEMR", instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);

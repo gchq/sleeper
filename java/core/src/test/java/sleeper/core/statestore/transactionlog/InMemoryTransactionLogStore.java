@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -28,7 +29,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private static final Runnable DO_NOTHING = () -> {
     };
 
-    private final List<TransactionLogEntry> transactions = new ArrayList<>();
+    private List<TransactionLogEntry> transactions = new ArrayList<>();
     private Runnable startOfNextAdd = DO_NOTHING;
     private Runnable startOfNextRead = DO_NOTHING;
 
@@ -50,6 +51,13 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         doStartOfReadTransactions();
         return transactions.stream()
                 .skip(lastTransactionNumber);
+    }
+
+    @Override
+    public void deleteTransactionsAtOrBefore(long transactionNumber) {
+        transactions = transactions.stream()
+                .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)
+                .collect(Collectors.toList());
     }
 
     /**

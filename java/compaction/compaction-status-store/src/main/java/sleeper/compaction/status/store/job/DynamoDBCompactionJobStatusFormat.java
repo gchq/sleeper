@@ -122,11 +122,11 @@ class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    public static DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job, Instant timeNow, Instant expiry) {
+    public static DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId, Instant timeNow, Instant expiry) {
         return new DynamoDBRecordBuilder()
-                .string(TABLE_ID, job.getTableId())
-                .string(JOB_ID, job.getId())
-                .string(JOB_ID_AND_UPDATE, job.getId() + "|" + timeNow.toEpochMilli() + "|" + generateJobUpdateId())
+                .string(TABLE_ID, tableId)
+                .string(JOB_ID, jobId)
+                .string(JOB_ID_AND_UPDATE, jobId + "|" + timeNow.toEpochMilli() + "|" + generateJobUpdateId())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .number(EXPIRY_DATE, expiry.getEpochSecond());
     }

@@ -11,7 +11,7 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "IN_PROGRESS",
+            "type": "STARTED",
             "updateTime": "2022-10-13T12:01:10.123Z",
             "startTime": "2022-10-13T12:01:10Z"
           },
@@ -49,7 +49,7 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "IN_PROGRESS",
+            "type": "STARTED",
             "updateTime": "2022-10-13T12:00:10.123Z",
             "startTime": "2022-10-13T12:00:10Z"
           },

@@ -122,14 +122,12 @@ tail /var/log/cloud-init-output.log
 Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. Reconnect to the EC2
 with `sleeper environment connect`.
 
-You can access a built copy of the Sleeper scripts by running `sleeper deployment` in the EC2. That will get you a shell
-inside a Docker container inside the EC2. You can run all the deployment scripts there as explained below. If you run it
-outside of the EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the
-deployment being slow uploading jars and Docker images.
-
-The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
-That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
-for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
+During the `cloud-init` step, the Sleeper Git repository will be cloned, and you can access it by running
+`sleeper builder` in the EC2. This will get you a shell inside a Docker container inside the EC2, with the dependencies
+for building Sleeper. You can run all the deployment scripts there as explained below. If you run it outside of the
+EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the deployment being
+slow uploading jars and Docker images. Additionally, the whole working directory will be persisted between executions
+of `sleeper builder`.
 
 If you want someone else to be able to access the same environment EC2, they can run `sleeper environment add <id>`
 with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
@@ -156,10 +154,16 @@ zones). Multiple subnet ids can be specified with commas in between, e.g. `subne
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-While connected to your EC2 instance run:
+Before you can run any scripts, you need to build the project. You can do this by running the following script:
 
 ```bash
-sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
+sleeper builder sleeper/scripts/build/buildForTest.sh
+```
+
+Then you can deploy the system test instance by running the following command:
+
+```bash
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
@@ -175,7 +179,7 @@ sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
 Run the following command to see how many records are currently in the system:
 
 ```bash
-sleeper deployment utility/filesStatusReport.sh ${ID} system-test
+sleeper builder sleeper/scripts/utility/filesStatusReport.sh ${ID} system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -183,7 +187,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-sleeper deployment utility/query.sh ${ID}
+sleeper builder sleeper/scripts/utility/query.sh ${ID}
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -209,20 +213,20 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-sleeper deployment java -cp jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+sleeper builder java -cp jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run
 
 ```bash
-sleeper deployment test/tearDown.sh
+sleeper builder sleeper/scripts/test/tearDown.sh
 ```
 
 It is possible to run variations on this system-test by editing the system test properties, like this:
 
 ```bash
-sleeper deployment
-cd test/deployAll
+sleeper builder
+cd sleeper/scripts/test/deployAll
 editor system-test-instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```

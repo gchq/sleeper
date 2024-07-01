@@ -47,7 +47,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -97,14 +96,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources,
             List<IMetric> errorMetrics) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
-                instanceProperties, importBucketStack, statusStoreResources, coreStacks);
+                instanceProperties, importBucketStack, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
+                "EMRServerless", instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);
@@ -209,7 +207,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
-            BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
+            BulkImportBucketStack bulkImportBucketStack,
             CoreStacks coreStacks) {
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper",
@@ -222,7 +220,6 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
 
         bulkImportBucketStack.getImportBucket().grantReadWrite(role);
-        statusStoreResources.grantWriteJobEvent(role);
         coreStacks.grantIngest(role);
         return role;
     }
