@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +23,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.ProcessRunTime;
@@ -187,21 +184,21 @@ public class CompactionTask {
     }
 
     @FunctionalInterface
-    interface MessageReceiver {
+    public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws IOException;
     }
 
     @FunctionalInterface
-    interface CompactionRunner {
+    public interface CompactionRunner {
         RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
     @FunctionalInterface
-    interface WaitForFileAssignment {
+    public interface WaitForFileAssignment {
         void wait(CompactionJob job) throws InterruptedException;
     }
 
-    interface MessageHandle extends AutoCloseable {
+    public interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
         void completed();

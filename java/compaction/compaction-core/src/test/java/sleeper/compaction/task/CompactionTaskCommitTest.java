@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,16 +22,14 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.LinkedList;
@@ -61,7 +59,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final StateStore store1 = inMemoryStateStoreWithSinglePartition(schema);
     private final StateStore store2 = inMemoryStateStoreWithSinglePartition(schema);
     private final FixedTablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(List.of(table1, table2));
-    private final FixedStateStoreProvider stateStoreProvider = new FixedStateStoreProvider(Map.of("test-table-1", store1, "test-table-2", store2));
+    private final GetStateStoreByTableId stateStoreProvider = Map.of("test-table-1-id", store1, "test-table-2-id", store2)::get;
 
     @Nested
     @DisplayName("Send commits to queue")

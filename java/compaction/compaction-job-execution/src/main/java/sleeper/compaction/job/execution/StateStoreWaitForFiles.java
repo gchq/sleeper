@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
+import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.BeforeEach;
 
@@ -21,11 +21,10 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.job.execution.CompactionTask.CompactionRunner;
-import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
-import sleeper.compaction.job.execution.CompactionTask.MessageReceiver;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
-import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTask.CompactionRunner;
+import sleeper.compaction.task.CompactionTask.MessageHandle;
+import sleeper.compaction.task.CompactionTask.MessageReceiver;
+import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -36,9 +35,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -46,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -104,7 +103,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) throws Exception {
+            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider) throws Exception {
         runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence(), tablePropertiesProvider, stateStoreProvider);
     }
 
@@ -135,7 +134,7 @@ public class CompactionTaskTestBase {
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId, jobRunIdSupplier,
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore));
+                Map.of(tableProperties.get(TABLE_ID), stateStore)::get);
     }
 
     private void runTask(
@@ -145,10 +144,10 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier,
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) throws Exception {
+            GetStateStoreByTableId stateStoreProvider) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider,
-                new CompactionJobCommitter(jobStore, stateStoreProvider.byTableId(tablePropertiesProvider)),
+                new CompactionJobCommitter(jobStore, stateStoreProvider),
                 commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
