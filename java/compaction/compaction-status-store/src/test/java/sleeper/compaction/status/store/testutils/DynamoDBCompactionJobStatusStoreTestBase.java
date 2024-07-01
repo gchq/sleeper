@@ -34,6 +34,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -46,6 +47,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
@@ -143,6 +147,23 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
         return jobCreated(job, ignoredUpdateTime(),
                 finishedCompactionRun(DEFAULT_TASK_ID, summary));
+    }
+
+    protected static CompactionJobStatus finishedUncommittedStatusWithDefaults(CompactionJob job) {
+        return jobCreated(job, ignoredUpdateTime(),
+                ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                        .startedStatus(compactionStartedStatus(defaultStartTime()))
+                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                        .build());
+    }
+
+    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job) {
+        return jobCreated(job, ignoredUpdateTime(),
+                ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                        .startedStatus(compactionStartedStatus(defaultStartTime()))
+                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                        .statusUpdate(compactionCommittedStatus(ignoredUpdateTime()))
+                        .build());
     }
 
     protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, List<String> failureReasons) {

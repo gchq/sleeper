@@ -32,6 +32,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
@@ -96,6 +97,47 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(failedStatusWithDefaults(job, failureReasons));
+    }
+
+    @Test
+    public void shouldReportCompactionJobUncommitted() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedUncommittedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldReportCompactionJobCommittedSeparately() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(compactionJobCommitted(job).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedThenCommittedStatusWithDefaults(job));
     }
 
     @Test

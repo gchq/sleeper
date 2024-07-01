@@ -21,8 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -37,12 +42,12 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -63,14 +68,17 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String INPUT_FILES_COUNT = "InputFilesCount";
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
+    private static final String JOB_COMMITTED_SEPARATELY = "JobCommittedAsSeparateUpdate";
     private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
     private static final String RECORDS_WRITTEN = "RecordsWritten";
     private static final String FAILURE_REASONS = "FailureReasons";
+    private static final String JOB_RUN_ID = "JobRunId";
     private static final String TASK_ID = "TaskId";
     private static final String UPDATE_TYPE_CREATED = "created";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
+    private static final String UPDATE_TYPE_COMMITTED = "committed";
     private static final String UPDATE_TYPE_FAILED = "failed";
 
     private static final Random JOB_UPDATE_ID_GENERATOR = new SecureRandom();
@@ -87,36 +95,51 @@ class DynamoDBCompactionJobStatusFormat {
     }
 
     public static Map<String, AttributeValue> createJobStartedUpdate(
-            Instant startTime, String taskId, DynamoDBRecordBuilder builder) {
+            CompactionJobStartedEvent event, DynamoDBRecordBuilder builder) {
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_STARTED)
-                .number(START_TIME, startTime.toEpochMilli())
-                .string(TASK_ID, taskId)
+                .number(START_TIME, event.getStartTime().toEpochMilli())
+                .string(TASK_ID, event.getTaskId())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .build();
     }
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
-            RecordsProcessedSummary summary, String taskId, DynamoDBRecordBuilder builder) {
+            CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
+        RecordsProcessedSummary summary = event.getSummary();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
-                .string(TASK_ID, taskId)
+                .string(TASK_ID, event.getTaskId())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .bool(JOB_COMMITTED_SEPARATELY, event.isCommittedBySeparateUpdate())
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createJobCommittedUpdate(
+            CompactionJobCommittedEvent event, DynamoDBRecordBuilder builder) {
+        return builder
+                .string(UPDATE_TYPE, UPDATE_TYPE_COMMITTED)
+                .string(TASK_ID, event.getTaskId())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .build();
     }
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
-            ProcessRunTime runTime, String taskId, List<String> failureReasons, DynamoDBRecordBuilder builder) {
+            CompactionJobFailedEvent event, DynamoDBRecordBuilder builder) {
+        ProcessRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
                 .number(START_TIME, runTime.getStartTime().toEpochMilli())
-                .string(TASK_ID, taskId)
+                .string(TASK_ID, event.getTaskId())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
                 .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
-                .list(FAILURE_REASONS, failureReasons.stream()
+                .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(toUnmodifiableList()))
                 .build();
@@ -147,6 +170,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .jobId(getStringAttribute(item, JOB_ID))
                 .statusUpdate(getStatusUpdate(item))
                 .taskId(getStringAttribute(item, TASK_ID))
+                .jobRunId(getStringAttribute(item, JOB_RUN_ID))
                 .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
                 .build();
     }
@@ -170,7 +194,10 @@ class DynamoDBCompactionJobStatusFormat {
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))
+                        .committedBySeparateUpdate(getBooleanAttribute(item, JOB_COMMITTED_SEPARATELY))
                         .build();
+            case UPDATE_TYPE_COMMITTED:
+                return CompactionJobCommittedStatus.committedAt(getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
