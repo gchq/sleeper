@@ -26,6 +26,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -420,6 +421,42 @@ class InMemoryCompactionJobStatusStoreTest {
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatusUncommitted(summary),
                                     compactionCommittedStatus(committedTime)))));
+        }
+
+        @Test
+        void shouldTrackJobStartedTwiceThenFinishedTwiceFromSameTask() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:00Z");
+            Instant startedTime1 = Instant.parse("2023-03-29T12:27:10Z");
+            RecordsProcessedSummary summary1 = summary(
+                    startedTime1, Duration.ofMinutes(1), 100, 100);
+            Instant startedTime2 = Instant.parse("2023-03-29T12:28:15Z");
+            RecordsProcessedSummary summary2 = summary(
+                    startedTime2, Duration.ofMinutes(1), 100, 100);
+            String taskId = "test-task";
+            String runId1 = "test-run-1";
+            String runId2 = "test-run-2";
+
+            // When
+            CompactionJob job = dataHelper.singleFileCompaction();
+            store.jobCreated(job, createdTime);
+            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
+            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
+            store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
+            store.jobFailed(compactionJobFailed(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
+                    .failure(new RuntimeException("Could not commit same compaction twice")).build());
+
+            // Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobCreated(job, createdTime,
+                            ProcessRun.builder().taskId(taskId)
+                                    .startedStatus(compactionStartedStatus(startedTime2))
+                                    .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
+                                    .build(),
+                            ProcessRun.builder().taskId(taskId)
+                                    .startedStatus(compactionStartedStatus(startedTime1))
+                                    .finishedStatus(compactionFinishedStatus(summary1))
+                                    .build()));
         }
     }
 

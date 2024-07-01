@@ -373,9 +373,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
                 Instant.parse("2024-05-09T12:58:00Z")));    // Finished task
+        Queue<String> jobRunIds = new LinkedList<>(List.of("job-run-id"));
 
         // When
-        createTaskWithTimes("task-id", times::poll).run();
+        createTaskWithRunIdsAndTimes("task-id", jobRunIds::poll, times::poll).run();
 
         // Then
         // - The compaction job should not be on the input queue or DLQ
@@ -385,7 +386,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         assertThat(messagesOnQueue(STATESTORE_COMMITTER_QUEUE_URL))
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
-                        commitRequestOnQueue(job, "task-id",
+                        commitRequestOnQueue(job, "task-id", "job-run-id",
                                 new RecordsProcessedSummary(new RecordsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
@@ -433,19 +434,22 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
     }
 
-    private CompactionTask createTaskWithTimes(String taskId, Supplier<Instant> timeSupplier) {
-        return createTask(taskId, stateStoreProvider, timeSupplier);
+    private CompactionTask createTaskWithRunIdsAndTimes(
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
+        return createTask(taskId, stateStoreProvider, jobRunIdSupplier, timeSupplier);
     }
 
     private CompactionTask createTask(String taskId) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
+    private CompactionTask createTask(
+            String taskId, StateStoreProvider stateStoreProvider,
+            Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                 tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars());
@@ -456,7 +460,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
                 waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
                 compactSortedFiles, committer, jobStatusStore, taskStatusStore, taskId,
-                timeSupplier, duration -> {
+                jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;
     }
@@ -522,8 +526,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private String commitRequestOnQueue(CompactionJob job, String taskId, RecordsProcessedSummary summary) {
-        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, summary));
+    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary summary) {
+        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {

@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -63,6 +64,7 @@ public class CompactionTask {
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
+    private final Supplier<String> jobRunIdSupplier;
     private final PropertiesReloader propertiesReloader;
     private final WaitForFileAssignment waitForFiles;
     private int numConsecutiveFailures = 0;
@@ -73,14 +75,14 @@ public class CompactionTask {
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, String taskId) {
         this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, compactor, jobCommitter,
-                jobStore, taskStore, taskId, Instant::now, threadSleep());
+                jobStore, taskStore, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore,
-            String taskId, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
@@ -92,6 +94,7 @@ public class CompactionTask {
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
+        this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
     }
@@ -137,10 +140,11 @@ public class CompactionTask {
             }
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
+                String jobRunId = jobRunIdSupplier.get();
                 Instant jobStartTime = timeSupplier.get();
                 try {
                     waitForFiles.wait(job);
-                    RecordsProcessedSummary summary = compact(job, jobStartTime);
+                    RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     totalNumberOfMessagesProcessed++;
@@ -150,7 +154,7 @@ public class CompactionTask {
                     Instant jobFinishTime = timeSupplier.get();
                     jobStatusStore.jobFailed(compactionJobFailed(job,
                             new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .failure(e).taskId(taskId).build());
+                            .failure(e).taskId(taskId).jobRunId(jobRunId).build());
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
                     message.failed();
@@ -160,14 +164,14 @@ public class CompactionTask {
         return timeSupplier.get();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, Instant jobStartTime) throws Exception {
+    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-        jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).build());
+        jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         propertiesReloader.reloadIfNeeded();
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitter.commit(new CompactionJobCommitRequest(job, taskId, summary));
+        jobCommitter.commit(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
         logMetrics(job, summary);
         return summary;
     }

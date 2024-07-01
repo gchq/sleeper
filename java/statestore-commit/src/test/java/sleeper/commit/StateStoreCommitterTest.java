@@ -80,7 +80,7 @@ public class StateStoreCommitterTest {
         Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
         Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
-        CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", summary);
+        CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
 
         stateStore.addFile(inputFile);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(

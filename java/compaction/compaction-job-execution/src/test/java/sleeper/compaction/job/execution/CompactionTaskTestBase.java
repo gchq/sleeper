@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -98,27 +99,31 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID);
+        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier,
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, tablePropertiesProvider, stateStoreProvider);
+        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence(), tablePropertiesProvider, stateStoreProvider);
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId);
+        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+    }
+
+    protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
     protected void runTaskCheckingFiles(WaitForFileAssignment fileAssignmentCheck, CompactionRunner compactor) throws Exception {
-        runTask(pollQueue(), fileAssignmentCheck, compactor, Instant::now, DEFAULT_TASK_ID);
+        runTask(pollQueue(), fileAssignmentCheck, compactor, Instant::now, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID);
+        runTask(messageReceiver, filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
@@ -126,8 +131,8 @@ public class CompactionTaskTestBase {
             WaitForFileAssignment fileAssignmentCheck,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
-            String taskId) throws Exception {
-        runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId,
+            String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
+        runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId, jobRunIdSupplier,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore));
     }
@@ -137,7 +142,7 @@ public class CompactionTaskTestBase {
             WaitForFileAssignment fileAssignmentCheck,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
-            String taskId,
+            String taskId, Supplier<String> jobRunIdSupplier,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
@@ -146,13 +151,18 @@ public class CompactionTaskTestBase {
                 commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
-                compactor, committer, jobStore, taskStore, taskId, timeSupplier, sleeps::add)
+                compactor, committer, jobStore, taskStore, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
 
     private WaitForFileAssignment filesImmediatelyAssigned() {
         return job -> {
         };
+    }
+
+    private Supplier<String> jobRunIdsInSequence() {
+        AtomicInteger runNumber = new AtomicInteger();
+        return () -> "test-job-run-" + runNumber.incrementAndGet();
     }
 
     protected CompactionJob createJobOnQueue(String jobId) throws Exception {
@@ -162,7 +172,6 @@ public class CompactionTaskTestBase {
     protected CompactionJob createJobOnQueue(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
         CompactionJob job = createJob(jobId, tableProperties, stateStore);
         jobsOnQueue.add(job);
-        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 
@@ -179,6 +188,7 @@ public class CompactionTaskTestBase {
                 .inputFiles(List.of(inputFile))
                 .outputFile(UUID.randomUUID().toString()).build();
         assignFilesToJob(job, stateStore);
+        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }
 

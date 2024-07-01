@@ -28,11 +28,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +43,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class CompactionJobCommitterTestBase {
 
@@ -59,8 +56,6 @@ public class CompactionJobCommitterTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
-    protected final List<Duration> foundWaits = new ArrayList<>();
-    private Waiter waiter = recordWaits(foundWaits);
     private TableProperties lastTable;
 
     protected TableProperties createTable() {
@@ -110,7 +105,7 @@ public class CompactionJobCommitterTestBase {
 
     protected CompactionJobCommitRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
         statusStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
-        return new CompactionJobCommitRequest(job, taskId, summary);
+        return new CompactionJobCommitRequest(job, taskId, UUID.randomUUID().toString(), summary);
     }
 
     protected CompactionJobCommitter jobCommitter() {

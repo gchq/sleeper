@@ -96,7 +96,6 @@ public class CompactionJobCommitterTest extends CompactionJobCommitterTestBase {
 
         // Then
         assertThat(stateStore().getFileReferences()).isEmpty();
-        assertThat(foundWaits).isEmpty();
     }
 
 }
