@@ -31,16 +31,15 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,8 +69,10 @@ public class CompactionTaskTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = schemaWithKey("key");
+    private final List<TableProperties> tables = new ArrayList<>();
+    private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
     protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID, DEFAULT_TABLE_NAME);
-    protected final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+    protected final StateStore stateStore = stateStore(tableProperties);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     protected final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     protected final List<CompactionJob> successfulJobs = new ArrayList<>();
@@ -91,7 +92,13 @@ public class CompactionTaskTestBase {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
+        tables.add(tableProperties);
+        stateStoreByTableId.put(tableId, inMemoryStateStoreWithSinglePartition(schema));
         return tableProperties;
+    }
+
+    protected StateStore stateStore(TableProperties table) {
+        return stateStoreByTableId.get(table.get(TABLE_ID));
     }
 
     protected void runTask(CompactionRunner compactor) throws Exception {
@@ -100,11 +107,6 @@ public class CompactionTaskTestBase {
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
-    }
-
-    protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier,
-            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence(), tablePropertiesProvider, stateStoreProvider);
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
@@ -132,22 +134,9 @@ public class CompactionTaskTestBase {
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
-        runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId, jobRunIdSupplier,
-                new FixedTablePropertiesProvider(tableProperties),
-                Map.of(tableProperties.get(TABLE_ID), stateStore)::get);
-    }
-
-    private void runTask(
-            MessageReceiver messageReceiver,
-            WaitForFileAssignment fileAssignmentCheck,
-            CompactionRunner compactor,
-            Supplier<Instant> timeSupplier,
-            String taskId, Supplier<String> jobRunIdSupplier,
-            TablePropertiesProvider tablePropertiesProvider,
-            GetStateStoreByTableId stateStoreProvider) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
-                tablePropertiesProvider,
-                new CompactionJobCommitter(jobStore, stateStoreProvider),
+                new FixedTablePropertiesProvider(tables),
+                new CompactionJobCommitter(jobStore, stateStoreByTableId::get),
                 commitRequestsOnQueue::add);
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
@@ -180,14 +169,22 @@ public class CompactionTaskTestBase {
     }
 
     protected CompactionJob createJob(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
-        String inputFile = UUID.randomUUID().toString();
+        CompactionJob job = createJobNotInStateStore(jobId, tableProperties);
+        assignFilesToJob(job, stateStore);
+        return job;
+    }
+
+    protected CompactionJob createJobNotInStateStore(String jobId) throws Exception {
+        return createJobNotInStateStore(jobId, tableProperties);
+    }
+
+    protected CompactionJob createJobNotInStateStore(String jobId, TableProperties tableProperties) throws Exception {
         CompactionJob job = CompactionJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .jobId(jobId)
                 .partitionId("root")
-                .inputFiles(List.of(inputFile))
+                .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        assignFilesToJob(job, stateStore);
         jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
         return job;
     }

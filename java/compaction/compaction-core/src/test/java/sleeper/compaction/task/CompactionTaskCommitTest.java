@@ -22,19 +22,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.statestore.GetStateStoreByTableId;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
@@ -51,15 +49,12 @@ import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactio
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final TableProperties table1 = createTable("test-table-1-id", "test-table-1");
     private final TableProperties table2 = createTable("test-table-2-id", "test-table-2");
-    private final StateStore store1 = inMemoryStateStoreWithSinglePartition(schema);
-    private final StateStore store2 = inMemoryStateStoreWithSinglePartition(schema);
-    private final FixedTablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(List.of(table1, table2));
-    private final GetStateStoreByTableId stateStoreProvider = Map.of("test-table-1-id", store1, "test-table-2-id", store2)::get;
+    private final StateStore store1 = stateStore(table1);
+    private final StateStore store2 = stateStore(table2);
 
     @Nested
     @DisplayName("Send commits to queue")
@@ -113,7 +108,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Summary),
                     jobSucceeds(job2Summary)),
-                    times::poll, tablePropertiesProvider, stateStoreProvider);
+                    times::poll);
 
             // Then
             assertThat(successfulJobs).containsExactly(job1, job2);
@@ -158,7 +153,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Summary),
                     jobSucceeds(job2Summary)),
-                    times::poll, tablePropertiesProvider, stateStoreProvider);
+                    times::poll);
 
             // Then
             assertThat(successfulJobs).containsExactly(job1, job2);
@@ -229,6 +224,81 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
         private CompactionJobCommitRequest commitRequestFor(CompactionJob job, String runId, RecordsProcessedSummary summary) {
             return new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, runId, summary);
+        }
+    }
+
+    @Nested
+    @DisplayName("Update state store")
+    class UpdateStateStore {
+        @BeforeEach
+        void setup() {
+            tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            table1.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            table2.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+
+        @Test
+        void shouldCommitCompactionJobsOnDifferentTables() throws Exception {
+            // Given
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            CompactionJob job1 = createJobOnQueue("job1", table1, store1);
+            CompactionJob job2 = createJobOnQueue("job2", table2, store2);
+            store1.fixFileUpdateTime(finishTime1);
+            store2.fixFileUpdateTime(finishTime2);
+
+            // When
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsProcessed),
+                    jobSucceeds(recordsProcessed)),
+                    timesInTask::poll);
+
+            // Then
+            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task", new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1))));
+            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task", new RecordsProcessedSummary(recordsProcessed, startTime2, finishTime2))));
+            assertThat(store1.getFileReferences()).containsExactly(
+                    FileReferenceFactory.fromUpdatedAt(store1, finishTime1)
+                            .rootFile(job1.getOutputFile(), 10));
+            assertThat(store2.getFileReferences()).containsExactly(
+                    FileReferenceFactory.fromUpdatedAt(store2, finishTime2)
+                            .rootFile(job2.getOutputFile(), 10));
+        }
+
+        @Test
+        void shouldFailWhenFileDoesNotExistInStateStore() throws Exception {
+            // Given
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
+            Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime, finishTime, failTime,
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+            CompactionJob job = createJobNotInStateStore("test-job");
+            send(job);
+
+            // When
+            runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            failedCompactionRun("test-task", new ProcessRunTime(startTime, failTime), List.of(
+                                    "1 replace file reference requests failed to update the state store",
+                                    "File not found: " + job.getInputFiles().get(0)))));
         }
     }
 
