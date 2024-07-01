@@ -44,4 +44,3 @@ echo_github_output_for_image() {
 
 echo_github_output_for_image sleeper-builder builder
 echo_github_output_for_image sleeper-local env
-echo_github_output_for_image sleeper-deployment deploy

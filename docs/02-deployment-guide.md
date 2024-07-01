@@ -6,10 +6,29 @@ This contains instructions on how to deploy Sleeper.
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information
-below provides more detail on how to use it.
+interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information below
+provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
+
+Currently it's necessary to build Sleeper before any deployment. With the `sleeper environment` setup described in the
+getting started guide, you get an EC2 with the Sleeper CLI installed, and the Git repository checked out. Once this is
+deployed, you can connect to it and build Sleeper like this:
+
+```bash
+sleeper environment connect # Get a shell in the EC2 you deployed
+sleeper builder # Get a shell in a builder Docker container (hosted in the EC2)
+cd sleeper # Change directory to the root of the Git repository
+./scripts/build/build.sh
+```
+
+If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
+
+To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
+the [dev guide](11-dev-guide.md#install-prerequisite-software).
 
 ### Configure AWS
+
+When you configure AWS on your machine or in the environment EC2, if you do it outside the Sleeper CLI, the
+configuration will be passed on to any Sleeper CLI commands.
 
 The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
 
@@ -47,8 +66,8 @@ that bootstrapping CDK is a one-time action for the account that is nothing to d
 Sleeper itself. See
 [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory. You can run `cdk bootstrap` in the local
-Docker image, as described in [getting started](01-getting-started.md#deployment-environment).
+not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
+Docker container, as described in [getting started](01-getting-started.md#deployment-environment).
 
 ### Lambda Reserved Concurrency
 
@@ -136,15 +155,15 @@ Configuration section below for further details.
 
 Note that any property in the templates with "changeme" will be overwritten automatically.
 
-You can use the automated script like this:
+From the root of the Git repository with Sleeper already built, you can use the automated script like this:
 
 ```bash
-sleeper deployment
+cd scripts
 editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
 editor templates/tags.template
-deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
+./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
@@ -161,8 +180,10 @@ directory.
 The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
 dependencies or build Sleeper yourself.
 
-The `sleeper deployment` command gets you a shell inside a Docker container as though you were in the scripts directory
-of the Sleeper Git repository. The rest of the repository will not be present.
+The `sleeper builder` command gets you a shell inside a Docker container. This docker container will have all the
+dependencies required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2,
+the Sleeper Git repository will be cloned into the working directory of the container. If you are not using an
+environment EC2, you will need to manually clone the repository.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
@@ -176,24 +197,13 @@ if you run the Docker container multiple times you will still have details of th
 If you add a command on the end, you can run a specific script like this:
 
 ```shell
-sleeper deployment test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 ### Manual Deployment
 
-For Sleeper to be deployed manually, some resources have to be uploaded to AWS first:
-the jar files need to be uploaded to an S3 bucket, and some Docker images
-need to be uploaded to an ECR repository.
-
-These instructions will assume you're using a development environment, so see [the dev guide](11-dev-guide.md) for how
-to set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
-the CLI configured and authenticated with AWS.
-
-This guide assumes you start in the project root directory. First build the system:
-
-```bash
-./scripts/build/buildForTest.sh
-```
+For Sleeper to be deployed manually, some resources have to be uploaded to AWS first. The jar files need to be uploaded
+to an S3 bucket, and some Docker images need to be uploaded to an ECR repository.
 
 #### Upload the Docker images to ECR
 
@@ -434,7 +444,7 @@ The `deployExisting.sh` script can be used to bring an existing instance up to d
 that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
-sleeper deployment deploy/deployExisting.sh <instance-id>
+./scripts/deploy/deployExisting.sh <instance-id>
 ```
 
 #### Add Table
@@ -443,7 +453,7 @@ The `addTable.sh` script can be used to add a new table to sleeper. This will cr
 properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
 
 ```bash
-sleeper deployment deploy/addTable.sh <instance-id> <new-table-id>
+./scripts/deploy/addTable.sh <instance-id> <new-table-id>
 ```
 
 ## Tear Down
