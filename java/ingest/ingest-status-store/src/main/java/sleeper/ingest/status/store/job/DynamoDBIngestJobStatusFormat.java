@@ -155,7 +155,7 @@ class DynamoDBIngestJobStatusFormat {
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
                 .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
-                .number(FILES_WRITTEN_COUNT, event.getNumFilesAddedByJob())
+                .number(FILES_WRITTEN_COUNT, event.getNumFilesWrittenByJob())
                 .build();
     }
 

@@ -17,25 +17,30 @@ package sleeper.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
+import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 
 public class CompactionJobStatusFurthestStatusTest {
 
@@ -52,7 +57,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(PENDING);
     }
 
     @Test
@@ -63,13 +68,13 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
@@ -80,14 +85,51 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 200L, 100L));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
+    }
+
+    @Test
+    void shouldReportJobUncommitted() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatusUncommitted(summary(started, Duration.ofSeconds(30), 200L, 100L));
+
+        // When
+        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
+
+        // Then
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(UNCOMMITTED);
+    }
+
+    @Test
+    void shouldReportJobCommitted() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatusUncommitted(summary(started, Duration.ofSeconds(30), 200L, 100L));
+        CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2023-03-22T15:40:00Z"));
+
+        // When
+        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished, committed);
+
+        // Then
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -98,14 +140,14 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
         ProcessFailedStatus failed = failedStatus(started, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, failed);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FAILED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FAILED);
     }
 
     @Test
@@ -116,16 +158,16 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        ProcessFinishedStatus finished = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
-        CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2023-03-22T15:37:01Z"));
+        CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started1, Duration.ofSeconds(30), 200L, 100L));
+        CompactionJobStartedStatus started2 = compactionStartedStatus(Instant.parse("2023-03-22T15:37:01Z"));
         ProcessFailedStatus failed = failedStatus(started2, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, finished, started2, failed);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -136,14 +178,14 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
         ProcessFailedStatus failed = failedStatus(started1, Duration.ofSeconds(30), List.of("Some failure"));
-        CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2023-03-22T15:37:01Z"));
+        CompactionJobStartedStatus started2 = compactionStartedStatus(Instant.parse("2023-03-22T15:37:01Z"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, failed, started2);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
     }
 }

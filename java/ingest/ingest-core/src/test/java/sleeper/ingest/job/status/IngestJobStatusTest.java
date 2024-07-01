@@ -41,6 +41,7 @@ import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRunUncommitted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
@@ -172,6 +173,25 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
                     .isEqualTo(true);
         }
+
+        @Test
+        public void shouldReportIngestJobInProgressWhenFinishedButUncommitted() {
+            // Given
+            Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
+            Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
+            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+
+            // When
+            IngestJobStatus status = jobStatus(job,
+                    startedIngestRun(job, "task-2", startTime2),
+                    finishedIngestRunUncommitted(job, "task-1", new RecordsProcessedSummary(
+                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1))), 1));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
+                    .isEqualTo(true);
+        }
     }
 
     @Nested
@@ -186,7 +206,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(ACCEPTED);
         }
 
@@ -201,7 +221,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -219,7 +239,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FINISHED);
         }
 
@@ -236,7 +256,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -253,7 +273,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -271,7 +291,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FAILED);
         }
 
@@ -296,7 +316,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FINISHED);
         }
 
@@ -319,7 +339,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -335,7 +355,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(IN_PROGRESS);
         }
 
@@ -351,7 +371,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(UNCOMMITTED);
         }
 
@@ -369,7 +389,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(UNCOMMITTED);
         }
 
@@ -387,7 +407,7 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatusType::statusTypeOfFurthestRunOfJob)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FINISHED);
         }
     }
@@ -425,7 +445,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
-        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+        return IngestJobStatusTestHelper.ingestAcceptedStatus(job, validationTime);
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
@@ -433,32 +453,20 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
-        return IngestJobStartedStatus.withStartOfRun(false).job(job)
-                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
-                .build();
+        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job, startTime);
     }
 
     private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {
-        return IngestJobAddedFilesStatus.builder()
-                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime))
-                .fileCount(fileCount)
-                .build();
+        return IngestJobStatusTestHelper.ingestAddedFilesStatus(writtenTime, fileCount);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return finishedStatusUpdateBuilder(startTime, finishTime).build();
+        return IngestJobStatusTestHelper.ingestFinishedStatus(job, summary(startTime, finishTime), 2);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
-        return finishedStatusUpdateBuilder(startTime, finishTime)
-                .committedBySeparateFileUpdates(true)
-                .numFilesWrittenByJob(numFilesAddedByJob)
-                .build();
-    }
-
-    private IngestJobFinishedStatus.Builder finishedStatusUpdateBuilder(Instant startTime, Instant finishTime) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
+        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(job, summary(startTime, finishTime), numFilesAddedByJob);
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

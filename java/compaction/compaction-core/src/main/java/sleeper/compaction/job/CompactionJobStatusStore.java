@@ -15,9 +15,11 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,13 +34,16 @@ public interface CompactionJobStatusStore {
     default void jobCreated(CompactionJob job) {
     }
 
-    default void jobStarted(CompactionJob job, Instant startTime, String taskId) {
+    default void jobStarted(CompactionJobStartedEvent event) {
     }
 
-    default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
+    default void jobFinished(CompactionJobFinishedEvent event) {
     }
 
-    default void jobFailed(CompactionJob compactionJob, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    default void jobCommitted(CompactionJobCommittedEvent event) {
+    }
+
+    default void jobFailed(CompactionJobFailedEvent event) {
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {

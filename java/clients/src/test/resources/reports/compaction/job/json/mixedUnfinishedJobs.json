@@ -11,11 +11,13 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
+            "type": "STARTED",
             "startTime": "2022-09-20T13:34:12.001Z",
-            "type": "IN_PROGRESS",
             "updateTime": "2022-09-20T13:34:12.123Z"
           },
           {
+            "type": "FAILED",
+            "updateTime": "2022-09-20T13:35:12.123Z",
             "failureReasons": [
               "Something went wrong",
               "More details"
@@ -25,9 +27,7 @@
               "finishTime": "2022-09-20T13:35:12.001Z",
               "startTime": "2022-09-20T13:34:12.001Z",
               "timeInProcessInSeconds": 60.0
-            },
-            "type": "FAILED",
-            "updateTime": "2022-09-20T13:35:12.123Z"
+            }
           }
         ]
       }
@@ -45,7 +45,7 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "IN_PROGRESS",
+            "type": "STARTED",
             "updateTime": "2022-09-18T13:34:12.123Z",
             "startTime": "2022-09-18T13:34:12.001Z"
           }

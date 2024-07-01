@@ -28,7 +28,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
-    private final Integer numFilesWrittenByJob;
+    private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
@@ -63,7 +63,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
         return summary;
     }
 
-    public Integer getNumFilesWrittenByJob() {
+    public int getNumFilesWrittenByJob() {
         return numFilesWrittenByJob;
     }
 
@@ -102,7 +102,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
     public static class Builder {
         private Instant updateTime;
         private RecordsProcessedSummary summary;
-        private Integer numFilesWrittenByJob;
+        private int numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
         private Builder() {
@@ -136,7 +136,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
          * @param  numFilesWrittenByJob the number of files
          * @return                      the builder for chaining
          */
-        public Builder numFilesWrittenByJob(Integer numFilesWrittenByJob) {
+        public Builder numFilesWrittenByJob(int numFilesWrittenByJob) {
             this.numFilesWrittenByJob = numFilesWrittenByJob;
             return this;
         }

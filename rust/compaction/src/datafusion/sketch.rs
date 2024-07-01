@@ -18,7 +18,7 @@
 use crate::aws_s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
-use bytes::{BufMut, Bytes};
+use bytes::BufMut;
 use cxx::{Exception, UniquePtr};
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -333,7 +333,7 @@ pub fn serialise_sketches(
     // Save to object store
     let store = store_factory.get_object_store(path)?;
 
-    futures::executor::block_on(store.put(&store_path, Bytes::from(buf.into_inner())))?;
+    futures::executor::block_on(store.put(&store_path, buf.into_inner().into()))?;
 
     info!(
         "Serialised {} ({} bytes) sketches to {}",

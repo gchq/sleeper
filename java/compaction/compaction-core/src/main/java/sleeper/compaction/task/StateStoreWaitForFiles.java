@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 
@@ -37,21 +36,19 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
-    private final StateStoreProvider stateStoreProvider;
-    private final TablePropertiesProvider tablePropertiesProvider;
+    private final GetStateStoreByTableId stateStoreProvider;
 
-    public StateStoreWaitForFiles(StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
+    public StateStoreWaitForFiles(GetStateStoreByTableId stateStoreProvider) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                stateStoreProvider, tablePropertiesProvider);
+                stateStoreProvider);
     }
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
-            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
+            GetStateStoreByTableId stateStoreProvider) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
         this.stateStoreProvider = stateStoreProvider;
-        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     @Override
@@ -59,7 +56,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
         Instant startTime = Instant.now();
         LOGGER.info("Waiting for {} file{} to be assigned to compaction job {}",
                 job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
-        StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(job.getTableId()));
+        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
             try {

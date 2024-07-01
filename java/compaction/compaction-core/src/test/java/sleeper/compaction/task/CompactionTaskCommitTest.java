@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,39 +22,39 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final TableProperties table1 = createTable("test-table-1-id", "test-table-1");
     private final TableProperties table2 = createTable("test-table-2-id", "test-table-2");
-    private final StateStore store1 = inMemoryStateStoreWithSinglePartition(schema);
-    private final StateStore store2 = inMemoryStateStoreWithSinglePartition(schema);
-    private final FixedTablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(List.of(table1, table2));
-    private final FixedStateStoreProvider stateStoreProvider = new FixedStateStoreProvider(Map.of("test-table-1", store1, "test-table-2", store2));
+    private final StateStore store1 = stateStore(table1);
+    private final StateStore store2 = stateStore(table2);
 
     @Nested
     @DisplayName("Send commits to queue")
@@ -108,18 +108,18 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Summary),
                     jobSucceeds(job2Summary)),
-                    times::poll, tablePropertiesProvider, stateStoreProvider);
+                    times::poll);
 
             // Then
             assertThat(successfulJobs).containsExactly(job1, job2);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
-                    commitRequestFor(job1,
+                    commitRequestFor(job1, "test-job-run-1",
                             new RecordsProcessedSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:02Z"))),
-                    commitRequestFor(job2,
+                    commitRequestFor(job2, "test-job-run-2",
                             new RecordsProcessedSummary(job2Summary,
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:04Z"))));
@@ -153,7 +153,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Summary),
                     jobSucceeds(job2Summary)),
-                    times::poll, tablePropertiesProvider, stateStoreProvider);
+                    times::poll);
 
             // Then
             assertThat(successfulJobs).containsExactly(job1, job2);
@@ -175,8 +175,130 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     Instant.parse("2024-02-22T13:50:04Z")))));
         }
 
+        @Test
+        void shouldCorrelateAsynchronousCommitsAfterTwoRunsFinished() throws Exception {
+            // Given
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            Queue<String> jobRunIds = new LinkedList<>(List.of(
+                    "test-job-run-1", "test-job-run-2"));
+            CompactionJob job = createJob("test-job");
+            send(job);
+            send(job);
+
+            // When a task runs
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsProcessed),
+                    jobSucceeds(recordsProcessed)),
+                    jobRunIds::poll, timesInTask::poll);
+            // And the commits are saved to the status store
+            jobStore.jobFinished(compactionJobFinished(job, summary(startTime1, finishTime1, 10, 10))
+                    .taskId("test-task").jobRunId("test-job-run-1").build());
+            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, finishTime2))
+                    .failureReasons(List.of("Could not commit same job twice"))
+                    .taskId("test-task").jobRunId("test-job-run-2").build());
+
+            // Then
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime2))
+                                    .finishedStatus(compactionFailedStatus(new ProcessRunTime(startTime2, finishTime2), List.of("Could not commit same job twice")))
+                                    .build(),
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime1))
+                                    .finishedStatus(compactionFinishedStatus(summary(startTime1, finishTime1, 10, 10)))
+                                    .build()));
+        }
+
         private CompactionJobCommitRequest commitRequestFor(CompactionJob job, RecordsProcessedSummary summary) {
-            return new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, summary);
+            return commitRequestFor(job, "test-job-run-1", summary);
+        }
+
+        private CompactionJobCommitRequest commitRequestFor(CompactionJob job, String runId, RecordsProcessedSummary summary) {
+            return new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, runId, summary);
+        }
+    }
+
+    @Nested
+    @DisplayName("Update state store")
+    class UpdateStateStore {
+        @BeforeEach
+        void setup() {
+            tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            table1.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            table2.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+
+        @Test
+        void shouldCommitCompactionJobsOnDifferentTables() throws Exception {
+            // Given
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            CompactionJob job1 = createJobOnQueue("job1", table1, store1);
+            CompactionJob job2 = createJobOnQueue("job2", table2, store2);
+            store1.fixFileUpdateTime(finishTime1);
+            store2.fixFileUpdateTime(finishTime2);
+
+            // When
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsProcessed),
+                    jobSucceeds(recordsProcessed)),
+                    timesInTask::poll);
+
+            // Then
+            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+                    jobCreated(job1, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task", new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1))));
+            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+                    jobCreated(job2, DEFAULT_CREATED_TIME,
+                            finishedCompactionRun("test-task", new RecordsProcessedSummary(recordsProcessed, startTime2, finishTime2))));
+            assertThat(store1.getFileReferences()).containsExactly(
+                    FileReferenceFactory.fromUpdatedAt(store1, finishTime1)
+                            .rootFile(job1.getOutputFile(), 10));
+            assertThat(store2.getFileReferences()).containsExactly(
+                    FileReferenceFactory.fromUpdatedAt(store2, finishTime2)
+                            .rootFile(job2.getOutputFile(), 10));
+        }
+
+        @Test
+        void shouldFailWhenFileDoesNotExistInStateStore() throws Exception {
+            // Given
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
+            Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime, finishTime, failTime,
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+            CompactionJob job = createJobNotInStateStore("test-job");
+            send(job);
+
+            // When
+            runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            failedCompactionRun("test-task", new ProcessRunTime(startTime, failTime), List.of(
+                                    "1 replace file reference requests failed to update the state store",
+                                    "File not found: " + job.getInputFiles().get(0)))));
         }
     }
 

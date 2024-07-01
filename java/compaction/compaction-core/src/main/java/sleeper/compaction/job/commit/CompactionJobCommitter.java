@@ -27,6 +27,7 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
 public class CompactionJobCommitter {
@@ -44,7 +45,8 @@ public class CompactionJobCommitter {
         CompactionJob job = request.getJob();
         updateStateStoreSuccess(
                 job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
-        statusStore.jobFinished(job, request.buildRecordsProcessedSummary(), request.getTaskId());
+        statusStore.jobFinished(compactionJobFinished(job, request.buildRecordsProcessedSummary())
+                .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
         LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
     }
 

@@ -53,25 +53,6 @@ public class IngestJobStartedEvent {
      * this, and this validation event marks the start of a job run. Bulk import jobs should use the
      * {@link IngestJobStartedEvent#validatedIngestJobStarted} constructor.
      *
-     * @param  taskId    the task ID
-     * @param  job       the ingest job
-     * @param  startTime the start time
-     * @return           an instance of this class
-     */
-    public static IngestJobStartedEvent ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
-        return builder()
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(true)
-                .taskId(taskId).build();
-    }
-
-    /**
-     * Creates an instance of this class. This constructor is specifically for ingest jobs and creates an event that
-     * marks the start of a job run. This is not used for bulk import jobs, as they have a validation event before
-     * this, and this validation event marks the start of a job run. Bulk import jobs should use the
-     * {@link IngestJobStartedEvent#validatedIngestJobStarted} constructor.
-     *
      * @param  job       the ingest job
      * @param  startTime the start time
      * @return           an instance of this class

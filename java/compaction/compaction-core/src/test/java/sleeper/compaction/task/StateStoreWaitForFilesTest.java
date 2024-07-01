@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -28,16 +27,17 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
@@ -56,7 +56,7 @@ public class StateStoreWaitForFilesTest {
         FileReference file = factory.rootFile("test.parquet", 123L);
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        assignJobIdToInputFiles(stateStore, job);
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
 
         // When / Then
         assertThatCode(() -> waitForFiles(job))
@@ -70,7 +70,7 @@ public class StateStoreWaitForFilesTest {
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
         actionOnWait(() -> {
-            assignJobIdToInputFiles(stateStore, job);
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         });
 
         // When / Then
@@ -99,8 +99,7 @@ public class StateStoreWaitForFilesTest {
                 new ExponentialBackoffWithJitter(
                         StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,
                         noJitter(), waiter),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                new FixedTablePropertiesProvider(tableProperties))
+                Map.of(tableProperties.get(TABLE_ID), stateStore)::get)
                 .wait(job);
     }
 

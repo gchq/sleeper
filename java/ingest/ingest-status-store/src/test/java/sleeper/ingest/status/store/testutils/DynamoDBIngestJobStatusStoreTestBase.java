@@ -82,7 +82,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
-    private final Schema schema = createSchema();
+    protected final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
@@ -117,7 +117,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return ingestJobStarted(DEFAULT_TASK_ID, job, startedTime);
+        return ingestJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {
@@ -132,14 +132,14 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(DEFAULT_TASK_ID, job, summary);
+        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, int numFilesAdded) {
         return ingestJobFinished(job, defaultSummary(startedTime, finishedTime))
                 .committedBySeparateFileUpdates(true)
-                .numFilesAddedByJob(numFilesAdded)
+                .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)
                 .build();
     }
@@ -176,7 +176,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, RecordsProcessedSummary summary) {
-        return finishedIngestJob(job, DEFAULT_TASK_ID, summary);
+        return finishedIngestJob(job, DEFAULT_TASK_ID, summary, 2);
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
@@ -186,6 +186,22 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
+                        .build())
+                .build());
+    }
+
+    protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
+        return jobStatus(job, ProcessRun.builder()
+                .taskId(DEFAULT_TASK_ID)
+                .startedStatus(ingestStartedStatus(job, startedTime))
+                .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
+                        .committedBySeparateFileUpdates(true)
+                        .numFilesWrittenByJob(numFiles)
+                        .build())
+                .statusUpdate(IngestJobAddedFilesStatus.builder()
+                        .writtenTime(writtenTime)
+                        .updateTime(defaultUpdateTime(writtenTime))
+                        .fileCount(numFiles)
                         .build())
                 .build());
     }
@@ -207,7 +223,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static ProcessRun defaultJobFinishedRun(IngestJob job, RecordsProcessedSummary summary) {
-        return finishedIngestRun(job, DEFAULT_TASK_ID, summary);
+        return finishedIngestRun(job, DEFAULT_TASK_ID, summary, 2);
     }
 
     protected IngestJobStatus getJobStatus(String jobId) {

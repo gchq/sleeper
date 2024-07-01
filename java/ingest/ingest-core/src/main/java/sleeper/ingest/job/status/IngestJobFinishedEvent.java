@@ -31,7 +31,7 @@ public class IngestJobFinishedEvent {
     private final String jobId;
     private final String tableId;
     private final RecordsProcessedSummary summary;
-    private final Integer numFilesAddedByJob;
+    private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
     private final String jobRunId;
     private final String taskId;
@@ -40,7 +40,7 @@ public class IngestJobFinishedEvent {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        numFilesAddedByJob = builder.numFilesAddedByJob;
+        numFilesWrittenByJob = Objects.requireNonNull(builder.numFilesWrittenByJob, "numFilesWrittenByJob must not be null");
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -48,18 +48,6 @@ public class IngestJobFinishedEvent {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  taskId  the task ID
-     * @param  job     the ingest job
-     * @param  summary the records processed summary
-     * @return         an instance of this class
-     */
-    public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(taskId).build();
     }
 
     /**
@@ -85,8 +73,8 @@ public class IngestJobFinishedEvent {
         return summary;
     }
 
-    public Integer getNumFilesAddedByJob() {
-        return numFilesAddedByJob;
+    public int getNumFilesWrittenByJob() {
+        return numFilesWrittenByJob;
     }
 
     public boolean isCommittedBySeparateFileUpdates() {
@@ -103,7 +91,7 @@ public class IngestJobFinishedEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, summary, numFilesAddedByJob, committedBySeparateFileUpdates, jobRunId, taskId);
+        return Objects.hash(jobId, tableId, summary, numFilesWrittenByJob, committedBySeparateFileUpdates, jobRunId, taskId);
     }
 
     @Override
@@ -115,13 +103,14 @@ public class IngestJobFinishedEvent {
             return false;
         }
         IngestJobFinishedEvent other = (IngestJobFinishedEvent) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(summary, other.summary) && Objects.equals(numFilesAddedByJob, other.numFilesAddedByJob)
+        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(summary, other.summary)
+                && Objects.equals(numFilesWrittenByJob, other.numFilesWrittenByJob)
                 && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId);
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesAddedByJob=" + numFilesAddedByJob + ", committedWhenAllFilesAdded="
+        return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedBySeparateFileUpdates="
                 + committedBySeparateFileUpdates + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
     }
 
@@ -132,7 +121,7 @@ public class IngestJobFinishedEvent {
         private String jobId;
         private String tableId;
         private RecordsProcessedSummary summary;
-        private Integer numFilesAddedByJob;
+        private Integer numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
         private String jobRunId;
         private String taskId;
@@ -185,34 +174,34 @@ public class IngestJobFinishedEvent {
         }
 
         /**
-         * Sets the number of files added during the job.
+         * Sets the number of files written during the job.
          *
-         * @param  numFilesAddedByJob the number of files
-         * @return                    the builder
+         * @param  numFilesWrittenByJob the number of files
+         * @return                      the builder
          */
-        public Builder numFilesAddedByJob(int numFilesAddedByJob) {
-            this.numFilesAddedByJob = numFilesAddedByJob;
+        public Builder numFilesWrittenByJob(int numFilesWrittenByJob) {
+            this.numFilesWrittenByJob = numFilesWrittenByJob;
             return this;
         }
 
         /**
-         * Sets the files added during the job.
+         * Sets the files written during the job.
          *
          * @param  files the files
          * @return       the builder
          */
-        public Builder filesAddedByJob(List<AllReferencesToAFile> files) {
-            return numFilesAddedByJob(files.size());
+        public Builder filesWrittenByJob(List<AllReferencesToAFile> files) {
+            return numFilesWrittenByJob(files.size());
         }
 
         /**
-         * Sets the files added during the job.
+         * Sets the file references added for all files written during the job.
          *
          * @param  fileReferences the file references
          * @return                the builder
          */
         public Builder fileReferencesAddedByJob(List<FileReference> fileReferences) {
-            return filesAddedByJob(AllReferencesToAFile.newFilesWithReferences(fileReferences));
+            return filesWrittenByJob(AllReferencesToAFile.newFilesWithReferences(fileReferences));
         }
 
         /**

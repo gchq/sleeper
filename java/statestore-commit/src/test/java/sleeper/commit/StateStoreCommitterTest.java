@@ -40,11 +40,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -79,13 +81,13 @@ public class StateStoreCommitterTest {
         Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
         Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
-        CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", summary);
+        CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
 
         stateStore.addFile(inputFile);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
                 "test-job", "root", List.of("input.parquet"))));
         compactionJobStatusStore.jobCreated(job, createdTime);
-        compactionJobStatusStore.jobStarted(job, startTime, "test-task");
+        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
 
         // When
         committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
@@ -96,9 +98,9 @@ public class StateStoreCommitterTest {
                 .containsExactly(jobStatusFrom(records()
                         .fromUpdates(forJobOnTask("test-job", null,
                                 CompactionJobCreatedStatus.from(job, createdTime)))
-                        .fromUpdates(forJobOnTask("test-job", "test-task",
-                                startedCompactionStatus(startTime),
-                                finishedCompactionStatus(summary)))));
+                        .fromUpdates(forJobRunOnTask("test-job", "test-job-run", "test-task",
+                                compactionStartedStatus(startTime),
+                                compactionFinishedStatus(summary)))));
     }
 
     @Test

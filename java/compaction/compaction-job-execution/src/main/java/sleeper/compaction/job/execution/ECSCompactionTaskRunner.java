@@ -23,15 +23,22 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.task.CompactionTask;
+import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -46,6 +53,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -91,13 +99,12 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-
             DefaultSelector compactionSelector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider, objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider.byTableId(tablePropertiesProvider));
 
-            CompactionJobCommitterOrSendToLambda committerOrLambda = new CompactionJobCommitterOrSendToLambda(
+            CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties),
@@ -131,5 +138,31 @@ public class ECSCompactionTaskRunner {
                 LOGGER.warn("EC2 instance data not available", e);
             }
         }
+    }
+
+    public static CompactionJobCommitterOrSendToLambda committerOrSendToLambda(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+            CompactionJobStatusStore jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
+                committer(tablePropertiesProvider, stateStoreProvider, jobStatusStore),
+                sendToSqs(instanceProperties, sqsClient));
+    }
+
+    private static CompactionJobCommitter committer(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+            CompactionJobStatusStore jobStatusStore) {
+        return new CompactionJobCommitter(jobStatusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
+    }
+
+    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return request -> {
+            String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+            String tableId = request.getJob().getTableId();
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(queueUrl)
+                    .withMessageDeduplicationId(UUID.randomUUID().toString())
+                    .withMessageGroupId(tableId)
+                    .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request)));
+        };
     }
 }

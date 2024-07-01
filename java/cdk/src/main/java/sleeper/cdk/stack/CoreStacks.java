@@ -16,11 +16,16 @@
 
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.sqs.IQueue;
+
+import javax.annotation.Nullable;
+
+import java.util.Objects;
 
 public class CoreStacks {
 
@@ -29,14 +34,23 @@ public class CoreStacks {
     private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
+    private final StateStoreCommitterStack stateStoreCommitterStack;
+    private final IngestStatusStoreResources ingestStatusStore;
+    private final CompactionStatusStoreResources compactionStatusStore;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+            ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
+            StateStoreCommitterStack stateStoreCommitterStack,
+            IngestStatusStoreResources ingestStatusStore,
+            CompactionStatusStoreResources compactionStatusStore) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
+        this.stateStoreCommitterStack = stateStoreCommitterStack;
+        this.ingestStatusStore = ingestStatusStore;
+        this.compactionStatusStore = compactionStatusStore;
     }
 
     public void grantReadInstanceConfig(IGrantable grantee) {
@@ -70,10 +84,18 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void grantReadConfigAndPartitions(IGrantable grantee) {
+    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
+    // This means SpotBugs complains if we pass that role into attachToRole.
+    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
+    // even though attachToRole really requires the role to be non-null.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
+    public void grantValidateBulkImport(@Nullable IRole nullableRole) {
+        IRole grantee = Objects.requireNonNull(nullableRole);
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
+        policiesStack.grantReadIngestSources(grantee);
+        ingestStatusStore.grantWriteJobEvent(grantee);
     }
 
     public void grantIngest(IRole grantee) {
@@ -82,6 +104,9 @@ public class CoreStacks {
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
         policiesStack.grantReadIngestSources(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
+        ingestStatusStore.grantWriteJobEvent(grantee);
+        ingestStatusStore.grantWriteTaskEvent(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
@@ -95,6 +120,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
+        compactionStatusStore.grantWriteJobEvent(grantee);
     }
 
     public void grantRunCompactionJobs(IGrantable grantee) {
@@ -103,6 +129,9 @@ public class CoreStacks {
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
+        compactionStatusStore.grantWriteJobEvent(grantee);
+        compactionStatusStore.grantWriteTaskEvent(grantee);
     }
 
     public void grantSplitPartitions(IGrantable grantee) {
@@ -112,12 +141,14 @@ public class CoreStacks {
         dataStack.grantRead(grantee);
     }
 
-    public void grantReadIngestSources(IRole grantee) {
+    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
+    // This means SpotBugs complains if we pass that role into attachToRole.
+    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
+    // even though attachToRole really requires the role to be non-null.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
+    public void grantReadIngestSources(@Nullable IRole nullableRole) {
+        IRole grantee = Objects.requireNonNull(nullableRole);
         policiesStack.grantReadIngestSources(grantee);
-    }
-
-    public IGrantable getDirectIngestPolicyForGrants() {
-        return policiesStack.getDirectIngestPolicyForGrants();
     }
 
     public IGrantable getIngestByQueuePolicyForGrants() {

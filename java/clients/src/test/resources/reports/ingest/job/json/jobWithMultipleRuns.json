@@ -30,6 +30,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:45.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 2,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 300,
@@ -60,6 +61,7 @@
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:20.123Z",
               "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 1,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 300,

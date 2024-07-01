@@ -61,12 +61,6 @@ run_in_environment_docker() {
     sleeper-local:current "$@"
 }
 
-run_in_deployment_docker() {
-  run_in_docker \
-    -v "$HOME/.sleeper/generated:/sleeper/generated" \
-    sleeper-deployment:current "$@"
-}
-
 run_in_builder_docker() {
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
@@ -112,7 +106,6 @@ pull_docker_images(){
   parse_version "$@"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
-  pull_and_tag sleeper-deployment
 }
 
 upgrade_cli() {
@@ -153,8 +146,6 @@ elif [ "$COMMAND" == "cdk" ]; then
   run_in_environment_docker cdk "$@"
 elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
   get_version
-elif [ "$COMMAND" == "deployment" ]; then
-  run_in_deployment_docker "$@"
 elif [ "$COMMAND" == "builder" ]; then
   run_in_builder_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then
