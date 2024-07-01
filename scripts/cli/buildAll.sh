@@ -36,15 +36,10 @@ echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCI
 END_BUILDER_TIME=$(record_time)
 echo "Finished builder Docker build at $(recorded_time_str "$END_BUILDER_TIME"), took $(elapsed_time_str "$END_DEPENDENCIES_TIME" "$END_BUILDER_TIME")"
 
-"$THIS_DIR/deployment/buildDocker.sh"
-
-END_DEPLOYMENT_TIME=$(record_time)
-echo "Finished deployment Docker build at $(recorded_time_str "$END_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_DEPLOYMENT_TIME")"
-
 "$THIS_DIR/environment/buildMaven.sh"
 
 END_ENVIRONMENT_MAVEN_TIME=$(record_time)
-echo "Finished environment Maven build at $(recorded_time_str "$END_ENVIRONMENT_MAVEN_TIME"), took $(elapsed_time_str "$END_DEPLOYMENT_TIME" "$END_ENVIRONMENT_MAVEN_TIME")"
+echo "Finished environment Maven build at $(recorded_time_str "$END_ENVIRONMENT_MAVEN_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_ENVIRONMENT_MAVEN_TIME")"
 
 "$THIS_DIR/environment/buildDocker.sh"
 
@@ -58,7 +53,6 @@ echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_TIME")"
 echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$END_MAVEN_TIME" "$END_DEPENDENCIES_TIME")"
 echo "Finished builder Docker build at $(recorded_time_str "$END_BUILDER_TIME"), took $(elapsed_time_str "$END_DEPENDENCIES_TIME" "$END_BUILDER_TIME")"
-echo "Finished deployment Docker build at $(recorded_time_str "$END_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_DEPLOYMENT_TIME")"
-echo "Finished environment Maven build at $(recorded_time_str "$END_ENVIRONMENT_MAVEN_TIME"), took $(elapsed_time_str "$END_DEPLOYMENT_TIME" "$END_ENVIRONMENT_MAVEN_TIME")"
-echo "Finished environment Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_DEPLOYMENT_TIME" "$END_TIME")"
+echo "Finished environment Maven build at $(recorded_time_str "$END_ENVIRONMENT_MAVEN_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_ENVIRONMENT_MAVEN_TIME")"
+echo "Finished environment Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$END_TIME")"
