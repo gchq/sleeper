@@ -40,9 +40,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
@@ -98,8 +98,8 @@ public class StateStoreCommitterTest {
                         .fromUpdates(forJobOnTask("test-job", null,
                                 CompactionJobCreatedStatus.from(job, createdTime)))
                         .fromUpdates(forJobOnTask("test-job", "test-task",
-                                startedCompactionStatus(startTime),
-                                finishedCompactionStatus(summary)))));
+                                compactionStartedStatus(startTime),
+                                compactionFinishedStatus(summary)))));
     }
 
     @Test

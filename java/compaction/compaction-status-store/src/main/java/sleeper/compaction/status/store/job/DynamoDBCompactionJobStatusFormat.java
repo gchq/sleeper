@@ -22,13 +22,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
@@ -164,12 +164,13 @@ class DynamoDBCompactionJobStatusFormat {
                         getInstantAttribute(item, START_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FINISHED:
-                return ProcessFinishedStatus.updateTimeAndSummary(
+                return CompactionJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
                         new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)));
+                                getRunTime(item)))
+                        .build();
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
