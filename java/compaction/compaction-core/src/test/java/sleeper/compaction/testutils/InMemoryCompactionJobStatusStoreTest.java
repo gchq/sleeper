@@ -326,6 +326,36 @@ class InMemoryCompactionJobStatusStoreTest {
         }
 
         @Test
+        void shouldGetJobInTimePeriodWhenFirstRunIsInPeriod() {
+            // Given
+            Instant createdTime = Instant.parse("2024-07-01T10:40:00Z");
+            Instant startedTime1 = Instant.parse("2024-07-01T10:41:00Z");
+            RecordsProcessedSummary summary1 = summary(startedTime1, Duration.ofMinutes(2), 100L, 100L);
+            Instant startedTime2 = Instant.parse("2024-07-01T10:41:10Z");
+            RecordsProcessedSummary summary2 = summary(startedTime2, Duration.ofMinutes(1), 100L, 100L);
+            String taskId1 = "test-task-1";
+            String taskId2 = "test-task-2";
+            CompactionJob job = dataHelper.singleFileCompaction();
+            store.jobCreated(job, createdTime);
+            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
+            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
+            store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
+            store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId1).build());
+
+            // When / Then
+            assertThat(store.getJobsInTimePeriod(tableId,
+                    Instant.parse("2024-07-01T10:42:30Z"),
+                    Instant.parse("2024-07-01T11:00:00Z")))
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                                    forJobOnTask(job.getId(), taskId1,
+                                            compactionStartedStatus(startedTime1), compactionFinishedStatus(summary1)),
+                                    forJobOnTask(job.getId(), taskId2,
+                                            compactionStartedStatus(startedTime2), compactionFinishedStatus(summary2)))));
+        }
+
+        @Test
         void shouldGetNoJobsWhenNoneInGivenPeriod() {
             // Given
             addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
