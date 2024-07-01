@@ -1,9 +1,0 @@
-
-build/
-dev/
-generated/
-cli/
-trino/
-deploy/buildAndDeploy.sh
-test/**/buildDeployTest.sh
-test/nightly/
