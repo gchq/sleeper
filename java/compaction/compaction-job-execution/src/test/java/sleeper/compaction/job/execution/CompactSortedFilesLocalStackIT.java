@@ -140,8 +140,8 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector compactSortedFiles = createCompactSortedFiles(schema, stateStore);
-        CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+        DefaultSelector selector = createCompactSortedFiles(schema, stateStore);
+        CompactionRunner runner = selector.chooseCompactor(compactionJob);
         RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then

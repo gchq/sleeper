@@ -57,9 +57,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector compactSortedFiles = createCompactionSelector(schema,
-            HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+        DefaultSelector selector = createCompactionSelector(schema,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        CompactionRunner runner = selector.chooseCompactor(compactionJob);
         RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then
@@ -106,9 +106,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector compactSortedFiles = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+            DefaultSelector selector = createCompactionSelector(schema,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            CompactionRunner runner = selector.chooseCompactor(compactionJob);
             RecordsProcessed summary = runner.compact(compactionJob);
 
             // Then
@@ -162,9 +162,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector compactSortedFiles = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = compactSortedFiles.chooseCompactor(compactionJob);
+            DefaultSelector selector = createCompactionSelector(schema,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            CompactionRunner runner = selector.chooseCompactor(compactionJob);
             RecordsProcessed summary = runner.compact(compactionJob);
 
             // Then
