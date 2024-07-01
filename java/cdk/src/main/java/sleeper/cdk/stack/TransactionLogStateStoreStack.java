@@ -156,6 +156,6 @@ public class TransactionLogStateStoreStack extends NestedStack {
         partitionsLogTable.grantReadWriteData(grantee);
         latestSnapshotsTable.grantReadData(grantee);
         allSnapshotsTable.grantReadData(grantee);
-        dataStack.grantReadWrite(grantee);
+        dataStack.grantReadDelete(grantee);
     }
 }
