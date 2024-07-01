@@ -38,6 +38,7 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -97,7 +98,7 @@ public class ECSCompactionTaskRunner {
             String taskId = UUID.randomUUID().toString();
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider, tablePropertiesProvider);
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider.byTableId(tablePropertiesProvider));
             CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
                     tablePropertiesProvider, stateStoreProvider, objectFactory);
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
