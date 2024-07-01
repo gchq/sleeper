@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
@@ -57,10 +58,10 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedS
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StateStoreCommitterTest {
-    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
+    private static final Instant DEFAULT_FILE_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
     private final Schema schema = schemaWithKey("key");
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-    private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_UPDATE_TIME);
+    private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
@@ -72,38 +73,22 @@ public class StateStoreCommitterTest {
         @Test
         void shouldApplyCompactionCommitRequest() throws Exception {
             // Given
-            StateStore stateStore = createTable("test-table");
-            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-            CompactionJob job = CompactionJob.builder()
-                    .tableId("test-table")
-                    .jobId("test-job")
-                    .inputFiles(List.of("input.parquet"))
-                    .outputFile("output.parquet")
-                    .partitionId("root")
-                    .build();
+            createTable("test-table");
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
-            CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
-
-            stateStore.addFile(inputFile);
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
-                    "test-job", "root", List.of("input.parquet"))));
-            compactionJobStatusStore.jobCreated(job, createdTime);
-            compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
-            compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary).committedBySeparateUpdate(true)
-                    .taskId("test-task").jobRunId("test-job-run").build());
+            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
+            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
             compactionJobStatusStore.fixUpdateTime(commitTime);
 
             // When
-            committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
+            committer().apply(StateStoreCommitRequest.forCompactionJob(request));
 
             // Then
-            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            assertThat(stateStore("test-table").getFileReferences()).containsExactly(
+                    fileFactory.rootFile("output.parquet", 123L));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(job, createdTime,
+                    jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatusUncommitted(summary))
@@ -177,8 +162,34 @@ public class StateStoreCommitterTest {
 
     private StateStore createTable(String tableId) {
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
+        stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
         stateStoreByTableId.put(tableId, stateStore);
         return stateStore;
+    }
+
+    private StateStore stateStore(String tableId) {
+        return stateStoreByTableId.get(tableId);
+    }
+
+    private CompactionJobCommitRequest createFinishedCompactionForTable(
+            String tableId, Instant createTime, Instant startTime, RecordsProcessedSummary summary) throws Exception {
+        CompactionJob job = CompactionJob.builder()
+                .tableId(tableId)
+                .jobId(UUID.randomUUID().toString())
+                .inputFiles(List.of("input.parquet"))
+                .outputFile("output.parquet")
+                .partitionId("root")
+                .build();
+        StateStore stateStore = stateStore(tableId);
+        stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
+                job.getId(), "root", List.of("input.parquet"))));
+        compactionJobStatusStore.jobCreated(job, createTime);
+        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
+                .taskId("test-task").jobRunId("test-job-run").build());
+        compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
+                .committedBySeparateUpdate(true)
+                .taskId("test-task").jobRunId("test-job-run").build());
+        return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }
 }
