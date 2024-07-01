@@ -15,6 +15,7 @@
  */
 package sleeper.commit;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,31 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
+                                    .build()));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldStoreCompactionFailedWhenInputFileDoesNotExist() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
+            stateStore.clearFileData();
+
+            // When
+            committer().apply(StateStoreCommitRequest.forCompactionJob(request));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    fileFactory.rootFile("output.parquet", 123L));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
+                    jobCreated(request.getJob(), createdTime,
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .build()));
         }
     }
