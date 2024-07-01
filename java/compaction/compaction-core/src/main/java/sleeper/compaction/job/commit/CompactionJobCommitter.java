@@ -15,39 +15,18 @@
  */
 package sleeper.compaction.job.commit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
 public class CompactionJobCommitter {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitter.class);
 
-    private final CompactionJobStatusStore statusStore;
-    private final GetStateStoreByTableId stateStoreProvider;
-
-    public CompactionJobCommitter(CompactionJobStatusStore statusStore, GetStateStoreByTableId stateStoreProvider) {
-        this.statusStore = statusStore;
-        this.stateStoreProvider = stateStoreProvider;
-    }
-
-    public void apply(CompactionJobCommitRequest request) throws StateStoreException {
-        CompactionJob job = request.getJob();
-        updateStateStoreSuccess(
-                job, request.getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
-        statusStore.jobFinished(compactionJobFinished(job, request.buildRecordsProcessedSummary())
-                .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-        LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
+    private CompactionJobCommitter() {
     }
 
     public static void updateStateStoreSuccess(

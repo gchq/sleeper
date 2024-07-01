@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -42,14 +41,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
@@ -86,6 +84,7 @@ public class StateStoreCommitterTest {
                     .build();
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
             CompactionJobCommitRequest commitRequest = new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
 
@@ -94,19 +93,22 @@ public class StateStoreCommitterTest {
                     "test-job", "root", List.of("input.parquet"))));
             compactionJobStatusStore.jobCreated(job, createdTime);
             compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
+            compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary).committedBySeparateUpdate(true)
+                    .taskId("test-task").jobRunId("test-job-run").build());
+            compactionJobStatusStore.fixUpdateTime(commitTime);
 
             // When
             committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-            assertThat(compactionJobStatusStore.getAllJobs("test-table"))
-                    .containsExactly(jobStatusFrom(records()
-                            .fromUpdates(forJobOnTask("test-job", null,
-                                    CompactionJobCreatedStatus.from(job, createdTime)))
-                            .fromUpdates(forJobRunOnTask("test-job", "test-job-run", "test-task",
-                                    compactionStartedStatus(startTime),
-                                    compactionFinishedStatus(summary)))));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
+                    jobCreated(job, createdTime,
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                                    .statusUpdate(compactionCommittedStatus(commitTime))
+                                    .build()));
         }
     }
 

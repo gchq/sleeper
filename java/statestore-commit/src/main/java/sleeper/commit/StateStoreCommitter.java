@@ -18,6 +18,7 @@ package sleeper.commit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
@@ -32,13 +33,15 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
 
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+
 /**
  * Applies a state store commit request.
  */
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final CompactionJobCommitter compactionJobCommitter;
+    private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
 
@@ -46,7 +49,7 @@ public class StateStoreCommitter {
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
             GetStateStoreByTableId stateStoreProvider) {
-        this.compactionJobCommitter = new CompactionJobCommitter(compactionJobStatusStore, stateStoreProvider);
+        this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
     }
@@ -59,10 +62,19 @@ public class StateStoreCommitter {
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
         Object requestObj = request.getRequest();
         if (requestObj instanceof CompactionJobCommitRequest) {
-            compactionJobCommitter.apply((CompactionJobCommitRequest) requestObj);
+            apply((CompactionJobCommitRequest) requestObj);
         } else if (requestObj instanceof IngestAddFilesCommitRequest) {
             apply((IngestAddFilesCommitRequest) requestObj);
         }
+    }
+
+    private void apply(CompactionJobCommitRequest request) throws StateStoreException {
+        CompactionJob job = request.getJob();
+        CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
+                stateStoreProvider.getByTableId(job.getTableId()));
+        compactionJobStatusStore.jobCommitted(compactionJobCommitted(job)
+                .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
+        LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
     }
 
     private void apply(IngestAddFilesCommitRequest request) throws StateStoreException {
