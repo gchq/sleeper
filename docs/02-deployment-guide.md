@@ -202,15 +202,8 @@ sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc 
 
 ### Manual Deployment
 
-For Sleeper to be deployed manually, some resources have to be uploaded to AWS first:
-the jar files need to be uploaded to an S3 bucket, and some Docker images
-need to be uploaded to an ECR repository.
-
-These instructions will assume you're using a development environment, so see [the dev guide](11-dev-guide.md) for how
-to set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
-the CLI configured and authenticated with AWS.
-
-This guide assumes you start in the project root directory with Sleeper already built.
+For Sleeper to be deployed manually, some resources have to be uploaded to AWS first. The jar files need to be uploaded
+to an S3 bucket, and some Docker images need to be uploaded to an ECR repository.
 
 #### Upload the Docker images to ECR
 
@@ -444,9 +437,6 @@ Note that the system test stacks do not need to be specified. They will be inclu
 ### Utility Scripts
 
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
-
-These instructions will assume you start in the project root directory and you're using a development environment
-(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
 
 #### Update Existing Instance
 
