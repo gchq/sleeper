@@ -23,10 +23,7 @@ use crate::{
     details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
-use arrow::{
-    datatypes::{Field, FieldRef},
-    util::pretty::pretty_format_batches,
-};
+use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     common::{
         tree_node::{Transformed, TreeNode},
@@ -116,6 +113,9 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
+    // Store schema before applying the sketch function so we can reapply it later
+    let input_schema = frame.schema().clone();
+
     // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
@@ -139,7 +139,7 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), output_path, pqo).await?;
+    let stats = collect_stats(frame.clone(), output_path, pqo, input_schema).await?;
 
     show_store_stats(&store);
 
@@ -182,6 +182,7 @@ async fn collect_stats(
     frame: DataFrame,
     output_path: &Url,
     pqo: datafusion::config::TableParquetOptions,
+    schema: DFSchema,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
@@ -203,7 +204,7 @@ async fn collect_stats(
         // Fix schema to remove nullable columns
         .transform(|node| {
             if let LogicalPlan::Projection(mut projection) = node {
-                projection.schema = non_null_schema(&projection.schema)?;
+                projection.schema = DFSchemaRef::new(schema.clone());
                 return Ok(Transformed::yes(LogicalPlan::Projection(projection)));
             }
             Ok(Transformed::no(node))
@@ -220,26 +221,6 @@ async fn collect_stats(
     let mut stats = RowCounts::default();
     accept(physical_plan.as_ref(), &mut stats)?;
     Ok(stats)
-}
-
-/// Copies a schema, but sets all the fields to "non-nullable".
-///
-/// Sleeper will never use optional row key fields, but the user of UDFs
-/// gets converted to an optional column.
-fn non_null_schema(schema: &DFSchema) -> Result<DFSchemaRef, DataFusionError> {
-    let fields = schema
-        .iter()
-        .map(|(tr, f)| {
-            (
-                tr.cloned(),
-                FieldRef::new(Field::new(f.name(), f.data_type().clone(), false)),
-            )
-        })
-        .collect::<Vec<_>>();
-    Ok(DFSchemaRef::new(DFSchema::new_with_metadata(
-        fields,
-        schema.metadata().clone(),
-    )?))
 }
 
 /// Simple struct used for storing the collected statistics from an execution plan.
