@@ -4,8 +4,8 @@ Checking the status of the system
 There are two main ways to check the status of the system: use the metrics in the CloudWatch console,
 or use the provided scripts to get a textual summary of various aspects of the system.
 
-These instructions will assume you start in the project root directory and you have the required dependencies
-(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
+These instructions will assume you start in the project root directory and Sleeper has been built
+(see [the developer guide](11-dev-guide.md) for how to set that up).
 
 ## CloudWatch metrics
 
@@ -69,7 +69,7 @@ Here's an example:
 
 ```bash
 # Retry up to 1000 messages on the ingest dead letter queue
-java -cp jars/clients-*-utility.jar \
+java -cp scripts/jars/clients-*-utility.jar \
   sleeper.clients.status.report.RetryMessages ${INSTANCE_ID} ingest 1000
 ```
 

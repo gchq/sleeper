@@ -5,8 +5,8 @@ You can run a LocalStack container locally and deploy an instance of Sleeper to 
 functionality and will only work with small volumes of data, but will allow you to perform a queue-based standard
 ingest, and run reports and scripts against the instance.
 
-These instructions will assume you start in the project root directory and you have the required dependencies
-(see [the deployment guide](11-dev-guide.md#install-prerequisite-software) for how to set that up).
+These instructions will assume you start in the project root directory and Sleeper has been built
+(see [the developer guide](11-dev-guide.md) for how to set that up).
 
 ## Launch LocalStack container
 

@@ -1,8 +1,8 @@
 Common problems and their solutions
 ===================================
 
-These instructions will assume you start in the project root directory and you have the required dependencies
-(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
+These instructions will assume you start in the project root directory and Sleeper has been built
+(see [the developer guide](11-dev-guide.md) for how to set that up).
 
 ## EOFException when using client classes
 
@@ -73,7 +73,7 @@ For a table with a Dynamo DB state store:
 - Reinitialise the state store:
 
 ```bash
-java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
+java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 For a table with an S3 state store:
@@ -86,7 +86,7 @@ For a table with an S3 state store:
 - Reinitialise the state store:
 
 ```bash
-java -cp jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
+java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
 ## Why is adding a table to an existing Sleeper instance so slow?

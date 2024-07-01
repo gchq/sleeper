@@ -10,8 +10,8 @@ key2, or ranges for key1.
 The methods below describe how queries can be executed using scripts. See the docs on the [Python API](08-python-api.md)
 for details of how to execute them from Python.
 
-These instructions will assume you start in the project root directory and you have the required dependencies
-(see [Installing prerequisite software](11-dev-guide.md#install-prerequisite-software) for how to set that up).
+These instructions will assume you start in the project root directory and Sleeper has been built
+(see [the developer guide](11-dev-guide.md) for how to set that up).
 
 ## Running queries directly using the Java client
 
@@ -58,7 +58,7 @@ SQS then the results are written to the SQS queue named `<instance-id>-QueryResu
 print the results when they are available use:
 
 ```bash
-java -cp jars/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
+java -cp scripts/jars/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
 ```
 
 This will print the results to standard out as they appear on the queue.
