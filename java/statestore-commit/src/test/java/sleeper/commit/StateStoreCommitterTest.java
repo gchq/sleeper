@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
@@ -85,7 +86,7 @@ public class StateStoreCommitterTest {
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
                 "test-job", "root", List.of("input.parquet"))));
         compactionJobStatusStore.jobCreated(job, createdTime);
-        compactionJobStatusStore.jobStarted(job, startTime, "test-task");
+        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").build());
 
         // When
         committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));

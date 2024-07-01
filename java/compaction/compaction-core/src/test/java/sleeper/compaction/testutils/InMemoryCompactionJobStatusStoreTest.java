@@ -36,6 +36,9 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -134,8 +137,8 @@ class InMemoryCompactionJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job, createdTime);
-            store.jobStarted(job, startedTime, taskId);
-            store.jobFinished(job, summary, taskId);
+            store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
+            store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
@@ -351,21 +354,21 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
         CompactionJob job = addCreatedJob(createdTime);
         store.fixUpdateTime(defaultUpdateTime(startedTime));
-        store.jobStarted(job, startedTime, taskId);
+        store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
         return job;
     }
 
     private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(job, summary, taskId);
+        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
         return job;
     }
 
     private CompactionJob addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJob job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
-        store.jobFailed(job, runTime, taskId, failureReasons);
+        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }
