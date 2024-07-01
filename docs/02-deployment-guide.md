@@ -14,8 +14,8 @@ getting started guide, you get an EC2 with the Sleeper CLI installed, and the Gi
 deployed, you can connect to it and build Sleeper like this:
 
 ```bash
-sleeper environment connect # Gets a shell in the EC2 you deployed
-sleeper builder # Gets a shell in a builder Docker container
+sleeper environment connect # Get a shell in the EC2 you deployed
+sleeper builder # Get a shell in a builder Docker container (hosted in the EC2)
 cd sleeper # Change directory to the root of the Git repository
 ./scripts/build/build.sh
 ```
