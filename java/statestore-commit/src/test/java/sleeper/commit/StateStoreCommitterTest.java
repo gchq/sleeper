@@ -46,6 +46,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -86,7 +87,7 @@ public class StateStoreCommitterTest {
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
                 "test-job", "root", List.of("input.parquet"))));
         compactionJobStatusStore.jobCreated(job, createdTime);
-        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").build());
+        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime).taskId("test-task").jobRunId("test-job-run").build());
 
         // When
         committer().apply(StateStoreCommitRequest.forCompactionJob(commitRequest));
@@ -97,7 +98,7 @@ public class StateStoreCommitterTest {
                 .containsExactly(jobStatusFrom(records()
                         .fromUpdates(forJobOnTask("test-job", null,
                                 CompactionJobCreatedStatus.from(job, createdTime)))
-                        .fromUpdates(forJobOnTask("test-job", "test-task",
+                        .fromUpdates(forJobRunOnTask("test-job", "test-job-run", "test-task",
                                 compactionStartedStatus(startTime),
                                 compactionFinishedStatus(summary)))));
     }
