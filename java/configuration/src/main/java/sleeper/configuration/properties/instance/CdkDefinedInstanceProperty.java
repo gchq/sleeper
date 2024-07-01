@@ -138,6 +138,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue for transaction log snapshot deletion requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.queue.url")
+            .description("URL of the queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.queue.arn")
+            .description("The ARN of the queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.dlq.url")
+            .description("The URL of the dead letter queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.dlq.arn")
+            .description("The ARN of the dead letter queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_RULE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.rule")
             .description("The name of the CloudWatch rule that triggers deletion of transaction log snapshots.")
             .propertyGroup(InstancePropertyGroup.COMMON)
