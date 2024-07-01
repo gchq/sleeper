@@ -59,6 +59,13 @@
             </excludes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../compaction/compaction-gpu/docker</directory>
+            <outputDirectory>scripts/docker/compaction-gpu</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../ingest/ingest-runner/docker</directory>
             <outputDirectory>scripts/docker/ingest</outputDirectory>
             <excludes>
