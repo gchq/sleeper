@@ -180,6 +180,49 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     Instant.parse("2024-02-22T13:50:04Z")))));
         }
 
+        @Test
+        void shouldCorrelateAsynchronousCommitsAfterTwoRunsFinished() throws Exception {
+            // Given
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+            Queue<String> jobRunIds = new LinkedList<>(List.of(
+                    "test-job-run-1", "test-job-run-2"));
+            CompactionJob job = createJob("test-job");
+            send(job);
+            send(job);
+
+            // When a task runs
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsProcessed),
+                    jobSucceeds(recordsProcessed)),
+                    jobRunIds::poll, timesInTask::poll);
+            // And the commits are saved to the status store
+            jobStore.jobFinished(compactionJobFinished(job, summary(startTime1, finishTime1, 10, 10))
+                    .taskId("test-task").jobRunId("test-job-run-1").build());
+            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, finishTime2))
+                    .failureReasons(List.of("Could not commit same job twice"))
+                    .taskId("test-task").jobRunId("test-job-run-2").build());
+
+            // Then
+            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime2))
+                                    .finishedStatus(compactionFailedStatus(new ProcessRunTime(startTime2, finishTime2), List.of("Could not commit same job twice")))
+                                    .build(),
+                            ProcessRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime1))
+                                    .finishedStatus(compactionFinishedStatus(summary(startTime1, finishTime1, 10, 10)))
+                                    .build()));
+        }
+
         private CompactionJobCommitRequest commitRequestFor(CompactionJob job, RecordsProcessedSummary summary) {
             return commitRequestFor(job, "test-job-run-1", summary);
         }
@@ -313,50 +356,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
-        }
-
-        @Test
-        void shouldSaveAsynchronousCommitsAfterTwoRunsFinished() throws Exception {
-            // Given
-            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
-            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
-            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
-            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    startTime1, finishTime1, startTime2, finishTime2,
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
-            Queue<String> jobRunIds = new LinkedList<>(List.of(
-                    "test-job-run-1", "test-job-run-2"));
-            CompactionJob job = createJob("test-job");
-            send(job);
-            send(job);
-            tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
-
-            // When a task runs
-            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
-            runTask("test-task", processJobs(
-                    jobSucceeds(recordsProcessed),
-                    jobSucceeds(recordsProcessed)),
-                    jobRunIds::poll, timesInTask::poll);
-            // And the commits are saved to the status store
-            jobStore.jobFinished(compactionJobFinished(job, summary(startTime1, finishTime1, 10, 10))
-                    .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, finishTime2))
-                    .failureReasons(List.of("Could not commit same job twice"))
-                    .taskId("test-task").jobRunId("test-job-run-2").build());
-
-            // Then
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                    jobCreated(job, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFailedStatus(new ProcessRunTime(startTime2, finishTime2), List.of("Could not commit same job twice")))
-                                    .build(),
-                            ProcessRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatus(summary(startTime1, finishTime1, 10, 10)))
-                                    .build()));
         }
 
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {
