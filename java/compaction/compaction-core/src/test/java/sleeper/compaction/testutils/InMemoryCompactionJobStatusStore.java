@@ -85,7 +85,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         RecordsProcessedSummary summary = event.getSummary();
         Instant eventTime = summary.getFinishTime();
         add(event.getTableId(), ProcessStatusUpdateRecord.builder()
-                .jobId(event.getJobId()).taskId(event.getTaskId())
+                .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobFinishedStatus.updateTimeAndSummary(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary)
                         .committedBySeparateUpdate(event.isCommittedBySeparateUpdate()).build())
@@ -99,7 +99,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
 
     public void jobCommitted(CompactionJobCommittedEvent event, Instant committedTime) {
         add(event.getTableId(), ProcessStatusUpdateRecord.builder()
-                .jobId(event.getJobId()).taskId(event.getTaskId())
+                .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobCommittedStatus.committedAt(committedTime))
                 .build());
     }
@@ -109,7 +109,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         ProcessRunTime runTime = event.getRunTime();
         Instant eventTime = runTime.getFinishTime();
         add(event.getTableId(), ProcessStatusUpdateRecord.builder()
-                .jobId(event.getJobId()).taskId(event.getTaskId())
+                .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(ProcessFailedStatus.timeAndReasons(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, event.getFailureReasons()))
                 .build());

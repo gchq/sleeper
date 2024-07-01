@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
