@@ -38,15 +38,19 @@ cd sleeper
 git checkout --track origin/main
 ```
 
-If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
-the dependencies pre-installed. **Note that due to a bug in the GitHub container repository you need to build the
-builder image from scratch**, so it's much easer to use Nix. If you do want to build the builder image from scratch, see the [Sleeper CLI](11-dev-guide.md#sleeper-cli) section below
+If you're working with the Sleeper CLI as described in the [getting started guide](01-getting-started.md), you can
+use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed.
 
-You will need to clone the repository as an extra step.
+If you run `sleeper builder` in an environment EC2 instance, you'll have the Git repository checked out at `/sleeper`.
+If you run `sleeper builder` locally, you'll need to clone the repository. You can use the commands below to do this:
 
 ```bash
+sleeper builder
 git clone https://github.com/gchq/sleeper.git
+cd sleeper
 ```
+
+Everything in the repository will be persisted between executions of `sleeper builder`.
 
 ## Building
 
