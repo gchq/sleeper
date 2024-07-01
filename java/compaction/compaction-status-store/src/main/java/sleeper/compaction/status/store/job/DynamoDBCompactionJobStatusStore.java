@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
@@ -49,6 +50,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
@@ -122,7 +124,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobStarted(CompactionJobStartedEvent event) {
         try {
-            save(createJobStartedUpdate(event.getStartTime(), event.getTaskId(), jobUpdateBuilder(event.getTableId(), event.getJobId())));
+            save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
         }
@@ -131,16 +133,25 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobFinished(CompactionJobFinishedEvent event) {
         try {
-            save(createJobFinishedUpdate(event.getSummary(), event.getTaskId(), jobUpdateBuilder(event.getTableId(), event.getJobId())));
+            save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed saving finished event for job " + event.getJobId(), e);
         }
     }
 
     @Override
+    public void jobCommitted(CompactionJobCommittedEvent event) {
+        try {
+            save(createJobCommittedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed saving committed event for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
     public void jobFailed(CompactionJobFailedEvent event) {
         try {
-            save(createJobFailedUpdate(event.getRunTime(), event.getTaskId(), event.getFailureReasons(), jobUpdateBuilder(event.getTableId(), event.getJobId())));
+            save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
         }
