@@ -249,7 +249,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore")
-            .description("The name of the class used for the metadata store. " +
+            .description("The name of the class used for the state store. " +
                     "The default is DynamoDBTransactionLogStateStore. Options are:\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots\n" +
