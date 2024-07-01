@@ -20,7 +20,7 @@ cd sleeper # Change directory to the root of the Git repository
 ./scripts/build/build.sh
 ```
 
-If you used the system test deployment described in the getting started guide, Sleeper will already have been built.
+If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
 To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
 the [dev guide](11-dev-guide.md#install-prerequisite-software).
