@@ -67,7 +67,7 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
+        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(committerJar,
