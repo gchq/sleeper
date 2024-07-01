@@ -104,8 +104,9 @@ public class CompactionJobCommitterTestBase {
     }
 
     protected CompactionJobCommitRequest runCompactionJobOnTask(String taskId, CompactionJob job, RecordsProcessedSummary summary) throws Exception {
-        statusStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
-        return new CompactionJobCommitRequest(job, taskId, UUID.randomUUID().toString(), summary);
+        String jobRunId = UUID.randomUUID().toString();
+        statusStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).jobRunId(jobRunId).build());
+        return new CompactionJobCommitRequest(job, taskId, jobRunId, summary);
     }
 
     protected CompactionJobCommitter jobCommitter() {
