@@ -46,10 +46,12 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -373,9 +375,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
                 Instant.parse("2024-05-09T12:58:00Z")));    // Finished task
+        Queue<String> jobRunIds = new LinkedList<>(List.of("job-run-id"));
 
         // When
-        createTaskWithTimes("task-id", times::poll).run();
+        createTaskWithRunIdsAndTimes("task-id", jobRunIds::poll, times::poll).run();
 
         // Then
         // - The compaction job should not be on the input queue or DLQ
@@ -385,7 +388,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         assertThat(messagesOnQueue(STATESTORE_COMMITTER_QUEUE_URL))
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
-                        commitRequestOnQueue(job, "task-id",
+                        commitRequestOnQueue(job, "task-id", "job-run-id",
                                 new RecordsProcessedSummary(new RecordsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
@@ -433,29 +436,32 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
     }
 
-    private CompactionTask createTaskWithTimes(String taskId, Supplier<Instant> timeSupplier) {
-        return createTask(taskId, stateStoreProvider, timeSupplier);
+    private CompactionTask createTaskWithRunIdsAndTimes(
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
+        return createTask(taskId, stateStoreProvider, jobRunIdSupplier, timeSupplier);
     }
 
     private CompactionTask createTask(String taskId) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
+    private CompactionTask createTask(
+            String taskId, StateStoreProvider stateStoreProvider,
+            Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultSelector compactSortedFiles = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
                 ObjectFactory.noUserJars(), configuration);
-        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
+        CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
                 waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
                 committer, jobStatusStore, taskStatusStore, compactSortedFiles, taskId,
-                timeSupplier, duration -> {
+                jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;
     }
@@ -521,8 +527,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private String commitRequestOnQueue(CompactionJob job, String taskId, RecordsProcessedSummary summary) {
-        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, summary));
+    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary summary) {
+        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {

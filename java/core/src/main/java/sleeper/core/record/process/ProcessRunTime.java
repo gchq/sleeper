@@ -37,11 +37,11 @@ public class ProcessRunTime {
         this(startTime, finishTime, Duration.between(startTime, finishTime));
     }
 
-    public ProcessRunTime(Instant startTime, Instant endTime, Duration timeInProcess) {
+    public ProcessRunTime(Instant startTime, Instant finishTime, Duration timeInProcess) {
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
-        this.finishTime = Objects.requireNonNull(endTime, "endTime must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
         this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
-        this.duration = Duration.between(startTime, endTime);
+        this.duration = Duration.between(startTime, finishTime);
     }
 
     public Instant getStartTime() {
@@ -70,7 +70,7 @@ public class ProcessRunTime {
 
     @Override
     public int hashCode() {
-        return Objects.hash(startTime, finishTime, duration, timeInProcess);
+        return Objects.hash(startTime, finishTime, timeInProcess);
     }
 
     @Override

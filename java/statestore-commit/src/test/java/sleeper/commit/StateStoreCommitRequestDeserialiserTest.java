@@ -47,7 +47,8 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .outputFile("test-output.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobCommitRequest compactionJobCommitRequest = new CompactionJobCommitRequest(job, "test-task",
+        CompactionJobCommitRequest compactionJobCommitRequest = new CompactionJobCommitRequest(
+                job, "test-task", "test-job-run",
                 new RecordsProcessedSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));

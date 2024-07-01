@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.CompactionTask.WaitForFileAssignment;
+import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.core.util.PollWithRetries;
 
 import java.util.ArrayList;
