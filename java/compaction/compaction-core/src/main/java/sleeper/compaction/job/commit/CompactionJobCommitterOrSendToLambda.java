@@ -18,7 +18,11 @@ package sleeper.compaction.job.commit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStoreException;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
@@ -27,23 +31,31 @@ public class CompactionJobCommitterOrSendToLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterOrSendToLambda.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final CompactionJobCommitter jobCommitter;
+    private final GetStateStoreByTableId stateStoreProvider;
+    private final CompactionJobStatusStore statusStore;
     private final CommitQueueSender jobCommitQueueSender;
 
-    public CompactionJobCommitterOrSendToLambda(TablePropertiesProvider tablePropertiesProvider,
-            CompactionJobCommitter jobCommitter, CommitQueueSender jobCommitQueueSender) {
+    public CompactionJobCommitterOrSendToLambda(
+            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider,
+            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender) {
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.jobCommitter = jobCommitter;
+        this.stateStoreProvider = stateStoreProvider;
+        this.statusStore = statusStore;
         this.jobCommitQueueSender = jobCommitQueueSender;
     }
 
-    public void commit(CompactionJobCommitRequest commitRequest) throws StateStoreException {
-        if (tablePropertiesProvider.getById(commitRequest.getJob().getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
-            LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", commitRequest.getJob().getId());
-            jobCommitQueueSender.send(commitRequest);
+    public void commit(CompactionJob job, CompactionJobFinishedEvent.Builder finishedBuilder) throws StateStoreException {
+        boolean commitAsync = tablePropertiesProvider.getById(job.getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
+        CompactionJobFinishedEvent finishedEvent = finishedBuilder.committedBySeparateUpdate(commitAsync).build();
+        if (commitAsync) {
+            statusStore.jobFinished(finishedEvent);
+            LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", job.getId());
+            jobCommitQueueSender.send(new CompactionJobCommitRequest(job,
+                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary()));
         } else {
-            LOGGER.info("Committing compaction job {} inside compaction task", commitRequest.getJob().getId());
-            jobCommitter.apply(commitRequest);
+            LOGGER.info("Committing compaction job {} inside compaction task", job.getId());
+            CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
+            statusStore.jobFinished(finishedEvent);
         }
     }
 
