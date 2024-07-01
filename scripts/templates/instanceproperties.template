@@ -169,6 +169,13 @@ sleeper.statestore.transactionlog.snapshot.deletion.batch.size=1
 # The frequency in minutes with which the transaction log snapshot deletion lambda is run.
 sleeper.statestore.transactionlog.snapshot.deletion.lambda.period.minutes=60
 
+# The number of tables to delete old transaction log transactions for in a single invocation. This
+# will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
+sleeper.statestore.transactionlog.transaction.deletion.batch.size=1
+
+# The frequency in minutes with which the transaction log transaction deletion lambda is run.
+sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes=60
+
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
 sleeper.tables.index.dynamo.pointintimerecovery=false
