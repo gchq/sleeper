@@ -52,7 +52,8 @@ public class DockerImageConfiguration {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
-                        .flatMap(Optional::stream),
+                        .flatMap(Optional::stream)
+                        .flatMap(List::stream),
                 extraDockerImages.stream())
                 .collect(toUnmodifiableList());
     }
