@@ -50,6 +50,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 
 public class InstancePropertiesTestHelper {
@@ -102,6 +103,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.setNumber(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 1);
         instanceProperties.set(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+        instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, Integer.MAX_VALUE);
         return instanceProperties;
     }
 
