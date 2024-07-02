@@ -109,7 +109,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
         out.printf("State: %s%n", jobStatus.getFurthestRunStatusType());
-        out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime().toString());
+        out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(this::printJobRun);
         out.println("--------------------------");
@@ -127,9 +127,10 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
+        out.printf("State store commit time: %s%n", committedStatus.getUpdateTime());
         if (run.isFinished()) {
             LoggedDuration delay = LoggedDuration.withFullOutput(run.getFinishTime(), committedStatus.getUpdateTime());
-            out.printf("Committed 1 file to state store, took %s%n", delay);
+            out.printf("Delay between finish and commit: %s%n", delay);
         }
     }
 
