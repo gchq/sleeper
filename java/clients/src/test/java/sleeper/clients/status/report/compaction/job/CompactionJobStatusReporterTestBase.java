@@ -21,9 +21,13 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -36,6 +40,9 @@ import java.util.stream.Collectors;
 
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
@@ -69,6 +76,15 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJob job4 = dataHelper.singleFileCompaction(partition("D"));
         Instant creationTime4 = Instant.parse("2022-09-20T13:33:12.001Z");
         Instant startedTime4 = Instant.parse("2022-09-20T13:34:12.001Z");
+        CompactionJob job5 = dataHelper.singleFileCompaction(partition("E"));
+        Instant creationTime5 = Instant.parse("2022-09-21T13:33:12.001Z");
+        CompactionJobStartedStatus started5 = compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z"));
+        CompactionJobFinishedStatus finished5 = compactionFinishedStatusUncommitted(summary(started5, Duration.ofMinutes(1), 600, 300));
+        CompactionJob job6 = dataHelper.singleFileCompaction(partition("F"));
+        Instant creationTime6 = Instant.parse("2022-09-22T13:33:12.001Z");
+        CompactionJobStartedStatus started6 = compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z"));
+        CompactionJobFinishedStatus finished6 = compactionFinishedStatusUncommitted(summary(started6, Duration.ofMinutes(1), 600, 300));
+        CompactionJobCommittedStatus committed6 = compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z"));
 
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
         CompactionJobStatus status2 = jobCreated(job2, creationTime2,
@@ -80,7 +96,15 @@ public abstract class CompactionJobStatusReporterTestBase {
                 failedCompactionRun(task(1),
                         new ProcessRunTime(startedTime4, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
-        return Arrays.asList(status4, status3, status2, status1);
+        CompactionJobStatus status5 = jobCreated(job5, creationTime5,
+                ProcessRun.builder().taskId(task(1))
+                        .startedStatus(started5).finishedStatus(finished5)
+                        .build());
+        CompactionJobStatus status6 = jobCreated(job6, creationTime6,
+                ProcessRun.builder().taskId(task(1))
+                        .startedStatus(started6).finishedStatus(finished6).statusUpdate(committed6)
+                        .build());
+        return Arrays.asList(status6, status5, status4, status3, status2, status1);
     }
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
