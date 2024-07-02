@@ -29,7 +29,6 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import java.util.function.Consumer;
 
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
 public class IngestCoordinatorFactory {
 
@@ -67,9 +66,8 @@ public class IngestCoordinatorFactory {
     public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
         try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            return standardIngestCoordinatorBuilder(parameters,
-                    ArrowRecordBatchFactory.builder()
+            return parameters.ingestCoordinatorBuilder()
+                    .recordBatchFactory(ArrowRecordBatchFactory.builder()
                             .schema(parameters.getSchema())
                             .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
                             .workingBufferAllocatorBytes(16 * 1024 * 1024L)
@@ -77,9 +75,9 @@ public class IngestCoordinatorFactory {
                             .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
                             .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
                             .localWorkingDirectory(parameters.getWorkingDir())
-                            .buildAcceptingRecords(),
-                    AsyncS3PartitionFileWriterFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
+                            .buildAcceptingRecords())
+                    .partitionFileWriterFactory(AsyncS3PartitionFileWriterFactory.builder()
+                            .parquetConfiguration(parquetConfiguration(parameters))
                             .s3AsyncClient(parameters.getS3AsyncClient())
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .s3BucketName(parameters.getDataBucketName())
@@ -110,11 +108,12 @@ public class IngestCoordinatorFactory {
                     .maxNoOfRecordsInMemory(100000)
                     .localWorkingDirectory(parameters.getWorkingDir());
             arrowConfig.accept(arrayListRecordBatch);
-            return standardIngestCoordinatorBuilder(parameters,
-                    arrayListRecordBatch.buildAcceptingRecords(),
-                    DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix,
-                            parameters.getFileNameGenerator()))
+            return parameters.ingestCoordinatorBuilder()
+                    .recordBatchFactory(arrayListRecordBatch.buildAcceptingRecords())
+                    .partitionFileWriterFactory(
+                            DirectPartitionFileWriterFactory.from(
+                                    parquetConfiguration, filePathPrefix,
+                                    parameters.getFileNameGenerator()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
