@@ -87,7 +87,7 @@
             </excludes>
         </fileSet>
     </fileSets>
-
+@
     <files>
         <file>
             <source>${project.basedir}/../../README.md</source>
@@ -123,6 +123,13 @@
             </source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>compaction-job-execution.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${maven.multiModuleProjectDirectory}/../cpp/test_file.txt
+            </source>
+            <outputDirectory>scripts/docker/compaction-gpu/</outputDirectory>
+            <destName>test_file.txt</destName>
         </file>
         <file>
             <source>

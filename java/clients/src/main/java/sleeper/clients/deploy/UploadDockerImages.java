@@ -25,7 +25,9 @@ import sleeper.clients.util.EcrRepositoryCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -80,9 +82,12 @@ public class UploadDockerImages {
         for (StackDockerImage stackImage : stacksToBuild) {
             String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
             String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
+            Optional<String> target = stackImage.getDockerTarget();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
+
+            List<String> dockerTargetCmd = target.map(t -> List.of("--target", t)).orElse(Collections.emptyList());
 
             String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
             try {
@@ -90,11 +95,15 @@ public class UploadDockerImages {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
                 }
                 if (stackImage.isBuildx()) {
-                    runCommand.runOrThrow("docker", "buildx", "build",
+                    List<String> cmd = List.of("docker", "buildx", "build",
                             "--platform", "linux/amd64,linux/arm64",
                             "-t", tag, "--push", directory);
+                    cmd.addAll(dockerTargetCmd);
+                    runCommand.runOrThrow(cmd.toArray(new String[0]));
                 } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, directory);
+                    List<String> cmd = List.of("docker", "build", "-t", tag, directory);
+                    cmd.addAll(dockerTargetCmd);
+                    runCommand.runOrThrow(cmd.toArray(new String[0]));
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {

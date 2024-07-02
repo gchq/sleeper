@@ -16,9 +16,12 @@
 
 package sleeper.clients.deploy;
 
+import java.util.Optional;
+
 public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
+    private final Optional<String> dockerTarget;
     private final boolean isBuildx;
     private final boolean createEmrServerlessPolicy;
 
@@ -26,6 +29,7 @@ public class StackDockerImage {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
         isBuildx = builder.isBuildx;
+        dockerTarget = Optional.ofNullable(builder.dockerTarget);
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
@@ -34,14 +38,32 @@ public class StackDockerImage {
                 .directoryName(imageName).build();
     }
 
+    public static StackDockerImage dockerBuildImage(String imageName, String dockerTarget) {
+        return builder().imageName(imageName)
+                .directoryName(imageName)
+                .target(dockerTarget).build();
+    }
+
     public static StackDockerImage dockerBuildxImage(String imageName) {
         return builder().imageName(imageName)
                 .directoryName(imageName).isBuildx(true).build();
     }
 
+    public static StackDockerImage dockerBuildxImage(String imageName, String dockerTarget) {
+        return builder().imageName(imageName)
+                .directoryName(imageName).isBuildx(true)
+                .target(dockerTarget).build();
+    }
+
     public static StackDockerImage emrServerlessImage(String imageName) {
         return builder().imageName(imageName)
                 .directoryName(imageName).createEmrServerlessPolicy(true).build();
+    }
+
+    public static StackDockerImage emrServerlessImage(String imageName, String dockerTarget) {
+        return builder().imageName(imageName)
+                .directoryName(imageName).createEmrServerlessPolicy(true)
+                .target(dockerTarget).build();
     }
 
     public static Builder builder() {
@@ -50,6 +72,10 @@ public class StackDockerImage {
 
     public String getImageName() {
         return imageName;
+    }
+
+    public Optional<String> getDockerTarget() {
+        return dockerTarget;
     }
 
     public String getDirectoryName() {
@@ -67,6 +93,7 @@ public class StackDockerImage {
     public static final class Builder {
         private String imageName;
         private String directoryName;
+        private String dockerTarget;
         private boolean isBuildx;
         private boolean createEmrServerlessPolicy;
 
@@ -90,6 +117,11 @@ public class StackDockerImage {
 
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        public Builder target(String dockerTarget) {
+            this.dockerTarget = dockerTarget;
             return this;
         }
 

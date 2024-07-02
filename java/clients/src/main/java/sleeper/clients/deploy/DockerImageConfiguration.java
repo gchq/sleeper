@@ -32,7 +32,8 @@ public class DockerImageConfiguration {
             "IngestStack", dockerBuildImage("ingest"),
             "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
             "CompactionStack", dockerBuildxImage("compaction-job-execution"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
+            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"),
+            "CompactionGPU", dockerBuildImage("compaction-gpu", "runner"));
 
     private final Map<String, StackDockerImage> imageByStack;
 

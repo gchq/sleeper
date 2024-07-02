@@ -50,3 +50,7 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 # Drop to normal user
 USER $USERNAME 
 WORKDIR /home/rapids
+
+FROM base AS runner
+COPY test_file.txt /home/rapids/
+ENTRYPOINT [ "/bin/bash", "-c", "cat", "test_file.txt" ]
