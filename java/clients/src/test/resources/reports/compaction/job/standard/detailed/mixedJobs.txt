@@ -16,7 +16,7 @@ Records read: 600
 Records written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
-Unknown update type: CompactionJobCommittedStatus
+Committed 1 file to state store, took 1 minute 0 seconds
 --------------------------
 Details for job $(jobId5):
 State: UNCOMMITTED

@@ -23,14 +23,18 @@ import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.LoggedDuration;
 
 import java.io.PrintStream;
 import java.util.List;
 
 import static java.util.function.Predicate.not;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -107,8 +111,23 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("State: %s%n", jobStatus.getFurthestRunStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
+        jobStatus.getJobRuns().forEach(this::printJobRun);
         out.println("--------------------------");
+    }
+
+    private void printJobRun(ProcessRun run) {
+        runReporter.printProcessJobRunWithUpdatePrinter(run,
+                printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
+        if (!run.isFinished()) {
+            out.println("Not finished");
+        }
+    }
+
+    private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
+        // TODO test case where the finished status does not exist
+        LoggedDuration delay = LoggedDuration.withFullOutput(run.getFinishTime(), committedStatus.getUpdateTime());
+        out.printf("Committed 1 file to state store, took %s%n", delay);
+
     }
 
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
