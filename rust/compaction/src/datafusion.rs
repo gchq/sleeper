@@ -18,7 +18,7 @@
 * limitations under the License.
 */
 use crate::{
-    aws_s3::{CountingObjectStore, ObjectStoreFactory},
+    aws_s3::{ExtendedObjectStore, ObjectStoreFactory},
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
@@ -44,7 +44,7 @@ use datafusion::{
     physical_planner::{DefaultPhysicalPlanner, PhysicalPlanner},
     prelude::*,
 };
-use log::{error, info};
+use log::{error, info, warn};
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
@@ -75,6 +75,26 @@ pub async fn compact(
 
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
+
+    // Find total input size and configure multipart upload size
+    let input_size = calculate_input_size(input_paths, &store)
+        .await
+        .inspect(|v| {
+            info!(
+                "Total input size {} bytes",
+                v.to_formatted_string(&Locale::en)
+            );
+        })
+        .inspect_err(|e| warn!("Error getting total input size {e}"));
+    let multipart_size = std::cmp::max(
+        crate::aws_s3::MULTIPART_BUF_SIZE,
+        input_size.unwrap_or_default() / 5000,
+    );
+    store.set_multipart_size_hint(multipart_size);
+    info!(
+        "Setting multipart size hint to {} bytes.",
+        multipart_size.to_formatted_string(&Locale::en)
+    );
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -172,6 +192,21 @@ pub async fn compact(
     Ok(CompactionResult::from(&stats))
 }
 
+/// Calculate the total size of all `input_paths` objects.
+///
+/// The given store is queried for the size of each object.
+async fn calculate_input_size(
+    input_paths: &[Url],
+    store: &Arc<dyn ExtendedObjectStore>,
+) -> Result<usize, DataFusionError> {
+    let mut total_input = 0usize;
+    for path in input_paths {
+        let p = path.path();
+        total_input += store.head(&p.into()).await?.size;
+    }
+    Ok(total_input)
+}
+
 /// Write the frame out to the output path and collect statistics.
 ///
 /// The rows read and written are returned in the [`RowCount`] object.
@@ -263,9 +298,9 @@ impl ExecutionPlanVisitor for RowCounts {
     }
 }
 
-/// Show some basic statistics from the [`ObjectStore`].
+/// Show some basic statistics from the [`ExtendedObjectStore`].
 ///
-fn show_store_stats(store: &Arc<dyn CountingObjectStore>) {
+fn show_store_stats(store: &Arc<dyn ExtendedObjectStore>) {
     info!(
         "Object store read {} bytes from {} GETs",
         store
@@ -439,7 +474,7 @@ fn register_store(
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn CountingObjectStore>, DataFusionError> {
+) -> Result<Arc<dyn ExtendedObjectStore>, DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;
@@ -449,6 +484,6 @@ fn register_store(
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(output_path, out_store.clone().as_object_store());
+        .register_object_store(output_path, out_store.as_object_store());
     Ok(in_store)
 }

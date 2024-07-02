@@ -41,7 +41,7 @@ use object_store::{
 };
 use url::Url;
 
-pub const MULTIPART_BUF_SIZE: usize = 50 * 1024 * 1024;
+pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -72,9 +72,17 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
-/// Trait the provides ability to count the number of GET
-/// operations a store makes and number of bytes read.
-pub trait CountingObjectStore: ObjectStore {
+/// Trait that gives [`ObjectStore`] some new abilities such as
+/// counting the number of certain operations a store makes, number
+/// of bytes read.
+pub trait ExtendedObjectStore: ObjectStore {
+    /// Set the buffer capacity hint for multipart uploading.
+    ///
+    /// In multipart uploads, data will be buffered until `capacity`
+    /// bytes have been put. This is a hint and implementations may
+    /// differ in how they use this hint, if at all.
+    fn set_multipart_size_hint(&self, capacity: usize);
+
     /// Get the number of GET object requests this store as made.
     fn get_count(&self) -> Option<usize>;
 
@@ -90,7 +98,7 @@ pub trait CountingObjectStore: ObjectStore {
 pub struct ObjectStoreFactory {
     creds: Option<Arc<CredentialsFromConfigProvider>>,
     region: Region,
-    store_map: RefCell<HashMap<String, Arc<dyn CountingObjectStore>>>,
+    store_map: RefCell<HashMap<String, Arc<dyn ExtendedObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
@@ -114,7 +122,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn CountingObjectStore>> {
+    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ExtendedObjectStore>> {
         let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
@@ -138,7 +146,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn CountingObjectStore>> {
+    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ExtendedObjectStore>> {
         match src.scheme() {
             "s3" => {
                 if let Some(creds) = &self.creds {
@@ -166,16 +174,18 @@ impl ObjectStoreFactory {
 #[derive(Debug)]
 pub struct LoggingObjectStore {
     store: Arc<dyn ObjectStore>,
-    get_count: Arc<Mutex<usize>>,
-    get_bytes_read: Arc<Mutex<usize>>,
+    get_count: Mutex<usize>,
+    get_bytes_read: Mutex<usize>,
+    capacity: Mutex<usize>,
 }
 
 impl LoggingObjectStore {
     pub fn new(inner: Arc<dyn ObjectStore>) -> Self {
         Self {
             store: inner,
-            get_count: Arc::new(Mutex::new(0)),
-            get_bytes_read: Arc::new(Mutex::new(0)),
+            get_count: Mutex::new(0),
+            get_bytes_read: Mutex::new(0),
+            capacity: Mutex::new(MULTIPART_BUF_SIZE),
         }
     }
 }
@@ -371,20 +381,29 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
     {
         Box::pin(async move {
-            info!("PUT MULTIPART request to {}", location);
+            let part_size = *self.capacity.lock().unwrap();
+            info!(
+                "PUT MULTIPART request to {}, part size {}",
+                location,
+                part_size.to_formatted_string(&Locale::en)
+            );
             let thing = self.store.put_multipart_opts(location, opts).await?;
-            Ok(
-                Box::new(BufferingMultipartUpload::new(thing, MULTIPART_BUF_SIZE))
-                    as Box<dyn MultipartUpload>,
-            )
+            Ok(Box::new(BufferingMultipartUpload::new_with_capacity(
+                thing, part_size,
+            )) as Box<dyn MultipartUpload>)
         })
     }
 }
 
-impl CountingObjectStore for LoggingObjectStore {
+impl ExtendedObjectStore for LoggingObjectStore {
+    fn set_multipart_size_hint(&self, capacity: usize) {
+        *self.capacity.lock().unwrap() = capacity;
+    }
+
     fn get_count(&self) -> Option<usize> {
         Some(*self.get_count.lock().unwrap())
     }
+
     fn get_bytes_read(&self) -> Option<usize> {
         Some(*self.get_bytes_read.lock().unwrap())
     }
@@ -402,7 +421,7 @@ struct BufferingMultipartUpload {
 }
 
 impl BufferingMultipartUpload {
-    pub fn new(inner: Box<dyn MultipartUpload>, capacity: usize) -> Self {
+    pub fn new_with_capacity(inner: Box<dyn MultipartUpload>, capacity: usize) -> Self {
         Self {
             inner,
             buffer: BytesMut::with_capacity(capacity),
