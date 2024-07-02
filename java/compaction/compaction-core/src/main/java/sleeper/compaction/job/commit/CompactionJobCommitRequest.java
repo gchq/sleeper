@@ -26,18 +26,20 @@ public class CompactionJobCommitRequest {
     private final CompactionJob job;
     private final String taskId;
     private final String jobRunId;
-    private final long recordsWritten;
     private final Instant startTime;
     private final Instant finishTime;
+    private final long recordsRead;
+    private final long recordsWritten;
 
     public CompactionJobCommitRequest(
             CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary recordsProcessed) {
         this.job = job;
         this.taskId = taskId;
         this.jobRunId = jobRunId;
-        this.recordsWritten = recordsProcessed.getRecordsWritten();
         this.startTime = recordsProcessed.getStartTime();
         this.finishTime = recordsProcessed.getFinishTime();
+        this.recordsRead = recordsProcessed.getRecordsRead();
+        this.recordsWritten = recordsProcessed.getRecordsWritten();
     }
 
     public CompactionJob getJob() {
@@ -52,10 +54,6 @@ public class CompactionJobCommitRequest {
         return jobRunId;
     }
 
-    public long getRecordsWritten() {
-        return recordsWritten;
-    }
-
     public Instant getStartTime() {
         return startTime;
     }
@@ -64,9 +62,17 @@ public class CompactionJobCommitRequest {
         return finishTime;
     }
 
+    public long getRecordsRead() {
+        return recordsRead;
+    }
+
+    public long getRecordsWritten() {
+        return recordsWritten;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(job, taskId, jobRunId, recordsWritten, startTime, finishTime);
+        return Objects.hash(job, taskId, jobRunId, startTime, finishTime, recordsRead, recordsWritten);
     }
 
     @Override
@@ -78,14 +84,14 @@ public class CompactionJobCommitRequest {
             return false;
         }
         CompactionJobCommitRequest other = (CompactionJobCommitRequest) obj;
-        return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && recordsWritten == other.recordsWritten
-                && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime);
+        return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(startTime, other.startTime)
+                && Objects.equals(finishTime, other.finishTime) && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", recordsWritten=" + recordsWritten + ", startTime=" + startTime + ", finishTime="
-                + finishTime + "}";
+        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead
+                + ", recordsWritten=" + recordsWritten + "}";
     }
 
 }
