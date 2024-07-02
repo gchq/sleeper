@@ -23,14 +23,19 @@ import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.List;
 
 import static java.util.function.Predicate.not;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDurationString;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -105,10 +110,29 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
         out.printf("State: %s%n", jobStatus.getFurthestRunStatusType());
-        out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime().toString());
+        out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
+        jobStatus.getJobRuns().forEach(this::printJobRun);
         out.println("--------------------------");
+    }
+
+    private void printJobRun(ProcessRun run) {
+        runReporter.printProcessJobRunWithUpdatePrinter(run,
+                printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
+        CompactionJobStatusType runStatusType = CompactionJobStatusType.statusTypeOfJobRun(run);
+        if (runStatusType == CompactionJobStatusType.IN_PROGRESS) {
+            out.println("Not finished");
+        } else if (runStatusType == CompactionJobStatusType.UNCOMMITTED) {
+            out.println("Not committed");
+        }
+    }
+
+    private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
+        out.printf("State store commit time: %s%n", committedStatus.getUpdateTime());
+        if (run.isFinished()) {
+            Duration delay = Duration.between(run.getFinishTime(), committedStatus.getUpdateTime());
+            out.printf("Delay between finish and commit: %s%n", formatDurationString(delay));
+        }
     }
 
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {

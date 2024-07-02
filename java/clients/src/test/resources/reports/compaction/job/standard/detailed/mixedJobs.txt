@@ -1,6 +1,51 @@
 
 Compaction Job Status Report
 ----------------------------
+Details for job $(jobId7):
+State: FINISHED
+Creation time: 2022-09-23T13:33:12.001Z
+Partition ID: partnGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-23T13:34:12.001Z
+Start update time: 2022-09-23T13:34:12.123Z
+State store commit time: 2022-09-23T13:36:12.001Z
+--------------------------
+Details for job $(jobId6):
+State: FINISHED
+Creation time: 2022-09-22T13:33:12.001Z
+Partition ID: partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-22T13:34:12.001Z
+Start update time: 2022-09-22T13:34:12.123Z
+Finish time: 2022-09-22T13:35:12.001Z
+Finish update time: 2022-09-22T13:35:12.123Z
+Duration: 1m
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+State store commit time: 2022-09-22T13:36:12.001Z
+Delay between finish and commit: 1m
+--------------------------
+Details for job $(jobId5):
+State: UNCOMMITTED
+Creation time: 2022-09-21T13:33:12.001Z
+Partition ID: partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-21T13:34:12.001Z
+Start update time: 2022-09-21T13:34:12.123Z
+Finish time: 2022-09-21T13:35:12.001Z
+Finish update time: 2022-09-21T13:35:12.123Z
+Duration: 1m
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+Not committed
+--------------------------
 Details for job $(jobId4):
 State: FAILED
 Creation time: 2022-09-20T13:33:12.001Z
