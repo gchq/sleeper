@@ -28,12 +28,13 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.util.LoggedDuration;
 
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.List;
 
 import static java.util.function.Predicate.not;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDurationString;
 import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
@@ -129,8 +130,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
         out.printf("State store commit time: %s%n", committedStatus.getUpdateTime());
         if (run.isFinished()) {
-            LoggedDuration delay = LoggedDuration.withFullOutput(run.getFinishTime(), committedStatus.getUpdateTime());
-            out.printf("Delay between finish and commit: %s%n", delay);
+            Duration delay = Duration.between(run.getFinishTime(), committedStatus.getUpdateTime());
+            out.printf("Delay between finish and commit: %s%n", formatDurationString(delay));
         }
     }
 

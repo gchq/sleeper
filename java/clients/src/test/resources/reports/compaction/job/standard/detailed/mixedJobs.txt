@@ -27,7 +27,7 @@ Records written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 State store commit time: 2022-09-22T13:36:12.001Z
-Delay between finish and commit: 1 minute 0 seconds
+Delay between finish and commit: 1m
 --------------------------
 Details for job $(jobId5):
 State: UNCOMMITTED
