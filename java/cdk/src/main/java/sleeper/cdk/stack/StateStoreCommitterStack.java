@@ -67,7 +67,7 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE_COMMITTER, jarsBucket);
+        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(committerJar,
@@ -121,7 +121,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.committer.lambda.StateStoreCommitterLambda::handleRequest")
+                .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "StateStoreCommitterLogGroup", functionName, instanceProperties)));
 

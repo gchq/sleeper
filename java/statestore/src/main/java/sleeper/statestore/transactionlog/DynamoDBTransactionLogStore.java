@@ -54,7 +54,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
  * Stores a transaction log in DynamoDB and S3. If a transaction is too big to fit in a DynamoDB item, the body of the
  * transaction is stored in S3.
  */
-class DynamoDBTransactionLogStore implements TransactionLogStore {
+public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStore.class);
 
     private static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
@@ -72,7 +72,7 @@ class DynamoDBTransactionLogStore implements TransactionLogStore {
     private final AmazonS3 s3;
     private final TransactionSerDe serDe;
 
-    DynamoDBTransactionLogStore(
+    public DynamoDBTransactionLogStore(
             String logTableName, InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamo, AmazonS3 s3) {
         this.logTableName = logTableName;

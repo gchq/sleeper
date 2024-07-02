@@ -57,6 +57,7 @@ import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.TransactionLogSnapshotStack;
 import sleeper.cdk.stack.TransactionLogStateStoreStack;
+import sleeper.cdk.stack.TransactionLogTransactionStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.WebSocketQueryStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -169,6 +170,8 @@ public class SleeperCdkApp extends Stack {
                 stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
+                instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
+        new TransactionLogTransactionStack(this, "TransactionLogTransaction",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
