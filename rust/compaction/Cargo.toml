@@ -1,0 +1,55 @@
+# Copyright 2022-2024 Crown Copyright
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+[package]
+name = "compaction"
+version = "0.1.0"
+edition = "2021"
+authors = ["GCHQ"]
+rust-version = "1.77"
+description = "This is the compaction library that implements all the core data compaction and sketches writing functionality that will be needed in Sleeper."
+license = "Apache-2.0"
+keywords = ["sleeper", "compaction"]
+categories = ["science"]
+publish = false
+
+[lib]
+doc = true
+doctest = true
+test = true
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cxx = { version = "1.0.104" } # Exception handling for Rust
+libc = { version = "0.2.147" } # FFI type support
+log = { version = "0.4.19" } # Logging support
+arrow = { version = "52.0.0" } # Batch of reading from Parquet files
+futures = { version = "0.3.28" } # Async processing
+datafusion = { version = "39.0.0", features = ["backtrace"] }
+object_store = { version = "0.10.1", features = [
+    "aws",
+] } # Remote cloud storage access
+rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
+tokio = { version = "1.31.0", features = ["full"] }
+aws-config = { version = "1.2.0" } # Credential loading
+aws-credential-types = { version = "1.2.0" } # Credential provider types
+aws-types = { version = "1.2.0" } # for Region
+url = { version = "2.4.0" } # URL processing for S3
+bytes = { version = "1.4.0" } # Byte buffer for S3 uploading
+num-format = { version = "0.4.4" } # Nicely formatted numbers
+tokio-test = { version = "0.4.2" } # Doc tests
+env_logger = { version = "0.11.3" }
+chrono = { version = "0.4.26" } # Log helper
+color-eyre = { version = "0.6.3" } # Error handling

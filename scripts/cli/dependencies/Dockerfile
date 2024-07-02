@@ -48,8 +48,8 @@ WORKDIR /aws
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in \
-        arm64) awsArch='aarch64' ;; \
-        *) awsArch='x86_64' ;; \
+    arm64) awsArch='aarch64' ;; \
+    *) awsArch='x86_64' ;; \
     esac; \
     curl "https://awscli.amazonaws.com/awscli-exe-linux-$awsArch.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip && rm awscliv2.zip && ./aws/install && rm -rf /aws
@@ -60,8 +60,14 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor --ye
 RUN echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
 RUN apt-get update && apt-get install -y \
     docker-ce \
     docker-ce-cli \
     containerd.io \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Rust and C++
+RUN apt-get update && apt-get install -y gcc g++ cmake make
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
+RUN $HOME/.cargo/bin/cargo install cross

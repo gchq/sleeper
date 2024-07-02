@@ -112,7 +112,7 @@ public class WorkflowTriggerPathsDiff {
 
     @Override
     public String toString() {
-        return "OnPushPathsDiff{" +
+        return "OnPullRequestPathsDiff{" +
                 "expected=" + expected +
                 ", actual=" + actual +
                 ", missingEntries=" + missingEntries +

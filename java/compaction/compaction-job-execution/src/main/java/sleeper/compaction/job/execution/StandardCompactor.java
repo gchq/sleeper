@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.task.CompactionTask;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -41,7 +41,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -62,24 +61,22 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class CompactSortedFiles implements CompactionTask.CompactionRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
-    public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
-    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
-
+public class StandardCompactor implements CompactionRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final Configuration configuration;
 
-    public CompactSortedFiles(
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardCompactor.class);
+
+    public StandardCompactor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
         this(tablePropertiesProvider, stateStoreProvider, objectFactory,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
     }
 
-    public CompactSortedFiles(
+    public StandardCompactor(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -106,7 +103,8 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
-        // update the state store, it will overwrite the existing output file written by the previous run
+        // update the state store, it will overwrite the existing output file written
+        // by the previous run
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
@@ -148,6 +146,7 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
 
     private List<CloseableIterator<Record>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
+
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
             ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
@@ -176,11 +175,27 @@ public class CompactSortedFiles implements CompactionTask.CompactionRunner {
             } catch (ObjectFactoryException e) {
                 throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
             }
+
             LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
             iterator.init(compactionJob.getIteratorConfig(), schema);
             LOGGER.debug("Initialised iterator with config {}", compactionJob.getIteratorConfig());
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
+    }
+
+    @Override
+    public boolean supportsIterators() {
+        return true;
+    }
+
+    @Override
+    public String implementationLanguage() {
+        return "Java";
+    }
+
+    @Override
+    public boolean isHardwareAccelerated() {
+        return false;
     }
 }

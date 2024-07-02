@@ -18,6 +18,7 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -25,6 +26,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.util.List;
 
@@ -52,8 +54,10 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
-        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+        DefaultSelector selector = createCompactionSelector(schema,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        CompactionRunner runner = selector.chooseCompactor(compactionJob);
+        RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -76,8 +80,10 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema);
-        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+        DefaultSelector selector = createCompactionSelector(schema,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        CompactionRunner runner = selector.chooseCompactor(compactionJob);
+        RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results

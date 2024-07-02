@@ -13,5 +13,14 @@ pkgs.mkShell {
     git
     maven
     k9s
+    cmake
+    gcc
+    rustup
+    cargo-cross # For Rust cross compiling
+    pkg-config # Used to find openssl install
+    openssl # Needed by git2 module in Rust
   ];
+  shellHook = ''
+    rustup default stable
+  '';
 }

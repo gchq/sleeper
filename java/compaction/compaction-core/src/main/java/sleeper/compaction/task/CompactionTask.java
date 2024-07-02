@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -57,7 +58,7 @@ public class CompactionTask {
     private final Duration maxIdleTime;
     private final Duration delayBeforeRetry;
     private final MessageReceiver messageReceiver;
-    private final CompactionRunner compactor;
+    private final CompactionAlgorithmSelector selector;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
@@ -69,17 +70,17 @@ public class CompactionTask {
     private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles, CompactionRunner compactor,
+            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
-            CompactionTaskStatusStore taskStore, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, compactor, jobCommitter,
-                jobStore, taskStore, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
+            CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId) {
+        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, jobCommitter,
+                jobStore, taskStore, selector, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
-            CompactionRunner compactor, CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore,
+            CompactionJobCommitterOrSendToLambda jobCommitter,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
@@ -88,7 +89,7 @@ public class CompactionTask {
         this.timeSupplier = timeSupplier;
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
-        this.compactor = compactor;
+        this.selector = selector;
         this.jobStatusStore = jobStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
@@ -166,6 +167,7 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         propertiesReloader.reloadIfNeeded();
+        CompactionRunner compactor = this.selector.chooseCompactor(job);
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
@@ -186,11 +188,6 @@ public class CompactionTask {
     @FunctionalInterface
     public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws IOException;
-    }
-
-    @FunctionalInterface
-    public interface CompactionRunner {
-        RecordsProcessed compact(CompactionJob job) throws Exception;
     }
 
     @FunctionalInterface

@@ -283,6 +283,107 @@ s3fs:
 
 - The 3-Clause BSD License
 
+Sleeper contains Rust code. This has the following dependencies.
+
+Rust Object Store (https://github.com/apache/arrow-rs/tree/master/object_store)
+
+- Apache License, Version 2.0
+
+color-eyre (https://github.com/yaahc/color-eyre)
+
+- Apache License, Version 2.0
+
+Tokio (https://github.com/tokio-rs/tokio)
+
+- MIT License
+
+owo-colors (https://github.com/jam1garner/owo-colors)
+
+- MIT License
+
+thiserror (https://github.com/dtolnay/thiserror)
+
+- Apache License, Version 2.0
+
+log (https://github.com/rust-lang/log)
+
+- Apache License, Version 2.0
+
+env_logger (https://github.com/rust-cli/env_logger/)
+
+- Apache License, Version 2.0
+
+human-panic (https://github.com/rust-cli/human-panic)
+
+- Apache License, Version 2.0
+
+clap (https://github.com/clap-rs/clap)
+
+- Apache License, Version 2.0
+
+libc (https://github.com/rust-lang/libc)
+
+- Apache License, Version 2.0
+
+arrow (https://github.com/apache/arrow-rs)
+
+- Apache License, Version 2.0
+
+futures (https://github.com/rust-lang/futures-rs)
+
+- MIT License
+
+itertools (https://github.com/rust-itertools/itertools)
+
+- Apache License, Version 2.0
+
+object_store (https://github.com/apache/arrow-rs/tree/master/object_store)
+
+- Apache License, Version 2.0
+
+aws-config (https://github.com/awslabs/smithy-rs)
+ 
+- Apache License, Version 2.0
+
+aws-credentials (https://github.com/awslabs/smithy-rs)
+
+- Apache License, Version 2.0
+
+aws-types (https://github.com/awslabs/smithy-rs)
+
+- Apache License, Version 2.0
+
+url (https://github.com/servo/rust-url)
+
+- Apache License, Version 2.0
+
+bytes (https://github.com/tokio-rs/bytes)
+
+- MIT License
+
+tokio-test (https://github.com/tokio-rs/tokio)
+
+- MIT License
+
+chrono (https://github.com/chronotope/chrono)
+
+- Apache License, Version 2.0
+
+num-format (https://github.com/bcmyers/num-format)
+
+- Apache License, Version 2.0
+
+cxx (https://github.com/dtolnay/cxx)
+
+- Apache 2 License
+
+datasketches-cpp (https://github.com/apache/datasketches-cpp)
+
+- Apache 2 License
+
+git2 (https://github.com/rust-lang/git2-rs)
+
+- Apache 2 License
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.
