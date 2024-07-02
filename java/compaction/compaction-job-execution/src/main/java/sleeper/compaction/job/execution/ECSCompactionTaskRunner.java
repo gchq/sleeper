@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -140,15 +139,9 @@ public class ECSCompactionTaskRunner {
     public static CompactionJobCommitterOrSendToLambda committerOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        return new CompactionJobCommitterOrSendToLambda(tablePropertiesProvider,
-                committer(tablePropertiesProvider, stateStoreProvider, jobStatusStore),
+        return new CompactionJobCommitterOrSendToLambda(
+                tablePropertiesProvider, stateStoreProvider.byTableId(tablePropertiesProvider), jobStatusStore,
                 sendToSqs(instanceProperties, sqsClient));
-    }
-
-    private static CompactionJobCommitter committer(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore) {
-        return new CompactionJobCommitter(jobStatusStore, stateStoreProvider.byTableId(tablePropertiesProvider));
     }
 
     private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {

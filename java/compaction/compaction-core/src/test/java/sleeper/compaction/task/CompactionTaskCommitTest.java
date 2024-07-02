@@ -37,15 +37,16 @@ import java.util.Queue;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
@@ -63,11 +64,12 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestToQueue() throws Exception {
             // Given
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Queue<Instant> times = new LinkedList<>(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"),   // Start
-                    Instant.parse("2024-02-22T13:50:01Z"),   // Job started
-                    Instant.parse("2024-02-22T13:50:02Z"),   // Job completed
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                    startTime, finishTime,
+                    Instant.parse("2024-02-22T13:50:05Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1");
             RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
 
@@ -85,29 +87,32 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     Instant.parse("2024-02-22T13:50:02Z"))));
             assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     jobCreated(job1, DEFAULT_CREATED_TIME,
-                            startedCompactionRun(DEFAULT_TASK_ID,
-                                    Instant.parse("2024-02-22T13:50:01Z"))));
+                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary(startTime, finishTime, 10, 5)))
+                                    .build()));
         }
 
         @Test
         void shouldSendJobCommitRequestsForDifferentTablesToQueue() throws Exception {
             // Given
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Queue<Instant> times = new LinkedList<>(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"),   // Start
-                    Instant.parse("2024-02-22T13:50:01Z"),   // Job 1 started
-                    Instant.parse("2024-02-22T13:50:02Z"),   // Job 1 completed
-                    Instant.parse("2024-02-22T13:50:03Z"),   // Job 2 started
-                    Instant.parse("2024-02-22T13:50:04Z"),   // Job 2 completed
-                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RecordsProcessed job1Summary = new RecordsProcessed(10L, 10L);
+            RecordsProcessed job1Records = new RecordsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RecordsProcessed job2Summary = new RecordsProcessed(20L, 20L);
+            RecordsProcessed job2Records = new RecordsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
-                    jobSucceeds(job1Summary),
-                    jobSucceeds(job2Summary)),
+                    jobSucceeds(job1Records),
+                    jobSucceeds(job2Records)),
                     times::poll);
 
             // Then
@@ -116,43 +121,46 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1, "test-job-run-1",
-                            new RecordsProcessedSummary(job1Summary,
-                                    Instant.parse("2024-02-22T13:50:01Z"),
-                                    Instant.parse("2024-02-22T13:50:02Z"))),
+                            new RecordsProcessedSummary(job1Records, startTime1, finishTime1)),
                     commitRequestFor(job2, "test-job-run-2",
-                            new RecordsProcessedSummary(job2Summary,
-                                    Instant.parse("2024-02-22T13:50:03Z"),
-                                    Instant.parse("2024-02-22T13:50:04Z"))));
+                            new RecordsProcessedSummary(job2Records, startTime2, finishTime2)));
             assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     jobCreated(job1, DEFAULT_CREATED_TIME,
-                            startedCompactionRun(DEFAULT_TASK_ID,
-                                    Instant.parse("2024-02-22T13:50:01Z"))));
+                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime1))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                            new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
+                                    .build()));
             assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     jobCreated(job2, DEFAULT_CREATED_TIME,
-                            startedCompactionRun(DEFAULT_TASK_ID,
-                                    Instant.parse("2024-02-22T13:50:03Z"))));
+                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime2))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                            new RecordsProcessedSummary(job2Records, startTime2, finishTime2)))
+                                    .build()));
         }
 
         @Test
         void shouldOnlySendJobCommitRequestsForTablesConfiguredForAsyncCommit() throws Exception {
             // Given
             table2.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
+            Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
+            Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Queue<Instant> times = new LinkedList<>(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"),   // Start
-                    Instant.parse("2024-02-22T13:50:01Z"),   // Job 1 started
-                    Instant.parse("2024-02-22T13:50:02Z"),   // Job 1 completed
-                    Instant.parse("2024-02-22T13:50:03Z"),   // Job 2 started
-                    Instant.parse("2024-02-22T13:50:04Z"),   // Job 2 completed
-                    Instant.parse("2024-02-22T13:50:07Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                    startTime1, finishTime1, startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RecordsProcessed job1Summary = new RecordsProcessed(10L, 10L);
+            RecordsProcessed job1Records = new RecordsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RecordsProcessed job2Summary = new RecordsProcessed(20L, 20L);
+            RecordsProcessed job2Records = new RecordsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
-                    jobSucceeds(job1Summary),
-                    jobSucceeds(job2Summary)),
+                    jobSucceeds(job1Records),
+                    jobSucceeds(job2Records)),
                     times::poll);
 
             // Then
@@ -160,19 +168,21 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
-                    commitRequestFor(job1,
-                            new RecordsProcessedSummary(job1Summary,
-                                    Instant.parse("2024-02-22T13:50:01Z"),
-                                    Instant.parse("2024-02-22T13:50:02Z"))));
+                    commitRequestFor(job1, new RecordsProcessedSummary(job1Records, startTime1, finishTime1)));
             assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     jobCreated(job1, DEFAULT_CREATED_TIME,
-                            startedCompactionRun(DEFAULT_TASK_ID,
-                                    Instant.parse("2024-02-22T13:50:01Z"))));
+                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime1))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                            new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
+                                    .build()));
             assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     jobCreated(job2, DEFAULT_CREATED_TIME,
-                            finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(job2Summary,
-                                    Instant.parse("2024-02-22T13:50:03Z"),
-                                    Instant.parse("2024-02-22T13:50:04Z")))));
+                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime2))
+                                    .finishedStatus(compactionFinishedStatus(
+                                            new RecordsProcessedSummary(job2Records, startTime2, finishTime2)))
+                                    .build()));
         }
 
         @Test
@@ -182,6 +192,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
+            Instant commitTime = Instant.parse("2024-02-22T13:50:10Z");
+            Instant commitFailTime = Instant.parse("2024-02-22T13:50:10Z");
             Queue<Instant> timesInTask = new LinkedList<>(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     startTime1, finishTime1, startTime2, finishTime2,
@@ -199,9 +211,9 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobSucceeds(recordsProcessed)),
                     jobRunIds::poll, timesInTask::poll);
             // And the commits are saved to the status store
-            jobStore.jobFinished(compactionJobFinished(job, summary(startTime1, finishTime1, 10, 10))
-                    .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, finishTime2))
+            jobStore.jobCommitted(compactionJobCommitted(job)
+                    .taskId("test-task").jobRunId("test-job-run-1").build(), commitTime);
+            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, commitFailTime))
                     .failureReasons(List.of("Could not commit same job twice"))
                     .taskId("test-task").jobRunId("test-job-run-2").build());
 
@@ -210,11 +222,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFailedStatus(new ProcessRunTime(startTime2, finishTime2), List.of("Could not commit same job twice")))
+                                    .statusUpdate(compactionFinishedStatusUncommitted(
+                                            new RecordsProcessedSummary(recordsProcessed, startTime2, finishTime2)))
+                                    .finishedStatus(compactionFailedStatus(
+                                            new ProcessRunTime(startTime2, commitFailTime),
+                                            List.of("Could not commit same job twice")))
                                     .build(),
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatus(summary(startTime1, finishTime1, 10, 10)))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                            new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1)))
+                                    .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
         }
 

@@ -16,7 +16,6 @@
 package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
@@ -59,16 +58,16 @@ public class CompactionJobCommitRequest {
         return startTime;
     }
 
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
+    public long getRecordsRead() {
+        return recordsRead;
+    }
+
     public long getRecordsWritten() {
         return recordsWritten;
-    }
-
-    public RecordsProcessed buildRecordsProcessed() {
-        return new RecordsProcessed(recordsRead, recordsWritten);
-    }
-
-    public RecordsProcessedSummary buildRecordsProcessedSummary() {
-        return new RecordsProcessedSummary(buildRecordsProcessed(), startTime, finishTime);
     }
 
     @Override

@@ -18,19 +18,32 @@ package sleeper.commit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
+
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 
 /**
  * Applies a state store commit request.
@@ -38,17 +51,20 @@ import java.util.List;
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final CompactionJobCommitter compactionJobCommitter;
+    private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
+    private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
-            GetStateStoreByTableId stateStoreProvider) {
-        this.compactionJobCommitter = new CompactionJobCommitter(compactionJobStatusStore, stateStoreProvider);
+            GetStateStoreByTableId stateStoreProvider,
+            Supplier<Instant> timeSupplier) {
+        this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
+        this.timeSupplier = timeSupplier;
     }
 
     /**
@@ -59,9 +75,34 @@ public class StateStoreCommitter {
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
         Object requestObj = request.getRequest();
         if (requestObj instanceof CompactionJobCommitRequest) {
-            compactionJobCommitter.apply((CompactionJobCommitRequest) requestObj);
+            apply((CompactionJobCommitRequest) requestObj);
         } else if (requestObj instanceof IngestAddFilesCommitRequest) {
             apply((IngestAddFilesCommitRequest) requestObj);
+        }
+    }
+
+    private void apply(CompactionJobCommitRequest request) throws StateStoreException {
+        CompactionJob job = request.getJob();
+        try {
+            CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
+                    stateStoreProvider.getByTableId(job.getTableId()));
+            compactionJobStatusStore.jobCommitted(compactionJobCommitted(job)
+                    .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
+            LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
+        } catch (ReplaceRequestsFailedException e) {
+            Exception failure = e.getFailures().get(0);
+            if (failure instanceof FileNotFoundException
+                    | failure instanceof FileReferenceNotFoundException
+                    | failure instanceof FileReferenceNotAssignedToJobException
+                    | failure instanceof NewReferenceSameAsOldReferenceException
+                    | failure instanceof FileAlreadyExistsException) {
+                compactionJobStatusStore.jobFailed(compactionJobFailed(job,
+                        new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
+                        .failure(e.getFailures().get(0))
+                        .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
+            } else {
+                throw e;
+            }
         }
     }
 

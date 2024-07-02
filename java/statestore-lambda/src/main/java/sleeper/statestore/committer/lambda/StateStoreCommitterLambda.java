@@ -99,6 +99,6 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider));
+                stateStoreProvider.byTableId(tablePropertiesProvider), Instant::now);
     }
 }
