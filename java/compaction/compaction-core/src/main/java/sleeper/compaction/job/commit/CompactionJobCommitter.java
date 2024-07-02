@@ -17,8 +17,9 @@ package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 
 import java.util.List;
 
@@ -32,7 +33,12 @@ public class CompactionJobCommitter {
     public static void updateStateStoreSuccess(
             CompactionJob job,
             long recordsWritten,
-            StateStore stateStore) throws StateStoreException {
+            StateStore stateStore) throws ReplaceRequestsFailedException {
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes(
+                List.of(replaceFileReferencesRequest(job, recordsWritten)));
+    }
+
+    public static ReplaceFileReferencesRequest replaceFileReferencesRequest(CompactionJob job, long recordsWritten) {
         FileReference fileReference = FileReference.builder()
                 .filename(job.getOutputFile())
                 .partitionId(job.getPartitionId())
@@ -40,7 +46,6 @@ public class CompactionJobCommitter {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference)));
+        return replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
     }
 }
