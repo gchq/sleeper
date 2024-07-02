@@ -16,11 +16,7 @@
 
 package sleeper.ingest.testutils;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
@@ -29,14 +25,9 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
@@ -49,7 +40,6 @@ public class IngestCoordinatorFactory {
             IngestCoordinatorTestParameters parameters, String filePathPrefix,
             Consumer<ArrowRecordBatchFactory.Builder<U>> arrowConfig,
             T recordWriter) {
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
         ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builder()
                 .schema(parameters.getSchema())
                 .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
@@ -60,22 +50,10 @@ public class IngestCoordinatorFactory {
                 .recordWriter(recordWriter)
                 .localWorkingDirectory(parameters.getWorkingDir());
         arrowConfig.accept(arrowConfigBuilder);
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties table = createTestTableProperties(instanceProperties, parameters.getSchema());
-        table.set(ITERATOR_CLASS_NAME, parameters.getIteratorClassName());
-        table.set(INGEST_FILE_WRITING_STRATEGY, parameters.getIngestFileWritingStrategy().toString());
-        IngestFactory factory = IngestFactory.builder()
-                .instanceProperties(instanceProperties)
-                .hadoopConfiguration(parameters.getHadoopConfiguration())
-                .localDir(parameters.getWorkingDir())
-                .objectFactory(ObjectFactory.noUserJars())
-                .s3AsyncClient(parameters.getS3AsyncClient())
-                .stateStoreProvider(new FixedStateStoreProvider(table, parameters.getStateStore()))
-                .build();
-        return factory.ingestCoordinatorBuilder(table)
+        return parameters.ingestCoordinatorBuilder()
                 .recordBatchFactory(arrowConfigBuilder.build())
                 .partitionFileWriterFactory(DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, filePathPrefix,
+                        parquetConfiguration(parameters), filePathPrefix,
                         parameters.getFileNameGenerator()))
                 .build();
     }
