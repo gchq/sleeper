@@ -28,20 +28,19 @@ import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 
 public class DockerImageConfiguration {
-    private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            "IngestStack", dockerBuildImage("ingest"),
-            "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
-            "CompactionStack", dockerBuildxImage("compaction-job-execution"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"),
-            "CompactionGPU", dockerBuildImage("compaction-gpu", "runner"));
+    private static final Map<String, List<StackDockerImage>> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
+            "IngestStack", List.of(dockerBuildImage("ingest")),
+            "EksBulkImportStack", List.of(dockerBuildImage("bulk-import-runner")),
+            "CompactionStack", List.of(dockerBuildxImage("compaction-job-execution"), dockerBuildImage("compaction-gpu", "runner")),
+            "EmrServerlessBulkImportStack", List.of(emrServerlessImage("bulk-import-runner-emr-serverless")));
 
-    private final Map<String, StackDockerImage> imageByStack;
+    private final Map<String, List<StackDockerImage>> imageByStack;
 
     public DockerImageConfiguration() {
         this(DEFAULT_DOCKER_IMAGE_BY_STACK);
     }
 
-    public DockerImageConfiguration(Map<String, StackDockerImage> imageByStack) {
+    public DockerImageConfiguration(Map<String, List<StackDockerImage>> imageByStack) {
         this.imageByStack = imageByStack;
     }
 
@@ -58,13 +57,13 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    public Optional<StackDockerImage> getStackImage(String stack) {
+    public Optional<List<StackDockerImage>> getStackImage(String stack) {
         return Optional.ofNullable(imageByStack.get(stack));
     }
 
     public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
         return imageByStack.values().stream()
-                .filter(image -> repositoryName.endsWith("/" + image.getImageName()))
+                .filter(image -> repositoryName.endsWith("/" + image.get(0).getImageName()))
                 .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
                 .findFirst();
     }

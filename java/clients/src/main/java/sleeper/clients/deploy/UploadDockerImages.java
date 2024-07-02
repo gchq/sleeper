@@ -25,6 +25,7 @@ import sleeper.clients.util.EcrRepositoryCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -95,14 +96,18 @@ public class UploadDockerImages {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
                 }
                 if (stackImage.isBuildx()) {
-                    List<String> cmd = List.of("docker", "buildx", "build",
+                    List<String> cmd = new ArrayList<>();
+                    cmd.addAll(List.of("docker", "buildx", "build",
                             "--platform", "linux/amd64,linux/arm64",
-                            "-t", tag, "--push", directory);
+                            "-t", tag, "--push"));
                     cmd.addAll(dockerTargetCmd);
+                    cmd.add(directory);
                     runCommand.runOrThrow(cmd.toArray(new String[0]));
                 } else {
-                    List<String> cmd = List.of("docker", "build", "-t", tag, directory);
+                    List<String> cmd = new ArrayList<>();
+                    cmd.addAll(List.of("docker", "build", "-t", tag));
                     cmd.addAll(dockerTargetCmd);
+                    cmd.add(directory);
                     runCommand.runOrThrow(cmd.toArray(new String[0]));
                     runCommand.runOrThrow("docker", "push", tag);
                 }

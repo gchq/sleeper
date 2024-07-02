@@ -87,7 +87,6 @@
             </excludes>
         </fileSet>
     </fileSets>
-@
     <files>
         <file>
             <source>${project.basedir}/../../README.md</source>
