@@ -118,8 +118,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printJobRun(ProcessRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run,
                 printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
-        if (!run.isFinished()) {
+        CompactionJobStatusType runStatusType = CompactionJobStatusType.statusTypeOfJobRun(run);
+        if (runStatusType == CompactionJobStatusType.IN_PROGRESS) {
             out.println("Not finished");
+        } else if (runStatusType == CompactionJobStatusType.UNCOMMITTED) {
+            out.println("Not committed");
         }
     }
 

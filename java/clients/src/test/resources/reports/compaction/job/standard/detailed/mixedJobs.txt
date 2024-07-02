@@ -33,6 +33,7 @@ Records read: 600
 Records written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
+Not committed
 --------------------------
 Details for job $(jobId4):
 State: FAILED
