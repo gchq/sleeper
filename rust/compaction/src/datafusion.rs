@@ -76,7 +76,7 @@ pub async fn compact(
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
 
-    // Find total input size and configure multipart upload size
+    // Find total input size and configure multipart upload size on output store
     let input_size = calculate_input_size(input_paths, &store)
         .await
         .inspect(|v| {
@@ -90,6 +90,11 @@ pub async fn compact(
         crate::aws_s3::MULTIPART_BUF_SIZE,
         input_size.unwrap_or_default() / 5000,
     );
+    store_factory
+        .get_object_store(output_path)
+        .map_err(|e| DataFusionError::External(e.into()))?
+        .set_multipart_size_hint(multipart_size);
+
     store.set_multipart_size_hint(multipart_size);
     info!(
         "Setting multipart size hint to {} bytes.",
