@@ -85,6 +85,10 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStartedStatus started6 = compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z"));
         CompactionJobFinishedStatus finished6 = compactionFinishedStatusUncommitted(summary(started6, Duration.ofMinutes(1), 600, 300));
         CompactionJobCommittedStatus committed6 = compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z"));
+        CompactionJob job7 = dataHelper.singleFileCompaction(partition("G"));
+        Instant creationTime7 = Instant.parse("2022-09-23T13:33:12.001Z");
+        CompactionJobStartedStatus started7 = compactionStartedStatus(Instant.parse("2022-09-23T13:34:12.001Z"));
+        CompactionJobCommittedStatus committed7 = compactionCommittedStatus(Instant.parse("2022-09-23T13:36:12.001Z"));
 
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
         CompactionJobStatus status2 = jobCreated(job2, creationTime2,
@@ -104,7 +108,11 @@ public abstract class CompactionJobStatusReporterTestBase {
                 ProcessRun.builder().taskId(task(1))
                         .startedStatus(started6).finishedStatus(finished6).statusUpdate(committed6)
                         .build());
-        return Arrays.asList(status6, status5, status4, status3, status2, status1);
+        CompactionJobStatus status7 = jobCreated(job7, creationTime7,
+                ProcessRun.builder().taskId(task(1))
+                        .startedStatus(started7).statusUpdate(committed7)
+                        .build());
+        return Arrays.asList(status7, status6, status5, status4, status3, status2, status1);
     }
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {

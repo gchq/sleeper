@@ -127,10 +127,10 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
-        // TODO test case where the finished status does not exist
-        LoggedDuration delay = LoggedDuration.withFullOutput(run.getFinishTime(), committedStatus.getUpdateTime());
-        out.printf("Committed 1 file to state store, took %s%n", delay);
-
+        if (run.isFinished()) {
+            LoggedDuration delay = LoggedDuration.withFullOutput(run.getFinishTime(), committedStatus.getUpdateTime());
+            out.printf("Committed 1 file to state store, took %s%n", delay);
+        }
     }
 
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
