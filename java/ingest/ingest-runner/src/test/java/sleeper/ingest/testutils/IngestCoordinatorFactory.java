@@ -29,7 +29,6 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import java.util.function.Consumer;
 
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
 public class IngestCoordinatorFactory {
 
@@ -40,7 +39,6 @@ public class IngestCoordinatorFactory {
             IngestCoordinatorTestParameters parameters, String filePathPrefix,
             Consumer<ArrowRecordBatchFactory.Builder<U>> arrowConfig,
             T recordWriter) {
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
         ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builder()
                 .schema(parameters.getSchema())
                 .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
@@ -51,10 +49,10 @@ public class IngestCoordinatorFactory {
                 .recordWriter(recordWriter)
                 .localWorkingDirectory(parameters.getWorkingDir());
         arrowConfig.accept(arrowConfigBuilder);
-        return standardIngestCoordinatorBuilder(parameters,
-                arrowConfigBuilder.build(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, filePathPrefix,
+        return parameters.ingestCoordinatorBuilder()
+                .recordBatchFactory(arrowConfigBuilder.build())
+                .partitionFileWriterFactory(DirectPartitionFileWriterFactory.from(
+                        parquetConfiguration(parameters), filePathPrefix,
                         parameters.getFileNameGenerator()))
                 .build();
     }
@@ -65,11 +63,11 @@ public class IngestCoordinatorFactory {
         }, new ArrowRecordWriterAcceptingRecords());
     }
 
-    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(IngestCoordinatorTestParameters parameters) {
+    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
+            IngestCoordinatorTestParameters parameters) {
         try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            return standardIngestCoordinatorBuilder(parameters,
-                    ArrowRecordBatchFactory.builder()
+            return parameters.ingestCoordinatorBuilder()
+                    .recordBatchFactory(ArrowRecordBatchFactory.builder()
                             .schema(parameters.getSchema())
                             .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
                             .workingBufferAllocatorBytes(16 * 1024 * 1024L)
@@ -77,9 +75,9 @@ public class IngestCoordinatorFactory {
                             .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
                             .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
                             .localWorkingDirectory(parameters.getWorkingDir())
-                            .buildAcceptingRecords(),
-                    AsyncS3PartitionFileWriterFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
+                            .buildAcceptingRecords())
+                    .partitionFileWriterFactory(AsyncS3PartitionFileWriterFactory.builder()
+                            .parquetConfiguration(parquetConfiguration(parameters))
                             .s3AsyncClient(parameters.getS3AsyncClient())
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .s3BucketName(parameters.getDataBucketName())
@@ -103,17 +101,19 @@ public class IngestCoordinatorFactory {
             Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrowConfig) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch = (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory.builder()
+            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch = (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory
+                    .builder()
                     .parquetConfiguration(parquetConfiguration)
                     .maxNoOfRecordsInLocalStore(1000)
                     .maxNoOfRecordsInMemory(100000)
                     .localWorkingDirectory(parameters.getWorkingDir());
             arrowConfig.accept(arrayListRecordBatch);
-            return standardIngestCoordinatorBuilder(parameters,
-                    arrayListRecordBatch.buildAcceptingRecords(),
-                    DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix,
-                            parameters.getFileNameGenerator()))
+            return parameters.ingestCoordinatorBuilder()
+                    .recordBatchFactory(arrayListRecordBatch.buildAcceptingRecords())
+                    .partitionFileWriterFactory(
+                            DirectPartitionFileWriterFactory.from(
+                                    parquetConfiguration, filePathPrefix,
+                                    parameters.getFileNameGenerator()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);

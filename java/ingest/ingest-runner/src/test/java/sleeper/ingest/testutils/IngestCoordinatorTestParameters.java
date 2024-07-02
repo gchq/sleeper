@@ -19,9 +19,16 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.IngestFactory;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -30,6 +37,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 
 public class IngestCoordinatorTestParameters {
 
@@ -109,6 +120,21 @@ public class IngestCoordinatorTestParameters {
 
     public IngestFileWritingStrategy getIngestFileWritingStrategy() {
         return ingestFileWritingStrategy;
+    }
+
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
+        tableProperties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString());
+        return IngestFactory.builder()
+                .instanceProperties(instanceProperties)
+                .hadoopConfiguration(hadoopConfiguration)
+                .localDir(workingDir)
+                .objectFactory(ObjectFactory.noUserJars())
+                .s3AsyncClient(s3AsyncClient)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build().ingestCoordinatorBuilder(tableProperties);
     }
 
     public static final class Builder {

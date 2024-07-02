@@ -58,15 +58,6 @@ public class IngestCoordinatorTestHelper {
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
-            IngestCoordinatorTestParameters parameters,
-            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
-        return standardIngestCoordinatorBuilder(parameters.getStateStore(), parameters.getSchema(),
-                recordBatchFactory, partitionFileWriterFactory)
-                .iteratorClassName(parameters.getIteratorClassName())
-                .ingestFileWritingStrategy(parameters.getIngestFileWritingStrategy());
-    }
-
-    public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
             RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return IngestCoordinator.builder()
