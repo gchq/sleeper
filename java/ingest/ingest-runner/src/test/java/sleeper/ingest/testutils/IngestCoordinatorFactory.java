@@ -22,7 +22,6 @@ import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
@@ -30,6 +29,8 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -91,18 +92,13 @@ public class IngestCoordinatorFactory {
             int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            ArrayListRecordBatchFactory.Builder<?> arrayListRecordBatch = ArrayListRecordBatchFactory
-                    .builder()
-                    .parquetConfiguration(parquetConfiguration)
-                    .maxNoOfRecordsInLocalStore(maxRecordsToWriteToLocalStore)
-                    .maxNoOfRecordsInMemory(maxRecordsInMemory)
-                    .localWorkingDirectory(parameters.getWorkingDir());
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
             instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
             instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
             return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
-                    .recordBatchFactory(arrayListRecordBatch.buildAcceptingRecords())
                     .partitionFileWriterFactory(
                             DirectPartitionFileWriterFactory.from(
                                     parquetConfiguration, filePathPrefix,
