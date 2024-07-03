@@ -75,12 +75,7 @@ pub async fn compact(
     info!("Compaction partition region {:?}", input_data.region);
 
     let sf = create_session_cfg(input_data, input_paths);
-    let mp = FairSpillPool::new(10 * 1024 * 1024);
-    let rt = RuntimeConfig::new()
-        .with_disk_manager(datafusion::execution::disk_manager::DiskManagerConfig::NewOs)
-        .with_memory_pool(Arc::new(mp));
-
-    let ctx = SessionContext::new_with_config_rt(sf, Arc::new(RuntimeEnv::new(rt)?));
+    let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
@@ -100,7 +95,6 @@ pub async fn compact(
         input_size.unwrap_or_default() / 5000,
     );
 
-    multipart_size = 120 * 1024 * 1024;
     store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?
