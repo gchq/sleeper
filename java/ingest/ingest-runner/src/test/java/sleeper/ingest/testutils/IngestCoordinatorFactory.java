@@ -106,22 +106,20 @@ public class IngestCoordinatorFactory {
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters, String filePathPrefix) {
-        return ingestCoordinatorDirectWriteBackedByArrayList(parameters, filePathPrefix, arrayList -> {
-        });
+        return ingestCoordinatorDirectWriteBackedByArrayList(parameters, filePathPrefix, 100000, 1000);
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters, String filePathPrefix,
-            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrowConfig) {
+            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            ArrayListRecordBatchFactory.Builder<Record> arrayListRecordBatch = (ArrayListRecordBatchFactory.Builder<Record>) ArrayListRecordBatchFactory
+            ArrayListRecordBatchFactory.Builder<?> arrayListRecordBatch = ArrayListRecordBatchFactory
                     .builder()
                     .parquetConfiguration(parquetConfiguration)
-                    .maxNoOfRecordsInLocalStore(1000)
-                    .maxNoOfRecordsInMemory(100000)
+                    .maxNoOfRecordsInLocalStore(maxRecordsToWriteToLocalStore)
+                    .maxNoOfRecordsInMemory(maxRecordsInMemory)
                     .localWorkingDirectory(parameters.getWorkingDir());
-            arrowConfig.accept(arrayListRecordBatch);
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
             instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");

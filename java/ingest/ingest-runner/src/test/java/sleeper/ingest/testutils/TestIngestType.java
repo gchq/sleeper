@@ -18,7 +18,6 @@ package sleeper.ingest.testutils;
 
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 
@@ -71,9 +70,9 @@ public class TestIngestType {
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
-            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrayListConfig) {
+            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), arrayListConfig),
+                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
                 IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 

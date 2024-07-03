@@ -269,8 +269,8 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
             // When
             int maxRecordsInMemory = 5;
-            long maxNoOfBytesToWriteToLocalStore = 10L;
-            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxNoOfBytesToWriteToLocalStore);
+            long maxRecordsToWriteToLocalStore = 10L;
+            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxRecordsToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -464,8 +464,8 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
             // When
             int maxRecordsInMemory = 5;
-            long maxNoOfBytesToWriteToLocalStore = 10L;
-            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxNoOfBytesToWriteToLocalStore);
+            long maxRecordsToWriteToLocalStore = 10L;
+            ingestRecords(recordListAndSchema, parameters, maxRecordsInMemory, maxRecordsToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -508,11 +508,8 @@ public class IngestCoordinatorFileWritingStrategyIT {
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             int maxRecordsInMemory,
-            long maxNoOfBytesToWriteToLocalStore) throws StateStoreException, IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(
-                arrayList -> arrayList
-                        .maxNoOfRecordsInMemory(maxRecordsInMemory)
-                        .maxNoOfRecordsInLocalStore(maxNoOfBytesToWriteToLocalStore))
+            long maxRecordsToWriteToLocalStore) throws StateStoreException, IteratorCreationException, IOException {
+        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(maxRecordsInMemory, maxRecordsToWriteToLocalStore)
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
