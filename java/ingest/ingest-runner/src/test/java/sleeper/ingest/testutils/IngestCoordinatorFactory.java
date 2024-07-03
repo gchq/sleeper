@@ -69,20 +69,15 @@ public class IngestCoordinatorFactory {
             IngestCoordinatorTestParameters parameters, String filePathPrefix,
             Consumer<ArrowRecordBatchFactory.Builder<U>> arrowConfig,
             T recordWriter) {
-        ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builder()
-                .schema(parameters.getSchema())
-                .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(512 * 1024 * 1024L)
-                .recordWriter(recordWriter)
-                .localWorkingDirectory(parameters.getWorkingDir());
-        arrowConfig.accept(arrowConfigBuilder);
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builderWith(instanceProperties)
+                .schema(parameters.getSchema())
+                .localWorkingDirectory(parameters.getWorkingDir())
+                .recordWriter(recordWriter);
+        arrowConfig.accept(arrowConfigBuilder);
         return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
                 .recordBatchFactory(arrowConfigBuilder.build())
                 .partitionFileWriterFactory(DirectPartitionFileWriterFactory.from(
