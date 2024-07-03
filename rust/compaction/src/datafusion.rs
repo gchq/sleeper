@@ -32,7 +32,11 @@ use datafusion::{
     config::FormatOptions,
     error::DataFusionError,
     execution::{
-        config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
+        config::SessionConfig,
+        context::SessionContext,
+        memory_pool::{FairSpillPool, GreedyMemoryPool},
+        options::ParquetReadOptions,
+        runtime_env::{RuntimeConfig, RuntimeEnv},
         FunctionRegistry,
     },
     logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF},
@@ -86,16 +90,16 @@ pub async fn compact(
             );
         })
         .inspect_err(|e| warn!("Error getting total input size {e}"));
-    let multipart_size = std::cmp::max(
+    let mut multipart_size = std::cmp::max(
         crate::aws_s3::MULTIPART_BUF_SIZE,
         input_size.unwrap_or_default() / 5000,
     );
+
     store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?
         .set_multipart_size_hint(multipart_size);
 
-    store.set_multipart_size_hint(multipart_size);
     info!(
         "Setting multipart size hint to {} bytes.",
         multipart_size.to_formatted_string(&Locale::en)
