@@ -24,7 +24,6 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 
 import java.util.function.Consumer;
 
@@ -39,6 +38,43 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfig
 public class IngestCoordinatorFactory {
 
     private IngestCoordinatorFactory() {
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(
+            IngestCoordinatorTestParameters parameters, String filePathPrefix) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
+                .partitionFileWriterFactory(
+                        DirectPartitionFileWriterFactory.from(
+                                parquetConfiguration(parameters), filePathPrefix,
+                                parameters.getFileNameGenerator()))
+                .build();
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
+            IngestCoordinatorTestParameters parameters) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
+            IngestCoordinatorTestParameters parameters, String filePathPrefix) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
+                .partitionFileWriterFactory(
+                        DirectPartitionFileWriterFactory.from(
+                                parquetConfiguration(parameters), filePathPrefix,
+                                parameters.getFileNameGenerator()))
+                .build();
     }
 
     public static <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> ingestCoordinatorDirectWriteBackedByArrow(
@@ -65,26 +101,6 @@ public class IngestCoordinatorFactory {
                         parquetConfiguration(parameters), filePathPrefix,
                         parameters.getFileNameGenerator()))
                 .build();
-    }
-
-    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(
-            IngestCoordinatorTestParameters parameters, String filePathPrefix) {
-        return ingestCoordinatorDirectWriteBackedByArrow(parameters, filePathPrefix, arrowConfig -> {
-        }, new ArrowRecordWriterAcceptingRecords());
-    }
-
-    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
-            IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
-    }
-
-    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
-            IngestCoordinatorTestParameters parameters, String filePathPrefix) {
-        return ingestCoordinatorDirectWriteBackedByArrayList(parameters, filePathPrefix, 100000, 1000);
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
