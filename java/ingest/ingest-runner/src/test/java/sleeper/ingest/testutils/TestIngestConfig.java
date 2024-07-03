@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.testutils;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters.CoordinatorConfig;
@@ -53,6 +54,11 @@ public class TestIngestConfig {
     public TestIngestConfig s3AsyncWrite() {
         configureCoordinator = configureCoordinator.andThen(config -> config.s3AsyncWrite());
         getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
+        return this;
+    }
+
+    public TestIngestConfig setInstanceProperties(Consumer<InstanceProperties> setProperties) {
+        configureCoordinator = configureCoordinator.andThen(config -> config.setInstanceProperties(setProperties));
         return this;
     }
 

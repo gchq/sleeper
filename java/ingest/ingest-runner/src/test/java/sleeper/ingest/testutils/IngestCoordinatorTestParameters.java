@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -186,6 +188,11 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
+        public CoordinatorConfig setInstanceProperties(Consumer<InstanceProperties> config) {
+            config.accept(instanceProperties);
+            return this;
+        }
+
         public IngestCoordinator<Record> buildCoordinator() {
             TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
             return ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
@@ -203,7 +210,7 @@ public class IngestCoordinatorTestParameters {
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
-        private String tableId;
+        private String tableId = UUID.randomUUID().toString();
         private IngestFileWritingStrategy ingestFileWritingStrategy;
 
         private Builder() {

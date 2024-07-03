@@ -18,17 +18,18 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestFilesAndRecords;
+import sleeper.ingest.testutils.TestIngestConfig;
 import sleeper.ingest.testutils.TestIngestType;
 
 import java.time.Instant;
@@ -42,8 +43,10 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
@@ -67,10 +70,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
+        ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 128 * 1024 * 1024L);
+        });
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
@@ -121,10 +125,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L));
+        ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 16 * 1024 * 1024L);
+        });
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
@@ -179,18 +184,17 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When/Then
-        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(32 * 1024L)
-                .batchBufferAllocatorBytes(32 * 1024L)
-                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L)))
-                .isInstanceOf(OutOfMemoryException.class)
-                .hasNoSuppressedExceptions();
+        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 32 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 64 * 1024 * 1024L);
+        })).isInstanceOf(OutOfMemoryException.class).hasNoSuppressedExceptions();
     }
 
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
-            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
-        TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
+            Consumer<InstanceProperties> config) throws Exception {
+        TestIngestType ingestType = TestIngestType.withConfig(new TestIngestConfig().localDirectWrite().backedByArrow().setInstanceProperties(config));
         try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(parameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
