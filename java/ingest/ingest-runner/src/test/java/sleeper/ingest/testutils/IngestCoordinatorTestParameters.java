@@ -37,8 +37,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class IngestCoordinatorTestParameters {
 
@@ -121,6 +123,8 @@ public class IngestCoordinatorTestParameters {
     }
 
     public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        instanceProperties.set(DATA_BUCKET, dataBucketName);
+        tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
         tableProperties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString());
         tableProperties.setSchema(schema);

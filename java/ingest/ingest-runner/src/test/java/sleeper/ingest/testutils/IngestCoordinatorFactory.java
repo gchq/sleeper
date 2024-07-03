@@ -78,18 +78,9 @@ public class IngestCoordinatorFactory {
         try {
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
             instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
             return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
-                    .recordBatchFactory(ArrowRecordBatchFactory.builder()
-                            .schema(parameters.getSchema())
-                            .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                            .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
-                            .localWorkingDirectory(parameters.getWorkingDir())
-                            .buildAcceptingRecords())
                     .partitionFileWriterFactory(AsyncS3PartitionFileWriterFactory.builder()
                             .parquetConfiguration(parquetConfiguration(parameters))
                             .s3AsyncClient(parameters.getS3AsyncClient())
