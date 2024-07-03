@@ -25,7 +25,9 @@ import java.util.function.Consumer;
 
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrayList;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
+import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorLocalDirectWriteBackedByArrayList;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorLocalDirectWriteBackedByArrow;
+import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorS3DirectWriteBackedByArrayList;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorS3DirectWriteBackedByArrow;
 
 public class TestIngestType {
@@ -66,13 +68,13 @@ public class TestIngestType {
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix()),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
+                parameters -> ingestCoordinatorLocalDirectWriteBackedByArrayList(parameters),
+                IngestCoordinatorTestParameters::getLocalFilePrefixWithTableId);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToS3() {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getAsyncS3Prefix()),
+                parameters -> ingestCoordinatorS3DirectWriteBackedByArrayList(parameters),
                 IngestCoordinatorTestParameters::getAsyncS3Prefix);
     }
 

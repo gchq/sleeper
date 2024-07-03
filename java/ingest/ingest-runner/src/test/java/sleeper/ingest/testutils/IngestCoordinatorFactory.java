@@ -75,18 +75,26 @@ public class IngestCoordinatorFactory {
         return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
-    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
-            IngestCoordinatorTestParameters parameters, String filePathPrefix) {
+    public static IngestCoordinator<Record> ingestCoordinatorLocalDirectWriteBackedByArrayList(
+            IngestCoordinatorTestParameters parameters) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, parameters.getLocalFilePrefix());
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
-                .partitionFileWriterFactory(
-                        DirectPartitionFileWriterFactory.from(
-                                parquetConfiguration(parameters), filePathPrefix,
-                                parameters.getFileNameGenerator()))
-                .build();
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+    }
+
+    public static IngestCoordinator<Record> ingestCoordinatorS3DirectWriteBackedByArrayList(
+            IngestCoordinatorTestParameters parameters) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        instanceProperties.set(FILE_SYSTEM, "s3a://");
+        instanceProperties.set(DATA_BUCKET, parameters.getDataBucketName());
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
     public static <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> ingestCoordinatorDirectWriteBackedByArrow(
