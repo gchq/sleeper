@@ -40,19 +40,19 @@ public class TestIngestConfig {
 
     public TestIngestConfig localDirectWrite() {
         configureCoordinator = configureCoordinator.andThen(config -> config.localDirectWrite());
-        getFilePrefix = IngestCoordinatorTestParameters::getLocalFilePrefixWithTableId;
+        getFilePrefix = IngestCoordinatorTestParameters::getLocalFilePrefix;
         return this;
     }
 
     public TestIngestConfig s3DirectWrite() {
         configureCoordinator = configureCoordinator.andThen(config -> config.s3DirectWrite());
-        getFilePrefix = IngestCoordinatorTestParameters::getAsyncS3Prefix;
+        getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
         return this;
     }
 
     public TestIngestConfig s3AsyncWrite() {
         configureCoordinator = configureCoordinator.andThen(config -> config.s3AsyncWrite());
-        getFilePrefix = IngestCoordinatorTestParameters::getAsyncS3Prefix;
+        getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
         return this;
     }
 

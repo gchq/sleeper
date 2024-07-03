@@ -54,7 +54,7 @@ public class IngestCoordinatorTestParameters {
     private final String iteratorClassName;
     private final String workingDir;
     private final String dataBucketName;
-    private final String localFilePrefix;
+    private final String localDataPath;
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
@@ -67,7 +67,7 @@ public class IngestCoordinatorTestParameters {
         iteratorClassName = builder.iteratorClassName;
         workingDir = builder.workingDir;
         dataBucketName = builder.dataBucketName;
-        localFilePrefix = builder.localFilePrefix;
+        localDataPath = builder.localDataPath;
         hadoopConfiguration = builder.hadoopConfiguration;
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
@@ -80,14 +80,10 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getLocalFilePrefix() {
-        return localFilePrefix;
+        return "file://" + localDataPath + "/" + tableId;
     }
 
-    public String getLocalFilePrefixWithTableId() {
-        return "file://" + localFilePrefix + "/" + tableId;
-    }
-
-    public String getAsyncS3Prefix() {
+    public String getS3Prefix() {
         return "s3a://" + dataBucketName + "/" + tableId;
     }
 
@@ -171,7 +167,7 @@ public class IngestCoordinatorTestParameters {
 
         public CoordinatorConfig localDirectWrite() {
             instanceProperties.set(FILE_SYSTEM, "file://");
-            instanceProperties.set(DATA_BUCKET, getLocalFilePrefix());
+            instanceProperties.set(DATA_BUCKET, localDataPath);
             instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
             return this;
         }
@@ -203,7 +199,7 @@ public class IngestCoordinatorTestParameters {
         private String iteratorClassName;
         private String workingDir;
         private String dataBucketName;
-        private String localFilePrefix;
+        private String localDataPath;
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
@@ -238,14 +234,14 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder localFilePrefix(String localFilePrefix) {
-            this.localFilePrefix = localFilePrefix;
+        public Builder localDataPath(String localDataPath) {
+            this.localDataPath = localDataPath;
             return this;
         }
 
         public Builder temporaryFolder(Path temporaryFolder) {
             try {
-                return localFilePrefix(createTempDirectory(temporaryFolder, null).toString());
+                return localDataPath(createTempDirectory(temporaryFolder, null).toString());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

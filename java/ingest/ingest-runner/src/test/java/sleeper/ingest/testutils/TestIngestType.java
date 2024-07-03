@@ -71,16 +71,16 @@ public class TestIngestType {
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
             Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefixWithTableId(),
+                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
                         arrowConfig, new ArrowRecordWriterAcceptingRecords()),
-                IngestCoordinatorTestParameters::getLocalFilePrefixWithTableId);
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
             int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefixWithTableId(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
-                IngestCoordinatorTestParameters::getLocalFilePrefixWithTableId);
+                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     private interface CoordinatorFactory {
