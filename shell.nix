@@ -9,9 +9,18 @@ pkgs.mkShell {
     nodePackages.aws-cdk
     jdk17
     jdk11
-    python3
     git
     maven
     k9s
+  ];
+  packages = [
+    (pkgs.python3.withPackages(python-pkgs: [
+      python-pkgs.wheel
+      python-pkgs.pip
+      python-pkgs.setuptools
+      python-pkgs.pyarrow
+      python-pkgs.boto3
+      python-pkgs.s3fs
+    ]))
   ];
 }
