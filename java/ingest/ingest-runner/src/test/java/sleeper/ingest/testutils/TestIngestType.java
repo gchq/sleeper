@@ -44,17 +44,10 @@ public class TestIngestType {
         return getFilePrefix.getFilePrefix(parameters);
     }
 
-    public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
-            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
-        return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
-                        arrowConfig, new ArrowRecordWriterAcceptingRecords()),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
-    }
-
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile() {
-        return directWriteBackedByArrowWriteToLocalFile(arrow -> {
-        });
+        return new TestIngestType(
+                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix()),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToS3() {
@@ -69,13 +62,6 @@ public class TestIngestType {
                 IngestCoordinatorTestParameters::getAsyncS3Prefix);
     }
 
-    public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
-            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
-        return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
-    }
-
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
         return new TestIngestType(
                 parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix()),
@@ -86,6 +72,21 @@ public class TestIngestType {
         return new TestIngestType(
                 parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getAsyncS3Prefix()),
                 IngestCoordinatorTestParameters::getAsyncS3Prefix);
+    }
+
+    public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
+            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
+        return new TestIngestType(
+                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
+                        arrowConfig, new ArrowRecordWriterAcceptingRecords()),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
+    }
+
+    public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
+            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
+        return new TestIngestType(
+                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     private interface CoordinatorFactory {
