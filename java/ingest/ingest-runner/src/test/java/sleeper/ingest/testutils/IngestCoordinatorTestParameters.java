@@ -135,6 +135,7 @@ public class IngestCoordinatorTestParameters {
                 .objectFactory(ObjectFactory.noUserJars())
                 .s3AsyncClient(s3AsyncClient)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .fileNameGenerator(getFileNameGenerator())
                 .build().ingestCoordinatorBuilder(tableProperties);
     }
 
