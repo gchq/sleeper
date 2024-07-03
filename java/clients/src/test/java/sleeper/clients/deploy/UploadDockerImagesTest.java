@@ -52,11 +52,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesTest {
-    private static final Map<String, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(
-            "IngestStack", dockerBuildImage("ingest"),
-            "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
-            "BuildxStack", dockerBuildxImage("buildx"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
+    private static final Map<String, List<StackDockerImage>> STACK_DOCKER_IMAGES = Map.of(
+            "IngestStack", List.of(dockerBuildImage("ingest")),
+            "EksBulkImportStack", List.of(dockerBuildImage("bulk-import-runner")),
+            "BuildxStack", List.of(dockerBuildxImage("buildx")),
+            "EmrServerlessBulkImportStack", List.of(emrServerlessImage("bulk-import-runner-emr-serverless")));
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
     private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES);
