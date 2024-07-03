@@ -36,10 +36,12 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -111,11 +113,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         set(property, String.join(",", list));
     }
 
-    public void addToList(T property, List<String> list) {
+    public void addToListIfMissing(T property, List<String> list) {
         List<String> before = getList(property);
-        setList(property, Stream.of(before, list)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList()));
+        Set<String> beforeSet = new HashSet<>(before);
+        List<String> after = Stream.concat(
+                before.stream(),
+                list.stream().filter(not(beforeSet::contains)))
+                .collect(Collectors.toUnmodifiableList());
+        setList(property, after);
     }
 
     public <E extends Enum<E>> void setEnum(T property, E value) {
