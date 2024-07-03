@@ -30,8 +30,6 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -44,57 +42,27 @@ public class IngestCoordinatorFactory {
 
     public static IngestCoordinator<Record> ingestCoordinatorLocalDirectWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, parameters.getLocalFilePrefix());
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return parameters.ingestCoordinatorConfig().localDirectWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorS3DirectWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-        instanceProperties.set(DATA_BUCKET, parameters.getDataBucketName());
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return parameters.ingestCoordinatorConfig().s3DirectWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-        instanceProperties.set(DATA_BUCKET, parameters.getDataBucketName());
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return parameters.ingestCoordinatorConfig().s3AsyncWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorLocalDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, parameters.getLocalFilePrefix());
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return parameters.ingestCoordinatorConfig().localDirectWrite().backedByArrayList().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorS3DirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-        instanceProperties.set(DATA_BUCKET, parameters.getDataBucketName());
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return parameters.ingestCoordinatorConfig().s3DirectWrite().backedByArrayList().buildCoordinator();
     }
 
     public static <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> ingestCoordinatorDirectWriteBackedByArrow(

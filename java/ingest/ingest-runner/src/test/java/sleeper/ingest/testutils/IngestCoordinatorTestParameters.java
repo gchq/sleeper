@@ -37,6 +37,12 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -125,6 +131,10 @@ public class IngestCoordinatorTestParameters {
         return ingestFileWritingStrategy;
     }
 
+    public CoordinatorConfig ingestCoordinatorConfig() {
+        return new CoordinatorConfig(createTestInstanceProperties());
+    }
+
     public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
@@ -139,6 +149,52 @@ public class IngestCoordinatorTestParameters {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .fileNameGenerator(getFileNameGenerator())
                 .build().ingestCoordinatorBuilder(tableProperties);
+    }
+
+    public class CoordinatorConfig {
+
+        private final InstanceProperties instanceProperties;
+
+        private CoordinatorConfig(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+        }
+
+        public CoordinatorConfig backedByArrow() {
+            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
+            return this;
+        }
+
+        public CoordinatorConfig backedByArrayList() {
+            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+            return this;
+        }
+
+        public CoordinatorConfig localDirectWrite() {
+            instanceProperties.set(FILE_SYSTEM, "file://");
+            instanceProperties.set(DATA_BUCKET, getLocalFilePrefix());
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            return this;
+        }
+
+        public CoordinatorConfig s3DirectWrite() {
+            instanceProperties.set(FILE_SYSTEM, "s3a://");
+            instanceProperties.set(DATA_BUCKET, getDataBucketName());
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            return this;
+        }
+
+        public CoordinatorConfig s3AsyncWrite() {
+            instanceProperties.set(FILE_SYSTEM, "s3a://");
+            instanceProperties.set(DATA_BUCKET, getDataBucketName());
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+            return this;
+        }
+
+        public IngestCoordinator<Record> buildCoordinator() {
+            TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+            return ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        }
+
     }
 
     public static final class Builder {
