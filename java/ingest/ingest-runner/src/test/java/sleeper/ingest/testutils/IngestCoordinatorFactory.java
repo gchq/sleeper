@@ -16,6 +16,8 @@
 
 package sleeper.ingest.testutils;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -28,6 +30,10 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 
 public class IngestCoordinatorFactory {
@@ -49,7 +55,11 @@ public class IngestCoordinatorFactory {
                 .recordWriter(recordWriter)
                 .localWorkingDirectory(parameters.getWorkingDir());
         arrowConfig.accept(arrowConfigBuilder);
-        return parameters.ingestCoordinatorBuilder()
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
                 .recordBatchFactory(arrowConfigBuilder.build())
                 .partitionFileWriterFactory(DirectPartitionFileWriterFactory.from(
                         parquetConfiguration(parameters), filePathPrefix,
@@ -66,7 +76,11 @@ public class IngestCoordinatorFactory {
     public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
         try {
-            return parameters.ingestCoordinatorBuilder()
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
                     .recordBatchFactory(ArrowRecordBatchFactory.builder()
                             .schema(parameters.getSchema())
                             .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
@@ -108,7 +122,11 @@ public class IngestCoordinatorFactory {
                     .maxNoOfRecordsInMemory(100000)
                     .localWorkingDirectory(parameters.getWorkingDir());
             arrowConfig.accept(arrayListRecordBatch);
-            return parameters.ingestCoordinatorBuilder()
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
+            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
                     .recordBatchFactory(arrayListRecordBatch.buildAcceptingRecords())
                     .partitionFileWriterFactory(
                             DirectPartitionFileWriterFactory.from(

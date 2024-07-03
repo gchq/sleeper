@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 
@@ -122,11 +120,10 @@ public class IngestCoordinatorTestParameters {
         return ingestFileWritingStrategy;
     }
 
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
         tableProperties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString());
+        tableProperties.setSchema(schema);
         return IngestFactory.builder()
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration)
