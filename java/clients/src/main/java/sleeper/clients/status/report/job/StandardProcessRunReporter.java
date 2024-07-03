@@ -74,13 +74,6 @@ public class StandardProcessRunReporter {
         }
     }
 
-    public void printProcessJobRun(ProcessRun run) {
-        printProcessJobRun(run, defaultUpdatePrinter());
-        if (!run.isFinished()) {
-            out.println("Not finished");
-        }
-    }
-
     public void printProcessJobRunWithUpdatePrinter(ProcessRun run, UpdatePrinter updatePrinter) {
         printProcessJobRun(run, updatePrinters(updatePrinter, defaultUpdatePrinter()));
     }
