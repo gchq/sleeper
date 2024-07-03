@@ -84,7 +84,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getLocalFilePrefixWithTableId() {
-        return localFilePrefix + "/" + tableId;
+        return "file://" + localFilePrefix + "/" + tableId;
     }
 
     public String getAsyncS3Prefix() {
