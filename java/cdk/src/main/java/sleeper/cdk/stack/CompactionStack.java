@@ -429,6 +429,11 @@ public class CompactionStack extends NestedStack {
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
+        boolean isGPUEnabled = instanceProperties.getBoolean(COMPACTION_GPU_ENABLED);
+        EcsOptimizedImage machineImage = EcsOptimizedImage.amazonLinux2023(isGPUEnabled ? AmiHardwareType.GPU : AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
+                .cachedInContext(false)
+                .build());
+
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup").vpc(vpc)
                 .allowAllOutbound(true)
                 .associatePublicIpAddress(false)
@@ -447,10 +452,7 @@ public class CompactionStack extends NestedStack {
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
                 .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD,
-                        EcsOptimizedImageOptions.builder()
-                                .cachedInContext(false)
-                                .build()))
+                .machineImage(machineImage)
                 .build();
 
         IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);

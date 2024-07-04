@@ -167,13 +167,13 @@ public interface CompactionProperty {
             .defaultValue("FARGATE")
             .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
             .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
             .defaultValue("t3.xlarge")
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
             .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("0")
@@ -198,7 +198,7 @@ public interface CompactionProperty {
             .defaultValue("50")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.compaction.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
