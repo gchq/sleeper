@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -62,6 +64,7 @@ public class IngestCoordinatorTestParameters {
     private final List<String> fileNames;
     private final String tableId;
     private final IngestFileWritingStrategy ingestFileWritingStrategy;
+    private final SetInstanceProperties setInstanceProperties;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -75,6 +78,7 @@ public class IngestCoordinatorTestParameters {
         fileNames = builder.fileNames;
         tableId = builder.tableId;
         ingestFileWritingStrategy = builder.ingestFileWritingStrategy;
+        setInstanceProperties = builder.setInstanceProperties;
     }
 
     public static Builder builder() {
@@ -133,7 +137,15 @@ public class IngestCoordinatorTestParameters {
         return new CoordinatorConfig(createTestInstanceProperties());
     }
 
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public IngestCoordinator<Record> buildCoordinator() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        setInstanceProperties.setProperties(instanceProperties, this);
+        return ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+    }
+
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties,
+            TableProperties tableProperties) {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
         tableProperties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString());
@@ -147,6 +159,10 @@ public class IngestCoordinatorTestParameters {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .fileNameGenerator(getFileNameGenerator())
                 .build().ingestCoordinatorBuilder(tableProperties);
+    }
+
+    public Builder toBuilder() {
+        return new Builder(this);
     }
 
     public class CoordinatorConfig {
@@ -176,14 +192,14 @@ public class IngestCoordinatorTestParameters {
 
         public CoordinatorConfig s3DirectWrite() {
             instanceProperties.set(FILE_SYSTEM, "s3a://");
-            instanceProperties.set(DATA_BUCKET, getDataBucketName());
+            instanceProperties.set(DATA_BUCKET, dataBucketName);
             instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
             return this;
         }
 
         public CoordinatorConfig s3AsyncWrite() {
             instanceProperties.set(FILE_SYSTEM, "s3a://");
-            instanceProperties.set(DATA_BUCKET, getDataBucketName());
+            instanceProperties.set(DATA_BUCKET, dataBucketName);
             instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
             return this;
         }
@@ -212,8 +228,24 @@ public class IngestCoordinatorTestParameters {
         private List<String> fileNames;
         private String tableId = UUID.randomUUID().toString();
         private IngestFileWritingStrategy ingestFileWritingStrategy;
+        private SetInstanceProperties setInstanceProperties = (properties, parameters) -> {
+        };
 
         private Builder() {
+        }
+
+        private Builder(IngestCoordinatorTestParameters parameters) {
+            this.stateStore = parameters.stateStore;
+            this.schema = parameters.schema;
+            this.workingDir = parameters.workingDir;
+            this.dataBucketName = parameters.dataBucketName;
+            this.localDataPath = parameters.localDataPath;
+            this.hadoopConfiguration = parameters.hadoopConfiguration;
+            this.s3AsyncClient = parameters.s3AsyncClient;
+            this.fileNames = parameters.fileNames;
+            this.tableId = parameters.tableId;
+            this.ingestFileWritingStrategy = parameters.ingestFileWritingStrategy;
+            this.setInstanceProperties = parameters.setInstanceProperties;
         }
 
         public Builder stateStore(StateStore stateStore) {
@@ -279,8 +311,75 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
+        public Builder setInstanceProperties(Map<InstanceProperty, String> values) {
+            setInstanceProperties = setInstanceProperties.andThen((properties, parameters) -> {
+                values.forEach((property, value) -> properties.set(property, value));
+            });
+            return this;
+        }
+
+        public Builder setInstanceProperties(Consumer<InstanceProperties> config) {
+            setInstanceProperties = setInstanceProperties.andThen((properties, parameters) -> {
+                config.accept(properties);
+            });
+            return this;
+        }
+
+        public Builder backedByArrow() {
+            return setInstanceProperties(Map.of(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow"));
+        }
+
+        public Builder backedByArrayList() {
+            return setInstanceProperties(Map.of(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist"));
+        }
+
+        public Builder localDirectWrite() {
+            setInstanceProperties = setInstanceProperties.andThen((properties, parameters) -> {
+                properties.set(FILE_SYSTEM, "file://");
+                properties.set(DATA_BUCKET, parameters.localDataPath);
+                properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            });
+            return this;
+        }
+
+        public Builder s3DirectWrite() {
+            setInstanceProperties = setInstanceProperties.andThen((properties, parameters) -> {
+                properties.set(FILE_SYSTEM, "s3a://");
+                properties.set(DATA_BUCKET, parameters.dataBucketName);
+                properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+            });
+            return this;
+        }
+
+        public Builder s3AsyncWrite() {
+            setInstanceProperties = setInstanceProperties.andThen((properties, parameters) -> {
+                properties.set(FILE_SYSTEM, "s3a://");
+                properties.set(DATA_BUCKET, parameters.dataBucketName);
+                properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+            });
+            return this;
+        }
+
         public IngestCoordinatorTestParameters build() {
             return new IngestCoordinatorTestParameters(this);
+        }
+
+        public IngestCoordinator<Record> buildCoordinator() {
+            return build().buildCoordinator();
+        }
+    }
+
+    /**
+     * Sets values of instance properties based on test parameters.
+     */
+    public interface SetInstanceProperties {
+        void setProperties(InstanceProperties properties, IngestCoordinatorTestParameters parameters);
+
+        default SetInstanceProperties andThen(SetInstanceProperties next) {
+            return (properties, parameters) -> {
+                setProperties(properties, parameters);
+                next.setProperties(properties, parameters);
+            };
         }
     }
 }

@@ -39,27 +39,27 @@ public class IngestCoordinatorFactory {
 
     public static IngestCoordinator<Record> ingestCoordinatorLocalDirectWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        return parameters.ingestCoordinatorConfig().localDirectWrite().backedByArrow().buildCoordinator();
+        return parameters.toBuilder().localDirectWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorS3DirectWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        return parameters.ingestCoordinatorConfig().s3DirectWrite().backedByArrow().buildCoordinator();
+        return parameters.toBuilder().s3DirectWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters) {
-        return parameters.ingestCoordinatorConfig().s3AsyncWrite().backedByArrow().buildCoordinator();
+        return parameters.toBuilder().s3AsyncWrite().backedByArrow().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorLocalDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters) {
-        return parameters.ingestCoordinatorConfig().localDirectWrite().backedByArrayList().buildCoordinator();
+        return parameters.toBuilder().localDirectWrite().backedByArrayList().buildCoordinator();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorS3DirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters) {
-        return parameters.ingestCoordinatorConfig().s3DirectWrite().backedByArrayList().buildCoordinator();
+        return parameters.toBuilder().s3DirectWrite().backedByArrayList().buildCoordinator();
     }
 
     public static <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> ingestCoordinatorDirectWriteBackedByArrow(
