@@ -45,6 +45,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
@@ -67,6 +68,7 @@ class PopulatePropertiesTest {
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
+        expected.set(ECR_COMPACTION_GPU_REPO, "test-instance/compaction-gpu");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -99,6 +101,7 @@ class PopulatePropertiesTest {
         // Then
         InstanceProperties expected = expectedInstanceProperties();
         expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
+        expected.set(ECR_COMPACTION_GPU_REPO, "test-ecr-prefix/compaction-gpu");
         expected.set(ECR_COMPACTION_REPO, "test-ecr-prefix/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
         expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
@@ -142,6 +145,7 @@ class PopulatePropertiesTest {
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(ECR_COMPACTION_GPU_REPO, "test-instance/compaction-gpu");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");

@@ -95,8 +95,8 @@ public class PopulateInstanceProperties {
         properties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         properties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
-        properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
         properties.set(ECR_COMPACTION_GPU_REPO, ecrPrefix + "/compaction-gpu");
+        properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
         properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
         properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");
         properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, ecrPrefix + "/bulk-import-runner-emr-serverless");

@@ -75,6 +75,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
@@ -246,6 +247,7 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);
         instanceProperties.setNumber(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS, 800);
         instanceProperties.set(JARS_BUCKET, "bucket");
+        instanceProperties.set(ECR_COMPACTION_GPU_REPO, "sleeper-compaction-gpu");
         instanceProperties.set(ECR_COMPACTION_REPO, "sleeper-compaction");
         instanceProperties.set(ECR_INGEST_REPO, "sleeper-ingest");
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, "url");

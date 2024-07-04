@@ -39,6 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
@@ -69,6 +70,7 @@ class RemoveECRRepositoriesIT {
     void shouldRemoveRepositoriesWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
+        properties.set(ECR_COMPACTION_GPU_REPO, "test-compaction-gpu-repo");
         properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
         properties.set(ECR_INGEST_REPO, "test-ingest-repo");
         properties.set(BULK_IMPORT_REPO, "test-bulk-import-repo");
@@ -77,6 +79,7 @@ class RemoveECRRepositoriesIT {
         RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
 
         // Then
+        verify(1, deleteRequestedFor("test-compaction-gpu-repo"));
         verify(1, deleteRequestedFor("test-compaction-repo"));
         verify(1, deleteRequestedFor("test-ingest-repo"));
         verify(1, deleteRequestedFor("test-bulk-import-repo"));
