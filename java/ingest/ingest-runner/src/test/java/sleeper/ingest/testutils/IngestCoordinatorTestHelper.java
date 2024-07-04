@@ -37,10 +37,6 @@ public class IngestCoordinatorTestHelper {
     private IngestCoordinatorTestHelper() {
     }
 
-    public static ParquetConfiguration parquetConfiguration(IngestCoordinatorTestParameters parameters) {
-        return parquetConfiguration(parameters.getSchema(), parameters.getHadoopConfiguration());
-    }
-
     public static ParquetConfiguration parquetConfiguration(Schema schema, Configuration hadoopConfiguration) {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(COMPRESSION_CODEC, "zstd");

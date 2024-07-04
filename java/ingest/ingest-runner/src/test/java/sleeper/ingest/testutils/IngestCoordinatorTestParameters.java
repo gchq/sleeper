@@ -89,14 +89,6 @@ public class IngestCoordinatorTestParameters {
         return "s3a://" + Objects.requireNonNull(dataBucketName, "dataBucketName must not be null") + "/" + tableId;
     }
 
-    public Configuration getHadoopConfiguration() {
-        return hadoopConfiguration;
-    }
-
-    public Schema getSchema() {
-        return schema;
-    }
-
     public IngestCoordinator<Record> buildCoordinator() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
