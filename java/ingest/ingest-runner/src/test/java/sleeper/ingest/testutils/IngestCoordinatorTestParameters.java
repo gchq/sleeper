@@ -29,6 +29,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
@@ -46,7 +48,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -134,22 +136,39 @@ public class IngestCoordinatorTestParameters {
     }
 
     public IngestCoordinator<Record> buildCoordinator() {
-        return coordinatorBuilder().build();
+        InstanceProperties instanceProperties = buildInstanceProperties();
+        TableProperties tableProperties = buildTableProperties(instanceProperties);
+        return coordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
-    public IngestCoordinator.Builder<Record> coordinatorBuilder() {
+    public <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T recordWriter) {
+        InstanceProperties instanceProperties = buildInstanceProperties();
+        TableProperties tableProperties = buildTableProperties(instanceProperties);
+        ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builderWith(instanceProperties)
+                .schema(schema)
+                .localWorkingDirectory(workingDir)
+                .recordWriter(recordWriter);
+        return coordinatorBuilder(instanceProperties, tableProperties)
+                .recordBatchFactory(arrowConfigBuilder.build())
+                .build();
+    }
+
+    private InstanceProperties buildInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
         setInstanceProperties.setProperties(instanceProperties, this);
-        return ingestCoordinatorBuilder(instanceProperties, tableProperties);
+        return instanceProperties;
     }
 
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties,
-            TableProperties tableProperties) {
+    private TableProperties buildTableProperties(InstanceProperties instanceProperties) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClassName);
         tableProperties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString());
-        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    private IngestCoordinator.Builder<Record> coordinatorBuilder(
+            InstanceProperties instanceProperties, TableProperties tableProperties) {
         return IngestFactory.builder()
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration)
@@ -311,10 +330,6 @@ public class IngestCoordinatorTestParameters {
 
         public IngestCoordinatorTestParameters build() {
             return new IngestCoordinatorTestParameters(this);
-        }
-
-        public IngestCoordinator.Builder<Record> coordinatorBuilder() {
-            return build().coordinatorBuilder();
         }
 
         public IngestCoordinator<Record> buildCoordinator() {
