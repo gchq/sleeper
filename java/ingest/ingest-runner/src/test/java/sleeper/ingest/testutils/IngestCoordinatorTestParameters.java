@@ -82,39 +82,19 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getLocalFilePrefix() {
-        return "file://" + localDataPath + "/" + tableId;
+        return "file://" + Objects.requireNonNull(localDataPath, "localDataPath must not be null") + "/" + tableId;
     }
 
     public String getS3Prefix() {
-        return "s3a://" + dataBucketName + "/" + tableId;
-    }
-
-    public String getDataBucketName() {
-        return dataBucketName;
+        return "s3a://" + Objects.requireNonNull(dataBucketName, "dataBucketName must not be null") + "/" + tableId;
     }
 
     public Configuration getHadoopConfiguration() {
         return hadoopConfiguration;
     }
 
-    public StateStore getStateStore() {
-        return stateStore;
-    }
-
     public Schema getSchema() {
         return schema;
-    }
-
-    public String getWorkingDir() {
-        return workingDir;
-    }
-
-    public S3AsyncClient getS3AsyncClient() {
-        return s3AsyncClient;
-    }
-
-    public String getTableId() {
-        return tableId;
     }
 
     public IngestCoordinator<Record> buildCoordinator() {
@@ -288,6 +268,7 @@ public class IngestCoordinatorTestParameters {
                 instanceProperties.set(FILE_SYSTEM, "s3a://");
                 instanceProperties.set(DATA_BUCKET, parameters.dataBucketName);
                 instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+                Objects.requireNonNull(parameters.s3AsyncClient, "s3AsyncClient must not be null");
             });
             return this;
         }
