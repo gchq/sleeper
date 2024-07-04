@@ -62,7 +62,6 @@ public class IngestCoordinatorTestParameters {
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final String tableId;
-    private final IngestFileWritingStrategy ingestFileWritingStrategy;
     private final SetProperties setProperties;
 
     private IngestCoordinatorTestParameters(Builder builder) {
@@ -75,7 +74,6 @@ public class IngestCoordinatorTestParameters {
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         tableId = builder.tableId;
-        ingestFileWritingStrategy = builder.ingestFileWritingStrategy;
         setProperties = builder.setProperties;
     }
 
@@ -121,10 +119,6 @@ public class IngestCoordinatorTestParameters {
 
     public String getTableId() {
         return tableId;
-    }
-
-    public IngestFileWritingStrategy getIngestFileWritingStrategy() {
-        return ingestFileWritingStrategy;
     }
 
     public IngestCoordinator<Record> buildCoordinator() {
@@ -174,11 +168,7 @@ public class IngestCoordinatorTestParameters {
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private String tableId = UUID.randomUUID().toString();
-        private IngestFileWritingStrategy ingestFileWritingStrategy;
-        private SetProperties setProperties = (instanceProperties, tableProperties, parameters) -> {
-            tableProperties.set(TABLE_ID, parameters.tableId);
-            tableProperties.set(INGEST_FILE_WRITING_STRATEGY, parameters.ingestFileWritingStrategy.toString());
-        };
+        private SetProperties setProperties = (instanceProperties, tableProperties, parameters) -> tableProperties.set(TABLE_ID, parameters.tableId);
 
         private Builder() {
         }
@@ -193,7 +183,6 @@ public class IngestCoordinatorTestParameters {
             this.s3AsyncClient = parameters.s3AsyncClient;
             this.fileNames = parameters.fileNames;
             this.tableId = parameters.tableId;
-            this.ingestFileWritingStrategy = parameters.ingestFileWritingStrategy;
             this.setProperties = parameters.setProperties;
         }
 
@@ -255,8 +244,7 @@ public class IngestCoordinatorTestParameters {
         }
 
         public Builder ingestFileWritingStrategy(IngestFileWritingStrategy ingestFileWritingStrategy) {
-            this.ingestFileWritingStrategy = ingestFileWritingStrategy;
-            return this;
+            return setTableProperties(properties -> properties.set(INGEST_FILE_WRITING_STRATEGY, ingestFileWritingStrategy.toString()));
         }
 
         public Builder setInstanceProperties(Consumer<InstanceProperties> config) {
