@@ -36,8 +36,7 @@ public abstract class DirectWriteBackedByArrowTestBase {
     protected final Configuration configuration = new Configuration();
 
     protected IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
-        return IngestCoordinatorTestParameters
-                .builder()
+        return IngestCoordinatorTestParameters.builder()
                 .temporaryFolder(temporaryFolder)
                 .hadoopConfiguration(configuration)
                 .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF);
