@@ -36,7 +36,7 @@ public class ProcessRun {
 
     private ProcessRun(Builder builder) {
         taskId = builder.taskId;
-        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
+        startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
         statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
     }
@@ -94,11 +94,11 @@ public class ProcessRun {
     }
 
     public Instant getStartTime() {
-        return getStartedStatus().getStartTime();
+        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getStartTime).orElse(null);
     }
 
     public Instant getStartUpdateTime() {
-        return getStartedStatus().getUpdateTime();
+        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getUpdateTime).orElse(null);
     }
 
     /**
