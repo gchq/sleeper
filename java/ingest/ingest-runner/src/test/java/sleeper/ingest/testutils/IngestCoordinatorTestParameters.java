@@ -205,6 +205,7 @@ public class IngestCoordinatorTestParameters {
         private Builder(IngestCoordinatorTestParameters parameters) {
             this.stateStore = parameters.stateStore;
             this.schema = parameters.schema;
+            this.iteratorClassName = parameters.iteratorClassName;
             this.workingDir = parameters.workingDir;
             this.dataBucketName = parameters.dataBucketName;
             this.localDataPath = parameters.localDataPath;
