@@ -38,6 +38,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.METRICS_T
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
@@ -142,6 +143,7 @@ public class SystemTestInstance {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.set(COMPACTION_GPU_ENABLED, "false");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");

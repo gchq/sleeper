@@ -46,6 +46,8 @@ public class Utils {
 
     private static final Set<String> VALID_EBS_VOLUME_TYPES = Sets.newHashSet("gp2", "gp3", "io1", "io2");
 
+    private static final Set<String> VALID_COMPACTION_METHODS = Sets.newHashSet("JAVA", "RUST", "GPU");
+
     public static boolean isPositiveInteger(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0);
     }
@@ -156,6 +158,10 @@ public class Utils {
 
     public static boolean isValidEbsVolumeType(String ebsVolumeType) {
         return VALID_EBS_VOLUME_TYPES.contains(ebsVolumeType);
+    }
+
+    public static boolean isValidCompactionMethod(String compactionMethod) {
+        return VALID_COMPACTION_METHODS.contains(compactionMethod.toUpperCase());
     }
 
     public static boolean isPositiveIntLtEqValue(String string, int maxValue) {

@@ -156,6 +156,12 @@ public interface CompactionProperty {
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_GPU_ENABLED = Index.propertyBuilder("sleeper.compaction.gpu.enabled")
+            .description("Should a GPU compaction docker image be deployed with compactions? If yes, then GPU compactions " +
+                    "can be used. This is enabled on a per table basis with sleeper.table.compaction.method")
+            .defaultValue("false")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")
@@ -255,11 +261,11 @@ public interface CompactionProperty {
             .defaultValue("" + Integer.MAX_VALUE)
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
             .description("Select what compaction method to use on a table. Current options are JAVA, RUST and GPU. Rust and GPU compaction support are " +
                     "experimental.")
             .defaultValue("JAVA")
+            .validationPredicate(Utils::isValidCompactionMethod)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
