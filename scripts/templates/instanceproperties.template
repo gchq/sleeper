@@ -55,6 +55,10 @@ sleeper.bulk.import.eks.repo=changeme
 # account.
 sleeper.compaction.repo=changeme
 
+# The name of the repository for the GPU compaction container. The Docker image from the
+# compaction-gpu module should have been uploaded to an ECR repository of this name in this account.
+sleeper.compaction.gpu.repo=changeme
+
 
 ##################
 # Default Values #
@@ -892,6 +896,10 @@ sleeper.compaction.task.x86.cpu=1024
 # options.
 sleeper.compaction.task.x86.memory=4096
 
+# Should a GPU compaction docker image be deployed with compactions? If yes, then GPU compactions can
+# be used. This is enabled on a per table basis with sleeper.table.compaction.method
+sleeper.compaction.gpu.enabled=false
+
 # What launch type should compaction containers use? Valid options: FARGATE, EC2.
 sleeper.compaction.ecs.launch.type=FARGATE
 
@@ -961,8 +969,8 @@ sleeper.default.table.compaction.strategy.sizeratio.ratio=3
 # concurrently per partition. It can be overridden on a per-table basis.
 sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
 
-# Select what compaction method to use on a table. Current options are JAVA, RUST and GPU. Rust and GPU
-# compaction support are experimental.
+# Select what compaction method to use on a table. Current options are JAVA, RUST and GPU. Rust and
+# GPU compaction support are experimental.
 sleeper.default.table.compaction.method=JAVA
 
 
