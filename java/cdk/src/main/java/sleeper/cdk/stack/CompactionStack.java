@@ -49,6 +49,7 @@ import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
+import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
 import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
@@ -121,6 +122,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
@@ -129,6 +131,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
@@ -385,8 +388,9 @@ public class CompactionStack extends NestedStack {
             FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
+            LogDriver logDriver = Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks");
             ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
+                    environmentVariables, instanceProperties, logDriver);
             fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     fargateContainerDefinitionOptions);
             grantPermissions.accept(fargateTaskDefinition);
@@ -394,9 +398,19 @@ public class CompactionStack extends NestedStack {
             Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
             String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
+            LogDriver logDriver = Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks");
             ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
+                    environmentVariables, instanceProperties, logDriver);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
+
+            if (instanceProperties.getBoolean(COMPACTION_GPU_ENABLED)) {
+                IRepository gpuRepo = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_GPU_REPO));
+                ContainerImage gpuImage = ContainerImage.fromEcrRepository(gpuRepo, instanceProperties.get(VERSION));
+
+                ContainerDefinitionOptions gpuContainerOptions = createEC2GPUContainerDefinition(gpuImage, environmentVariables, instanceProperties, logDriver);
+                ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_GPU_CONTAINER_NAME, gpuContainerOptions);
+            }
+
             grantPermissions.accept(ec2TaskDefinition);
             addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
         }
@@ -517,7 +531,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private ContainerDefinitionOptions createFargateContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -525,12 +539,11 @@ public class CompactionStack extends NestedStack {
                 .environment(environment)
                 .cpu(requirements.getLeft())
                 .memoryLimitMiB(requirements.getRight())
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
+                .logging(logDriver)
                 .build();
     }
 
-    private ContainerDefinitionOptions createEC2ContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+    private ContainerDefinitionOptions createEC2GPUContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -541,7 +554,24 @@ public class CompactionStack extends NestedStack {
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (requirements.getRight() * 0.95))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
+                .gpuCount(1)
+                .logging(logDriver)
+                .build();
+    }
+
+    private ContainerDefinitionOptions createEC2ContainerDefinition(
+            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getLeft())
+                // bit hacky: Reduce memory requirement for EC2 to prevent
+                // container allocation failing when we need almost entire resources
+                // of machine
+                .memoryLimitMiB((int) (requirements.getRight() * 0.95))
+                .logging(logDriver)
                 .build();
     }
 

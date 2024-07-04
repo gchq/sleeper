@@ -53,4 +53,4 @@ WORKDIR /home/rapids
 
 FROM base AS runner
 COPY test_file.txt /home/rapids/
-ENTRYPOINT [ "/bin/bash", "-c", "cat test_file.txt" ]
+ENTRYPOINT [ "/bin/bash", "-c", "nvidia-smi; cat test_file.txt" ]

@@ -23,6 +23,7 @@ public class ContainerConstants {
     private ContainerConstants() {
     }
 
+    public static final String COMPACTION_GPU_CONTAINER_NAME = "GPUCompactionContainer";
     public static final String COMPACTION_CONTAINER_NAME = "CompactionContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";
 }
