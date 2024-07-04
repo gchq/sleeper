@@ -135,10 +135,7 @@ class IngestJobRunnerIT {
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
-        runIngestJob(
-                stateStore,
-                recordListAndSchema,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -172,10 +169,7 @@ class IngestJobRunnerIT {
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
-                stateStore,
-                recordListAndSchema,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -217,10 +211,7 @@ class IngestJobRunnerIT {
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
-                stateStore,
-                recordListAndSchema,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -263,7 +254,7 @@ class IngestJobRunnerIT {
         fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
         // When
-        runIngestJob(instanceProperties, tableProperties, stateStore, ingestJob);
+        runIngestJob(tableProperties, stateStore, ingestJob);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -308,10 +299,10 @@ class IngestJobRunnerIT {
         fixTimes(Instant.parse("2024-06-20T15:10:00Z"), Instant.parse("2024-06-20T15:10:01Z"));
 
         // When
-        runIngestJob(instanceProperties, tableProperties, stateStore, job);
+        runIngestJob(tableProperties, stateStore, job);
 
         // Then
-        List<IngestAddFilesCommitRequest> commitRequests = getCommitRequestsFromQueue(instanceProperties);
+        List<IngestAddFilesCommitRequest> commitRequests = getCommitRequestsFromQueue();
         List<FileReference> actualFiles = commitRequests.stream()
                 .map(IngestAddFilesCommitRequest::getFileReferences)
                 .flatMap(List::stream)
@@ -337,7 +328,7 @@ class IngestJobRunnerIT {
                 .build());
     }
 
-    private List<IngestAddFilesCommitRequest> getCommitRequestsFromQueue(InstanceProperties instanceProperties) {
+    private List<IngestAddFilesCommitRequest> getCommitRequestsFromQueue() {
         String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         ReceiveMessageResult result = sqs.receiveMessage(commitQueueUrl);
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
@@ -358,10 +349,10 @@ class IngestJobRunnerIT {
                 .id("id")
                 .files(files)
                 .build();
-        runIngestJob(instanceProperties, tableProperties, stateStore, job);
+        runIngestJob(tableProperties, stateStore, job);
     }
 
-    private void runIngestJob(InstanceProperties instanceProperties,
+    private void runIngestJob(
             TableProperties tableProperties,
             StateStore stateStore,
             IngestJob job) throws Exception {
