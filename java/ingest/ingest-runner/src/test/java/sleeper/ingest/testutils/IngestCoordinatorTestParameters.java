@@ -275,7 +275,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     /**
-     * Sets values of instance properties based on test parameters.
+     * Sets values of properties based on test parameters.
      */
     public interface SetProperties {
         void setProperties(InstanceProperties instanceProperties, TableProperties tableProperties, IngestCoordinatorTestParameters parameters);
