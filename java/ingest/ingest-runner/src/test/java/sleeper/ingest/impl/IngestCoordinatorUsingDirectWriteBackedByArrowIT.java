@@ -29,7 +29,6 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestFilesAndRecords;
-import sleeper.ingest.testutils.TestIngestConfig;
 import sleeper.ingest.testutils.TestIngestType;
 
 import java.time.Instant;
@@ -194,7 +193,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
-        TestIngestType ingestType = TestIngestType.withConfig(new TestIngestConfig().localDirectWrite().backedByArrow().setInstanceProperties(config));
+        TestIngestType ingestType = TestIngestType.builder().localDirectWrite().backedByArrow().setInstanceProperties(config).build();
         try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(parameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);

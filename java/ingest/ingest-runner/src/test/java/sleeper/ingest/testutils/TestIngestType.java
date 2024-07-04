@@ -16,8 +16,12 @@
 
 package sleeper.ingest.testutils;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.testutils.IngestCoordinatorTestParameters.CoordinatorConfig;
+
+import java.util.function.Consumer;
 
 public class TestIngestType {
 
@@ -37,28 +41,28 @@ public class TestIngestType {
         return getFilePrefix.getFilePrefix(parameters);
     }
 
-    public static TestIngestType withConfig(TestIngestConfig config) {
-        return new TestIngestType(config::buildCoordinator, config::getFilePrefix);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile() {
-        return withConfig(new TestIngestConfig().localDirectWrite().backedByArrow());
+        return builder().localDirectWrite().backedByArrow().build();
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToS3() {
-        return withConfig(new TestIngestConfig().s3DirectWrite().backedByArrow());
+        return builder().s3DirectWrite().backedByArrow().build();
     }
 
     public static TestIngestType asyncWriteBackedByArrow() {
-        return withConfig(new TestIngestConfig().s3AsyncWrite().backedByArrow());
+        return builder().s3AsyncWrite().backedByArrow().build();
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
-        return withConfig(new TestIngestConfig().localDirectWrite().backedByArrayList());
+        return builder().localDirectWrite().backedByArrayList().build();
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToS3() {
-        return withConfig(new TestIngestConfig().s3DirectWrite().backedByArrayList());
+        return builder().s3DirectWrite().backedByArrayList().build();
     }
 
     private interface CoordinatorFactory {
@@ -67,5 +71,62 @@ public class TestIngestType {
 
     private interface GetFilePrefix {
         String getFilePrefix(IngestCoordinatorTestParameters parameters);
+    }
+
+    public static class Builder {
+
+        private Consumer<CoordinatorConfig> configureCoordinator = config -> {
+        };
+        private GetFilePrefix getFilePrefix;
+
+        private Builder() {
+        }
+
+        public Builder backedByArrow() {
+            configureCoordinator = configureCoordinator.andThen(config -> config.backedByArrow());
+            return this;
+        }
+
+        public Builder backedByArrayList() {
+            configureCoordinator = configureCoordinator.andThen(config -> config.backedByArrow());
+            return this;
+        }
+
+        public Builder localDirectWrite() {
+            configureCoordinator = configureCoordinator.andThen(config -> config.localDirectWrite());
+            getFilePrefix = IngestCoordinatorTestParameters::getLocalFilePrefix;
+            return this;
+        }
+
+        public Builder s3DirectWrite() {
+            configureCoordinator = configureCoordinator.andThen(config -> config.s3DirectWrite());
+            getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
+            return this;
+        }
+
+        public Builder s3AsyncWrite() {
+            configureCoordinator = configureCoordinator.andThen(config -> config.s3AsyncWrite());
+            getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
+            return this;
+        }
+
+        public Builder setInstanceProperties(Consumer<InstanceProperties> setProperties) {
+            configureCoordinator = configureCoordinator.andThen(config -> config.setInstanceProperties(setProperties));
+            return this;
+        }
+
+        public IngestCoordinator<Record> buildCoordinator(IngestCoordinatorTestParameters parameters) {
+            CoordinatorConfig config = parameters.ingestCoordinatorConfig();
+            configureCoordinator.accept(config);
+            return config.buildCoordinator();
+        }
+
+        public String getFilePrefix(IngestCoordinatorTestParameters parameters) {
+            return getFilePrefix.getFilePrefix(parameters);
+        }
+
+        public TestIngestType build() {
+            return new TestIngestType(this::buildCoordinator, getFilePrefix);
+        }
     }
 }
