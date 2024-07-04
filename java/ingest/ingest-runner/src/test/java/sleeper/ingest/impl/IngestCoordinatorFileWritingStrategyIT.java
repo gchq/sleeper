@@ -67,6 +67,8 @@ import static java.nio.file.Files.createTempDirectory;
 import static java.util.stream.LongStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
@@ -79,7 +81,6 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.accurateSplit
 import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
-import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrayListWriteToLocalFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
@@ -506,11 +507,14 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
+            IngestCoordinatorTestParameters parameters,
             int maxRecordsInMemory,
             long maxRecordsToWriteToLocalStore) throws StateStoreException, IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrayListWriteToLocalFile(maxRecordsInMemory, maxRecordsToWriteToLocalStore)
-                .createIngestCoordinator(ingestCoordinatorTestParameters)) {
+        try (IngestCoordinator<Record> ingestCoordinator = parameters.ingestCoordinatorConfig()
+                .localDirectWrite().backedByArrayList().setInstanceProperties(properties -> {
+                    properties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
+                    properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
+                }).buildCoordinator()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }

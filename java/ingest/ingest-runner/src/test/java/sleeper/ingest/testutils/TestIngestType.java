@@ -19,8 +19,6 @@ package sleeper.ingest.testutils;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 
-import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrayList;
-
 public class TestIngestType {
 
     private final CoordinatorFactory coordinatorFactory;
@@ -61,13 +59,6 @@ public class TestIngestType {
 
     public static TestIngestType directWriteBackedByArrayListWriteToS3() {
         return withConfig(new TestIngestConfig().s3DirectWrite().backedByArrayList());
-    }
-
-    public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
-            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
-        return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), maxRecordsInMemory, maxRecordsToWriteToLocalStore),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     private interface CoordinatorFactory {

@@ -20,7 +20,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
@@ -28,8 +27,6 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -84,27 +81,5 @@ public class IngestCoordinatorFactory {
                         parquetConfiguration(parameters), filePathPrefix,
                         parameters.getFileNameGenerator()))
                 .build();
-    }
-
-    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
-            IngestCoordinatorTestParameters parameters, String filePathPrefix,
-            int maxRecordsInMemory, long maxRecordsToWriteToLocalStore) {
-        try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
-            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
-            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-            return parameters.ingestCoordinatorBuilder(instanceProperties, tableProperties)
-                    .partitionFileWriterFactory(
-                            DirectPartitionFileWriterFactory.from(
-                                    parquetConfiguration, filePathPrefix,
-                                    parameters.getFileNameGenerator()))
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
