@@ -36,9 +36,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -46,7 +46,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -65,16 +65,16 @@ public class IngestCoordinatorTestParameters {
     private final SetProperties setProperties;
 
     private IngestCoordinatorTestParameters(Builder builder) {
-        stateStore = builder.stateStore;
-        schema = builder.schema;
-        workingDir = builder.workingDir;
+        stateStore = Objects.requireNonNull(builder.stateStore, "stateStore must not be null");
+        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        workingDir = Objects.requireNonNull(builder.workingDir, "workingDir must not be null");
         dataBucketName = builder.dataBucketName;
         localDataPath = builder.localDataPath;
-        hadoopConfiguration = builder.hadoopConfiguration;
+        hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration, "hadoopConfiguration must not be null");
         s3AsyncClient = builder.s3AsyncClient;
-        fileNames = builder.fileNames;
-        tableId = builder.tableId;
-        setProperties = builder.setProperties;
+        fileNames = Objects.requireNonNull(builder.fileNames, "fileNames must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        setProperties = Objects.requireNonNull(builder.setProperties, "setProperties must not be null");
     }
 
     public static Builder builder() {
@@ -113,24 +113,20 @@ public class IngestCoordinatorTestParameters {
         return s3AsyncClient;
     }
 
-    public Supplier<String> getFileNameGenerator() {
-        return fileNames.iterator()::next;
-    }
-
     public String getTableId() {
         return tableId;
     }
 
     public IngestCoordinator<Record> buildCoordinator() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         setProperties.setProperties(instanceProperties, tableProperties, this);
         return coordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
     public <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T recordWriter) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         setProperties.setProperties(instanceProperties, tableProperties, this);
         ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builderWith(instanceProperties)
                 .schema(schema)
@@ -150,7 +146,7 @@ public class IngestCoordinatorTestParameters {
                 .objectFactory(ObjectFactory.noUserJars())
                 .s3AsyncClient(s3AsyncClient)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                .fileNameGenerator(getFileNameGenerator())
+                .fileNameGenerator(fileNames.iterator()::next)
                 .build().ingestCoordinatorBuilder(tableProperties);
     }
 
