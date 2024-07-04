@@ -31,11 +31,13 @@ import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRu
 import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.ProcessRunsTestHelper.runsFromUpdates;
 import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onNoTask;
@@ -93,6 +95,21 @@ class ProcessRunsTest {
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, finished2, List.of(started, finished1, finished2)));
+        }
+
+        @Test
+        void shouldReportRunFailedBeforeStart() {
+            // Given
+            ProcessFailedStatus failed = failedStatus(Instant.parse("2022-09-24T09:23:30.001Z"), Duration.ofSeconds(30), List.of("Job could not be started"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(forJobRunOnTask("some-job", "some-run", "some-task", failed));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(ProcessRun::getStartedStatus, ProcessRun::getStartTime, ProcessRun::getStartUpdateTime, ProcessRun::getFinishedStatus)
+                    .containsExactly(
+                            tuple(null, null, null, failed));
         }
     }
 
