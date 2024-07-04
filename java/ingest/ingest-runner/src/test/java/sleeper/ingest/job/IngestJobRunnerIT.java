@@ -124,48 +124,6 @@ class IngestJobRunnerIT {
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
     }
 
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
-    }
-
-    private TableProperties createTableProperties(Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(TABLE_ID, tableId);
-        tableProperties.setSchema(schema);
-        return tableProperties;
-    }
-
-    private List<String> writeParquetFilesForIngest(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            String subDirectory,
-            int numberOfFiles) throws IOException {
-        List<String> files = new ArrayList<>();
-
-        for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
-                    ingestSourceBucketName, subDirectory, fileNo);
-            files.add(fileWithoutSystemPrefix);
-            Path path = new Path("s3a://" + fileWithoutSystemPrefix);
-            writeParquetFileForIngest(path, recordListAndSchema);
-        }
-
-        return files;
-    }
-
-    private void writeParquetFileForIngest(
-            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory
-                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
-        for (Record record : recordListAndSchema.recordList) {
-            writer.write(record);
-        }
-        writer.close();
-    }
-
     @Test
     void shouldIngestParquetFiles() throws Exception {
         // Given
@@ -446,4 +404,47 @@ class IngestJobRunnerIT {
     private void fixTimes(Instant... times) {
         timeSupplier = List.of(times).iterator()::next;
     }
+
+    private String createFifoQueueGetUrl() {
+        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")));
+        return result.getQueueUrl();
+    }
+
+    private TableProperties createTableProperties(Schema schema) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_ID, tableId);
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    private List<String> writeParquetFilesForIngest(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            String subDirectory,
+            int numberOfFiles) throws IOException {
+        List<String> files = new ArrayList<>();
+
+        for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
+            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
+                    ingestSourceBucketName, subDirectory, fileNo);
+            files.add(fileWithoutSystemPrefix);
+            Path path = new Path("s3a://" + fileWithoutSystemPrefix);
+            writeParquetFileForIngest(path, recordListAndSchema);
+        }
+
+        return files;
+    }
+
+    private void writeParquetFileForIngest(
+            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
+        for (Record record : recordListAndSchema.recordList) {
+            writer.write(record);
+        }
+        writer.close();
+    }
+
 }
