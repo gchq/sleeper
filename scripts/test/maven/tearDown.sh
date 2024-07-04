@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: $0 <short-id> <instance-ids-if-any-are-deployed>"
+  echo "Usage: $0 <comma-separated-short-ids> <optional-comma-separated-instance-short-names> <optional-comma-separated-standalone-instance-ids>"
   exit 1
 fi
 
