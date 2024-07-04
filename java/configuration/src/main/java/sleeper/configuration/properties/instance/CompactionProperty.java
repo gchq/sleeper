@@ -28,6 +28,11 @@ public interface CompactionProperty {
                     "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty ECR_COMPACTION_GPU_REPO = Index.propertyBuilder("sleeper.compaction.gpu.repo")
+            .description("The name of the repository for the GPU compaction container. The Docker image from the compaction-gpu module " +
+                    "should have been uploaded to an ECR repository of this name in this account.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.creation.batch.size")
             .description("The number of tables to perform compaction job creation for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
