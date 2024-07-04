@@ -19,7 +19,6 @@ package sleeper.ingest.testutils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.testutils.IngestCoordinatorTestParameters.CoordinatorConfig;
 
 import java.util.function.Consumer;
 
@@ -75,7 +74,7 @@ public class TestIngestType {
 
     public static class Builder {
 
-        private Consumer<CoordinatorConfig> configureCoordinator = config -> {
+        private Consumer<IngestCoordinatorTestParameters.Builder> config = builder -> {
         };
         private GetFilePrefix getFilePrefix;
 
@@ -83,42 +82,42 @@ public class TestIngestType {
         }
 
         public Builder backedByArrow() {
-            configureCoordinator = configureCoordinator.andThen(config -> config.backedByArrow());
+            config = config.andThen(builder -> builder.backedByArrow());
             return this;
         }
 
         public Builder backedByArrayList() {
-            configureCoordinator = configureCoordinator.andThen(config -> config.backedByArrow());
+            config = config.andThen(builder -> builder.backedByArrow());
             return this;
         }
 
         public Builder localDirectWrite() {
-            configureCoordinator = configureCoordinator.andThen(config -> config.localDirectWrite());
+            config = config.andThen(builder -> builder.localDirectWrite());
             getFilePrefix = IngestCoordinatorTestParameters::getLocalFilePrefix;
             return this;
         }
 
         public Builder s3DirectWrite() {
-            configureCoordinator = configureCoordinator.andThen(config -> config.s3DirectWrite());
+            config = config.andThen(builder -> builder.s3DirectWrite());
             getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
             return this;
         }
 
         public Builder s3AsyncWrite() {
-            configureCoordinator = configureCoordinator.andThen(config -> config.s3AsyncWrite());
+            config = config.andThen(builder -> builder.s3AsyncWrite());
             getFilePrefix = IngestCoordinatorTestParameters::getS3Prefix;
             return this;
         }
 
         public Builder setInstanceProperties(Consumer<InstanceProperties> setProperties) {
-            configureCoordinator = configureCoordinator.andThen(config -> config.setInstanceProperties(setProperties));
+            config = config.andThen(builder -> builder.setInstanceProperties(setProperties));
             return this;
         }
 
         public IngestCoordinator<Record> buildCoordinator(IngestCoordinatorTestParameters parameters) {
-            CoordinatorConfig config = parameters.ingestCoordinatorConfig();
-            configureCoordinator.accept(config);
-            return config.buildCoordinator();
+            IngestCoordinatorTestParameters.Builder builder = parameters.toBuilder();
+            config.accept(builder);
+            return builder.buildCoordinator();
         }
 
         public String getFilePrefix(IngestCoordinatorTestParameters parameters) {

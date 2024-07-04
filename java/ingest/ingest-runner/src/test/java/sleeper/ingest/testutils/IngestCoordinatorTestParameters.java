@@ -133,15 +133,15 @@ public class IngestCoordinatorTestParameters {
         return ingestFileWritingStrategy;
     }
 
-    public CoordinatorConfig ingestCoordinatorConfig() {
-        return new CoordinatorConfig(createTestInstanceProperties());
+    public IngestCoordinator<Record> buildCoordinator() {
+        return coordinatorBuilder().build();
     }
 
-    public IngestCoordinator<Record> buildCoordinator() {
+    public IngestCoordinator.Builder<Record> coordinatorBuilder() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
         setInstanceProperties.setProperties(instanceProperties, this);
-        return ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
+        return ingestCoordinatorBuilder(instanceProperties, tableProperties);
     }
 
     public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(InstanceProperties instanceProperties,
@@ -163,57 +163,6 @@ public class IngestCoordinatorTestParameters {
 
     public Builder toBuilder() {
         return new Builder(this);
-    }
-
-    public class CoordinatorConfig {
-
-        private final InstanceProperties instanceProperties;
-
-        private CoordinatorConfig(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-        }
-
-        public CoordinatorConfig backedByArrow() {
-            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
-            return this;
-        }
-
-        public CoordinatorConfig backedByArrayList() {
-            instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
-            return this;
-        }
-
-        public CoordinatorConfig localDirectWrite() {
-            instanceProperties.set(FILE_SYSTEM, "file://");
-            instanceProperties.set(DATA_BUCKET, localDataPath);
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-            return this;
-        }
-
-        public CoordinatorConfig s3DirectWrite() {
-            instanceProperties.set(FILE_SYSTEM, "s3a://");
-            instanceProperties.set(DATA_BUCKET, dataBucketName);
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-            return this;
-        }
-
-        public CoordinatorConfig s3AsyncWrite() {
-            instanceProperties.set(FILE_SYSTEM, "s3a://");
-            instanceProperties.set(DATA_BUCKET, dataBucketName);
-            instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
-            return this;
-        }
-
-        public CoordinatorConfig setInstanceProperties(Consumer<InstanceProperties> config) {
-            config.accept(instanceProperties);
-            return this;
-        }
-
-        public IngestCoordinator<Record> buildCoordinator() {
-            TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-            return ingestCoordinatorBuilder(instanceProperties, tableProperties).build();
-        }
-
     }
 
     public static final class Builder {
@@ -362,6 +311,10 @@ public class IngestCoordinatorTestParameters {
 
         public IngestCoordinatorTestParameters build() {
             return new IngestCoordinatorTestParameters(this);
+        }
+
+        public IngestCoordinator.Builder<Record> coordinatorBuilder() {
+            return build().coordinatorBuilder();
         }
 
         public IngestCoordinator<Record> buildCoordinator() {
