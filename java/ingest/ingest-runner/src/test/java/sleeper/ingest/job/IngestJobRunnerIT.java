@@ -65,7 +65,6 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +77,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -114,7 +112,7 @@ class IngestJobRunnerIT {
     private final String ingestSourceBucketName = "ingest-source-" + UUID.randomUUID().toString();
     private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
     @TempDir
-    public java.nio.file.Path temporaryFolder;
+    public java.nio.file.Path localDir;
     private Supplier<Instant> timeSupplier = Instant::now;
 
     @BeforeEach
@@ -130,7 +128,6 @@ class IngestJobRunnerIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
@@ -141,14 +138,13 @@ class IngestJobRunnerIT {
         runIngestJob(
                 stateStore,
                 recordListAndSchema,
-                localDir,
                 files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
@@ -173,21 +169,19 @@ class IngestJobRunnerIT {
         URI uri2 = new URI("s3a://" + ingestSourceBucketName + "/file-2.csv");
         FileSystem.get(uri2, hadoopConfiguration).createNewFile(new Path(uri2));
         files.add(ingestSourceBucketName + "/file-2.csv");
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
         runIngestJob(
                 stateStore,
                 recordListAndSchema,
-                localDir,
                 files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
@@ -220,21 +214,19 @@ class IngestJobRunnerIT {
                 .flatMap(List::stream).collect(Collectors.toList());
         List<Record> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
         runIngestJob(
                 stateStore,
                 recordListAndSchema,
-                localDir,
                 files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 160));
@@ -266,20 +258,19 @@ class IngestJobRunnerIT {
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records1.recordList);
         expectedRecords.addAll(records2.recordList);
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         TableProperties tableProperties = createTableProperties(records1.sleeperSchema);
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
         fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
         // When
-        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, ingestJob);
+        runIngestJob(instanceProperties, tableProperties, stateStore, ingestJob);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
@@ -303,7 +294,6 @@ class IngestJobRunnerIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema);
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
@@ -318,7 +308,7 @@ class IngestJobRunnerIT {
         fixTimes(Instant.parse("2024-06-20T15:10:00Z"), Instant.parse("2024-06-20T15:10:01Z"));
 
         // When
-        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, job);
+        runIngestJob(instanceProperties, tableProperties, stateStore, job);
 
         // Then
         List<IngestAddFilesCommitRequest> commitRequests = getCommitRequestsFromQueue(instanceProperties);
@@ -328,7 +318,7 @@ class IngestJobRunnerIT {
                 .collect(Collectors.toList());
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
@@ -360,7 +350,6 @@ class IngestJobRunnerIT {
     private void runIngestJob(
             StateStore stateStore,
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            String localDir,
             List<String> files) throws Exception {
         TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema);
         IngestJob job = IngestJob.builder()
@@ -369,33 +358,31 @@ class IngestJobRunnerIT {
                 .id("id")
                 .files(files)
                 .build();
-        runIngestJob(instanceProperties, tableProperties, stateStore, localDir, job);
+        runIngestJob(instanceProperties, tableProperties, stateStore, job);
     }
 
     private void runIngestJob(InstanceProperties instanceProperties,
             TableProperties tableProperties,
             StateStore stateStore,
-            String localDir,
             IngestJob job) throws Exception {
         statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
-        ingestJobRunner(instanceProperties, tableProperties, stateStore, localDir)
+        ingestJobRunner(instanceProperties, tableProperties, stateStore)
                 .ingest(job, "test-job-run");
     }
 
     private IngestJobRunner ingestJobRunner(InstanceProperties instanceProperties,
             TableProperties tableProperties,
-            StateStore stateStore,
-            String localDir) throws Exception {
+            StateStore stateStore) throws Exception {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
         return new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
+                ObjectFactory.noUserJars(),
                 instanceProperties,
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),
                 stateStoreProvider, statusStore,
                 "test-task",
-                localDir,
+                localDir.toString(),
                 s3Async, sqs,
                 hadoopConfiguration,
                 timeSupplier);
