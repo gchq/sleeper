@@ -32,7 +32,7 @@ sudo apt update && sudo apt -y dist-upgrade
 
 # Install Nix
 if ! command -v nix &> /dev/null ; then
-  curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes
+  runuser --login "$LOGIN_USER" -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes"
 fi
 
 # Install latest Docker
