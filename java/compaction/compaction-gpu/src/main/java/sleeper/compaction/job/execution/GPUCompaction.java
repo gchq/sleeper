@@ -111,7 +111,7 @@ public class GPUCompaction implements CompactionRunner {
 
     /**
      * Makes a gRPC call over the given channel to a compaction server.
-     * 
+     *
      * @param  channel         managed channel to server
      * @param  job             compaction job
      * @param  tableProperties table properties for compaction job
@@ -125,17 +125,17 @@ public class GPUCompaction implements CompactionRunner {
                 .withWaitForReady();
         CompactionParams params = createParams(job, tableProperties, schema, region);
 
-        CompactionResult grpc_result;
+        CompactionResult grpcResult;
         try {
-            grpc_result = stub.compact(params);
+            grpcResult = stub.compact(params);
 
             // check exit status of compaction
-            if (grpc_result.getExitStatus() != ReturnCode.OK) {
-                String exitReason = grpc_result.hasExitReason() ? grpc_result.getExitReason() : "not specified";
-                throw new IOException("GPU compaction failed with exit status " + grpc_result.getExitStatus().name() + " due to " + exitReason);
+            if (grpcResult.getExitStatus() != ReturnCode.OK) {
+                String exitReason = grpcResult.hasExitReason() ? grpcResult.getExitReason() : "not specified";
+                throw new IOException("GPU compaction failed with exit status " + grpcResult.getExitStatus().name() + " due to " + exitReason);
             }
 
-            RecordsProcessed result = new RecordsProcessed(grpc_result.getRowsRead(), grpc_result.getRowsWritten());
+            RecordsProcessed result = new RecordsProcessed(grpcResult.getRowsRead(), grpcResult.getRowsWritten());
             return result;
         } catch (StatusRuntimeException e) {
             LOGGER.error("gRPC failed: {0}", e.getStatus());
@@ -145,7 +145,7 @@ public class GPUCompaction implements CompactionRunner {
 
     /**
      * Create the compaction message to send to the compaction server.
-     * 
+     *
      * @param  job             compaction job details
      * @param  tableProperties properties for the table being compacted
      * @param  schema          table schema
@@ -207,13 +207,13 @@ public class GPUCompaction implements CompactionRunner {
 
     /**
      * Generate an iterable of bounds in the form of bytes.
-     * 
+     *
      * This takes a stream of range bounds and encodes them into bytes for gRPC transport. If nulls
      * are not allowed then any found will raise an Exception.
-     * 
+     *
      * @param  bounds               the list of bounds to encode
      * @param  nullsAllowed         if bounds are optional, that is if a value may be null
-     * @return
+     * @return                      byte array of region bounds
      * @throws NullPointerException if a null is found but not allowed
      */
     @SuppressWarnings("unchecked")
@@ -224,10 +224,10 @@ public class GPUCompaction implements CompactionRunner {
 
     /**
      * Converts a single item into a optional byte array.
-     * 
+     *
      * If nulls are allowed then item maybe null, otherwise an exception is raised. Number
      * types are encoded little endian byte order.
-     * 
+     *
      * @param  item                 the item to encode
      * @param  nullsAllowed         if nulls are allowed
      * @return                      an optional byte type
