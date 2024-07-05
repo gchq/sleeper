@@ -31,9 +31,6 @@ USERNAME="$1"
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
   "&&" sudo usermod -aG docker "$USERNAME" \
-  "&&" sudo runuser --login "$USERNAME" -c '"git clone https://github.com/gchq/sleeper.git ~/.sleeper/builder/sleeper"' \
-  "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh develop"' \
-  "&&" sudo runuser --login "$USERNAME" -c '"sudo chown -R root:root ~/.sleeper/builder"' \
-  "&&" sudo runuser --login "$USERNAME" -c '"mkdir ~/.m2"' \
-  "&&" sudo runuser --login "$USERNAME" -c '"mkdir ~/.aws"'
+  "&&" sudo runuser --login "$USERNAME" -c "curl -O https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/shell.nix" \
+  "&&" sudo runuser --login "$USERNAME" -c "nix-shell --run \"git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git\""
 "$THIS_DIR/setuser.sh" "$USERNAME"
