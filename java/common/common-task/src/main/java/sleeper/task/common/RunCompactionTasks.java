@@ -44,6 +44,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -165,7 +166,7 @@ public class RunCompactionTasks {
         String fargateVersion = instanceProperties.get(FARGATE_VERSION);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
-        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties.getList(SUBNETS));
+        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
         String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
         RunTaskRequest runTaskRequest = createRunTaskRequest(
                 clusterName, launchType, fargateVersion,
@@ -181,12 +182,13 @@ public class RunCompactionTasks {
     /**
      * Create the container networking configuration.
      *
-     * @param  subnets the subnet name
-     * @return         task network configuration
+     * @param  instanceProperties the instance properties
+     * @return                    task network configuration
      */
-    private static NetworkConfiguration networkConfig(List<String> subnets) {
+    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(subnets);
+                .withSubnets(instanceProperties.getList(SUBNETS))
+                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
 
         return new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
