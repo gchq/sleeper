@@ -52,11 +52,6 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-us
 # Allow user to access docker socket
 usermod -aG docker "$LOGIN_USER"
 
-# Install Sleeper CLI
-curl "https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
-chmod +x "$LOGIN_HOME/sleeper-install.sh"
-runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh $BRANCH"
-
 # Check out code
 if [ ! -d "$LOGIN_HOME/$REPOSITORY" ]; then
   runuser --login "$LOGIN_USER" -c "curl -O https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/shell.nix"
