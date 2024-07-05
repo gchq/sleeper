@@ -182,11 +182,11 @@ public class Utils {
         return parseAndCheckInteger(string, num -> num >= 0 && num <= maxValue);
     }
 
-    public static boolean isListWithMaxSize(String string, int maxSize) {
-        if (!isNonNullNonEmptyString(string)) {
+    public static boolean isListWithMaxSize(String input, int maxSize) {
+        if (input == null) {
             return false;
         }
-        List<String> values = Lists.newArrayList(string.split(","));
+        List<String> values = Lists.newArrayList(input.split(","));
         return values.size() <= maxSize;
     }
 
