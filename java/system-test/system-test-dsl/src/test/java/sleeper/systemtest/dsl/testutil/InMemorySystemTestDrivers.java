@@ -34,6 +34,9 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
+import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
+import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
+import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -46,6 +49,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryPartitionSplittingDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
@@ -69,6 +73,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
+    private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -181,6 +186,25 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return metrics.driver(context);
     }
 
+    @Override
+    public CompactionReportsDriver compactionReports(SystemTestContext context) {
+        return reports.compaction(context.instance());
+    }
+
+    @Override
+    public IngestReportsDriver ingestReports(SystemTestContext context) {
+        return reports.ingest(context.instance());
+    }
+
+    @Override
+    public PartitionReportDriver partitionReports(SystemTestContext context) {
+        return reports.partitions(context.instance());
+    }
+
+    public InMemoryReports reports() {
+        return reports;
+    }
+
     public InMemoryDataStore data() {
         return data;
     }
@@ -189,4 +213,5 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     public SnapshotsDriver snapshots() {
         return new InMemorySnapshotsDriver();
     }
+
 }
