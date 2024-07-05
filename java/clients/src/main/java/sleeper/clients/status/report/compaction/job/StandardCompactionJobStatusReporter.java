@@ -24,6 +24,7 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.compaction.job.status.CompactionJobCommittedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
@@ -31,6 +32,7 @@ import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import static java.util.function.Predicate.not;
@@ -169,8 +171,25 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
                 row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
-                runReporter.writeRunFields(run, row);
+                runReporter.writeRunFields(run, row, StandardCompactionJobStatusReporter::getFinishOrCommitTime);
             }));
+        }
+    }
+
+    private static Instant getFinishOrCommitTime(ProcessRun run) {
+        if (run.getFinishedStatus() instanceof CompactionJobFinishedStatus) {
+            CompactionJobFinishedStatus finishedStatus = (CompactionJobFinishedStatus) run.getFinishedStatus();
+            if (finishedStatus.isCommittedBySeparateUpdate()) {
+                return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                        .map(CompactionJobCommittedStatus::getUpdateTime)
+                        .orElse(null);
+            } else {
+                return run.getFinishTime();
+            }
+        } else if (run.isFinished()) {
+            return run.getFinishTime();
+        } else {
+            return null;
         }
     }
 

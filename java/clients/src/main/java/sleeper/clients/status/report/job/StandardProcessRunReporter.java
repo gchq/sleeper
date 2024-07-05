@@ -27,6 +27,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -61,9 +62,13 @@ public class StandardProcessRunReporter {
     }
 
     public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
+        writeRunFields(run, builder, processRun -> processRun.getFinishTime());
+    }
+
+    public void writeRunFields(ProcessRun run, TableRow.Builder builder, GetFinishTime getFinishTime) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
-                .value(FINISH_TIME, run.getFinishTime());
+                .value(FINISH_TIME, getFinishTime.from(run));
         if (run.isFinished()) {
             RecordsProcessedSummary summary = run.getFinishedSummary();
             builder.value(DURATION, getDurationString(summary))
@@ -72,6 +77,10 @@ public class StandardProcessRunReporter {
                     .value(READ_RATE, getRecordsReadPerSecond(summary))
                     .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
         }
+    }
+
+    public interface GetFinishTime {
+        Instant from(ProcessRun run);
     }
 
     public void printProcessJobRunWithUpdatePrinter(ProcessRun run, UpdatePrinter updatePrinter) {
