@@ -58,9 +58,9 @@ chmod +x "$LOGIN_HOME/sleeper-install.sh"
 runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh $BRANCH"
 
 # Check out code
-REPOSITORY_DIR="$LOGIN_HOME/.sleeper/builder/$REPOSITORY"
-if [ ! -d "$REPOSITORY_DIR" ]; then
-  runuser --login "$LOGIN_USER" -c "sleeper builder git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git"
+if [ ! -d "$LOGIN_HOME/$REPOSITORY" ]; then
+  runuser --login "$LOGIN_USER" -c "curl -O https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/shell.nix"
+  runuser --login "$LOGIN_USER" -c "nix-shell --run \"git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git\""
 fi
 
 if [ -f /var/run/reboot-required ]; then
