@@ -19,8 +19,6 @@ pkgs.mkShell {
       python-pkgs.pip
       python-pkgs.setuptools
       python-pkgs.pyarrow
-      python-pkgs.boto3
-      python-pkgs.s3fs
     ]))
   ];
 }
