@@ -15,6 +15,7 @@
  */
 package sleeper.configuration;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -22,6 +23,7 @@ import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -180,6 +182,14 @@ public class Utils {
         return parseAndCheckInteger(string, num -> num >= 0 && num <= maxValue);
     }
 
+    public static boolean isListWithMaxSize(String string, int maxSize) {
+        if (!isNonNullNonEmptyString(string)) {
+            return false;
+        }
+        List<String> values = Lists.newArrayList(string.split(","));
+        return values.size() <= maxSize;
+    }
+
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {
         try {
             return check.test(Integer.parseInt(string));
@@ -208,4 +218,5 @@ public class Utils {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString)
                 .map(String::toLowerCase).collect(Collectors.toList()).toString();
     }
+
 }

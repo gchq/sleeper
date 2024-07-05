@@ -127,4 +127,24 @@ class UtilsTest {
             assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
         }
     }
+
+    @Nested
+    @DisplayName("Validate lists")
+    class ValidateLists {
+        @Test
+        void shouldValidateStringWhenListSizeIsLowerThanMaxSize() {
+            assertThat(Utils.isListWithMaxSize("a,b", 4)).isTrue();
+        }
+
+        @Test
+        void shouldValidateStringWhenListSizeMeetsMaxSize() {
+            assertThat(Utils.isListWithMaxSize("a,b,c,d", 4)).isTrue();
+        }
+
+        @Test
+        void shouldValidateStringWhenListSizeExceedsMaxSize() {
+            assertThat(Utils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
+        }
+    }
+
 }
