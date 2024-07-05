@@ -291,6 +291,11 @@ public interface CommonProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
+            .description("A comma-separated list of security group to be used when running ECS tasks.")
+            .defaultValue("")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

@@ -206,6 +206,9 @@ sleeper.statestore.committer.lambda.timeout.seconds=900
 # This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.committer.batch.size=10
 
+# A comma-separated list of security group to be used when running ECS tasks.
+sleeper.ecs.security.groups=
+
 
 ## The following properties relate to standard ingest.
 
