@@ -177,7 +177,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private static Instant getFinishOrCommitTime(ProcessRun run) {
-        if (run.getFinishedStatus() instanceof CompactionJobFinishedStatus) {
+        if (run.isFinishedSuccessfully()) {
             CompactionJobFinishedStatus finishedStatus = (CompactionJobFinishedStatus) run.getFinishedStatus();
             if (finishedStatus.isCommittedBySeparateUpdate()) {
                 return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
