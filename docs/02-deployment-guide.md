@@ -14,10 +14,10 @@ getting started guide, you get an EC2 with the Sleeper CLI installed, and the Gi
 deployed, you can connect to it and build Sleeper like this:
 
 ```bash
-sleeper environment connect # Get a shell in the EC2 you deployed
-sleeper builder # Get a shell in a builder Docker container (hosted in the EC2)
-cd sleeper # Change directory to the root of the Git repository
-./scripts/build/build.sh
+sleeper environment connect   # Get a shell in the EC2 you deployed
+cd sleeper                    # Change directory to the root of the Git repository
+nix-shell                     # Get a Nix shell with Sleeper's dependencies pre-installed
+scripts/build/build.sh
 ```
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
@@ -87,11 +87,9 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
-to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
-
-When you use the Sleeper CLI described in [getting started](01-getting-started.md#deployment-environment), you can
-manage multiple environments.
+Please follow the [getting started guide](01-getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](01-getting-started.md#install-sleeper-cli).
+This section adds more detail for the tools to set up this environment.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
@@ -99,6 +97,8 @@ Sleeper `environment` commands directly, without prefixing with `sleeper`.
 You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
 `sleeper` commands.
+
+The Sleeper CLI also lets you manage multiple environments.
 
 #### Managing environments
 
@@ -143,6 +143,9 @@ Parameters after the environment ID will be passed to a `cdk destroy` command.
 
 There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
 
+Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
+jar files and Docker images.
+
 ### Automated Deployment
 
 The automated deployment uses template files to provide a default configuration for Sleeper. It also deploys only one
@@ -174,31 +177,6 @@ ECR.
 
 The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
 directory.
-
-#### Sleeper CLI Docker environment
-
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
-dependencies or build Sleeper yourself.
-
-The `sleeper builder` command gets you a shell inside a Docker container. This docker container will have all the
-dependencies required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2,
-the Sleeper Git repository will be cloned into the working directory of the container. If you are not using an
-environment EC2, you will need to manually clone the repository.
-
-If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
-the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
-to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
 
 ### Manual Deployment
 
