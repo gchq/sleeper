@@ -7,6 +7,8 @@ and tear them down afterwards.
 
 ### Setup
 
+TODO rework to use Nix
+
 It's easiest to run this through the Sleeper CLI. You can bring the CLI up to date and check out the Git repository like
 this:
 
