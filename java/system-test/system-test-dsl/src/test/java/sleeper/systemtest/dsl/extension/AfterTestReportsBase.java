@@ -28,7 +28,7 @@ public class AfterTestReportsBase<B extends SystemTestReports.Builder> {
     private boolean reportIfPassed;
     private Consumer<B> config;
 
-    AfterTestReportsBase(Supplier<B> reportsFactory) {
+    public AfterTestReportsBase(Supplier<B> reportsFactory) {
         this.reportsFactory = reportsFactory;
     }
 
@@ -45,13 +45,13 @@ public class AfterTestReportsBase<B extends SystemTestReports.Builder> {
         this.config = config;
     }
 
-    void afterTestPassed(TestContext testContext) {
+    public void afterTestPassed(TestContext testContext) {
         if (reportIfPassed) {
             reports().print(testContext);
         }
     }
 
-    void afterTestFailed(TestContext testContext) {
+    public void afterTestFailed(TestContext testContext) {
         if (config != null) {
             reports().print(testContext);
         }
