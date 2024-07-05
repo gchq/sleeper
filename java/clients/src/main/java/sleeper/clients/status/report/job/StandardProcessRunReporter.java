@@ -62,13 +62,13 @@ public class StandardProcessRunReporter {
     }
 
     public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
-        writeRunFields(run, builder, processRun -> processRun.getFinishTime());
+        writeRunFields(run, builder, run.getFinishTime());
     }
 
-    public void writeRunFields(ProcessRun run, TableRow.Builder builder, GetFinishTime getFinishTime) {
+    public void writeRunFields(ProcessRun run, TableRow.Builder builder, Instant finishTime) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
-                .value(FINISH_TIME, getFinishTime.from(run));
+                .value(FINISH_TIME, finishTime);
         if (run.isFinished()) {
             RecordsProcessedSummary summary = run.getFinishedSummary();
             builder.value(DURATION, getDurationString(summary))
@@ -77,10 +77,6 @@ public class StandardProcessRunReporter {
                     .value(READ_RATE, getRecordsReadPerSecond(summary))
                     .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
         }
-    }
-
-    public interface GetFinishTime {
-        Instant from(ProcessRun run);
     }
 
     public void printProcessJobRunWithUpdatePrinter(ProcessRun run, UpdatePrinter updatePrinter) {
