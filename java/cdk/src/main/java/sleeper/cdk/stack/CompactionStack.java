@@ -33,6 +33,7 @@ import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
 import software.amazon.awscdk.services.ec2.LaunchTemplate;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -415,7 +416,9 @@ public class CompactionStack extends NestedStack {
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
-
+        SecurityGroup sg = SecurityGroup.Builder.create(this, "CompactionScalingSG")
+                .vpc(vpc)
+                .build();
         LaunchTemplate template = LaunchTemplate.Builder.create(this, "CompactionScalingTemplate")
                 .associatePublicIpAddress(false)
                 .requireImdsv2(true)
@@ -434,6 +437,7 @@ public class CompactionStack extends NestedStack {
                         EcsOptimizedImageOptions.builder()
                                 .cachedInContext(false)
                                 .build()))
+                .securityGroup(sg)
                 .build();
 
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup").vpc(vpc)
