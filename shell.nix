@@ -18,7 +18,10 @@ pkgs.mkShell {
       python-pkgs.wheel
       python-pkgs.pip
       python-pkgs.setuptools
+      # PyArrow requires native code that isn't accessible through Nix with pip install
       python-pkgs.pyarrow
+      # Note that including boto3 or botocore here may break the AWS CLI.
+      # Nix adds Python dependencies for all Python installs, including the one in the AWS CLI package.
     ]))
   ];
 }
