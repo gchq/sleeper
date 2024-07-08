@@ -30,7 +30,5 @@ USERNAME="$1"
   "&&" sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
-  "&&" sudo usermod -aG docker "$USERNAME" \
-  "&&" sudo runuser --login "$USERNAME" -c "curl -O https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/shell.nix" \
-  "&&" sudo runuser --login "$USERNAME" -c "nix-shell --run \"git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git\""
+  "&&" sudo usermod -aG docker "$USERNAME"
 "$THIS_DIR/setuser.sh" "$USERNAME"
