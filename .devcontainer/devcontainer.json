@@ -8,7 +8,9 @@
     "vscode": {
       "extensions": [
         "vscjava.vscode-java-pack",
-        "eamodio.gitlens"
+        "shengchen.vscode-checkstyle",
+        "eamodio.gitlens",
+        "mhutchie.git-graph"
       ]
     }
   },
