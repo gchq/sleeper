@@ -59,6 +59,10 @@
         "editor.tabSize": 2,
         "files.insertFinalNewline": true
     },
+    "[jsonc]": {
+        "editor.tabSize": 2,
+        "files.insertFinalNewline": true
+    },
     "java.debug.settings.onBuildFailureProceed": true,
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
