@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.GetStateStoreByTableId;
@@ -55,6 +56,10 @@ public class CompactionJobCommitterOrSendToLambda {
         } else {
             LOGGER.info("Committing compaction job {} inside compaction task", job.getId());
             CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
+            statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job)
+                    .jobRunId(finishedEvent.getJobRunId())
+                    .taskId(finishedEvent.getTaskId())
+                    .build());
             statusStore.jobFinished(finishedEvent);
             LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
         }
