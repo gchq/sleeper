@@ -27,7 +27,6 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -46,8 +45,13 @@ public class StandardProcessRunReporter {
     public static final TableFieldDefinition RECORDS_WRITTEN = TableFieldDefinition.numeric("RECORDS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
+    private static final List<TableFieldDefinition> FINISHED_FIELDS = List.of(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
 
     private final PrintStream out;
+
+    public static Builder withTable(TableWriterFactory.Builder tableBuilder) {
+        return new Builder(tableBuilder);
+    }
 
     public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
         this(out);
@@ -145,7 +149,7 @@ public class StandardProcessRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+        return FINISHED_FIELDS;
     }
 
     private static String getDurationString(RecordsProcessedSummary summary) {
@@ -186,4 +190,25 @@ public class StandardProcessRunReporter {
         return getter.apply(object);
     }
 
+    public static class Builder {
+        private TableWriterFactory.Builder tableBuilder;
+
+        public Builder(TableWriterFactory.Builder tableBuilder) {
+            this.tableBuilder = tableBuilder;
+        }
+
+        public Builder addProgressFields() {
+            tableBuilder.addFields(TASK_ID, START_TIME, FINISH_TIME);
+            return this;
+        }
+
+        public Builder addResultsFields() {
+            tableBuilder.addFields(DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+            return this;
+        }
+
+        public StandardProcessRunReporter build(PrintStream out) {
+            return new StandardProcessRunReporter(out);
+        }
+    }
 }
