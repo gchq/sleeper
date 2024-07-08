@@ -65,7 +65,7 @@ parse_version(){
     CURRENT_VERSION=$(get_version | tr -d '\r\n')
     case $CURRENT_VERSION in
     *-SNAPSHOT)
-      VERSION="latest"
+      VERSION="develop"
       ;;
     *)
       # We could get the latest version from GitHub by querying this URL:
