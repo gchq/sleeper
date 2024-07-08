@@ -106,6 +106,14 @@ public class InMemoryIngestByQueue {
         });
     }
 
+    public IngestJobStatusStore jobStore() {
+        return jobStore;
+    }
+
+    public IngestTaskStatusStore taskStore() {
+        return taskStore;
+    }
+
     private void finishJobs(SystemTestContext context, String taskId) {
         for (IngestJob queuedJob : queuedJobs) {
             IngestJob job = addTableId(queuedJob, context);
