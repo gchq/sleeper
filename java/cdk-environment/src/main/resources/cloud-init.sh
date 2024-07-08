@@ -30,11 +30,6 @@ LOGIN_HOME=/home/$LOGIN_USER
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update && sudo apt -y dist-upgrade
 
-# Install Nix
-if [ ! -d /nix ]; then
-  runuser --login "$LOGIN_USER" -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes"
-fi
-
 # Install latest Docker
 sudo apt remove -y docker.io containerd runc
 sudo apt install -y ca-certificates curl gnupg lsb-release
@@ -52,10 +47,14 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-us
 # Allow user to access docker socket
 usermod -aG docker "$LOGIN_USER"
 
+# Install Nix
+if [ ! -d /nix ]; then
+  runuser --login "$LOGIN_USER" -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes"
+fi
+
 # Check out code
 if [ ! -d "$LOGIN_HOME/$REPOSITORY" ]; then
-  runuser --login "$LOGIN_USER" -c "curl -O https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/shell.nix"
-  runuser --login "$LOGIN_USER" -c "nix-shell --run \"git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git\""
+  runuser --login "$LOGIN_USER" -c "git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git"
 fi
 
 if [ -f /var/run/reboot-required ]; then
