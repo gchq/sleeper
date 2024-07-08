@@ -120,9 +120,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 .taskId("test-task").jobRunId("test-run-2").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true)
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobCommitted(compactionJobCommitted(job).commitTime(defaultCommitTime())
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobCommitted(compactionJobCommitted(job).commitTime(defaultCommitTime())
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
 
         // Then

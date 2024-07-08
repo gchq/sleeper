@@ -211,7 +211,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobSucceeds(recordsProcessed)),
                     jobRunIds::poll, timesInTask::poll);
             // And the commits are saved to the status store
-            jobStore.jobCommitted(compactionJobCommitted(job).commitTime(commitTime)
+            jobStore.jobCommitted(compactionJobCommitted(job, commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build(), commitTime);
             jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, commitFailTime))
                     .failureReasons(List.of("Could not commit same job twice"))

@@ -41,11 +41,12 @@ public class CompactionJobCommittedEvent {
     /**
      * Creates a builder for this class.
      *
-     * @param  job the compaction job
-     * @return     a builder
+     * @param  job        the compaction job
+     * @param  commitTime the commit time
+     * @return            a builder
      */
-    public static Builder compactionJobCommitted(CompactionJob job) {
-        return builder().job(job);
+    public static Builder compactionJobCommitted(CompactionJob job, Instant commitTime) {
+        return builder().job(job).commitTime(commitTime);
     }
 
     public static Builder builder() {
