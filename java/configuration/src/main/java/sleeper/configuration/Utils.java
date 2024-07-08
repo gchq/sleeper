@@ -15,7 +15,6 @@
  */
 package sleeper.configuration;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -183,10 +182,7 @@ public class Utils {
     }
 
     public static boolean isListWithMaxSize(String input, int maxSize) {
-        if (input == null) {
-            return false;
-        }
-        List<String> values = Lists.newArrayList(input.split(","));
+        List<String> values = SleeperPropertyValues.readList(input);
         return values.size() <= maxSize;
     }
 

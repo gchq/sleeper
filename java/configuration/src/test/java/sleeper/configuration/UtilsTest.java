@@ -132,8 +132,8 @@ class UtilsTest {
     @DisplayName("Validate lists")
     class ValidateLists {
         @Test
-        void shouldFailToValidateNullString() {
-            assertThat(Utils.isListWithMaxSize(null, 4)).isFalse();
+        void shouldValidateNullStringAsEmptyList() {
+            assertThat(Utils.isListWithMaxSize(null, 4)).isTrue();
         }
 
         @Test
