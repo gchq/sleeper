@@ -56,13 +56,6 @@ run_in_environment_docker() {
     sleeper-local:current "$@"
 }
 
-run_in_builder_docker() {
-  run_in_docker \
-    -v "$HOME/.sleeper/builder:/sleeper-builder" \
-    -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    sleeper-builder:current "$@"
-}
-
 get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
@@ -141,8 +134,6 @@ elif [ "$COMMAND" == "cdk" ]; then
   run_in_environment_docker cdk "$@"
 elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
   get_version
-elif [ "$COMMAND" == "builder" ]; then
-  run_in_builder_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
     run_in_environment_docker
