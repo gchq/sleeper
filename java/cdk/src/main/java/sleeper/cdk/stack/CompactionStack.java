@@ -131,6 +131,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
@@ -563,16 +565,16 @@ public class CompactionStack extends NestedStack {
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        int cpu = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_CPU);
+        int memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_MEMORY);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
+                .cpu(cpu)
                 // bit hacky: Reduce memory requirement for EC2 to prevent
                 // container allocation failing when we need almost entire resources
                 // of machine
-                .memoryLimitMiB((int) (requirements.getRight() * 0.95))
+                .memoryLimitMiB((int) (memoryLimitMiB * 0.95))
                 .logging(logDriver)
                 .build();
     }
