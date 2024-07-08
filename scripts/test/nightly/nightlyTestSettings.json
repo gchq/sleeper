@@ -8,7 +8,7 @@
     "functional": false
   },
   "gitHubApp": {
-    "privateKeyFile": "/sleeper-builder/<my GitHub App private key uploaded to Sleeper builder>.pem",
+    "privateKeyFile": "/path/to/<my GitHub App private key>.pem",
     "appId": "my GitHub App ID",
     "installationId": "my GitHub App installation ID"
   }
