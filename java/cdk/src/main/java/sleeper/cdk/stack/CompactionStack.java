@@ -430,7 +430,7 @@ public class CompactionStack extends NestedStack {
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
         boolean isGPUEnabled = instanceProperties.getBoolean(COMPACTION_GPU_ENABLED);
-        EcsOptimizedImage machineImage = EcsOptimizedImage.amazonLinux2023(isGPUEnabled ? AmiHardwareType.GPU : AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
+        EcsOptimizedImage machineImage = EcsOptimizedImage.amazonLinux2(isGPUEnabled ? AmiHardwareType.GPU : AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
                 .cachedInContext(false)
                 .build());
 

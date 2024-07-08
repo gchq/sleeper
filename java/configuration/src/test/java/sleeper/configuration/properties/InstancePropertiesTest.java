@@ -76,6 +76,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
@@ -265,6 +267,8 @@ class InstancePropertiesTest {
         instanceProperties.set(INGEST_JOB_DLQ_URL, "url11");
         instanceProperties.set(INGEST_CLUSTER, "ecsCluster3");
         instanceProperties.set(COMPACTION_GPU_ENABLED, "false");
+        instanceProperties.set(COMPACTION_TASK_GPU_CONT_CPU, "2048");
+        instanceProperties.set(COMPACTION_TASK_GPU_CONT_MEMORY, "8192");
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES, 5);
         instanceProperties.setNumber(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES, 6);
         instanceProperties.setNumber(INGEST_TASK_CREATION_PERIOD_IN_MINUTES, 7);

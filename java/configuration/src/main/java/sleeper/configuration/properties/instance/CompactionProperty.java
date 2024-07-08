@@ -139,7 +139,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory")
-            .description("The amount of memory in MB for a compaction task using an ARM64 architecture.\n" +
+            .description("The amount of memory in MiB for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -151,9 +151,23 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory")
-            .description("The amount of memory in MB for a compaction task using an x86_64 architecture.\n" +
+            .description("The amount of memory in MiB for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_GPU_CONT_CPU = Index.propertyBuilder("sleeper.compaction.task.gpu.cont.cpu")
+            .description("The CPU for a GPU sidecar compaction task container. When GPU compaction is enabled, the sidecar " +
+                    "container needs extra CPU resources.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("2048")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_GPU_CONT_MEMORY = Index.propertyBuilder("sleeper.compaction.task.gpu.cont.memory")
+            .description("The amount of memory in MiB for a GPU sidecar compaction task container. When GPU compaction is enabled, the sidecar " +
+                    "container needs extra memory resources.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
+            .defaultValue("8192")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_GPU_ENABLED = Index.propertyBuilder("sleeper.compaction.gpu.enabled")
