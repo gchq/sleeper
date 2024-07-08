@@ -1,71 +1,71 @@
 {
-    "editor.detectIndentation": false,
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": "always",
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "always",
+  },
+  "editor.rulers": [
+    120
+  ],
+  "files.autoSave": "onFocusChange",
+  "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
+  "java.checkstyle.version": "10.14.1",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.completion.importOrder": [
+    "",
+    "sleeper",
+    "javax",
+    "java",
+    "#"
+  ],
+  "comment.java.configuration.runtimes": [
+    {
+      "name": "JavaSE-11",
+      "path": "/usr/lib/jvm/java-11-amazon-corretto",
+      "default": true
     },
-    "editor.rulers": [
-        120
-    ],
-    "files.autoSave": "onFocusChange",
-    "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
-    "java.checkstyle.version": "10.14.1",
-    "java.compile.nullAnalysis.mode": "automatic",
-    "java.completion.importOrder": [
-        "",
-        "sleeper",
-        "javax",
-        "java",
-        "#"
-    ],
-    "comment.java.configuration.runtimes": [
-        {
-            "name": "JavaSE-11",
-            "path": "/usr/lib/jvm/java-11-amazon-corretto",
-            "default": true
-        },
-        {
-            "name": "JavaSE-17",
-            "path": "/usr/lib/jvm/java-17-amazon-corretto.x86_64",
-            "default": false
-        }
-    ],
-    "java.debug.settings.exceptionBreakpoint.skipClasses": [],
-    "java.format.settings.profile": "Sleeper Checkstyle",
-    "java.format.settings.url": "./code-style/eclipse-style.xml",
-    "comment.java.jdt.ls.java.home": "/usr/lib/jvm/java-17-amazon-corretto.x86_64",
-    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms2G -Xlog:disable",
-    "java.test.config": {
-        "vmArgs": [
-            "--add-opens",
-            "java.base/java.nio=ALL-UNNAMED",
-            "--add-opens",
-            "java.base/sun.nio.ch=ALL-UNNAMED",
-            "--add-opens",
-            "java.base/java.util=ALL-UNNAMED",
-            "--add-opens",
-            "java.base/java.lang.invoke=ALL-UNNAMED"
-        ]
-    },
-    "java.debug.settings.vmArgs": "--add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED",
-    "java.templates.fileHeader": [
-        "/*\n * Copyright 2022-2024 Crown Copyright\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */"
-    ],
-    "redhat.telemetry.enabled": false,
-    "[java]": {
-        "editor.defaultFormatter": "redhat.java"
-    },
-    "[json]": {
-        "editor.tabSize": 2,
-        "files.insertFinalNewline": true
-    },
-    "[jsonc]": {
-        "editor.tabSize": 2,
-        "files.insertFinalNewline": true
-    },
-    "java.debug.settings.onBuildFailureProceed": true,
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
-    "java.codeGeneration.hashCodeEquals.useInstanceof": true,
-    "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
+    {
+      "name": "JavaSE-17",
+      "path": "/usr/lib/jvm/java-17-amazon-corretto.x86_64",
+      "default": false
+    }
+  ],
+  "java.debug.settings.exceptionBreakpoint.skipClasses": [],
+  "java.format.settings.profile": "Sleeper Checkstyle",
+  "java.format.settings.url": "./code-style/eclipse-style.xml",
+  "comment.java.jdt.ls.java.home": "/usr/lib/jvm/java-17-amazon-corretto.x86_64",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms2G -Xlog:disable",
+  "java.test.config": {
+    "vmArgs": [
+      "--add-opens",
+      "java.base/java.nio=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/sun.nio.ch=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/java.util=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/java.lang.invoke=ALL-UNNAMED"
+    ]
+  },
+  "java.debug.settings.vmArgs": "--add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED",
+  "java.templates.fileHeader": [
+    "/*\n * Copyright 2022-2024 Crown Copyright\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *     http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */"
+  ],
+  "redhat.telemetry.enabled": false,
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java"
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "files.insertFinalNewline": true
+  },
+  "[jsonc]": {
+    "editor.tabSize": 2,
+    "files.insertFinalNewline": true
+  },
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
+  "java.codeGeneration.hashCodeEquals.useInstanceof": true,
+  "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
 }
