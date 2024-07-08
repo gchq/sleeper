@@ -89,10 +89,9 @@ public class StateStoreCommitterTest {
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
-            compactionJobStatusStore.fixUpdateTime(commitTime);
 
             // When
-            committer().apply(StateStoreCommitRequest.forCompactionJob(request));
+            committerWithTimes(List.of(commitTime)).apply(StateStoreCommitRequest.forCompactionJob(request));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(

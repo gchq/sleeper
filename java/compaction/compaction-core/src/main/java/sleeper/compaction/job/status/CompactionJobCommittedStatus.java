@@ -22,14 +22,16 @@ import java.util.Objects;
 
 public class CompactionJobCommittedStatus implements ProcessStatusUpdate {
 
+    private final Instant commitTime;
     private final Instant updateTime;
 
-    private CompactionJobCommittedStatus(Instant updateTime) {
+    private CompactionJobCommittedStatus(Instant commitTime, Instant updateTime) {
+        this.commitTime = commitTime;
         this.updateTime = updateTime;
     }
 
-    public static CompactionJobCommittedStatus committedAt(Instant updateTime) {
-        return new CompactionJobCommittedStatus(updateTime);
+    public static CompactionJobCommittedStatus committedAt(Instant commitTime, Instant updateTime) {
+        return new CompactionJobCommittedStatus(commitTime, updateTime);
     }
 
     @Override
@@ -42,9 +44,13 @@ public class CompactionJobCommittedStatus implements ProcessStatusUpdate {
         return updateTime;
     }
 
+    public Instant getCommitTime() {
+        return commitTime;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime);
+        return Objects.hash(commitTime, updateTime);
     }
 
     @Override
@@ -56,12 +62,12 @@ public class CompactionJobCommittedStatus implements ProcessStatusUpdate {
             return false;
         }
         CompactionJobCommittedStatus other = (CompactionJobCommittedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime);
+        return Objects.equals(commitTime, other.commitTime) && Objects.equals(updateTime, other.updateTime);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobCommittedStatus{updateTime=" + updateTime + "}";
+        return "CompactionJobCommittedStatus{commitTime=" + commitTime + ", updateTime=" + updateTime + "}";
     }
 
 }

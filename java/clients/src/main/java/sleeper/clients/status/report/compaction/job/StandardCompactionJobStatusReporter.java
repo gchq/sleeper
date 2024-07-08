@@ -139,9 +139,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
-        out.printf("State store commit time: %s%n", committedStatus.getUpdateTime());
+        out.printf("State store commit time: %s%n", committedStatus.getCommitTime());
         if (run.isFinished()) {
-            Duration delay = Duration.between(run.getFinishTime(), committedStatus.getUpdateTime());
+            Duration delay = Duration.between(run.getFinishTime(), committedStatus.getCommitTime());
             out.printf("Delay between finish and commit: %s%n", formatDurationString(delay));
         }
     }

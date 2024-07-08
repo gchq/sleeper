@@ -94,13 +94,9 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public void jobCommitted(CompactionJobCommittedEvent event) {
-        jobCommitted(event, getUpdateTimeOrDefault(Instant::now));
-    }
-
-    public void jobCommitted(CompactionJobCommittedEvent event, Instant committedTime) {
         add(event.getTableId(), ProcessStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
-                .statusUpdate(CompactionJobCommittedStatus.committedAt(committedTime))
+                .statusUpdate(CompactionJobCommittedStatus.committedAt(event.getCommitTime(), defaultUpdateTime(event.getCommitTime())))
                 .build());
     }
 
