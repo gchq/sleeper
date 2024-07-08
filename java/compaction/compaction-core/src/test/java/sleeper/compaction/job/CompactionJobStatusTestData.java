@@ -57,6 +57,14 @@ public class CompactionJobStatusTestData {
                 compactionFinishedStatus(summary));
     }
 
+    public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary, Instant commitTime) {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(compactionStartedStatus(summary.getStartTime()))
+                .finishedStatus(compactionFinishedStatus(summary))
+                .statusUpdate(compactionCommittedStatus(commitTime))
+                .build();
+    }
+
     public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),

@@ -26,6 +26,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Instant;
+import java.util.function.Supplier;
+
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitterOrSendToLambda {
@@ -35,14 +38,22 @@ public class CompactionJobCommitterOrSendToLambda {
     private final GetStateStoreByTableId stateStoreProvider;
     private final CompactionJobStatusStore statusStore;
     private final CommitQueueSender jobCommitQueueSender;
+    private final Supplier<Instant> timeSupplier;
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider,
             CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender) {
+        this(tablePropertiesProvider, stateStoreProvider, statusStore, jobCommitQueueSender, Instant::now);
+    }
+
+    public CompactionJobCommitterOrSendToLambda(
+            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider,
+            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.jobCommitQueueSender = jobCommitQueueSender;
+        this.timeSupplier = timeSupplier;
     }
 
     public void commit(CompactionJob job, CompactionJobFinishedEvent.Builder finishedBuilder) throws StateStoreException {
@@ -56,7 +67,7 @@ public class CompactionJobCommitterOrSendToLambda {
         } else {
             LOGGER.info("Committing compaction job {} inside compaction task", job.getId());
             CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
-            statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job)
+            statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job, timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
                     .build());
