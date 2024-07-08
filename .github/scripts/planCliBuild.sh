@@ -42,5 +42,4 @@ echo_github_output_for_image() {
   } >> "$GITHUB_OUTPUT"
 }
 
-echo_github_output_for_image sleeper-builder builder
 echo_github_output_for_image sleeper-local env

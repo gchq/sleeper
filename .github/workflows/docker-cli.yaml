@@ -65,16 +65,6 @@ jobs:
       deployPackage: ${{ steps.plan.outputs.deployPackage }}
       platforms: ${{ env.DOCKER_PLATFORMS }}
       buildUrl: ${{ env.BUILD_URL }}
-  builder:
-    needs: setup
-    uses: ./.github/workflows/docker-cli-image.yaml
-    with:
-      pushImages: ${{ inputs.pushImages }}
-      context: ./scripts/cli/builder
-      pushTag: ${{ needs.setup.outputs.builderTag }}
-      packageName: ${{ needs.setup.outputs.builderPackage }}
-      platforms: ${{ needs.setup.outputs.platforms }}
-      buildUrl: ${{ needs.setup.outputs.buildUrl }}
   environment:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
