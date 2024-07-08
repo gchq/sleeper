@@ -448,12 +448,12 @@ public class CompactionStack extends NestedStack {
                 .instanceProfile(roleProfile)
                 .build();
 
-        AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup").vpc(vpc)
-                .allowAllOutbound(true)
+        AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup")
+                .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
-                .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
+                .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM))
                 .build();
 
         IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
