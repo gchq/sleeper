@@ -60,6 +60,7 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.InstanceProfile;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
@@ -416,10 +417,16 @@ public class CompactionStack extends NestedStack {
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
-        SecurityGroup sg = SecurityGroup.Builder.create(this, "CompactionScalingSG")
+
+        SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingSG")
                 .vpc(vpc)
+                .allowAllOutbound(true)
                 .build();
-        LaunchTemplate template = LaunchTemplate.Builder.create(this, "CompactionScalingTemplate")
+
+        InstanceProfile roleProfile = InstanceProfile.Builder.create(this, "CompactionScalingInstanceProfile")
+                .build();
+
+        LaunchTemplate scalingLaunchTemplate = LaunchTemplate.Builder.create(this, "CompactionScalingTemplate")
                 .associatePublicIpAddress(false)
                 .requireImdsv2(true)
                 .blockDevices(List.of(BlockDevice.builder()
@@ -437,12 +444,13 @@ public class CompactionStack extends NestedStack {
                         EcsOptimizedImageOptions.builder()
                                 .cachedInContext(false)
                                 .build()))
-                .securityGroup(sg)
+                .securityGroup(scalingSecurityGroup)
+                .instanceProfile(roleProfile)
                 .build();
 
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup").vpc(vpc)
                 .allowAllOutbound(true)
-                .launchTemplate(template)
+                .launchTemplate(scalingLaunchTemplate)
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
