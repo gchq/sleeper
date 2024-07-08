@@ -93,7 +93,6 @@ parse_version(){
 pull_docker_images(){
   parse_version "$@"
   pull_and_tag sleeper-local
-  pull_and_tag sleeper-builder
 }
 
 upgrade_cli() {
