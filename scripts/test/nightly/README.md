@@ -7,28 +7,21 @@ and tear them down afterwards.
 
 ### Setup
 
-TODO rework to use Nix
+Ensure you've checked out the Git repository and have set up a development environment as described in
+the [developer guide](../../../docs/11-dev-guide.md), connected to an AWS with a VPC suitable for deploying Sleeper.
 
-It's easiest to run this through the Sleeper CLI. You can bring the CLI up to date and check out the Git repository like
-this:
-
-```bash
-sleeper cli upgrade main
-sleeper builder
-git clone https://github.com/gchq/sleeper.git
-cd sleeper
-```
+The commands in this guide assume you're working in the `sleeper environment` EC2 as described in
+the [getting started guide](../../../docs/01-getting-started.md). This is automatically set up for development and
+deployment.
 
 ### Configuration
 
-You can configure the nightly tests inside the builder. Note that any files you put in the builder under the
-directory `/sleeper-builder` will be persisted between invocations of `sleeper builder`. Copy the configuration template
-out of the Sleeper Git repository so that it will not be overwritten when updating the repository, and edit it to
-configure the tests:
+Copy the configuration template out of the Sleeper Git repository so that it will not be overwritten when updating the
+repository, and edit it to configure the tests:
 
 ```bash
-cp /sleeper-builder/sleeper/scripts/test/nightly/nightlyTestSettings.json /sleeper-builder
-vim nightlyTestSettings.json
+cp ~/sleeper/scripts/test/nightly/nightlyTestSettings.json ~/
+vim ~/nightlyTestSettings.json
 ```
 
 You'll need to set a VPC, subnets, results S3 bucket and a path to your fork in GitHub.
@@ -52,29 +45,29 @@ suites to run. Please see that document for details of the test suites.
 The functional test type will run the nightly functional test suite. The performance test type will run the nightly
 performance test suite. There's currently no test type that uses the quick test suite.
 
-Both test types may also run the nightly functional test suite again, against an alternative state store implementation.
+Both test types may also run a test suite against an alternative state store implementation.
 
-To run the tests as they would be run by the cron job, use this command from the host machine:
+To run the tests as they would be run by the cron job, use this command:
 
 ```bash
-sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json <test-type> &> /tmp/sleeperTests.log
+~/sleeper/scripts/test/nightly/updateAndRunTestsInNix.sh ~/nightlyTestSettings.json <test-type> &> /tmp/sleeperTests.log
 ```
 
 With the performance test suite, this will take 6 hours or so.
 
 ### Output
 
-You can check the output in `/tmp/sleeperTests.log`, but once each suite starts it will only update once the suite
-finishes. The output of the tests will be in a tmp folder in the Docker container, and will later be uploaded to S3. You
-can connect to the Docker container to view the output as it's happening:
+You can check the output in `/tmp/sleeperTests.log`. The output for each test suite will be in a separate folder under
+`/tmp/sleeper/<test-type>Tests/<start-time>`. This directory will later be uploaded to S3. Here's an example for how you
+can view the output as it's happening:
 
 ```bash
-docker images # Find the image ID of the sleeper-builder image with the 'current' tag
-docker ps # Find the container ID running the updateAndRunTests command with that image
-docker exec -it <container ID> bash
+~/sleeper/scripts/test/nightly/updateAndRunTestsInNix.sh ~/nightlyTestSettings.json performance &> /tmp/sleeperTests.log
+# In less, use shift+F to follow the output
+less -R /tmp/sleeperTests.log # Once the build has finished, this will be very quiet
 cd /tmp/sleeper/performanceTests
 ls # Find the directory named by the start time of the test suite
-less -R <directory>/performance.log # Once this opens, use shift+F to follow the output of the test
+less -R <directory>/performance.log # This will contain the output from the actual tests
 ```
 
 #### Results in S3

@@ -36,10 +36,6 @@ MERGE_TO_MAIN=$(jq ".mergeToMainOnTestType.$TEST_TYPE" "$SETTINGS_FILE" --raw-ou
 
 pushd "$THIS_DIR"
 
-git remote set-url origin "https://github.com/$REPO_PATH.git"
-git fetch
-git switch --discard-changes -C develop origin/develop
-
 set +e
 ./runTests.sh "$VPC" "$SUBNETS" "$RESULTS_BUCKET" "$TEST_TYPE"
 EXIT_CODE=$?

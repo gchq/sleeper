@@ -4,6 +4,7 @@ in
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     bash
+    jq
     nodejs
     awscli2
     nodePackages.aws-cdk
