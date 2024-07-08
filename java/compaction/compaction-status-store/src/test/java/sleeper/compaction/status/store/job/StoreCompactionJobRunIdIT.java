@@ -120,9 +120,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 .taskId("test-task").jobRunId("test-run-2").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true)
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobCommitted(compactionJobCommitted(job)
+        store.jobCommitted(compactionJobCommitted(job).commitTime(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobCommitted(compactionJobCommitted(job)
+        store.jobCommitted(compactionJobCommitted(job).commitTime(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
 
         // Then
@@ -132,12 +132,12 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
-                                .statusUpdate(compactionCommittedStatus(ignoredUpdateTime()))
+                                .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
-                                .statusUpdate(compactionCommittedStatus(ignoredUpdateTime()))
+                                .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build()));
     }
 }
