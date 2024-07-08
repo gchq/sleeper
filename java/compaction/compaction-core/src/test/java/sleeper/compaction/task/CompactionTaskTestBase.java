@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.task.CompactionTask.MessageHandle;
 import sleeper.compaction.task.CompactionTask.MessageReceiver;
@@ -135,9 +134,7 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
-                new FixedTablePropertiesProvider(tables),
-                new CompactionJobCommitter(jobStore, stateStoreByTableId::get),
-                commitRequestsOnQueue::add);
+                new FixedTablePropertiesProvider(tables), stateStoreByTableId::get, jobStore, commitRequestsOnQueue::add);
         CompactionAlgorithmSelector selector = job -> compactor;
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,

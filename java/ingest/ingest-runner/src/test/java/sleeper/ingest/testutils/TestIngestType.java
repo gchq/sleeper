@@ -18,14 +18,6 @@ package sleeper.ingest.testutils;
 
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-
-import java.util.function.Consumer;
-
-import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrayList;
-import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
 
 public class TestIngestType {
 
@@ -45,48 +37,34 @@ public class TestIngestType {
         return getFilePrefix.getFilePrefix(parameters);
     }
 
-    public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
-            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
-        return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
-                        arrowConfig, new ArrowRecordWriterAcceptingRecords()),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
-    }
-
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile() {
-        return directWriteBackedByArrowWriteToLocalFile(arrow -> {
-        });
+        return new TestIngestType(
+                parameters -> parameters.toBuilder().localDirectWrite().backedByArrow().buildCoordinator(),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToS3() {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getAsyncS3Prefix()),
-                IngestCoordinatorTestParameters::getAsyncS3Prefix);
+                parameters -> parameters.toBuilder().s3DirectWrite().backedByArrow().buildCoordinator(),
+                IngestCoordinatorTestParameters::getS3Prefix);
     }
 
     public static TestIngestType asyncWriteBackedByArrow() {
         return new TestIngestType(
-                IngestCoordinatorFactory::ingestCoordinatorAsyncWriteBackedByArrow,
-                IngestCoordinatorTestParameters::getAsyncS3Prefix);
-    }
-
-    public static TestIngestType directWriteBackedByArrayListWriteToLocalFile(
-            Consumer<ArrayListRecordBatchFactory.Builder<Record>> arrayListConfig) {
-        return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix(), arrayListConfig),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
+                parameters -> parameters.toBuilder().s3AsyncWrite().backedByArrow().buildCoordinator(),
+                IngestCoordinatorTestParameters::getS3Prefix);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix()),
+                parameters -> parameters.toBuilder().localDirectWrite().backedByArrayList().buildCoordinator(),
                 IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToS3() {
         return new TestIngestType(
-                parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getAsyncS3Prefix()),
-                IngestCoordinatorTestParameters::getAsyncS3Prefix);
+                parameters -> parameters.toBuilder().s3DirectWrite().backedByArrayList().buildCoordinator(),
+                IngestCoordinatorTestParameters::getS3Prefix);
     }
 
     private interface CoordinatorFactory {

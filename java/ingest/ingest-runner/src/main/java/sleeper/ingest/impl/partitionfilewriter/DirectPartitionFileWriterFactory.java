@@ -57,9 +57,18 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             ParquetConfiguration configuration,
             InstanceProperties instanceProperties,
             TableProperties tableProperties) {
+        return from(configuration, instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+    }
+
+    public static DirectPartitionFileWriterFactory from(
+            ParquetConfiguration configuration,
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            Supplier<String> fileNameGenerator) {
         return from(configuration,
                 instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) +
-                        "/" + tableProperties.get(TABLE_ID));
+                        "/" + tableProperties.get(TABLE_ID),
+                fileNameGenerator);
     }
 
     @Override

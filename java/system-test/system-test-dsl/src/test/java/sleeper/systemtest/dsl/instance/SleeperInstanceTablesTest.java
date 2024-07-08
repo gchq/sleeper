@@ -225,4 +225,27 @@ public class SleeperInstanceTablesTest {
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
     }
+
+    @Nested
+    @DisplayName("Fail when no instance/table chosen")
+    class FailWithNoInstanceOrTable {
+
+        @Test
+        void shouldFailToIngestWhenNoInstanceConnected(SleeperSystemTest sleeper) {
+            // When / Then
+            assertThatThrownBy(() -> sleeper.ingest())
+                    .isInstanceOf(NoInstanceConnectedException.class);
+        }
+
+        @Test
+        void shouldFailToIngestWhenNoTableChosen(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            var ingest = sleeper.ingest().direct(null);
+
+            // When / Then
+            assertThatThrownBy(() -> ingest.numberedRecords(LongStream.of(1, 2, 3)))
+                    .isInstanceOf(NoTableChosenException.class);
+        }
+    }
 }

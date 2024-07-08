@@ -34,6 +34,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_C
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -70,6 +71,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         instanceProperties.setTags(tags);
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
+        instanceProperties.unset(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS);
         return instanceProperties;
     }
 

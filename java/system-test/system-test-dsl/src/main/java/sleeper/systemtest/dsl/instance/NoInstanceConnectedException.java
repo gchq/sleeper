@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.dsl.instance;
 
-package sleeper.systemtest.dsl.extension;
+public class NoInstanceConnectedException extends RuntimeException {
 
-import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
-
-public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
-
-    public AfterTestReports(SystemTestContext context) {
-        super(() -> SystemTestReports.builder(context));
+    public NoInstanceConnectedException() {
+        super("Not connected to a Sleeper instance");
     }
+
 }
