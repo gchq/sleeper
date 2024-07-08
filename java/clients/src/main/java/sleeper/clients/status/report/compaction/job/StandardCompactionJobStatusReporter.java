@@ -181,7 +181,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 writeJobFields(job, row);
                 row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
                 row.value(commitTimeField, run.getLastStatusOfType(CompactionJobCommittedStatus.class)
-                        .map(CompactionJobCommittedStatus::getUpdateTime)
+                        .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
                 runReporter.writeRunFields(run, row);
             }));
