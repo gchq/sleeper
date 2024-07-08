@@ -81,11 +81,11 @@ public final class DeployedSleeperTablesForTest {
     }
 
     public TableProperties getTableProperties() {
-        return currentTable;
+        return currentTable();
     }
 
     public Schema getSchema() {
-        return currentTable.getSchema();
+        return currentTable().getSchema();
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
@@ -110,5 +110,9 @@ public final class DeployedSleeperTablesForTest {
 
     public void setCurrent(TableProperties tableProperties) {
         currentTable = tableProperties;
+    }
+
+    private TableProperties currentTable() {
+        return Optional.ofNullable(currentTable).orElseThrow(NoTableChosenException::new);
     }
 }

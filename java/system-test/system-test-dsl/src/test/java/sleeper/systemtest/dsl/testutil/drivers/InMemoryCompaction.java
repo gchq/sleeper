@@ -93,6 +93,14 @@ public class InMemoryCompaction {
         }, properties -> taskStore);
     }
 
+    public CompactionJobStatusStore jobStore() {
+        return jobStore;
+    }
+
+    public CompactionTaskStatusStore taskStore() {
+        return taskStore;
+    }
+
     private class Driver implements CompactionDriver {
 
         private final SystemTestInstanceContext instance;

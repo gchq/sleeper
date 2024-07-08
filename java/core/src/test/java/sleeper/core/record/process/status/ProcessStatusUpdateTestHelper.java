@@ -83,7 +83,20 @@ public class ProcessStatusUpdateTestHelper {
      */
     public static ProcessFailedStatus failedStatus(
             ProcessRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
-        ProcessRunTime runTime = new ProcessRunTime(startedStatus.getStartTime(), runDuration);
+        return failedStatus(startedStatus.getStartTime(), runDuration, failureReasons);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  startTime      the start time
+     * @param  runDuration    the duration
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            Instant startTime, Duration runDuration, List<String> failureReasons) {
+        ProcessRunTime runTime = new ProcessRunTime(startTime, runDuration);
         return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 

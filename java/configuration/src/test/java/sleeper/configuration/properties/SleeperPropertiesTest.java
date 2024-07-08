@@ -199,7 +199,7 @@ class SleeperPropertiesTest {
             testSleeperProperties.setList(OPTIONAL_STACKS, List.of("a", "b"));
 
             // When
-            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("c", "d"));
+            testSleeperProperties.addToListIfMissing(OPTIONAL_STACKS, List.of("c", "d"));
 
             // Then
             assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEqualTo("a,b,c,d");
@@ -211,7 +211,7 @@ class SleeperPropertiesTest {
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
             // When
-            testSleeperProperties.addToList(OPTIONAL_STACKS, List.of("a", "b"));
+            testSleeperProperties.addToListIfMissing(OPTIONAL_STACKS, List.of("a", "b"));
 
             // Then
             assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
@@ -224,11 +224,39 @@ class SleeperPropertiesTest {
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
             // When
-            testSleeperProperties.addToList(INGEST_SOURCE_BUCKET, List.of("a", "b"));
+            testSleeperProperties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of("a", "b"));
 
             // Then
             assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
                     .isEqualTo("a,b");
+        }
+
+        @Test
+        void shouldNotAddToListWhenAlreadyInList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of("a", "b"));
+
+            // When
+            testSleeperProperties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of("a", "c"));
+
+            // Then
+            assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
+                    .isEqualTo("a,b,c");
+        }
+
+        @Test
+        void shouldNotChangeExistingValuesWhenAddingToList() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of("something", "old", "something"));
+
+            // When
+            testSleeperProperties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of("something", "new"));
+
+            // Then
+            assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET))
+                    .isEqualTo("something,old,something,new");
         }
 
         @Test

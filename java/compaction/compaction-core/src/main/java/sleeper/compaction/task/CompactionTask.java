@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -40,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -52,11 +52,9 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
-    private final Supplier<Instant> timeSupplier;
+    private final InstanceProperties instanceProperties;
+    private final PropertiesReloader propertiesReloader;
     private final Consumer<Duration> sleepForTime;
-    private final int maxConsecutiveFailures;
-    private final Duration maxIdleTime;
-    private final Duration delayBeforeRetry;
     private final MessageReceiver messageReceiver;
     private final CompactionAlgorithmSelector selector;
     private final CompactionJobStatusStore jobStatusStore;
@@ -64,10 +62,8 @@ public class CompactionTask {
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
-    private final PropertiesReloader propertiesReloader;
+    private final Supplier<Instant> timeSupplier;
     private final WaitForFileAssignment waitForFiles;
-    private int numConsecutiveFailures = 0;
-    private int totalNumberOfMessagesProcessed = 0;
 
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
@@ -77,14 +73,14 @@ public class CompactionTask {
                 jobStore, taskStore, selector, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+    public CompactionTask(
+            InstanceProperties instanceProperties,
+            PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
-        maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
-        maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
-        delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+        this.instanceProperties = instanceProperties;
         this.propertiesReloader = propertiesReloader;
         this.timeSupplier = timeSupplier;
         this.sleepForTime = sleepForTime;
@@ -105,19 +101,19 @@ public class CompactionTask {
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
-        if (numConsecutiveFailures >= maxConsecutiveFailures) {
-            LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
-                    numConsecutiveFailures, maxConsecutiveFailures);
-        }
-        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
+        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
+        LOGGER.info("Total number of messages processed = {}", taskFinished.getJobRuns());
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
-        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);
     }
 
     public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         Instant lastActiveTime = startTime;
+        Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
+        int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        Duration delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+        int numConsecutiveFailures = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
@@ -146,7 +142,6 @@ public class CompactionTask {
                     RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
-                    totalNumberOfMessagesProcessed++;
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
                 } catch (Exception e) {
@@ -160,6 +155,8 @@ public class CompactionTask {
                 }
             }
         }
+        LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
+                numConsecutiveFailures, maxConsecutiveFailures);
         return timeSupplier.get();
     }
 
@@ -171,7 +168,7 @@ public class CompactionTask {
         RecordsProcessed recordsProcessed = compactor.compact(job);
         Instant jobFinishTime = timeSupplier.get();
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitter.commit(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
+        jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId));
         logMetrics(job, summary);
         return summary;
     }

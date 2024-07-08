@@ -19,6 +19,7 @@ import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -26,7 +27,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
@@ -47,8 +47,10 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT extends DirectWriteBackedByArrowTestBase {
 
@@ -73,10 +75,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
+        ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 128 * 1024 * 1024L);
+        });
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
@@ -126,10 +129,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L));
+        ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 2 * 1024 * 1024L);
+        });
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
@@ -184,12 +188,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
-                .workingBufferAllocatorBytes(32 * 1024L)
-                .batchBufferAllocatorBytes(32 * 1024L)
-                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L)))
-                .isInstanceOf(OutOfMemoryException.class)
-                .hasNoSuppressedExceptions();
+        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, properties -> {
+            properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 32 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024L);
+            properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 64 * 1024 * 1024L);
+        })).isInstanceOf(OutOfMemoryException.class).hasNoSuppressedExceptions();
     }
 
     private static List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
@@ -210,19 +213,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
 
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
-            Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
-        try (IngestCoordinator<RecordList> ingestCoordinator = createIngestCoordinator(parameters, arrowConfig)) {
+            Consumer<InstanceProperties> config) throws Exception {
+        try (IngestCoordinator<RecordList> ingestCoordinator = parameters
+                .toBuilder().localDirectWrite().setInstanceProperties(config).build()
+                .buildCoordinatorWithArrowWriter(new ArrowRecordWriterAcceptingRecordList())) {
             for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
                 ingestCoordinator.write(recordList);
             }
         }
-    }
-
-    private static IngestCoordinator<RecordList> createIngestCoordinator(
-            IngestCoordinatorTestParameters parameters,
-            Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
-        return ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
-                arrowConfig, new ArrowRecordWriterAcceptingRecordList());
     }
 
     static class RecordList {
