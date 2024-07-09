@@ -17,6 +17,8 @@ FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
     maven \
+    openjdk-17-jdk \
+    openjdk-17-source \
     git \
     python3 \
     pip \
@@ -43,4 +45,4 @@ RUN echo 'export HOSTNAME=$(cat /tmp/container.id)' >> ~/.bashrc
 
 WORKDIR /sleeper-builder
 
-CMD bash
+CMD [ "bash" ]
