@@ -59,7 +59,7 @@ public class RunCompactionTasksTest {
             runTasks(noJobsOnQueue(), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(scaleToHostsRequests).contains(0);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -111,7 +111,7 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(1), existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -124,7 +124,7 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(1), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(scaleToHostsRequests).contains(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -197,7 +197,7 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -207,7 +207,7 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
     }
