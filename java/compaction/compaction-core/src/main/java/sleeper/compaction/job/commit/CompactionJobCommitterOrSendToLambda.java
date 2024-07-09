@@ -59,11 +59,11 @@ public class CompactionJobCommitterOrSendToLambda {
     public void commit(CompactionJob job, CompactionJobFinishedEvent.Builder finishedBuilder) throws StateStoreException {
         boolean commitAsync = tablePropertiesProvider.getById(job.getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         CompactionJobFinishedEvent finishedEvent = finishedBuilder.committedBySeparateUpdate(commitAsync).build();
+        statusStore.jobFinished(finishedEvent);
         if (commitAsync) {
             LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", job.getId());
             jobCommitQueueSender.send(new CompactionJobCommitRequest(job,
                     finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary()));
-            statusStore.jobFinished(finishedEvent);
         } else {
             LOGGER.info("Committing compaction job {} inside compaction task", job.getId());
             CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
@@ -71,7 +71,6 @@ public class CompactionJobCommitterOrSendToLambda {
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
                     .build());
-            statusStore.jobFinished(finishedEvent);
             LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
         }
     }
