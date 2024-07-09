@@ -130,11 +130,11 @@ public class RunCompactionTasks {
     private void scaleToHostsAndLaunchTasks(int targetTasks, int createTasks, BooleanSupplier checkAbort) {
         LOGGER.info("Target number of tasks is {}", targetTasks);
         LOGGER.info("Tasks to create is {}", createTasks);
+        hostScaler.scaleTo(targetTasks);
         if (createTasks < 1) {
             LOGGER.info("Finishing as no new tasks are needed");
             return;
         }
-        hostScaler.scaleTo(targetTasks);
         taskLauncher.launchTasks(createTasks, checkAbort);
     }
 
