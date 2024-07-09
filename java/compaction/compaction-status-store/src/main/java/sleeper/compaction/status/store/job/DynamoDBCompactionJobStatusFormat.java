@@ -199,7 +199,7 @@ class DynamoDBCompactionJobStatusFormat {
                         .committedBySeparateUpdate(getBooleanAttribute(item, JOB_COMMITTED_SEPARATELY))
                         .build();
             case UPDATE_TYPE_COMMITTED:
-                return CompactionJobCommittedStatus.committedAt(
+                return CompactionJobCommittedStatus.commitAndUpdateTime(
                         getInstantAttribute(item, COMMIT_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FAILED:
