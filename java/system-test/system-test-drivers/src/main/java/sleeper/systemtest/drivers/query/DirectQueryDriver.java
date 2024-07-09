@@ -37,12 +37,15 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver implements QueryDriver {
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+
     private final SystemTestInstanceContext instance;
     private final SystemTestClients clients;
 
@@ -80,7 +83,7 @@ public class DirectQueryDriver implements QueryDriver {
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         try {
             QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                    stateStore, clients.createHadoopConf(), Executors.newSingleThreadExecutor());
+                    stateStore, clients.createHadoopConf(), EXECUTOR_SERVICE);
             executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
             return executor;
         } catch (StateStoreException e) {
