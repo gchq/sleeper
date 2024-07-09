@@ -17,6 +17,7 @@ package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -27,22 +28,25 @@ public class CompactionJobCommittedEvent {
     private final String tableId;
     private final String taskId;
     private final String jobRunId;
+    private final Instant commitTime;
 
     private CompactionJobCommittedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
+        commitTime = Objects.requireNonNull(builder.commitTime, "commitTime must not be null");
     }
 
     /**
      * Creates a builder for this class.
      *
-     * @param  job the compaction job
-     * @return     a builder
+     * @param  job        the compaction job
+     * @param  commitTime the commit time
+     * @return            a builder
      */
-    public static Builder compactionJobCommitted(CompactionJob job) {
-        return builder().job(job);
+    public static Builder compactionJobCommitted(CompactionJob job, Instant commitTime) {
+        return builder().job(job).commitTime(commitTime);
     }
 
     public static Builder builder() {
@@ -65,9 +69,13 @@ public class CompactionJobCommittedEvent {
         return jobRunId;
     }
 
+    public Instant getCommitTime() {
+        return commitTime;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, taskId, jobRunId);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, commitTime);
     }
 
     @Override
@@ -79,12 +87,17 @@ public class CompactionJobCommittedEvent {
             return false;
         }
         CompactionJobCommittedEvent other = (CompactionJobCommittedEvent) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
+                && Objects.equals(commitTime, other.commitTime);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobCommittedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + "}";
+        return "CompactionJobCommittedEvent{jobId=" + jobId +
+                ", tableId=" + tableId +
+                ", taskId=" + taskId +
+                ", jobRunId=" + jobRunId +
+                ", commitTime=" + commitTime + "}";
     }
 
     /**
@@ -95,6 +108,7 @@ public class CompactionJobCommittedEvent {
         private String tableId;
         private String jobRunId;
         private String taskId;
+        private Instant commitTime;
 
         private Builder() {
         }
@@ -154,9 +168,19 @@ public class CompactionJobCommittedEvent {
             return this;
         }
 
+        /**
+         * Sets the commit time.
+         *
+         * @param  commitTime the commit time
+         * @return            the builder
+         */
+        public Builder commitTime(Instant commitTime) {
+            this.commitTime = commitTime;
+            return this;
+        }
+
         public CompactionJobCommittedEvent build() {
             return new CompactionJobCommittedEvent(this);
         }
-
     }
 }

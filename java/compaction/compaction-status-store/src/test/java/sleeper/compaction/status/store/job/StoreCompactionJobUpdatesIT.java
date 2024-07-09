@@ -132,7 +132,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
