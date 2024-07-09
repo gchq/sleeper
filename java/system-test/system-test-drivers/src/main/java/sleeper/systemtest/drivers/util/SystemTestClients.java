@@ -175,7 +175,7 @@ public class SystemTestClients {
         return authEnvVars;
     }
 
-    public Configuration getConfiguration() {
+    public Configuration createHadoopConf() {
         return hadoopConfSupplier.get();
     }
 
