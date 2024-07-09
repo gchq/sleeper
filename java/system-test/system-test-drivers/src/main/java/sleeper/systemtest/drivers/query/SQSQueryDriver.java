@@ -69,7 +69,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         return new QueryAllTablesSendAndWaitDriver(instance,
-                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3(), clients.getConfiguration()));
+                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3(), clients.createHadoopConf()));
     }
 
     @Override

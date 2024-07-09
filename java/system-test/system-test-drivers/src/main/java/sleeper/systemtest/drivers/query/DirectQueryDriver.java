@@ -54,7 +54,7 @@ public class DirectQueryDriver implements QueryDriver {
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
-        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients.getConfiguration()));
+        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients.createHadoopConf()));
     }
 
     public List<Record> run(Query query) {

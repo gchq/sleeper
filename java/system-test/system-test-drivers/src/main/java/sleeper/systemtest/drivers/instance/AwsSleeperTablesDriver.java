@@ -81,7 +81,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     private final Configuration hadoopConfiguration;
 
     public AwsSleeperTablesDriver(SystemTestClients clients) {
-        this(clients.getS3(), clients.getS3V2(), clients.getDynamoDB(), clients.getConfiguration());
+        this(clients.getS3(), clients.getS3V2(), clients.getDynamoDB(), clients.createHadoopConf());
     }
 
     public AwsSleeperTablesDriver(
