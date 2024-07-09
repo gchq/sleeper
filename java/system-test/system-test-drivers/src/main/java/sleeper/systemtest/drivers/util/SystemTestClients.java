@@ -50,6 +50,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
@@ -68,7 +69,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
-    private final Configuration configuration;
+    private final Supplier<Configuration> hadoopConfSupplier;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
@@ -87,7 +88,7 @@ public class SystemTestClients {
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
-        configuration = HadoopConfigurationProvider.getConfigurationForClient();
+        hadoopConfSupplier = HadoopConfigurationProvider::getConfigurationForClient;
     }
 
     public SystemTestClients(AssumeSleeperRole assumeRole) {
@@ -107,7 +108,7 @@ public class SystemTestClients {
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
         cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
         authEnvVars = assumeRole.authEnvVars();
-        configuration = assumeRole.setS3ACredentials(new Configuration());
+        hadoopConfSupplier = () -> assumeRole.setS3ACredentials(new Configuration());
     }
 
     public AmazonS3 getS3() {
@@ -175,7 +176,7 @@ public class SystemTestClients {
     }
 
     public Configuration getConfiguration() {
-        return configuration;
+        return hadoopConfSupplier.get();
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
