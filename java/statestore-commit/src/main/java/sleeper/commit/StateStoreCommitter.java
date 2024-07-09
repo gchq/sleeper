@@ -86,7 +86,7 @@ public class StateStoreCommitter {
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
                     stateStoreProvider.getByTableId(job.getTableId()));
-            compactionJobStatusStore.jobCommitted(compactionJobCommitted(job)
+            compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
             LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
         } catch (ReplaceRequestsFailedException e) {

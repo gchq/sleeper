@@ -124,6 +124,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-23T10:51:00.001Z");
     }
 
+    protected static Instant defaultCommitTime() {
+        return Instant.parse("2022-09-23T10:53:00.001Z");
+    }
+
     protected static RecordsProcessedSummary defaultSummary() {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 100L),
@@ -162,7 +166,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(defaultStartTime()))
                         .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
-                        .statusUpdate(compactionCommittedStatus(ignoredUpdateTime()))
+                        .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                         .build());
     }
 
