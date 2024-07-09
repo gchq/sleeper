@@ -22,7 +22,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
-import software.amazon.awscdk.services.autoscaling.CfnAutoScalingGroup;
+import software.amazon.awscdk.services.autoscaling.TerminationPolicy;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.BlockDevice;
 import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
@@ -418,6 +418,13 @@ public class CompactionStack extends NestedStack {
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
+        IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
+        customTermination.addPermission("AutoscalingCall", Permission.builder()
+                .action("lambda:InvokeFunction")
+                .principal(Role.fromRoleArn(this, "compaction_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
+                .build());
+
         SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingSG")
                 .vpc(vpc)
                 .allowAllOutbound(true)
@@ -454,19 +461,9 @@ public class CompactionStack extends NestedStack {
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM))
+                .terminationPolicies(List.of(TerminationPolicy.CUSTOM_LAMBDA_FUNCTION))
+                .terminationPolicyCustomLambdaFunctionArn(customTermination.getFunctionArn())
                 .build();
-
-        IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
-        // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
-        // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
-        ((CfnAutoScalingGroup) Objects.requireNonNull(ec2scalingGroup.getNode().getDefaultChild()))
-                .setTerminationPolicies(List.of(customTermination.getFunctionArn()));
-
-        customTermination.addPermission("AutoscalingCall", Permission.builder()
-                .action("lambda:InvokeFunction")
-                .principal(Role.fromRoleArn(this, "compaction_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
-                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
-                .build());
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
                 .create(this, "CompactionCapacityProvider")
