@@ -28,6 +28,7 @@ import software.amazon.awscdk.services.ec2.BlockDevice;
 import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
 import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
 import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
+import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
@@ -89,7 +90,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -112,6 +116,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
@@ -418,7 +423,7 @@ public class CompactionStack extends NestedStack {
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
-        SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingSG")
+        SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingDefaultSG")
                 .vpc(vpc)
                 .allowAllOutbound(true)
                 .build();
@@ -447,7 +452,8 @@ public class CompactionStack extends NestedStack {
                 .securityGroup(scalingSecurityGroup)
                 .instanceProfile(roleProfile)
                 .build();
-
+        addSecurityGroupReferences(this, instanceProperties)
+                .forEach(scalingLaunchTemplate::addSecurityGroup);
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, "CompactionScalingGroup")
                 .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
@@ -486,6 +492,14 @@ public class CompactionStack extends NestedStack {
                         .build());
 
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, ec2scalingGroup.getAutoScalingGroupName());
+    }
+
+    private static List<ISecurityGroup> addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
+        AtomicInteger index = new AtomicInteger(1);
+        return instanceProperties.getList(ECS_SECURITY_GROUPS).stream()
+                .filter(Predicate.not(String::isBlank))
+                .map(groupId -> SecurityGroup.fromSecurityGroupId(scope, "CompactionScalingSG" + index.getAndIncrement(), groupId))
+                .collect(Collectors.toList());
     }
 
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {

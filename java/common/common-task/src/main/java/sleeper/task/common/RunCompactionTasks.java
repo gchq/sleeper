@@ -228,13 +228,13 @@ public class RunCompactionTasks {
                 .withCluster(clusterName)
                 .withOverrides(override)
                 .withTaskDefinition(defUsed)
-                .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                .withNetworkConfiguration(networkConfiguration);
+                .withPropagateTags(PropagateTags.TASK_DEFINITION);
 
         if (launchType.equals("FARGATE")) {
             Objects.requireNonNull(fargateVersion, "fargateVersion cannot be null");
             return runTaskRequest
                     .withPlatformVersion(fargateVersion)
+                    .withNetworkConfiguration(networkConfiguration)
                     .withLaunchType(LaunchType.FARGATE);
         } else {
             return runTaskRequest
