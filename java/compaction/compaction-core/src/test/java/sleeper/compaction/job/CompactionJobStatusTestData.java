@@ -77,7 +77,7 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {
-        return CompactionJobCommittedStatus.committedAt(committedTime);
+        return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
     }
 
     public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {
