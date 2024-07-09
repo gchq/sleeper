@@ -30,7 +30,7 @@ public class CompactionJobCommittedStatus implements ProcessStatusUpdate {
         this.updateTime = updateTime;
     }
 
-    public static CompactionJobCommittedStatus committedAt(Instant commitTime, Instant updateTime) {
+    public static CompactionJobCommittedStatus commitAndUpdateTime(Instant commitTime, Instant updateTime) {
         return new CompactionJobCommittedStatus(commitTime, updateTime);
     }
 
