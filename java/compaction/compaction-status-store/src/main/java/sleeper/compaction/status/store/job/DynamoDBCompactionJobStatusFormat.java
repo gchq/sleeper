@@ -68,6 +68,7 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String INPUT_FILES_COUNT = "InputFilesCount";
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
+    private static final String COMMIT_TIME = "CommitTime";
     private static final String JOB_COMMITTED_SEPARATELY = "JobCommittedAsSeparateUpdate";
     private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
@@ -126,6 +127,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .string(UPDATE_TYPE, UPDATE_TYPE_COMMITTED)
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
+                .number(COMMIT_TIME, event.getCommitTime().toEpochMilli())
                 .build();
     }
 
@@ -197,7 +199,9 @@ class DynamoDBCompactionJobStatusFormat {
                         .committedBySeparateUpdate(getBooleanAttribute(item, JOB_COMMITTED_SEPARATELY))
                         .build();
             case UPDATE_TYPE_COMMITTED:
-                return CompactionJobCommittedStatus.committedAt(getInstantAttribute(item, UPDATE_TIME));
+                return CompactionJobCommittedStatus.commitAndUpdateTime(
+                        getInstantAttribute(item, COMMIT_TIME),
+                        getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FAILED:
                 return ProcessFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
