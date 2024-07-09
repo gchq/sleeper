@@ -153,6 +153,45 @@ public class RunCompactionTasksTest {
             assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).containsExactly(1);
         }
+
+        @Test
+        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksLessThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
+
+            // When
+            runTasks(noJobsOnQueue(), existingTasks(3));
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksEqualToMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 3);
+
+            // When
+            runTasks(noJobsOnQueue(), existingTasks(3));
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksGreaterThanMax() {
+            // Given
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
+
+            // When
+            runTasks(noJobsOnQueue(), existingTasks(3));
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).isEmpty();
+        }
     }
 
     @DisplayName("Launch tasks with target number")
@@ -208,6 +247,16 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldScaleToZeroWhenNoExistingTasks() {
+            // When
+            runToMeetTargetTasks(0, noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(0);
             assertThat(launchTasksRequests).isEmpty();
         }
     }
