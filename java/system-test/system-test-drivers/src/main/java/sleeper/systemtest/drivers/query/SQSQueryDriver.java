@@ -56,20 +56,20 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private final AmazonS3 s3Client;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
-    private final Configuration configuration;
+    private final SystemTestClients clients;
 
     public SQSQueryDriver(
-            SystemTestInstanceContext instance, AmazonSQS sqsClient, AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client, Configuration configuration) {
+            SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqsClient = sqsClient;
-        this.dynamoDBClient = dynamoDBClient;
-        this.s3Client = s3Client;
-        this.configuration = configuration;
+        this.sqsClient = clients.getSqs();
+        this.dynamoDBClient = clients.getDynamoDB();
+        this.s3Client = clients.getS3();
+        this.clients = clients;
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         return new QueryAllTablesSendAndWaitDriver(instance,
-                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3(), clients.createHadoopConf()));
+                new SQSQueryDriver(instance, clients));
     }
 
     @Override
@@ -110,11 +110,12 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     public List<Record> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
+        Configuration conf = clients.createHadoopConf();
         return s3Client.listObjects(
                 instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                 "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, configuration))
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, conf))
                 .collect(Collectors.toUnmodifiableList());
     }
 }
