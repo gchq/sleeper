@@ -31,7 +31,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
@@ -86,7 +85,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        CompactionJobFinishedStatus finished = compactionFinishedStatusUncommitted(summary(started, Duration.ofSeconds(30), 200L, 100L));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 200L, 100L));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
@@ -104,7 +103,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2023-03-22T15:36:01Z"));
-        CompactionJobFinishedStatus finished = compactionFinishedStatusUncommitted(summary(started, Duration.ofSeconds(30), 200L, 100L));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 200L, 100L));
         CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2023-03-22T15:40:00Z"));
 
         // When

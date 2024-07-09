@@ -85,10 +85,6 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
-        return compactionFinishedStatusUncommitted(summary);
-    }
-
-    public static CompactionJobFinishedStatus compactionFinishedStatusUncommitted(RecordsProcessedSummary summary) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
                 .committedBySeparateUpdate(true).build();
     }
