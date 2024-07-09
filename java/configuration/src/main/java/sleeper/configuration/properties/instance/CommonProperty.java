@@ -295,6 +295,7 @@ public interface CommonProperty {
             .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
             .defaultValue("")
             .validationPredicate(value -> Utils.isListWithMaxSize(value, 5))
+            .runCdkDeployWhenChanged(true)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
