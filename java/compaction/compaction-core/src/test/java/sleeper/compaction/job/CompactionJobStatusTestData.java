@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 
@@ -71,12 +72,20 @@ public class CompactionJobStatusTestData {
                 compactionFailedStatus(runTime, failureReasons));
     }
 
+    public static ProcessRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(compactionStartedStatus(startTime))
+                .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
+                .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
+                .build();
+    }
+
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
+        return compactionFinishedStatusUncommitted(summary);
     }
 
     public static CompactionJobFinishedStatus compactionFinishedStatusUncommitted(RecordsProcessedSummary summary) {

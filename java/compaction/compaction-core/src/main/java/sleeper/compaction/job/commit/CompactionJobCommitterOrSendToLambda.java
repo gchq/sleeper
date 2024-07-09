@@ -58,7 +58,7 @@ public class CompactionJobCommitterOrSendToLambda {
 
     public void commit(CompactionJob job, CompactionJobFinishedEvent.Builder finishedBuilder) throws StateStoreException {
         boolean commitAsync = tablePropertiesProvider.getById(job.getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
-        CompactionJobFinishedEvent finishedEvent = finishedBuilder.committedBySeparateUpdate(commitAsync).build();
+        CompactionJobFinishedEvent finishedEvent = finishedBuilder.committedBySeparateUpdate(true).build();
         statusStore.jobFinished(finishedEvent);
         if (commitAsync) {
             LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", job.getId());

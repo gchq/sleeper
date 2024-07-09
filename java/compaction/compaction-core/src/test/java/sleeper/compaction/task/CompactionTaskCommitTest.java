@@ -181,7 +181,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFinishedStatus(
+                                    .finishedStatus(compactionFinishedStatusUncommitted(
                                             new RecordsProcessedSummary(job2Records, startTime2, finishTime2)))
                                     .statusUpdate(compactionCommittedStatus(commitTime2))
                                     .build()));
@@ -329,7 +329,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(failedJobs).containsExactly(job);
             assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(job, DEFAULT_CREATED_TIME,
-                            failedCompactionRun("test-task", new ProcessRunTime(startTime, failTime), List.of(
+                            failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
                                     "1 replace file reference requests failed to update the state store",
                                     "File not found: " + job.getInputFiles().get(0)))));
         }
