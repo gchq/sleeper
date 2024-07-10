@@ -11,14 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:22.04
-
-RUN apt-get update
-RUN apt-get install -y wget gnupg
-RUN wget -O- https://apt.corretto.aws/corretto.key | apt-key add -
-RUN echo 'deb https://apt.corretto.aws stable main' | tee /etc/apt/sources.list.d/corretto.list
-RUN apt-get update
-RUN apt-get install -y java-11-amazon-corretto-jdk
+FROM amazonlinux:2023.5.20240701.0
+RUN yum install -y java-11-amazon-corretto-devel
 
 COPY compaction-job-execution.jar /compaction-job-execution.jar
 COPY run.sh /run.sh
