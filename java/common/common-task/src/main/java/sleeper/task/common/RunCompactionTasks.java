@@ -120,16 +120,31 @@ public class RunCompactionTasks {
                 });
     }
 
-    public void runToMeetTargetTasks(int targetCount) {
+    /**
+     * Ensure that a given number of compaction tasks are running.
+     *
+     * If there are currently less tasks running, then new ones will be started.
+     * The scaler will be invoked to ensure the ECS cluster can accommodate the necessary new tasks
+     * (may be a delay in launching instances, so initial task launch may fail).
+     *
+     * @param desiredTaskCount the number of tasks to ensure are running
+     */
+    public void runToMeetTargetTasks(int desiredTaskCount) {
         int numRunningAndPendingTasks = taskCounts.getRunningAndPending();
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
-        int numberOfTasksToCreate = targetCount - numRunningAndPendingTasks;
-        scaleToHostsAndLaunchTasks(targetCount, numberOfTasksToCreate, () -> false);
+        int numberOfTasksToCreate = desiredTaskCount - numRunningAndPendingTasks;
+        // Instruct the scaler to ensure we have room for the correct number of running tasks. We use max() here
+        // because we are either at or need to grow to the desired number. If the desiredTaskCount is LESS than
+        // the number of running/pending tasks, we don't want to instruct the scaler to shrink the ECS cluster.
+        scaleToHostsAndLaunchTasks(Math.max(desiredTaskCount, numRunningAndPendingTasks), numberOfTasksToCreate, () -> false);
     }
 
     private void scaleToHostsAndLaunchTasks(int targetTasks, int createTasks, BooleanSupplier checkAbort) {
         LOGGER.info("Target number of tasks is {}", targetTasks);
         LOGGER.info("Tasks to create is {}", createTasks);
+        if (targetTasks < 0) {
+            throw new IllegalArgumentException("targetTasks is < 0");
+        }
         hostScaler.scaleTo(targetTasks);
         if (createTasks < 1) {
             LOGGER.info("Finishing as no new tasks are needed");

@@ -155,7 +155,7 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksLessThanMax() {
+        void shouldScaleHostsWhenNoJobsOnQueueAndExistingTasksPresentAndLessThanMax() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 5);
 
@@ -168,7 +168,7 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksEqualToMax() {
+        void shouldScaleHostsWhenNoJobsOnQueueAndExistingTasksEqualToMax() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 3);
 
@@ -181,7 +181,7 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        void shouldCreateNoTasksAndScaleWhenExistingTasksPresentPlusExistingTasksGreaterThanMax() {
+        void shouldScaleHostsWhenNoJobsOnQueueAndExistingTasksGreaterThanMax() {
             // Given
             instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 2);
 
@@ -236,7 +236,7 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).isEmpty();
         }
 
