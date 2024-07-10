@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
 import java.util.List;
 import java.util.Objects;
@@ -206,29 +207,27 @@ public class RunCompactionTasks {
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
     private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
-        String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-        String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
-        String fargateVersion = instanceProperties.get(FARGATE_VERSION);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
-        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
-        String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
         RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(clusterName)
+                .withCluster(instanceProperties.get(COMPACTION_CLUSTER))
                 .withOverrides(override)
-                .withTaskDefinition(defUsed)
                 .withPropagateTags(PropagateTags.TASK_DEFINITION);
 
-        if (launchType.equals("FARGATE")) {
-            Objects.requireNonNull(fargateVersion, "fargateVersion cannot be null");
+        CompactionECSLaunchType launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
+        if (launchType == CompactionECSLaunchType.FARGATE) {
+            String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null");
+            NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
             return runTaskRequest
+                    .withLaunchType(LaunchType.FARGATE)
                     .withPlatformVersion(fargateVersion)
                     .withNetworkConfiguration(networkConfiguration)
-                    .withLaunchType(LaunchType.FARGATE);
-        } else {
+                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
+        } else if (launchType == CompactionECSLaunchType.EC2) {
             return runTaskRequest
-                    .withLaunchType(LaunchType.EC2);
+                    .withLaunchType(LaunchType.EC2)
+                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
+        } else {
+            throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
         }
     }
 
