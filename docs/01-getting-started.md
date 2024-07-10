@@ -57,9 +57,12 @@ If you installed the development version, you can upgrade to the latest developm
 
 ### Authentication
 
-To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. You can do this by running
-`sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS environment variables
-will also be propagated to the Sleeper CLI.
+To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. The AWS configuration will be
+mounted into Sleeper CLI Docker containers from your home directory on your host machine. AWS environment variables will
+also be propagated to Sleeper CLI containers if you set them on the host machine.
+
+You can configure AWS without installing the AWS CLI by running `sleeper aws configure`, or any other AWS commands
+you may need with `sleeper aws`.
 
 Most Sleeper clients also require you to set the default region.
 
