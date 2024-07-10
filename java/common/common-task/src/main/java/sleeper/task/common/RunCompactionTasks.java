@@ -214,26 +214,6 @@ public class RunCompactionTasks {
         TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
         NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
         String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
-        RunTaskRequest runTaskRequest = createRunTaskRequest(
-                clusterName, launchType, fargateVersion,
-                override, networkConfiguration, defUsed);
-        return runTaskRequest;
-    }
-
-    /**
-     * Creates a new task request that can be passed to ECS.
-     *
-     * @param  clusterName              ECS cluster
-     * @param  launchType               either FARGATE or EC2
-     * @param  fargateVersion           version string if running on Fargate
-     * @param  override                 specific container overrides
-     * @param  networkConfiguration     the networking configuration for the container
-     * @param  defUsed                  which task definition to use
-     * @return                          the request for ECS
-     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
-     */
-    private static RunTaskRequest createRunTaskRequest(String clusterName, String launchType, String fargateVersion,
-            TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(clusterName)
                 .withOverrides(override)
