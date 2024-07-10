@@ -152,7 +152,7 @@ class UtilsTest {
         }
 
         @Test
-        void shouldValidateStringWhenListSizeExceedsMaxSize() {
+        void shouldFailToValidateStringWhenListSizeExceedsMaxSize() {
             assertThat(Utils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
         }
     }
