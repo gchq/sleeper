@@ -165,14 +165,13 @@ public class CompactionJobStatusInPeriodTest {
         Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
         Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
         Instant beforeTime3 = Instant.parse("2022-09-23T11:43:31.000Z");
-        Instant beforeTime4 = Instant.parse("2022-09-23T11:43:32.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant finishTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = jobCreated(job, beforeTime1,
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, beforeTime3), beforeTime4));
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, beforeTime3)));
 
         // When / Then
-        assertThat(status.isInPeriod(startTime, finishTime)).isFalse();
+        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
     }
 
     @Test

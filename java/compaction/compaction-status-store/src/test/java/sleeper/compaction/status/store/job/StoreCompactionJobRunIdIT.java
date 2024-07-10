@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
@@ -131,12 +131,12 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 .containsExactly(jobCreated(job, ignoredUpdateTime(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
+                                .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
+                                .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build()));
     }

@@ -82,7 +82,7 @@ class CompactionJobStatusTest {
     }
 
     @Test
-    void shouldBuildCompactionJobFinishedWaitingForCommit() {
+    void shouldBuildCompactionJobFinished() {
         // Given
         CompactionJob job = dataHelper.singleFileCompaction();
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
@@ -93,25 +93,6 @@ class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
                 finishedCompactionRun(DEFAULT_TASK_ID, summary));
-
-        // Then
-        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
-                .containsExactly(true, true);
-    }
-
-    @Test
-    void shouldBuildCompactionJobFinishedAndCommitted() {
-        // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
-        Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
-        Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
-        Instant commitTime = Instant.parse("2022-09-22T13:35:10.001Z");
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                new RecordsProcessed(450L, 300L), startTime, finishTime);
-
-        // When
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
-                finishedCompactionRun(DEFAULT_TASK_ID, summary, commitTime));
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)

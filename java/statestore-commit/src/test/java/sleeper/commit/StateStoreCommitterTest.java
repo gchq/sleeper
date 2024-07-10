@@ -53,7 +53,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
@@ -100,7 +100,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
         }
@@ -125,7 +125,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .statusUpdate(compactionFinishedStatus(summary))
+                                    .statusUpdate(compactionFinishedStatusUncommitted(summary))
                                     .finishedStatus(compactionFailedStatus(
                                             new ProcessRunTime(summary.getFinishTime(), failedTime),
                                             List.of("File not found: input.parquet")))
@@ -154,7 +154,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .build()));
         }
 
@@ -181,7 +181,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .build()));
         }
     }

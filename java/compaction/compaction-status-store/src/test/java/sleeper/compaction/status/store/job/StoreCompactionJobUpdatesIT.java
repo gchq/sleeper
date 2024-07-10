@@ -70,7 +70,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -160,8 +160,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startTime1).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, startTime2).taskId(DEFAULT_TASK_ID_2).build());
-        store.jobFinished(compactionJobFinished(job, summary1).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, summary2).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID_2).build());
+        store.jobFinished(compactionJobFinished(job, summary1).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, summary2).taskId(DEFAULT_TASK_ID_2).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -189,7 +189,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, summary).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, summary).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())

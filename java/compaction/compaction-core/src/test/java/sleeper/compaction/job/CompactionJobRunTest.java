@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
@@ -30,7 +29,6 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
@@ -88,10 +86,9 @@ public class CompactionJobRunTest {
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
-        CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2022-09-24T09:24:10.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished, committed);
+        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
 
         // Then
         assertThat(status.getJobRuns())
