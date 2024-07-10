@@ -207,7 +207,7 @@ sleeper.statestore.committer.lambda.timeout.seconds=900
 sleeper.statestore.committer.batch.size=10
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
-sleeper.ecs.security.groups=
+# sleeper.ecs.security.groups=
 
 
 ## The following properties relate to standard ingest.

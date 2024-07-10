@@ -293,7 +293,6 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
             .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
-            .defaultValue("")
             .validationPredicate(value -> Utils.isListWithMaxSize(value, 5))
             .runCdkDeployWhenChanged(true)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
