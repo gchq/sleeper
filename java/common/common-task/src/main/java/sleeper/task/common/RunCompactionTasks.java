@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +45,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -159,85 +161,73 @@ public class RunCompactionTasks {
     private static void launchTasks(
             AmazonECS ecsClient, InstanceProperties instanceProperties,
             int numberOfTasksToCreate, BooleanSupplier checkAbort) {
-        String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-        String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
-        String fargateVersion = instanceProperties.get(FARGATE_VERSION);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
-        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties.getList(SUBNETS));
-        String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
-        RunTaskRequest runTaskRequest = createRunTaskRequest(
-                clusterName, launchType, fargateVersion,
-                override, networkConfiguration, defUsed);
-
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
+                .runTaskRequest(createRunTaskRequest(instanceProperties))
                 .numberOfTasksToCreate(numberOfTasksToCreate)
                 .checkAbort(checkAbort));
     }
 
     /**
-     * Create the container networking configuration.
+     * Creates a new task request that can be passed to ECS.
      *
-     * @param  subnets the subnet name
-     * @return         task network configuration
+     * @param  instanceProperties       the instance properties
+     * @return                          the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private static NetworkConfiguration networkConfig(List<String> subnets) {
-        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(subnets);
+    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
+        TaskOverride override = createOverride(instanceProperties);
+        RunTaskRequest runTaskRequest = new RunTaskRequest()
+                .withCluster(instanceProperties.get(COMPACTION_CLUSTER))
+                .withOverrides(override)
+                .withPropagateTags(PropagateTags.TASK_DEFINITION);
 
-        return new NetworkConfiguration()
-                .withAwsvpcConfiguration(vpcConfiguration);
+        CompactionECSLaunchType launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
+        if (launchType == CompactionECSLaunchType.FARGATE) {
+            String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null");
+            NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
+            return runTaskRequest
+                    .withLaunchType(LaunchType.FARGATE)
+                    .withPlatformVersion(fargateVersion)
+                    .withNetworkConfiguration(networkConfiguration)
+                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
+        } else if (launchType == CompactionECSLaunchType.EC2) {
+            return runTaskRequest
+                    .withLaunchType(LaunchType.EC2)
+                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
+        } else {
+            throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
+        }
     }
 
     /**
      * Create the container definition overrides for the task launch.
      *
-     * @param  args          container runtime args
-     * @param  containerName name of container used for overriding
-     * @return               the container definition overrides
+     * @param  instanceProperties the instance properties
+     * @return                    the container definition overrides
      */
-    private static TaskOverride createOverride(List<String> args, String containerName) {
+    private static TaskOverride createOverride(InstanceProperties instanceProperties) {
         ContainerOverride containerOverride = new ContainerOverride()
-                .withName(containerName)
-                .withCommand(args);
+                .withName(COMPACTION_CONTAINER_NAME)
+                .withCommand(List.of(instanceProperties.get(CONFIG_BUCKET)));
 
         return new TaskOverride()
                 .withContainerOverrides(containerOverride);
     }
 
     /**
-     * Creates a new task request that can be passed to ECS.
+     * Create the container networking configuration.
      *
-     * @param  clusterName              ECS cluster
-     * @param  launchType               either FARGATE or EC2
-     * @param  fargateVersion           version string if running on Fargate
-     * @param  override                 specific container overrides
-     * @param  networkConfiguration     the networking configuration for the container
-     * @param  defUsed                  which task definition to use
-     * @return                          the request for ECS
-     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     * @param  instanceProperties the instance properties
+     * @return                    task network configuration
      */
-    private static RunTaskRequest createRunTaskRequest(String clusterName, String launchType, String fargateVersion,
-            TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
-        RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(clusterName)
-                .withOverrides(override)
-                .withTaskDefinition(defUsed)
-                .withPropagateTags(PropagateTags.TASK_DEFINITION);
+    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
+        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                .withSubnets(instanceProperties.getList(SUBNETS))
+                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
 
-        if (launchType.equals("FARGATE")) {
-            Objects.requireNonNull(fargateVersion, "fargateVersion cannot be null");
-            return runTaskRequest
-                    .withNetworkConfiguration(networkConfiguration)
-                    .withPlatformVersion(fargateVersion)
-                    .withLaunchType(LaunchType.FARGATE);
-        } else {
-            return runTaskRequest
-                    .withLaunchType(LaunchType.EC2);
-        }
+        return new NetworkConfiguration()
+                .withAwsvpcConfiguration(vpcConfiguration);
     }
 
     public static void main(String[] args) {

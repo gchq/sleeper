@@ -85,7 +85,7 @@ public class RunECSTasks {
             runTasksOrThrow();
         } catch (InvalidParameterException e) {
             LOGGER.error("Couldn't launch tasks due to InvalidParameterException. " +
-                    "This error is expected if there are no EC2 container instances in the cluster.");
+                    "This error is expected if there are no EC2 container instances in the cluster.", e);
         } catch (AmazonClientException | PollWithRetries.CheckFailedException | ECSFailureException e) {
             LOGGER.error("Couldn't launch tasks", e);
         }

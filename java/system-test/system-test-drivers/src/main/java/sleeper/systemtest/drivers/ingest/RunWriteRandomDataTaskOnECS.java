@@ -48,6 +48,7 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -101,7 +102,8 @@ public class RunWriteRandomDataTaskOnECS {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(instanceProperties.getList(SUBNETS));
+                .withSubnets(instanceProperties.getList(SUBNETS))
+                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
