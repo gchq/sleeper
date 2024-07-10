@@ -2,31 +2,6 @@
   {
     "jobId": "$(jobId6)",
     "createdStatus": {
-      "updateTime": "2022-09-23T13:33:12.001Z",
-      "partitionId": "partnGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG",
-      "inputFilesCount": 1
-    },
-    "jobRuns": [
-      {
-        "taskId": "task1111-1111-1111-1111-111111111111",
-        "updates": [
-          {
-            "type": "STARTED",
-            "updateTime": "2022-09-23T13:34:12.123Z",
-            "startTime": "2022-09-23T13:34:12.001Z"
-          },
-          {
-            "type": "COMMITTED",
-            "commitTime": "2022-09-23T13:36:12.001Z",
-            "updateTime": "2022-09-23T13:36:12.123Z"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "jobId": "$(jobId5)",
-    "createdStatus": {
       "updateTime": "2022-09-22T13:33:12.001Z",
       "partitionId": "partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
       "inputFilesCount": 1
@@ -41,25 +16,6 @@
             "startTime": "2022-09-22T13:34:12.001Z"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
-            "updateTime": "2022-09-22T13:35:12.123Z",
-            "committedBySeparateUpdate": true,
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 600,
-                "recordsWritten": 300
-              },
-              "runTime": {
-                "startTime": "2022-09-22T13:34:12.001Z",
-                "finishTime": "2022-09-22T13:35:12.001Z",
-                "durationInSeconds": 60.0,
-                "timeInProcessInSeconds": 60.0
-              },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
-            }
-          },
-          {
             "type": "COMMITTED",
             "commitTime": "2022-09-22T13:36:12.001Z",
             "updateTime": "2022-09-22T13:36:12.123Z"
@@ -69,7 +25,7 @@
     ]
   },
   {
-    "jobId": "$(jobId4)",
+    "jobId": "$(jobId5)",
     "createdStatus": {
       "updateTime": "2022-09-21T13:33:12.001Z",
       "partitionId": "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
@@ -102,13 +58,18 @@
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
             }
+          },
+          {
+            "type": "COMMITTED",
+            "commitTime": "2022-09-21T13:36:12.001Z",
+            "updateTime": "2022-09-21T13:36:12.123Z"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId3)",
+    "jobId": "$(jobId4)",
     "createdStatus": {
       "updateTime": "2022-09-20T13:33:12.001Z",
       "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
@@ -124,11 +85,50 @@
             "startTime": "2022-09-20T13:34:12.001Z"
           },
           {
-            "type": "FAILED",
+            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-20T13:35:12.123Z",
+            "committedBySeparateUpdate": true,
+            "summary": {
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
+              "runTime": {
+                "startTime": "2022-09-20T13:34:12.001Z",
+                "finishTime": "2022-09-20T13:35:12.001Z",
+                "durationInSeconds": 60.0,
+                "timeInProcessInSeconds": 60.0
+              },
+              "recordsReadPerSecond": 10.0,
+              "recordsWrittenPerSecond": 5.0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "jobId": "$(jobId3)",
+    "createdStatus": {
+      "updateTime": "2022-09-19T13:33:12.001Z",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+      "inputFilesCount": 1
+    },
+    "jobRuns": [
+      {
+        "taskId": "task1111-1111-1111-1111-111111111111",
+        "updates": [
+          {
+            "type": "STARTED",
+            "updateTime": "2022-09-19T13:34:12.123Z",
+            "startTime": "2022-09-19T13:34:12.001Z"
+          },
+          {
+            "type": "FAILED",
+            "updateTime": "2022-09-19T13:35:12.123Z",
             "runTime": {
-              "startTime": "2022-09-20T13:34:12.001Z",
-              "finishTime": "2022-09-20T13:35:12.001Z",
+              "startTime": "2022-09-19T13:34:12.001Z",
+              "finishTime": "2022-09-19T13:35:12.001Z",
               "durationInSeconds": 60.0,
               "timeInProcessInSeconds": 60.0
             },
