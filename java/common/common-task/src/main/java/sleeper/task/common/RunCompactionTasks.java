@@ -160,21 +160,9 @@ public class RunCompactionTasks {
     private static void launchTasks(
             AmazonECS ecsClient, InstanceProperties instanceProperties,
             int numberOfTasksToCreate, BooleanSupplier checkAbort) {
-        String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-        String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
-        String fargateVersion = instanceProperties.get(FARGATE_VERSION);
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
-        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
-        String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
-        RunTaskRequest runTaskRequest = createRunTaskRequest(
-                clusterName, launchType, fargateVersion,
-                override, networkConfiguration, defUsed);
-
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
+                .runTaskRequest(createRunTaskRequest(instanceProperties))
                 .numberOfTasksToCreate(numberOfTasksToCreate)
                 .checkAbort(checkAbort));
     }
@@ -208,6 +196,28 @@ public class RunCompactionTasks {
 
         return new TaskOverride()
                 .withContainerOverrides(containerOverride);
+    }
+
+    /**
+     * Creates a new task request that can be passed to ECS.
+     *
+     * @param  instanceProperties       the instance properties
+     * @return                          the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     */
+    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
+        String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
+        String fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+        String ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
+        String fargateVersion = instanceProperties.get(FARGATE_VERSION);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
+        NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
+        String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
+        RunTaskRequest runTaskRequest = createRunTaskRequest(
+                clusterName, launchType, fargateVersion,
+                override, networkConfiguration, defUsed);
+        return runTaskRequest;
     }
 
     /**
