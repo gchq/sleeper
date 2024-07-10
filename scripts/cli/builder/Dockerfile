@@ -17,6 +17,8 @@ FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
     maven \
+    openjdk-17-jdk \
+    openjdk-17-source \
     git \
     python3 \
     pip \
@@ -30,4 +32,4 @@ RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' 
 
 WORKDIR /sleeper-builder
 
-CMD bash
+CMD [ "bash" ]
