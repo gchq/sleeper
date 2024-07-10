@@ -55,7 +55,7 @@ Bugfixes:
 - Restored Trino plugin's ability to interact with Sleeper files in S3 via the Hadoop file system.
 - Explicitly grants permission for the bulk import starter to add tags to a non-persistent EMR cluster.
 - Prevented truncating resource names deployed as part of Sleeper.
-- Fixed cases where an ingest or compaction has finished but still displayed as in progress in the jobs report.
+- Fixed cases where an ingest or compaction has finished but is still displayed as in progress in the jobs report.
 - Prevented cases where compactions could run to completion but be unable to apply in the state store.
   - Compaction tasks now wait for input files to be assigned in the state store before they start a compaction job.
 
