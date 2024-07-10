@@ -49,6 +49,10 @@ public class StandardProcessRunReporter {
 
     private final PrintStream out;
 
+    public static Builder withTable(TableWriterFactory.Builder tableBuilder) {
+        return new Builder(tableBuilder);
+    }
+
     public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
         this(out);
         tableBuilder.addFields(
@@ -186,4 +190,25 @@ public class StandardProcessRunReporter {
         return getter.apply(object);
     }
 
+    public static class Builder {
+        private TableWriterFactory.Builder tableBuilder;
+
+        public Builder(TableWriterFactory.Builder tableBuilder) {
+            this.tableBuilder = tableBuilder;
+        }
+
+        public Builder addProgressFields() {
+            tableBuilder.addFields(TASK_ID, START_TIME, FINISH_TIME);
+            return this;
+        }
+
+        public Builder addResultsFields() {
+            tableBuilder.addFields(DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+            return this;
+        }
+
+        public StandardProcessRunReporter build(PrintStream out) {
+            return new StandardProcessRunReporter(out);
+        }
+    }
 }

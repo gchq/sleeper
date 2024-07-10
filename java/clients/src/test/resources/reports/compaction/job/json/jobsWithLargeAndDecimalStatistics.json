@@ -16,9 +16,9 @@
             "startTime": "2022-10-13T12:01:10Z"
           },
           {
-            "type": "FINISHED",
+            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-13T14:01:10.123Z",
-            "committedBySeparateUpdate": false,
+            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 1000600,
@@ -33,6 +33,11 @@
               "recordsReadPerSecond": 138.97222222222223,
               "recordsWrittenPerSecond": 69.48611111111111
             }
+          },
+          {
+            "type": "COMMITTED",
+            "commitTime": "2022-10-13T14:01:30Z",
+            "updateTime": "2022-10-13T14:01:30.123Z"
           }
         ]
       }
@@ -55,9 +60,9 @@
             "startTime": "2022-10-13T12:00:10Z"
           },
           {
-            "type": "FINISHED",
+            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-13T12:00:10.123Z",
-            "committedBySeparateUpdate": false,
+            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,
@@ -72,6 +77,11 @@
               "recordsReadPerSecond": 4878.048780487805,
               "recordsWrittenPerSecond": 2439.0243902439024
             }
+          },
+          {
+            "type": "COMMITTED",
+            "commitTime": "2022-10-13T12:00:30Z",
+            "updateTime": "2022-10-13T12:00:30.123Z"
           }
         ]
       }
