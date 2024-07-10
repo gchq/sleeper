@@ -4,6 +4,36 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.24.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.24.0*
+
+This includes improvements to the transaction log state store implementation, and experimental support for accelerated
+compactions with Rust.
+
+Transaction handling:
+- Improved support for asynchronous updates to the state store.
+  - Updates are submitted to a FIFO queue to be processed in a single lambda instance per Sleeper table.
+  - This allows for higher throughput by reducing contention, particularly when using a transaction log.
+  - Converted from the previous handler for committing compaction jobs asynchronously.
+  - Added ability for ingest and bulk import to add files to the state store via this lambda.
+- Added a lambda to delete old transactions and snapshots.
+  - This is specific to the `DynamoDBTransactionLogStateStore` type.
+  - This may reduce the load on the transaction log by reducing the amount of data held.
+  - This limits retention of unneeded data.
+- Converted state store implementations to store data in Arrow format.
+  - This should mean faster loading of snapshots for the transaction log state store, and data for the S3 state store.
+
+Reporting:
+- Added reporting of state store updates for compaction and ingest.
+  - Any delay between finishing and committing to the state store will be visible for compactions.
+  - Allows tracking when files are added partway through an ingest job.
+
+Accelerated compaction:
+- Added an option to run compactions on Rust instead of Java.
+- This is currently experimental, but allows for much faster compaction on the same hardware.
+
 ## Version 0.23.0
 
 This contains the following improvements:
