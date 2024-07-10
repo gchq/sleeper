@@ -5,9 +5,6 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-Currently in order to work with Sleeper you must build from source. Please follow the [developer guide](11-dev-guide.md)
-to build the system and get to the point where the scripts will work.
-
 ## Deploy to Docker
 
 The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
