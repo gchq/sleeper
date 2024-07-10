@@ -11,21 +11,57 @@ copy that you built yourself.
 
 ### Install Prerequisite Software
 
-You will need the following software:
+There are a number of dependencies for building Sleeper, and a few options to set up a development environment with
+these available.
 
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
-* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
+#### Sleeper CLI builder image
 
-You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When
-you have Nix installed, an easy way to get a development environment is to run `nix-shell` at the root of the Sleeper
-Git repository. This will start a shell with all the Sleeper dependencies installed, without installing them in your
-system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
-again whenever you want to work with Sleeper.
+If you installed the Sleeper CLI from GitHub as described in the [getting started guide](01-getting-started.md), you can
+use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. Unless you're in an
+EC2 deployed with `sleeper environment`, you'll need to clone the repository in the container. You can use the commands
+below to do this:
+
+```bash
+sleeper builder
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+```
+
+Everything in the repository will be persisted between executions of `sleeper builder`.
+
+If you have AWS CLI installed in the host, the same configuration will be used in the builder container. Otherwise, any
+configuration you set in the container will be persisted in the host home directory. AWS authentication environment
+variables will be propagated to the container as well.
+
+The host Docker environment will be propagated to the container via the Docker socket.
+
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+
+If you add a command on the end, you can run a specific script like this:
+
+```shell
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+```
+
+#### Dev Containers
+
+The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
+the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
+image based on this configuration.
+
+#### Nix shell
+
+You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all the
+dependencies except Docker and Bash. When you have Nix installed, an easy way to get a development environment is to run
+`nix-shell` at the root of the Sleeper Git repository. This will start a shell with all the Sleeper dependencies
+installed, without installing them in your system. If you run your IDE from that shell, the dependencies will be
+available in your IDE. You can run `nix-shell` again whenever you want to work with Sleeper.
+
+**This has problems working with Python code.** The Nix package for the AWS CLI adds a number of libraries to the
+system Python, and pins them to specific versions. It's not possible to override this in a virtual environment, so it's
+likely there will be conflicts with the AWS library used in the Python code for Sleeper. This may prevent execution of
+the Sleeper Python code. If you change the Python dependencies in the Nix shell, this may break the AWS CLI.
 
 You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
 the repository from the Nix shell. Here's an example to get the latest release:
@@ -38,23 +74,22 @@ cd sleeper
 git checkout --track origin/main
 ```
 
-If you're working with the Sleeper CLI as described in the [getting started guide](01-getting-started.md), you can
-use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed.
+#### Manual dependency installation
 
-If you run `sleeper builder` in an environment EC2 instance, you'll have the Git repository checked out at `/sleeper`.
-If you run `sleeper builder` locally, you'll need to clone the repository. You can use the commands below to do this:
+You will need the following software:
 
-```bash
-sleeper builder
-git clone https://github.com/gchq/sleeper.git
-cd sleeper
-```
-
-Everything in the repository will be persisted between executions of `sleeper builder`.
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
+* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* [Java 11/17](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
 ## Building
 
-Provided script (recommended) - this builds the code and copies the jars into the scripts directory so that the scripts work.
+Provided script (recommended) - this builds the code and copies the jars into the scripts directory so that the scripts
+work. Starting from the root of the Git repository:
 
 ```bash
 ./scripts/build/buildForTest.sh
@@ -62,7 +97,7 @@ Provided script (recommended) - this builds the code and copies the jars into th
 
 ### Sleeper CLI
 
-To build the Sleeper CLI, you can run this instead:
+To build the Sleeper CLI, you can run this script:
 
 ```bash
 ./scripts/cli/buildAll.sh
