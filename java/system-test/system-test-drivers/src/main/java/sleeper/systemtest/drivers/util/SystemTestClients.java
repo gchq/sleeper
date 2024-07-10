@@ -46,11 +46,13 @@ import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.AssumeSleeperRole;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
@@ -69,7 +71,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
-    private final Supplier<Configuration> hadoopConfSupplier;
+    private final UnaryOperator<Configuration> applyCredentialsToHadoop;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
@@ -88,7 +90,7 @@ public class SystemTestClients {
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
-        hadoopConfSupplier = HadoopConfigurationProvider::getConfigurationForClient;
+        applyCredentialsToHadoop = conf -> conf;
     }
 
     public SystemTestClients(AssumeSleeperRole assumeRole) {
@@ -108,7 +110,7 @@ public class SystemTestClients {
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
         cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
         authEnvVars = assumeRole.authEnvVars();
-        hadoopConfSupplier = () -> assumeRole.setS3ACredentials(new Configuration());
+        applyCredentialsToHadoop = assumeRole::setS3ACredentials;
     }
 
     public AmazonS3 getS3() {
@@ -176,7 +178,11 @@ public class SystemTestClients {
     }
 
     public Configuration createHadoopConf() {
-        return hadoopConfSupplier.get();
+        return applyCredentialsToHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
+    }
+
+    public Configuration createHadoopConf(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return applyCredentialsToHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties));
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
