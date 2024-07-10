@@ -15,21 +15,13 @@ unset CDPATH
 
 source "$(dirname "${BASH_SOURCE[0]}")/arrayUtils.sh"
 
-read_instance_ids_to_array() {
-    local ARRAY_OUT_NAME=$2
-    eval "$ARRAY_OUT_NAME=()"
-    while read -r id; do
-      eval "$ARRAY_OUT_NAME+=(\"$id\")"
-    done <"$1"
-}
-
-read_short_instance_names_from_instance_ids_to_array() {
+read_short_instance_names_from_instance_ids() {
     local SHORT_ID=$1
     local INSTANCE_IDS_FILE=$2
-    local ARRAY_OUT_NAME=$3
-    eval "$ARRAY_OUT_NAME=()"
+    local DELIM=""
     while read -r id; do
       local SHORT_INSTANCE_NAME=$(echo "$id" | cut -b$(("${#SHORT_ID}" + 1))-)
-      eval "$ARRAY_OUT_NAME+=(\"$SHORT_INSTANCE_NAME\")"
+      printf "%s" "$DELIM$SHORT_INSTANCE_NAME"
+      DELIM=","
     done <"$INSTANCE_IDS_FILE"
 }
