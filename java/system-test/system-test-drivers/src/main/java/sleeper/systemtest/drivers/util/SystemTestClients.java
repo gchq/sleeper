@@ -52,7 +52,6 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
@@ -71,7 +70,6 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
-    private final UnaryOperator<Configuration> applyCredentialsToHadoop;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
@@ -90,7 +88,6 @@ public class SystemTestClients {
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
-        applyCredentialsToHadoop = conf -> conf;
     }
 
     public SystemTestClients(AssumeSleeperRole assumeRole) {
@@ -110,7 +107,6 @@ public class SystemTestClients {
         cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
         cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
         authEnvVars = assumeRole.authEnvVars();
-        applyCredentialsToHadoop = assumeRole::setS3ACredentials;
     }
 
     public AmazonS3 getS3() {
@@ -178,11 +174,11 @@ public class SystemTestClients {
     }
 
     public Configuration createHadoopConf() {
-        return applyCredentialsToHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
+        return HadoopConfigurationProvider.getConfigurationForClient();
     }
 
     public Configuration createHadoopConf(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return applyCredentialsToHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties));
+        return HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
