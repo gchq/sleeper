@@ -495,7 +495,7 @@ public class CompactionStack extends NestedStack {
         AtomicInteger index = new AtomicInteger(1);
         return instanceProperties.getList(ECS_SECURITY_GROUPS).stream()
                 .filter(Predicate.not(String::isBlank))
-                .map(groupId -> SecurityGroup.fromSecurityGroupId(scope, "CompactionScalingSG" + index.getAndIncrement(), groupId))
+                .map(groupId -> SecurityGroup.fromLookupById(scope, "CompactionScalingSG" + index.getAndIncrement(), groupId))
                 .collect(Collectors.toList());
     }
 
