@@ -78,10 +78,10 @@ sleeper cdk bootstrap
 Next, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance to deploy from, to
 avoid lengthy uploads of large jar files and Docker images. You can use the Sleeper CLI to create both of these.
 
-If you'd prefer to use your own, you'll need to install the Sleeper CLI on your EC2, which should run on an x86_64
-architecture. You'll need to authenticate with AWS as described above. You'll need to ensure your VPC meets Sleeper's
-requirements, but you can also deploy a fresh VPC with the CLI. This is documented in
-the [deployment guide](02-deployment-guide.md#deployment-environment).
+If you prefer to use your own EC2, you'll need to build Sleeper there as described in
+the [developer guide](11-dev-guide.md). The EC2 should run on an x86_64 architecture. If you prefer to use your own VPC,
+you'll need to ensure it meets Sleeper's requirements. Deployment of an EC2 to an existing VPC is documented in
+the [deployment guide](02-deployment-guide.md#managing-environments).
 
 #### Sleeper CLI environment
 
@@ -112,15 +112,23 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. Reconnect to the EC2
-with `sleeper environment connect`.
+Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. The Sleeper Git repository
+will also be cloned. Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository
+mounted into it:
 
-During the `cloud-init` step, the Sleeper Git repository will be cloned, and you can access it by running
-`sleeper builder` in the EC2. This will get you a shell inside a Docker container inside the EC2, with the dependencies
-for building Sleeper. You can run all the deployment scripts there as explained below. If you run it outside of the
-EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the deployment being
-slow uploading jars and Docker images. Additionally, the whole working directory will be persisted between executions
-of `sleeper builder`.
+```bash
+sleeper environment connect # Connect to the EC2
+sleeper builder             # Open a shell in a builder Docker container
+cd sleeper                  # Change directory into the Sleeper repository
+```
+
+This Docker container includes the dependencies for building Sleeper. The rest of the guide assumes you're in the root
+of the Sleeper repository after using these commands. The directory with the Git repository will be persisted between
+executions of `sleeper builder`, and re-mounted to a fresh container each time you run it.
+
+If you run `sleeper builder` outside of the EC2, you'll get the same thing but in your local Docker host. Please ensure
+you connect to the EC2 first via `sleeper environment connect`, to avoid the deployment being slow uploading jars and
+Docker images.
 
 If you want someone else to be able to access the same environment EC2, they can run `sleeper environment add <id>`
 with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
@@ -147,16 +155,16 @@ zones). Multiple subnet ids can be specified with commas in between, e.g. `subne
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-Before you can run any scripts, you need to build the project. You can do this by running the following script:
+Before you can run any scripts, you need to build the project. From the root of the Git repository, run:
 
 ```bash
-sleeper builder sleeper/scripts/build/buildForTest.sh
+scripts/build/buildForTest.sh
 ```
 
 Then you can deploy the system test instance by running the following command:
 
 ```bash
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
+scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
@@ -172,7 +180,7 @@ sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
 Run the following command to see how many records are currently in the system:
 
 ```bash
-sleeper builder sleeper/scripts/utility/filesStatusReport.sh ${ID} system-test
+scripts/utility/filesStatusReport.sh ${ID} system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -180,7 +188,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-sleeper builder sleeper/scripts/utility/query.sh ${ID}
+scripts/utility/query.sh ${ID}
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -206,20 +214,19 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-sleeper builder java -cp jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+java -cp scripts/jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run
 
 ```bash
-sleeper builder sleeper/scripts/test/tearDown.sh
+scripts/test/tearDown.sh
 ```
 
 It is possible to run variations on this system-test by editing the system test properties, like this:
 
 ```bash
-sleeper builder
-cd sleeper/scripts/test/deployAll
+cd scripts/test/deployAll
 editor system-test-instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```
