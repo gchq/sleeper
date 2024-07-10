@@ -167,7 +167,7 @@
         <mockito.version>5.12.0</mockito.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
-        <assertj.version>3.26.0</assertj.version>
+        <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.2.0</approvaltests.version>
         <jsonunit.version>3.4.0</jsonunit.version>
         <checkstyle.version>10.17.0</checkstyle.version>
