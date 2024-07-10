@@ -117,9 +117,9 @@ will also be cloned. Run `sleeper builder` in the EC2 to start a builder Docker 
 mounted into it:
 
 ```bash
-sleeper environment connect # Connect to the EC2
-sleeper builder             # Open a shell in a builder Docker container
-cd sleeper                  # Change directory into the Sleeper repository
+sleeper environment connect # Get a shell in the EC2 you deployed
+sleeper builder             # Get a shell in a builder Docker container (hosted in the EC2)
+cd sleeper                  # Change directory to the root of the Git repository
 ```
 
 This Docker container includes the dependencies for building Sleeper. The rest of the guide assumes you're in the root
@@ -158,13 +158,13 @@ The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk
 Before you can run any scripts, you need to build the project. From the root of the Git repository, run:
 
 ```bash
-scripts/build/buildForTest.sh
+./scripts/build/buildForTest.sh
 ```
 
 Then you can deploy the system test instance by running the following command:
 
 ```bash
-scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
+./scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
@@ -180,7 +180,7 @@ sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
 Run the following command to see how many records are currently in the system:
 
 ```bash
-scripts/utility/filesStatusReport.sh ${ID} system-test
+./scripts/utility/filesStatusReport.sh ${ID} system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -188,7 +188,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-scripts/utility/query.sh ${ID}
+./scripts/utility/query.sh ${ID}
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -214,21 +214,21 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-java -cp scripts/jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+java -cp ./scripts/jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run
 
 ```bash
-scripts/test/tearDown.sh
+./scripts/test/tearDown.sh
 ```
 
 It is possible to run variations on this system-test by editing the system test properties, like this:
 
 ```bash
-cd scripts/test/deployAll
+cd ./scripts/test/deployAll
 editor system-test-instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```
 
-To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).
+To deploy your own instance of Sleeper with a particular schema, follow the [deployment guide](02-deployment-guide.md).
