@@ -174,10 +174,14 @@ public class SystemTestClients {
     }
 
     public Configuration createHadoopConf() {
+        // Not applying instance admin credentials, as this produced an intermittent AWSBadRequestException during the
+        // getFileStatus call from ParquetReader.Builder.build.
         return HadoopConfigurationProvider.getConfigurationForClient();
     }
 
     public Configuration createHadoopConf(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        // Not applying instance admin credentials, as this produced an intermittent AWSBadRequestException during the
+        // getFileStatus call from ParquetReader.Builder.build.
         return HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
     }
 
