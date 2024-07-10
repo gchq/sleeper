@@ -169,37 +169,6 @@ public class RunCompactionTasks {
     }
 
     /**
-     * Create the container networking configuration.
-     *
-     * @param  instanceProperties the instance properties
-     * @return                    task network configuration
-     */
-    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
-        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(instanceProperties.getList(SUBNETS))
-                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
-
-        return new NetworkConfiguration()
-                .withAwsvpcConfiguration(vpcConfiguration);
-    }
-
-    /**
-     * Create the container definition overrides for the task launch.
-     *
-     * @param  args          container runtime args
-     * @param  containerName name of container used for overriding
-     * @return               the container definition overrides
-     */
-    private static TaskOverride createOverride(List<String> args, String containerName) {
-        ContainerOverride containerOverride = new ContainerOverride()
-                .withName(containerName)
-                .withCommand(args);
-
-        return new TaskOverride()
-                .withContainerOverrides(containerOverride);
-    }
-
-    /**
      * Creates a new task request that can be passed to ECS.
      *
      * @param  instanceProperties       the instance properties
@@ -207,7 +176,7 @@ public class RunCompactionTasks {
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
     private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
-        TaskOverride override = createOverride(List.of(instanceProperties.get(CONFIG_BUCKET)), COMPACTION_CONTAINER_NAME);
+        TaskOverride override = createOverride(instanceProperties);
         RunTaskRequest runTaskRequest = new RunTaskRequest()
                 .withCluster(instanceProperties.get(COMPACTION_CLUSTER))
                 .withOverrides(override)
@@ -229,6 +198,36 @@ public class RunCompactionTasks {
         } else {
             throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
         }
+    }
+
+    /**
+     * Create the container definition overrides for the task launch.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the container definition overrides
+     */
+    private static TaskOverride createOverride(InstanceProperties instanceProperties) {
+        ContainerOverride containerOverride = new ContainerOverride()
+                .withName(COMPACTION_CONTAINER_NAME)
+                .withCommand(List.of(instanceProperties.get(CONFIG_BUCKET)));
+
+        return new TaskOverride()
+                .withContainerOverrides(containerOverride);
+    }
+
+    /**
+     * Create the container networking configuration.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    task network configuration
+     */
+    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
+        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                .withSubnets(instanceProperties.getList(SUBNETS))
+                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
+
+        return new NetworkConfiguration()
+                .withAwsvpcConfiguration(vpcConfiguration);
     }
 
     public static void main(String[] args) {
