@@ -5,51 +5,8 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-To get started we'll use the Sleeper CLI, which runs in Docker on your local machine.
-
-### Dependencies
-
-The Sleeper CLI has the following dependencies:
-
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2 to v5.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v24.0.2
-
-### Installation
-
-The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the latest development version of the CLI.
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
-chmod +x ./sleeper-install.sh
-./sleeper-install.sh develop
-```
-
-This will install the latest development version. This will not have been as fully tested as released versions and may
-not work as expected. Most users should use the latest released version. You can find a list
-of released versions [here](https://github.com/gchq/sleeper/tags), and the change log [here](../CHANGELOG.md).
-
-**Due to a bug in GitHub, it is not currently possible to install released versions this way.** See the following
-issue: https://github.com/gchq/sleeper/issues/2494
-
-To use a released version, please follow the [developer guide](11-dev-guide.md) to build the CLI from source.
-
-If the bug is fixed, you can replace `develop` with `main` for the latest release, or a release in the format `v0.20.0`.
-These correspond to a branch or tag in the GitHub repository. If you do not specify a version on the command line, it
-will default to the latest release.
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
-chmod +x ./sleeper-install.sh
-./sleeper-install.sh [version]
-```
-
-This installs a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
-`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
-AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
-you use `sleeper`.
-
-You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
+Currently in order to work with Sleeper you must build from source. Please follow the [developer guide](11-dev-guide.md)
+to build the system and get to the point where the scripts will work.
 
 ## Deploy to Docker
 
@@ -65,10 +22,46 @@ then use the status scripts to see how much data is in the system, run some exam
 understand what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to
 be uploaded to AWS.
 
+We'll use the Sleeper CLI to deploy an EC2 instance in an environment suitable for working with Sleeper.
+
+### Dependencies
+
+The Sleeper CLI has the following dependencies:
+
+* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2 to v5.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/): Tested with v24.0.2
+
+### Install Sleeper CLI
+
+**Due to a bug in GitHub, released versions must be built from source.** See the following
+issue: https://github.com/gchq/sleeper/issues/2494
+
+You can follow the [developer guide](11-dev-guide.md) to build and install the CLI from source. Most users should use
+the latest released version. You can find a list of released versions [here](https://github.com/gchq/sleeper/tags), and
+the change log [here](../CHANGELOG.md).
+
+For the latest development version, you can run the following commands to install the CLI from GitHub:
+
+```bash
+curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
+chmod +x ./sleeper-install.sh
+./sleeper-install.sh develop
+```
+
+This will not have been as fully tested as released versions and may not work as expected. If you build a specific
+release version after installing the development version, the version you build will replace the version you installed.
+
+The CLI consists of a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
+`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
+AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
+you use `sleeper`.
+
+If you installed the development version, you can upgrade to the latest development version with `sleeper cli upgrade`.
+
 ### Authentication
 
 To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. You can do this by running
-`sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS Environment variables
+`sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS environment variables
 will also be propagated to the Sleeper CLI.
 
 Most Sleeper clients also require you to set the default region.
