@@ -22,3 +22,14 @@ read_instance_ids_to_array() {
       eval "$ARRAY_OUT_NAME+=(\"$id\")"
     done <"$1"
 }
+
+read_short_instance_names_from_instance_ids_to_array() {
+    local SHORT_ID=$1
+    local INSTANCE_IDS_FILE=$2
+    local ARRAY_OUT_NAME=$3
+    eval "$ARRAY_OUT_NAME=()"
+    while read -r id; do
+      local SHORT_INSTANCE_NAME=$(echo "$id" | cut -b$(("${#SHORT_ID}" + 1))-)
+      eval "$ARRAY_OUT_NAME+=(\"$SHORT_INSTANCE_NAME\")"
+    done <"$INSTANCE_IDS_FILE"
+}
