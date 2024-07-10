@@ -35,4 +35,22 @@ public class DelayStatisticsTest {
                         "Shortest delay: 10s\n" +
                         "Longest delay: 10s");
     }
+
+    @Test
+    void shouldReportStatisticsForMultipleDelays() {
+        // Given
+        DelayStatistics statistics = DelayStatistics.builder()
+                .add(Duration.ofSeconds(10))
+                .add(Duration.ofSeconds(30))
+                .add(Duration.ofMinutes(1))
+                .add(Duration.ofMinutes(2))
+                .add(Duration.ofMinutes(5))
+                .build();
+
+        // When / Then
+        assertThat(statistics.toString())
+                .isEqualTo("Average delay: 1m 44s\n" +
+                        "Shortest delay: 10s\n" +
+                        "Longest delay: 5m 0s");
+    }
 }
