@@ -44,20 +44,26 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.AssumeSleeperRole;
+import sleeper.clients.util.AssumeSleeperRoleHadoop;
+import sleeper.clients.util.AssumeSleeperRoleNew;
+import sleeper.clients.util.AssumeSleeperRoleV1;
+import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
     private final AmazonS3 s3;
     private final S3Client s3V2;
     private final AmazonDynamoDB dynamoDB;
     private final AWSSecurityTokenService sts;
+    private final StsClient stsV2;
     private final AwsRegionProvider regionProvider;
     private final AmazonSQS sqs;
     private final LambdaClient lambda;
@@ -70,12 +76,14 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Map<String, String> authEnvVars;
+    private final UnaryOperator<Configuration> configureHadoop;
 
     public SystemTestClients() {
         s3 = AmazonS3ClientBuilder.defaultClient();
         s3V2 = S3Client.create();
         dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        stsV2 = StsClient.create();
         regionProvider = DefaultAwsRegionProviderChain.builder().build();
         sqs = AmazonSQSClientBuilder.defaultClient();
         lambda = systemTestLambdaClientBuilder().build();
@@ -88,25 +96,31 @@ public class SystemTestClients {
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
         authEnvVars = Map.of();
+        configureHadoop = conf -> conf;
     }
 
-    public SystemTestClients(AssumeSleeperRole assumeRole) {
-        s3 = assumeRole.v1Client(AmazonS3ClientBuilder.standard());
-        s3V2 = assumeRole.v2Client(S3Client.builder());
-        dynamoDB = assumeRole.v1Client(AmazonDynamoDBClientBuilder.standard());
-        sts = assumeRole.v1Client(AWSSecurityTokenServiceClientBuilder.standard());
-        regionProvider = assumeRole.v2RegionProvider();
-        sqs = assumeRole.v1Client(AmazonSQSClientBuilder.standard());
-        lambda = assumeRole.v2Client(systemTestLambdaClientBuilder());
-        cloudFormation = assumeRole.v2Client(CloudFormationClient.builder());
-        emrServerless = assumeRole.v2Client(EmrServerlessClient.builder());
-        emr = assumeRole.v1Client(AmazonElasticMapReduceClientBuilder.standard());
-        ecs = assumeRole.v1Client(AmazonECSClientBuilder.standard());
-        autoScaling = assumeRole.v1Client(AmazonAutoScalingClientBuilder.standard());
-        ecr = assumeRole.v1Client(AmazonECRClientBuilder.standard());
-        cloudWatch = assumeRole.v2Client(CloudWatchClient.builder());
-        cloudWatchEvents = assumeRole.v1Client(AmazonCloudWatchEventsClientBuilder.standard());
-        authEnvVars = assumeRole.authEnvVars();
+    public SystemTestClients(SystemTestClients clients, AssumeSleeperRoleNew assumeRole) {
+        AssumeSleeperRoleV1 v1 = assumeRole.forAwsV1(clients.sts);
+        AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(clients.stsV2);
+        AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
+        s3 = v1.buildClient(AmazonS3ClientBuilder.standard());
+        s3V2 = v2.buildClient(S3Client.builder());
+        dynamoDB = v1.buildClient(AmazonDynamoDBClientBuilder.standard());
+        sts = v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard());
+        stsV2 = v2.buildClient(StsClient.builder());
+        regionProvider = v2.regionProvider();
+        sqs = v1.buildClient(AmazonSQSClientBuilder.standard());
+        lambda = v2.buildClient(systemTestLambdaClientBuilder());
+        cloudFormation = v2.buildClient(CloudFormationClient.builder());
+        emrServerless = v2.buildClient(EmrServerlessClient.builder());
+        emr = v1.buildClient(AmazonElasticMapReduceClientBuilder.standard());
+        ecs = v1.buildClient(AmazonECSClientBuilder.standard());
+        autoScaling = v1.buildClient(AmazonAutoScalingClientBuilder.standard());
+        ecr = v1.buildClient(AmazonECRClientBuilder.standard());
+        cloudWatch = v2.buildClient(CloudWatchClient.builder());
+        cloudWatchEvents = v1.buildClient(AmazonCloudWatchEventsClientBuilder.standard());
+        authEnvVars = v1.authEnvVars();
+        configureHadoop = hadoop::setS3ACredentials;
     }
 
     public AmazonS3 getS3() {
@@ -176,13 +190,11 @@ public class SystemTestClients {
     public Configuration createHadoopConf() {
         // Not applying instance admin credentials, as this produced an intermittent AWSBadRequestException during the
         // getFileStatus call from ParquetReader.Builder.build.
-        return HadoopConfigurationProvider.getConfigurationForClient();
+        return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
     }
 
     public Configuration createHadoopConf(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        // Not applying instance admin credentials, as this produced an intermittent AWSBadRequestException during the
-        // getFileStatus call from ParquetReader.Builder.build.
-        return HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
+        return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties));
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
