@@ -18,17 +18,20 @@ package sleeper.clients.status.report.job;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DelayStatistics {
     private final Duration minDelay;
     private final Duration avgDelay;
     private final Duration maxDelay;
+    private final double standardDeviation;
 
     public DelayStatistics(Builder builder) {
         this.minDelay = Duration.ofMillis(builder.minDelayMillis);
         this.avgDelay = Duration.ofMillis(builder.avgDelayMillis);
         this.maxDelay = Duration.ofMillis(builder.maxDelayMillis);
+        this.standardDeviation = builder.standardDeviation;
     }
 
     public static Builder builder() {
@@ -36,34 +39,43 @@ public class DelayStatistics {
     }
 
     public String toString() {
-        return "Average delay: " + LoggedDuration.withShortOutput(avgDelay) + "\n"
-                + "Shortest delay: " + LoggedDuration.withShortOutput(minDelay) + "\n"
-                + "Longest delay: " + LoggedDuration.withShortOutput(maxDelay);
+        return String.format("Average delay: %s (min: %s, max: %s, std dev: %.2f)",
+                LoggedDuration.withShortOutput(avgDelay),
+                LoggedDuration.withShortOutput(minDelay),
+                LoggedDuration.withShortOutput(maxDelay),
+                standardDeviation);
     }
 
     public static class Builder {
-        private List<Long> delays;
+        private List<Long> delays = new ArrayList<>();
         private long minDelayMillis;
         private long avgDelayMillis;
         private long maxDelayMillis;
         private long totalDelay;
         private long delayCount;
-        private double standardDeviation;
+        private double standardDeviation = 0;
 
         public Builder add(Duration delay) {
-            if (delayCount == 0) {
-                minDelayMillis = delay.toMillis();
-            } else {
-                minDelayMillis = Math.min(delay.toMillis(), minDelayMillis);
-            }
-            maxDelayMillis = Math.max(delay.toMillis(), maxDelayMillis);
-            totalDelay += delay.toMillis();
-            delayCount++;
+            delays.add(delay.toMillis());
             return this;
         }
 
         public DelayStatistics build() {
+            delays.forEach(delay -> {
+                if (delayCount == 0) {
+                    minDelayMillis = delay;
+                } else {
+                    minDelayMillis = Math.min(delay, minDelayMillis);
+                }
+                maxDelayMillis = Math.max(delay, maxDelayMillis);
+                totalDelay += delay;
+                delayCount++;
+            });
             avgDelayMillis = totalDelay / delayCount;
+            delays.forEach(delay -> {
+                standardDeviation += Math.pow(delay - avgDelayMillis, 2);
+            });
+            standardDeviation = Math.sqrt(standardDeviation / delayCount) / 1000;
             return new DelayStatistics(this);
         }
     }

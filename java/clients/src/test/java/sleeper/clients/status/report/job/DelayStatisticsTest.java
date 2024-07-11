@@ -31,26 +31,22 @@ public class DelayStatisticsTest {
 
         // When / Then
         assertThat(statistics.toString())
-                .isEqualTo("Average delay: 10s\n" +
-                        "Shortest delay: 10s\n" +
-                        "Longest delay: 10s");
+                .isEqualTo("Average delay: 10s (min: 10s, max: 10s, std dev: 0.0)");
     }
 
     @Test
     void shouldReportStatisticsForMultipleDelays() {
         // Given
         DelayStatistics statistics = DelayStatistics.builder()
-                .add(Duration.ofSeconds(10))
-                .add(Duration.ofSeconds(30))
-                .add(Duration.ofMinutes(1))
-                .add(Duration.ofMinutes(2))
-                .add(Duration.ofMinutes(5))
+                .add(Duration.ofSeconds(58))
+                .add(Duration.ofSeconds(59))
+                .add(Duration.ofSeconds(60))
+                .add(Duration.ofSeconds(61))
+                .add(Duration.ofSeconds(62))
                 .build();
 
         // When / Then
         assertThat(statistics.toString())
-                .isEqualTo("Average delay: 1m 44s\n" +
-                        "Shortest delay: 10s\n" +
-                        "Longest delay: 5m 0s");
+                .isEqualTo("Average delay: 1m 0s (min: 58s, max: 1m 2s, std dev: 1.41)");
     }
 }
