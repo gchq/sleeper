@@ -1,6 +1,6 @@
 {
   "name": "Sleeper dev container",
-  "image": "ghcr.io/gchq/sleeper-builder",
+  "image": "ghcr.io/gchq/sleeper-builder:develop",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
@@ -18,6 +18,11 @@
     {
       "source": "${localEnv:HOME}/.aws",
       "target": "/root/.aws",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.m2",
+      "target": "/root/.m2",
       "type": "bind"
     }
   ],
