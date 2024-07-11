@@ -31,7 +31,7 @@ public class DelayStatisticsTest {
 
         // When / Then
         assertThat(statistics.toString())
-                .isEqualTo("avg: 10s, min: 10s, max: 10s, std dev: 0.00");
+                .isEqualTo("avg: 10s, min: 10s, max: 10s, std dev: 0s");
     }
 
     @Test
@@ -47,6 +47,6 @@ public class DelayStatisticsTest {
 
         // When / Then
         assertThat(statistics.toString())
-                .isEqualTo("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.41");
+                .isEqualTo("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
     }
 }

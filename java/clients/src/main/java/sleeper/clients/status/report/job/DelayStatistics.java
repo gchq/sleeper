@@ -25,13 +25,13 @@ public class DelayStatistics {
     private final Duration minDelay;
     private final Duration avgDelay;
     private final Duration maxDelay;
-    private final double standardDeviation;
+    private final Duration standardDeviation;
 
     public DelayStatistics(Builder builder) {
         this.minDelay = Duration.ofMillis(builder.minDelayMillis);
         this.avgDelay = Duration.ofMillis(builder.avgDelayMillis);
         this.maxDelay = Duration.ofMillis(builder.maxDelayMillis);
-        this.standardDeviation = builder.standardDeviation;
+        this.standardDeviation = Duration.ofMillis(builder.stdDevMillis);
     }
 
     public static Builder builder() {
@@ -39,11 +39,11 @@ public class DelayStatistics {
     }
 
     public String toString() {
-        return String.format("avg: %s, min: %s, max: %s, std dev: %.2f",
+        return String.format("avg: %s, min: %s, max: %s, std dev: %s",
                 LoggedDuration.withShortOutput(avgDelay),
                 LoggedDuration.withShortOutput(minDelay),
                 LoggedDuration.withShortOutput(maxDelay),
-                standardDeviation);
+                LoggedDuration.withShortOutput(standardDeviation));
     }
 
     public static class Builder {
@@ -53,7 +53,7 @@ public class DelayStatistics {
         private long maxDelayMillis;
         private long totalDelay;
         private long delayCount;
-        private double standardDeviation = 0;
+        private long stdDevMillis = 0;
 
         public Builder add(Duration delay) {
             delays.add(delay.toMillis());
@@ -72,10 +72,11 @@ public class DelayStatistics {
                 delayCount++;
             });
             avgDelayMillis = totalDelay / delayCount;
-            delays.forEach(delay -> {
-                standardDeviation += Math.pow(delay - avgDelayMillis, 2);
-            });
-            standardDeviation = Math.sqrt(standardDeviation / delayCount) / 1000;
+            double sumOfAvgDiffSquares = 0;
+            for (long delay : delays) {
+                sumOfAvgDiffSquares += Math.pow(delay - avgDelayMillis, 2);
+            }
+            stdDevMillis = (long) Math.sqrt(sumOfAvgDiffSquares / delayCount);
             return new DelayStatistics(this);
         }
     }
