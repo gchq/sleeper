@@ -15,15 +15,15 @@ deployed, you can connect to it and build Sleeper like this:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
-sleeper builder # Get a shell in a builder Docker container (hosted in the EC2)
-cd sleeper # Change directory to the root of the Git repository
+sleeper builder             # Get a shell in a builder Docker container (hosted in the EC2)
+cd sleeper                  # Change directory to the root of the Git repository
 ./scripts/build/build.sh
 ```
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
 To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
-the [dev guide](11-dev-guide.md#install-prerequisite-software).
+the [developer guide](11-dev-guide.md#install-prerequisite-software).
 
 ### Configure AWS
 
@@ -87,11 +87,9 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
-to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
-
-When you use the Sleeper CLI described in [getting started](01-getting-started.md#deployment-environment), you can
-manage multiple environments.
+Please follow the [getting started guide](01-getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](01-getting-started.md#install-sleeper-cli).
+This section adds more detail for the tools to set up this environment.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
@@ -99,6 +97,8 @@ Sleeper `environment` commands directly, without prefixing with `sleeper`.
 You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
 `sleeper` commands.
+
+The Sleeper CLI also lets you manage multiple environments.
 
 #### Managing environments
 
@@ -142,6 +142,9 @@ Parameters after the environment ID will be passed to a `cdk destroy` command.
 ## Deployment
 
 There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
+
+Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
+jar files and Docker images.
 
 ### Automated Deployment
 

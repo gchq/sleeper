@@ -18,8 +18,8 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
-import java.util.Arrays;
 import java.util.List;
 
 public interface CompactionProperty {
@@ -154,7 +154,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")
-            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
+            .validationPredicate(CompactionECSLaunchType::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")

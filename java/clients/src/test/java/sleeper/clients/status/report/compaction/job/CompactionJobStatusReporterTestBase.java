@@ -75,44 +75,38 @@ public abstract class CompactionJobStatusReporterTestBase {
         Instant startedTime3 = Instant.parse("2022-09-19T13:34:12.001Z");
         CompactionJob job4 = dataHelper.singleFileCompaction(partition("D"));
         Instant creationTime4 = Instant.parse("2022-09-20T13:33:12.001Z");
-        Instant startedTime4 = Instant.parse("2022-09-20T13:34:12.001Z");
+        CompactionJobStartedStatus started4 = compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z"));
+        CompactionJobFinishedStatus finished4 = compactionFinishedStatusUncommitted(summary(started4, Duration.ofMinutes(1), 600, 300));
         CompactionJob job5 = dataHelper.singleFileCompaction(partition("E"));
         Instant creationTime5 = Instant.parse("2022-09-21T13:33:12.001Z");
         CompactionJobStartedStatus started5 = compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z"));
         CompactionJobFinishedStatus finished5 = compactionFinishedStatusUncommitted(summary(started5, Duration.ofMinutes(1), 600, 300));
+        CompactionJobCommittedStatus committed5 = compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z"));
         CompactionJob job6 = dataHelper.singleFileCompaction(partition("F"));
         Instant creationTime6 = Instant.parse("2022-09-22T13:33:12.001Z");
         CompactionJobStartedStatus started6 = compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z"));
-        CompactionJobFinishedStatus finished6 = compactionFinishedStatusUncommitted(summary(started6, Duration.ofMinutes(1), 600, 300));
         CompactionJobCommittedStatus committed6 = compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z"));
-        CompactionJob job7 = dataHelper.singleFileCompaction(partition("G"));
-        Instant creationTime7 = Instant.parse("2022-09-23T13:33:12.001Z");
-        CompactionJobStartedStatus started7 = compactionStartedStatus(Instant.parse("2022-09-23T13:34:12.001Z"));
-        CompactionJobCommittedStatus committed7 = compactionCommittedStatus(Instant.parse("2022-09-23T13:36:12.001Z"));
 
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
         CompactionJobStatus status2 = jobCreated(job2, creationTime2,
                 startedCompactionRun(task(1), startedTime2));
         CompactionJobStatus status3 = jobCreated(job3, creationTime3,
-                finishedCompactionRun(task(1),
-                        summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
-        CompactionJobStatus status4 = jobCreated(job4, creationTime4,
                 failedCompactionRun(task(1),
-                        new ProcessRunTime(startedTime4, Duration.ofMinutes(1)),
+                        new ProcessRunTime(startedTime3, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
+        CompactionJobStatus status4 = jobCreated(job4, creationTime4,
+                ProcessRun.builder().taskId(task(1))
+                        .startedStatus(started4).finishedStatus(finished4)
+                        .build());
         CompactionJobStatus status5 = jobCreated(job5, creationTime5,
                 ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started5).finishedStatus(finished5)
+                        .startedStatus(started5).finishedStatus(finished5).statusUpdate(committed5)
                         .build());
         CompactionJobStatus status6 = jobCreated(job6, creationTime6,
                 ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started6).finishedStatus(finished6).statusUpdate(committed6)
+                        .startedStatus(started6).statusUpdate(committed6)
                         .build());
-        CompactionJobStatus status7 = jobCreated(job7, creationTime7,
-                ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started7).statusUpdate(committed7)
-                        .build());
-        return Arrays.asList(status7, status6, status5, status4, status3, status2, status1);
+        return Arrays.asList(status6, status5, status4, status3, status2, status1);
     }
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
@@ -130,7 +124,8 @@ public abstract class CompactionJobStatusReporterTestBase {
                         Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
                         List.of("Compaction has already been committed", "Failed database update")),
                 finishedCompactionRun(task(1), summary(
-                        Instant.parse("2022-10-10T10:01:00.001Z"), Duration.ofSeconds(20), 200L, 100L)));
+                        Instant.parse("2022-10-10T10:01:00.001Z"), Duration.ofSeconds(20), 200L, 100L),
+                        Instant.parse("2022-10-10T10:01:30.001Z")));
 
         CompactionJobStatus failedThenInProgress = jobCreated(dataHelper.singleFileCompaction(),
                 Instant.parse("2022-10-11T10:00:00.001Z"),
@@ -143,9 +138,11 @@ public abstract class CompactionJobStatusReporterTestBase {
                 Instant.parse("2022-10-12T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
                 finishedCompactionRun(task(2), summary(
-                        Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300L, 150L)),
+                        Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300L, 150L),
+                        Instant.parse("2022-10-12T10:02:00.001Z")),
                 finishedCompactionRun(task(1), summary(
-                        Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(30), 300L, 150L)));
+                        Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(30), 300L, 150L),
+                        Instant.parse("2022-10-12T10:01:45.001Z")));
 
         return List.of(twoFinishedRunsOneInProgress, failedThenInProgress, succeededThenFailed);
     }
@@ -159,15 +156,19 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJob job1 = dataHelper.singleFileCompaction(partition("C"));
         Instant creationTime1 = Instant.parse("2022-10-13T12:00:00.000Z");
         Instant startedTime1 = Instant.parse("2022-10-13T12:00:10.000Z");
+        Instant committedTime1 = Instant.parse("2022-10-13T12:00:30.000Z");
         CompactionJob job2 = dataHelper.singleFileCompaction(partition("C"));
         Instant creationTime2 = Instant.parse("2022-10-13T12:01:00.000Z");
         Instant startedTime2 = Instant.parse("2022-10-13T12:01:10.000Z");
+        Instant committedTime2 = Instant.parse("2022-10-13T14:01:30.000Z");
 
         return Arrays.asList(
                 jobCreated(job2, creationTime2, finishedCompactionRun("task-id",
-                        summary(startedTime2, Duration.ofHours(2), 1000600, 500300))),
+                        summary(startedTime2, Duration.ofHours(2), 1000600, 500300),
+                        committedTime2)),
                 jobCreated(job1, creationTime1, finishedCompactionRun("task-id",
-                        summary(startedTime1, Duration.ofMillis(123), 600, 300))));
+                        summary(startedTime1, Duration.ofMillis(123), 600, 300),
+                        committedTime1)));
     }
 
     protected List<CompactionJobStatus> jobWithMultipleInputFiles() {
