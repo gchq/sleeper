@@ -109,6 +109,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Total jobs in defined range: %d%n",
                 jobStatusList.size());
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
+        printDelayStatistics(jobStatusList, out);
     }
 
     private void printDetailedSummary(List<CompactionJobStatus> jobStatusList) {
@@ -165,9 +166,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Total jobs finished successfully: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunSuccessful).count());
         out.printf("Total jobs with any failed run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunFailed).count());
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
-        if (jobStatusList.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
+        printDelayStatistics(jobStatusList, out);
+    }
+
+    private void printDelayStatistics(List<CompactionJobStatus> jobs, PrintStream out) {
+        if (jobs.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
             out.println("Statistics for delays between all finish and commit times:");
-            out.println("  " + delayStatistics(jobStatusList));
+            out.println("  " + delayStatistics(jobs));
         }
     }
 
