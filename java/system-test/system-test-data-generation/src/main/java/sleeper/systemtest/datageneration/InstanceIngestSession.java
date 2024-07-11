@@ -26,8 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.AssumeSleeperRoleHadoop;
-import sleeper.clients.util.AssumeSleeperRoleNew;
 import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -45,7 +45,7 @@ public class InstanceIngestSession implements AutoCloseable {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
 
-    private InstanceIngestSession(AssumeSleeperRoleNew assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties,
+    private InstanceIngestSession(AssumeSleeperRole assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties,
             String tableName) {
         AssumeSleeperRoleV1 roleV1 = assumeRole.forAwsV1(stsClientV1);
         AssumeSleeperRoleV2 roleV2 = assumeRole.forAwsV2(stsClientV2);
@@ -61,12 +61,12 @@ public class InstanceIngestSession implements AutoCloseable {
     }
 
     public static InstanceIngestSession direct(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName) {
-        AssumeSleeperRoleNew assumeRole = AssumeSleeperRoleNew.directIngest(instanceProperties);
+        AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(instanceProperties);
         return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 
     public static InstanceIngestSession byQueue(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName) {
-        AssumeSleeperRoleNew assumeRole = AssumeSleeperRoleNew.ingestByQueue(instanceProperties);
+        AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(instanceProperties);
         return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 

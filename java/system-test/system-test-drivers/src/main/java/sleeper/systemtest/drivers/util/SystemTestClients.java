@@ -46,8 +46,8 @@ import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.AssumeSleeperRoleHadoop;
-import sleeper.clients.util.AssumeSleeperRoleNew;
 import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -99,7 +99,7 @@ public class SystemTestClients {
         configureHadoop = conf -> conf;
     }
 
-    public SystemTestClients(SystemTestClients clients, AssumeSleeperRoleNew assumeRole) {
+    public SystemTestClients(SystemTestClients clients, AssumeSleeperRole assumeRole) {
         AssumeSleeperRoleV1 v1 = assumeRole.forAwsV1(clients.sts);
         AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(clients.stsV2);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();

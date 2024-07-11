@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.AssumeSleeperRoleNew;
+import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
@@ -150,7 +150,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
-            AmazonS3 instanceS3Client = AssumeSleeperRoleNew.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             try {
                 return combinedInstance(configBucket, tableName, instanceS3Client);
             } finally {
@@ -159,7 +159,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
-            AmazonS3 instanceS3Client = AssumeSleeperRoleNew.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
