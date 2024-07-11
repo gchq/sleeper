@@ -7,6 +7,8 @@ Total jobs with a run in progress: 1
 Total jobs finished successfully: 2
 Total jobs with any failed run: 1
 Average compaction rate: 10.00 read/s, 5.00 write/s
+Statistics for delays between all finish and commit times:
+  avg: 1m 0s, min: 1m 0s, max: 1m 0s, std dev: 0s
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE       | CREATE_TIME              | JOB_ID                               | INPUT_FILES | PARTITION_ID                         | TASK_ID                              | START_TIME               | FINISH_TIME              | COMMIT_TIME              | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
 | FINISHED    | 2022-09-22T13:33:12.001Z | job66666-6666-6666-6666-666666666666 |           1 | partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF | task1111-1111-1111-1111-111111111111 | 2022-09-22T13:34:12.001Z |                          | 2022-09-22T13:36:12.001Z |          |              |                 |               |                |
