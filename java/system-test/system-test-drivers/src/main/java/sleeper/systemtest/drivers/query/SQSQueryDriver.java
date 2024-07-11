@@ -19,7 +19,6 @@ package sleeper.systemtest.drivers.query;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,12 +109,11 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     public List<Record> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
-        Configuration conf = clients.createHadoopConf();
         return s3Client.listObjects(
                 instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                 "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, conf))
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, clients.createHadoopConf()))
                 .collect(Collectors.toUnmodifiableList());
     }
 }

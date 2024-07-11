@@ -29,6 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.io.IOException;
@@ -39,20 +40,21 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
-    private final Configuration configuration;
+    private final SystemTestClients clients;
 
-    public AwsIngestSourceFilesDriver(Configuration configuration) {
-        this.configuration = configuration;
+    public AwsIngestSourceFilesDriver(SystemTestClients clients) {
+        this.clients = clients;
     }
 
     public void writeFile(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             String path, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
+        Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new Path(path), tableProperties, configuration)) {
+                new Path(path), tableProperties, conf)) {
             for (Record record : (Iterable<Record>) () -> records) {
                 sketches.update(schema, record);
                 writer.write(record);
@@ -63,7 +65,7 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
         if (writeSketches) {
             LOGGER.info("Writing sketches");
             try {
-                new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPathForDataFile(path), sketches, configuration);
+                new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPathForDataFile(path), sketches, conf);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

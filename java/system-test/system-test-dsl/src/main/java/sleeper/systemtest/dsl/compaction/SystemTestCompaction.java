@@ -54,8 +54,9 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
-        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobs(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)));
+        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobsToFinishThenCommit(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
         return this;
     }
 

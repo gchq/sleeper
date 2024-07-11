@@ -115,7 +115,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
-        return new AwsIngestSourceFilesDriver(clients.createHadoopConf());
+        return new AwsIngestSourceFilesDriver(clients);
     }
 
     @Override
