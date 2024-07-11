@@ -17,6 +17,7 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
+import sleeper.clients.status.report.job.DelayStatistics;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
@@ -32,6 +33,7 @@ import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -163,11 +165,30 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Total jobs finished successfully: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunSuccessful).count());
         out.printf("Total jobs with any failed run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunFailed).count());
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
+        if (jobStatusList.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
+            out.println("Statistics for delays between all finish and commit times:");
+            out.println("  " + delayStatistics(jobStatusList));
+        }
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
                 .flatMap(job -> job.getJobRuns().stream()));
+    }
+
+    private static DelayStatistics delayStatistics(List<CompactionJobStatus> jobs) {
+        DelayStatistics.Builder builder = DelayStatistics.builder();
+        jobs.stream()
+                .flatMap(job -> job.getJobRuns().stream())
+                .filter(ProcessRun::isFinishedSuccessfully)
+                .forEach(jobRun -> {
+                    jobRun.getLastStatusOfType(CompactionJobCommittedStatus.class).ifPresent(commitStatus -> {
+                        Instant finishTime = jobRun.getFinishedStatus().getSummary().getFinishTime();
+                        Instant commitTime = commitStatus.getCommitTime();
+                        builder.add(Duration.between(finishTime, commitTime));
+                    });
+                });
+        return builder.build();
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {

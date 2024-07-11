@@ -39,7 +39,7 @@ public class DelayStatistics {
     }
 
     public String toString() {
-        return String.format("Average delay: %s (min: %s, max: %s, std dev: %.2f)",
+        return String.format("avg: %s, min: %s, max: %s, std dev: %.2f",
                 LoggedDuration.withShortOutput(avgDelay),
                 LoggedDuration.withShortOutput(minDelay),
                 LoggedDuration.withShortOutput(maxDelay),
