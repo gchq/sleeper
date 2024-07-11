@@ -19,7 +19,7 @@ read_short_instance_names_from_instance_ids() {
     local SHORT_ID=$1
     local INSTANCE_IDS_FILE=$2
     local DELIM=""
-    local SHORT_ID_LEN=$(("${#SHORT_ID}"))
+    local SHORT_ID_LEN=${#SHORT_ID}
     while read -r id; do
       local SHORT_INSTANCE_NAME=$(echo "$id" | cut -b$(($SHORT_ID_LEN + 1))-)
       printf "%s" "$DELIM$SHORT_INSTANCE_NAME"
