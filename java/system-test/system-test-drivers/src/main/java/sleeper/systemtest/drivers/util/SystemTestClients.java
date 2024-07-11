@@ -56,6 +56,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
@@ -75,7 +76,7 @@ public class SystemTestClients {
     private final AmazonECR ecr;
     private final CloudWatchClient cloudWatch;
     private final AmazonCloudWatchEvents cloudWatchEvents;
-    private final Map<String, String> authEnvVars;
+    private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
 
     public SystemTestClients() {
@@ -95,7 +96,7 @@ public class SystemTestClients {
         ecr = AmazonECRClientBuilder.defaultClient();
         cloudWatch = CloudWatchClient.create();
         cloudWatchEvents = AmazonCloudWatchEventsClientBuilder.defaultClient();
-        authEnvVars = Map.of();
+        getAuthEnvVars = Map::of;
         configureHadoop = conf -> conf;
     }
 
@@ -119,7 +120,7 @@ public class SystemTestClients {
         ecr = v1.buildClient(AmazonECRClientBuilder.standard());
         cloudWatch = v2.buildClient(CloudWatchClient.builder());
         cloudWatchEvents = v1.buildClient(AmazonCloudWatchEventsClientBuilder.standard());
-        authEnvVars = v1.authEnvVars();
+        getAuthEnvVars = v1::authEnvVars;
         configureHadoop = hadoop::setS3ACredentials;
     }
 
@@ -184,7 +185,7 @@ public class SystemTestClients {
     }
 
     public Map<String, String> getAuthEnvVars() {
-        return authEnvVars;
+        return getAuthEnvVars.get();
     }
 
     public Configuration createHadoopConf() {
