@@ -47,7 +47,7 @@ jobs:
         working-directory: ./java
       - name: Test
         id: test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -DskipRust=${{ inputs.skipRust }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
         working-directory: ./java
       - name: Generate site
         id: site
