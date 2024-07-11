@@ -52,9 +52,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: dtolnay/rust-toolchain@1.79.0
-      - name: Install cargo cross
-        run: cargo install cross
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
