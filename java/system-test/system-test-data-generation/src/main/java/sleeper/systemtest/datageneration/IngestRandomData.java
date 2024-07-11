@@ -22,8 +22,9 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.AssumeSleeperRole;
+import sleeper.clients.util.AssumeSleeperRoleNew;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
@@ -52,16 +53,18 @@ public class IngestRandomData {
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
     private final String tableName;
-    private final AWSSecurityTokenService stsClient;
+    private final AWSSecurityTokenService stsClientV1;
+    private final StsClient stsClientV2;
     private final Configuration hadoopConf;
 
     private IngestRandomData(
             InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName,
-            AWSSecurityTokenService stsClient, Configuration hadoopConf) {
+            AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.tableName = tableName;
-        this.stsClient = stsClient;
+        this.stsClientV1 = stsClientV1;
+        this.stsClientV2 = stsClientV2;
         this.hadoopConf = hadoopConf;
     }
 
@@ -77,9 +80,9 @@ public class IngestRandomData {
     }
 
     public static void main(String[] args) throws IOException {
-        AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        try {
-            CommandLineFactory factory = new CommandLineFactory(stsClient);
+        AWSSecurityTokenService stsClientV1 = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        try (StsClient stsClientV2 = StsClient.create()) {
+            CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2);
             IngestRandomData ingestRandomData;
             if (args.length == 4) {
                 ingestRandomData = factory.standalone(args[0], args[1], args[2], args[3]);
@@ -93,7 +96,7 @@ public class IngestRandomData {
 
             ingestRandomData.run();
         } finally {
-            stsClient.shutdown();
+            stsClientV1.shutdown();
         }
     }
 
@@ -101,13 +104,13 @@ public class IngestRandomData {
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
             return () -> {
-                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClient, instanceProperties, tableName)) {
+                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, tableName)) {
                     WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
                 }
             };
         }
         return () -> {
-            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClient, instanceProperties, tableName)) {
+            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, tableName)) {
                 String jobId = UUID.randomUUID().toString();
                 String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, jobId);
 
@@ -129,10 +132,12 @@ public class IngestRandomData {
     }
 
     private static class CommandLineFactory {
-        private final AWSSecurityTokenService stsClient;
+        private final AWSSecurityTokenService stsClientV1;
+        private final StsClient stsClientV2;
 
-        CommandLineFactory(AWSSecurityTokenService stsClient) {
-            this.stsClient = stsClient;
+        CommandLineFactory(AWSSecurityTokenService stsClientV1, StsClient stsClientV2) {
+            this.stsClientV1 = stsClientV1;
+            this.stsClientV2 = stsClientV2;
         }
 
         IngestRandomData noLoadConfigRole(String configBucket, String tableName) {
@@ -145,7 +150,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
-            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            AmazonS3 instanceS3Client = AssumeSleeperRoleNew.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             try {
                 return combinedInstance(configBucket, tableName, instanceS3Client);
             } finally {
@@ -154,7 +159,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
-            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(stsClient, loadConfigRoleArn).v1Client(AmazonS3ClientBuilder.standard());
+            AmazonS3 instanceS3Client = AssumeSleeperRoleNew.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
@@ -174,7 +179,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName) {
-            return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient,
+            return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClientV1, stsClientV2,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         }
     }

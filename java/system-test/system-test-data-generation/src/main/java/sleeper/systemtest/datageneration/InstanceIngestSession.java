@@ -24,8 +24,12 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.AssumeSleeperRole;
+import sleeper.clients.util.AssumeSleeperRoleHadoop;
+import sleeper.clients.util.AssumeSleeperRoleNew;
+import sleeper.clients.util.AssumeSleeperRoleV1;
+import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -41,25 +45,29 @@ public class InstanceIngestSession implements AutoCloseable {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
 
-    private InstanceIngestSession(AssumeSleeperRole role, InstanceProperties instanceProperties, String tableName) {
-        this.s3 = role.v1Client(AmazonS3ClientBuilder.standard());
-        this.dynamo = role.v1Client(AmazonDynamoDBClientBuilder.standard());
-        this.sqs = role.v1Client(AmazonSQSClientBuilder.standard());
-        this.s3Async = role.v2Client(S3AsyncClient.builder());
-        this.hadoopConfiguration = role.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    private InstanceIngestSession(AssumeSleeperRoleNew assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties,
+            String tableName) {
+        AssumeSleeperRoleV1 roleV1 = assumeRole.forAwsV1(stsClientV1);
+        AssumeSleeperRoleV2 roleV2 = assumeRole.forAwsV2(stsClientV2);
+        AssumeSleeperRoleHadoop roleHadoop = assumeRole.forHadoop();
+        this.s3 = roleV1.buildClient(AmazonS3ClientBuilder.standard());
+        this.dynamo = roleV1.buildClient(AmazonDynamoDBClientBuilder.standard());
+        this.sqs = roleV1.buildClient(AmazonSQSClientBuilder.standard());
+        this.s3Async = roleV2.buildClient(S3AsyncClient.builder());
+        this.hadoopConfiguration = roleHadoop.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         this.instanceProperties = instanceProperties;
         this.tableProperties = new TablePropertiesProvider(instanceProperties, s3, dynamo)
                 .getByName(tableName);
     }
 
-    public static InstanceIngestSession direct(AWSSecurityTokenService stsClient, InstanceProperties instanceProperties, String tableName) {
-        AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(stsClient, instanceProperties);
-        return new InstanceIngestSession(assumeRole, instanceProperties, tableName);
+    public static InstanceIngestSession direct(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName) {
+        AssumeSleeperRoleNew assumeRole = AssumeSleeperRoleNew.directIngest(instanceProperties);
+        return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 
-    public static InstanceIngestSession byQueue(AWSSecurityTokenService stsClient, InstanceProperties instanceProperties, String tableName) {
-        AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(stsClient, instanceProperties);
-        return new InstanceIngestSession(assumeRole, instanceProperties, tableName);
+    public static InstanceIngestSession byQueue(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName) {
+        AssumeSleeperRoleNew assumeRole = AssumeSleeperRoleNew.ingestByQueue(instanceProperties);
+        return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 
     public S3AsyncClient s3Async() {
