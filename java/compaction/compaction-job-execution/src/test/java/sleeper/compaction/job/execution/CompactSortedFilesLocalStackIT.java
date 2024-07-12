@@ -31,6 +31,7 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -113,10 +114,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
                 .getStateStore(tableProperties);
     }
 
-    private CompactSortedFiles createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
+    private DefaultSelector createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
         tableProperties.setSchema(schema);
-        return new CompactSortedFiles(
-                new FixedTablePropertiesProvider(tableProperties),
+        return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars(),
                 configuration);
@@ -140,8 +140,9 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, stateStore);
-        RecordsProcessed summary = compactSortedFiles.compact(compactionJob);
+        DefaultSelector selector = createCompactSortedFiles(schema, stateStore);
+        CompactionRunner runner = selector.chooseCompactor(compactionJob);
+        RecordsProcessed summary = runner.compact(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results

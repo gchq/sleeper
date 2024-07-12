@@ -10,6 +10,7 @@
         "vscjava.vscode-java-pack",
         "shengchen.vscode-checkstyle",
         "eamodio.gitlens",
+        "1yib.rust-bundle",
         "mhutchie.git-graph"
       ]
     }

@@ -85,6 +85,8 @@ You will need the following software:
 * [Java 11/17](https://openjdk.java.net/install/)
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
+* [Rust](https://rustup.rs/): Tested with Rust v1.77
+* [Cross-rs](https://github.com/cross-rs/cross)
 
 ## Building
 
@@ -122,6 +124,15 @@ mvn clean install -Pquick
 
 Removing the '-Pquick' option will cause the unit and integration tests to run.
 
+### Disabling Rust component
+
+You can disable the building of the Rust modules with:
+
+```bash
+cd java
+mvn clean install -Pquick -DskipRust=true
+```
+
 ## Using the codebase
 
 The codebase is structured around the components explained in the [design document](12-design.md). The elements of the
@@ -141,19 +152,19 @@ For VS Code there's [a separate setup guide](/.vscode/README.md).
 
 For IntelliJ, these settings are available to import:
 
-- Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
-- Inspection profile at [code-style/intellij-inspection-profile.xml](/code-style/intellij-inspection-profile.xml)
-- Copyright profile for license header
+* Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
+* Inspection profile at [code-style/intellij-inspection-profile.xml](/code-style/intellij-inspection-profile.xml)
+* Copyright profile for license header
   at [code-style/intellij-copyright-profile.xml](/code-style/intellij-copyright-profile.xml)
-- Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
+* Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
 
 For Eclipse, these settings are available to import:
 
-- Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
-- Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
-- License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
-- Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
-- Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
+* Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
+* Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
+* License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+* Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
+* Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
 
 ### Linting
 
@@ -173,7 +184,7 @@ We try to ensure that all classes have Javadoc. Most methods should also have Ja
 getters and setters can be skipped unless there's something important to know.
 
 See Oracle's standards for Javadoc:
-https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html
+<https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html>
 
 Note that the first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This
 should not contain any links or formatting, to read normally as an item in a list.
@@ -244,8 +255,8 @@ When deploying multiple instances (or running multiple system tests), many log g
 it difficult to find the logs you need to view. This script will delete any log groups that meet all of the following
 criteria:
 
-- Its name does not contain the name of any deployed CloudFormation stack
-- Either it's empty, or it has no retention period and is older than 30 days
+* Its name does not contain the name of any deployed CloudFormation stack
+* Either it's empty, or it has no retention period and is older than 30 days
 
 This can be used to limit the number of log groups in your AWS account, particularly if all your log groups are
 deployed by the CDK or CloudFormation, with the stack name in the log group name.
