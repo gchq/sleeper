@@ -28,9 +28,11 @@ import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownInstance;
 import sleeper.clients.teardown.WaitForStackToDelete;
+import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -53,6 +55,7 @@ public class TearDownMavenSystemTest {
                 .collect(toUnmodifiableList());
         List<String> instanceIdsAndStandalone = Stream.concat(instanceIds.stream(), standaloneInstanceIds.stream())
                 .collect(toUnmodifiableList());
+        Instant startTime = Instant.now();
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
@@ -109,6 +112,8 @@ public class TearDownMavenSystemTest {
         } finally {
             ecr.shutdown();
         }
+
+        LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
