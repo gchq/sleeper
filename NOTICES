@@ -9,7 +9,7 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.26.18):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.26.19):
 
 - Apache License, Version 2.0
 
@@ -21,7 +21,7 @@ AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.3):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.6):
+AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.12.0):
 
 - Apache License, Version 2.0
 
@@ -175,7 +175,7 @@ Mockito (org.mockito:mockito-core:5.12.0):
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:24.2.0):
+ApprovalTests.Java (com.approvaltests:approvaltests:24.3.0):
 
 - Apache License, Version 2.0
 
@@ -203,7 +203,7 @@ Testcontainers (org.testcontainers:localstack:1.19.8, org.testcontainers:testcon
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.148.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.148.1):
 
 - Apache License, Version 2.0
 
@@ -342,7 +342,7 @@ object_store (https://github.com/apache/arrow-rs/tree/master/object_store)
 - Apache License, Version 2.0
 
 aws-config (https://github.com/awslabs/smithy-rs)
- 
+
 - Apache License, Version 2.0
 
 aws-credentials (https://github.com/awslabs/smithy-rs)
