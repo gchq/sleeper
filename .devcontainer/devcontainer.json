@@ -25,6 +25,11 @@
       "source": "${localEnv:HOME}/.m2",
       "target": "/root/.m2",
       "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}",
+      "target": "${localWorkspaceFolder}",
+      "type": "bind"
     }
   ],
   "containerEnv": {
