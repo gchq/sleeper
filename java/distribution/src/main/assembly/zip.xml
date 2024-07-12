@@ -14,8 +14,8 @@
   ~ limitations under the License.
   -->
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
     <id>bin</id>
     <formats>
         <format>${distribution.format}</format>
@@ -125,10 +125,10 @@
         </file>
         <file>
             <source>
-                ${maven.multiModuleProjectDirectory}/../cpp/test_file.txt
+                ${maven.multiModuleProjectDirectory}/../cpp/CMakeLists.txt
             </source>
             <outputDirectory>scripts/docker/compaction-gpu/</outputDirectory>
-            <destName>test_file.txt</destName>
+            <destName>CMakeLists.txt</destName>
         </file>
         <file>
             <source>

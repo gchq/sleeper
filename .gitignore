@@ -24,4 +24,6 @@ __pycache__
 python/build/
 python/src/sleeper.egg-info/
 python/env/
-
+target/coverage/*
+cmake-build-*/
+conan-cache/
