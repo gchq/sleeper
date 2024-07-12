@@ -99,8 +99,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     public AssumeAdminRoleDriver assumeAdminRole() {
-        return properties -> new AwsSystemTestDrivers(new SystemTestClients(
-                AssumeSleeperRole.instanceAdmin(clients.getSts(), properties)));
+        return properties -> new AwsSystemTestDrivers(new SystemTestClients(clients,
+                AssumeSleeperRole.instanceAdmin(properties)));
     }
 
     @Override

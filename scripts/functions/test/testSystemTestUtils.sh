@@ -17,12 +17,12 @@ unset CDPATH
 source "$(dirname "${BASH_SOURCE[0]}")/../systemTestUtils.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
-echo "instance-1" > testInstanceIds.txt
-echo "instance-2" >> testInstanceIds.txt
+echo "test-main" > testInstanceIds.txt
+echo "test-compact" >> testInstanceIds.txt
 
-SHORT_ID="in"
+SHORT_ID="test"
 SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" testInstanceIds.txt)
-expect_string_for_actual "stance-1,stance-2" "$SHORT_INSTANCE_NAMES"
+expect_string_for_actual "main,compact" "$SHORT_INSTANCE_NAMES"
 
 rm testInstanceIds.txt
 
