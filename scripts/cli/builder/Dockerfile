@@ -29,8 +29,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
+ENV RUSTUP_HOME=/rust/.rustup
+ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
-RUN $HOME/.cargo/bin/cargo install cross
+RUN $CARGO_HOME/bin/cargo install cross
 
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
