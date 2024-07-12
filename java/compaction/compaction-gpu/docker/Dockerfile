@@ -3,8 +3,7 @@ FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11 AS base
 
 USER root
 # Install tools
-RUN apt-get update
-RUN apt-get install -y htop dstat less nano wget sudo
+RUN apt-get update && apt-get install -y htop dstat less nano sudo software-properties-common wget unzip
 
 # Use shell form for redirection and enable sudo
 ARG USERNAME=rapids
@@ -18,21 +17,20 @@ WORKDIR /home/rapids
 FROM base AS build
 USER root
 # Install tools
-RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 
 # Install Java
-RUN wget -O- https://apt.corretto.aws/corretto.key | apt-key add -
+RUN wget -O- "https://apt.corretto.aws/corretto.key" | apt-key add -
 RUN echo 'deb https://apt.corretto.aws stable main' | tee /etc/apt/sources.list.d/corretto.list
 
 # Install Clang
-RUN wget https://apt.llvm.org/llvm.sh && chmod u+x llvm.sh && ./llvm.sh 18 all
+RUN wget -O "llvm.sh" "https://apt.llvm.org/llvm.sh" && chmod u+x llvm.sh && ./llvm.sh 18 all
 
 # The above line will run an apt update so now we install Java
-RUN apt-get install -y java-17-amazon-corretto-jdk make cmake gcc-13 g++-13 maven ccache cppcheck doxygen
+RUN apt-get install -y java-17-amazon-corretto-jdk make cmake gcc-13 g++-13 maven ccache cppcheck doxygen iwyu
 
-# Install AWS CLI
-RUN pip3 install awscli
+# Install aws
+RUN wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && unzip awscliv2.zip && ./aws/install
 
 # Drop to normal user
 USER $USERNAME 
