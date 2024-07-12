@@ -27,6 +27,11 @@
       "type": "bind"
     },
     {
+      "source": "${localEnv:HOME}/.ssh",
+      "target": "/root/.ssh",
+      "type": "bind"
+    },
+    {
       "source": "${localWorkspaceFolder}",
       "target": "${localWorkspaceFolder}",
       "type": "bind"
