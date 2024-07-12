@@ -22,14 +22,10 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/build/buildForTest.sh"
-
-END_MAVEN_TIME=$(record_time)
-
 "$THIS_DIR/dependencies/build.sh"
 
 END_DEPENDENCIES_TIME=$(record_time)
-echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$END_MAVEN_TIME" "$END_DEPENDENCIES_TIME")"
+echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPENDENCIES_TIME")"
 
 "$THIS_DIR/builder/build.sh"
 
@@ -50,9 +46,8 @@ echo "--------------------------------------------------------------------------
 echo "Finished build"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_TIME")"
-echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$END_MAVEN_TIME" "$END_DEPENDENCIES_TIME")"
+echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPENDENCIES_TIME")"
 echo "Finished builder Docker build at $(recorded_time_str "$END_BUILDER_TIME"), took $(elapsed_time_str "$END_DEPENDENCIES_TIME" "$END_BUILDER_TIME")"
 echo "Finished environment Maven build at $(recorded_time_str "$END_ENVIRONMENT_MAVEN_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_ENVIRONMENT_MAVEN_TIME")"
-echo "Finished environment Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_BUILDER_TIME" "$END_TIME")"
+echo "Finished environment Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_ENVIRONMENT_MAVEN_TIME" "$END_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$END_TIME")"
