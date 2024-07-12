@@ -392,6 +392,10 @@ gRPC (<https://grpc.io/>)
 
 - Apache 2 License
 
+cmake_template (<https://github.com/cpp-best-practices/cmake_template>)
+
+- The unlicense
+
 The build pipeline uses the following GitHub Actions from the marketplace.
 
 ScaCap/action-surefire-report (<https://github.com/marketplace/actions/surefire-report>)
