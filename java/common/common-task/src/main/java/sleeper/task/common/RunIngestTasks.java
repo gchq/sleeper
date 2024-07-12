@@ -37,6 +37,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
@@ -108,7 +109,8 @@ public class RunIngestTasks {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(properties.getList(SUBNETS));
+                .withSubnets(properties.getList(SUBNETS))
+                .withSecurityGroups(properties.getList(ECS_SECURITY_GROUPS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);

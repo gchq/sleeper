@@ -20,8 +20,10 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - uses: dtolnay/rust-toolchain@1.79.0
+        if: ${{ ! inputs.skipRust }}
       - name: Install cargo cross
         run: cargo install cross
+        if: ${{ ! inputs.skipRust }}
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -45,7 +47,7 @@ jobs:
         working-directory: ./java
       - name: Test
         id: test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -DskipRust=${{ inputs.skipRust }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
         working-directory: ./java
       - name: Generate site
         id: site

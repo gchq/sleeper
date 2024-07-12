@@ -62,8 +62,11 @@ run_in_environment_docker() {
 }
 
 run_in_builder_docker() {
+  # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
+  # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
+    -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
     sleeper-builder:current "$@"
 }
@@ -77,7 +80,7 @@ parse_version(){
     CURRENT_VERSION=$(get_version | tr -d '\r\n')
     case $CURRENT_VERSION in
     *-SNAPSHOT)
-      VERSION="latest"
+      VERSION="develop"
       ;;
     *)
       # We could get the latest version from GitHub by querying this URL:

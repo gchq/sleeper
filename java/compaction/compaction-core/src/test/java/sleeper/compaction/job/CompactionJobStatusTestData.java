@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 
@@ -57,10 +58,26 @@ public class CompactionJobStatusTestData {
                 compactionFinishedStatus(summary));
     }
 
+    public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary, Instant commitTime) {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(compactionStartedStatus(summary.getStartTime()))
+                .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                .statusUpdate(compactionCommittedStatus(commitTime))
+                .build();
+    }
+
     public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime, failureReasons));
+    }
+
+    public static ProcessRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(compactionStartedStatus(startTime))
+                .finishedStatus(compactionFinishedStatusUncommitted(summary(startTime, finishTime, 10L, 10L)))
+                .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
+                .build();
     }
 
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {

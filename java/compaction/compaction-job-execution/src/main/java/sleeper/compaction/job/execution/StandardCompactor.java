@@ -28,7 +28,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -44,7 +43,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.io.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -68,13 +66,6 @@ public class StandardCompactor implements CompactionRunner {
     private final Configuration configuration;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StandardCompactor.class);
-
-    public StandardCompactor(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory) {
-        this(tablePropertiesProvider, stateStoreProvider, objectFactory,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-    }
 
     public StandardCompactor(
             TablePropertiesProvider tablePropertiesProvider,

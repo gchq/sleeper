@@ -17,16 +17,12 @@ unset CDPATH
 source "$(dirname "${BASH_SOURCE[0]}")/../systemTestUtils.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
-echo "instance-1" > testInstanceIds.txt
-echo "instance-2" >> testInstanceIds.txt
-EXPECTED=("instance-1" "instance-2")
+echo "test-main" > testInstanceIds.txt
+echo "test-compact" >> testInstanceIds.txt
 
-PREDEFINED_ARRAY=()
-read_instance_ids_to_array testInstanceIds.txt PREDEFINED_ARRAY
-array_equals PREDEFINED_ARRAY EXPECTED || fail_test "PREDEFINED_ARRAY should equal EXPECTED"
-
-read_instance_ids_to_array testInstanceIds.txt NEW_ARRAY
-array_equals NEW_ARRAY EXPECTED || fail_test "NEW_ARRAY should equal EXPECTED"
+SHORT_ID="test"
+SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" testInstanceIds.txt)
+expect_string_for_actual "main,compact" "$SHORT_INSTANCE_NAMES"
 
 rm testInstanceIds.txt
 
