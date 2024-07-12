@@ -79,7 +79,7 @@ jobs:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
     with:
-      mavenCmd: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
+      mavenCmd: ./scripts/cli/environment/buildMaven.sh package -Pquick -DskipRust --batch-mode -Dmaven.repo.local=../.m2/repository
       pushImages: ${{ inputs.pushImages }}
       context: ./scripts/cli/environment
       pushTag: ${{ needs.setup.outputs.envTag }}

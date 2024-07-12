@@ -2,8 +2,8 @@
   {
     "jobId": "$(jobId4)",
     "createdStatus": {
-      "updateTime": "2022-09-21T13:33:12.001Z",
-      "partitionId": "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
+      "updateTime": "2022-09-20T13:33:12.001Z",
+      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
       "inputFilesCount": 1
     },
     "jobRuns": [
@@ -12,12 +12,12 @@
         "updates": [
           {
             "type": "STARTED",
-            "updateTime": "2022-09-21T13:34:12.123Z",
-            "startTime": "2022-09-21T13:34:12.001Z"
+            "updateTime": "2022-09-20T13:34:12.123Z",
+            "startTime": "2022-09-20T13:34:12.001Z"
           },
           {
             "type": "FINISHED_WHEN_COMMITTED",
-            "updateTime": "2022-09-21T13:35:12.123Z",
+            "updateTime": "2022-09-20T13:35:12.123Z",
             "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
@@ -25,8 +25,8 @@
                 "recordsWritten": 300
               },
               "runTime": {
-                "startTime": "2022-09-21T13:34:12.001Z",
-                "finishTime": "2022-09-21T13:35:12.001Z",
+                "startTime": "2022-09-20T13:34:12.001Z",
+                "finishTime": "2022-09-20T13:35:12.001Z",
                 "durationInSeconds": 60.0,
                 "timeInProcessInSeconds": 60.0
               },
@@ -41,8 +41,8 @@
   {
     "jobId": "$(jobId3)",
     "createdStatus": {
-      "updateTime": "2022-09-20T13:33:12.001Z",
-      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+      "updateTime": "2022-09-19T13:33:12.001Z",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
       "inputFilesCount": 1
     },
     "jobRuns": [
@@ -51,20 +51,20 @@
         "updates": [
           {
             "type": "STARTED",
-            "startTime": "2022-09-20T13:34:12.001Z",
-            "updateTime": "2022-09-20T13:34:12.123Z"
+            "startTime": "2022-09-19T13:34:12.001Z",
+            "updateTime": "2022-09-19T13:34:12.123Z"
           },
           {
             "type": "FAILED",
-            "updateTime": "2022-09-20T13:35:12.123Z",
+            "updateTime": "2022-09-19T13:35:12.123Z",
             "failureReasons": [
               "Something went wrong",
               "More details"
             ],
             "runTime": {
               "durationInSeconds": 60.0,
-              "finishTime": "2022-09-20T13:35:12.001Z",
-              "startTime": "2022-09-20T13:34:12.001Z",
+              "finishTime": "2022-09-19T13:35:12.001Z",
+              "startTime": "2022-09-19T13:34:12.001Z",
               "timeInProcessInSeconds": 60.0
             }
           }

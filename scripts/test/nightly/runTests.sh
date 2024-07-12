@@ -82,9 +82,8 @@ runMavenSystemTests() {
     zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
     popd
     rm -rf "$TEST_OUTPUT_DIR/site"
-    INSTANCE_IDS=()
-    read_instance_ids_to_array "$TEST_OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
-    ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
+    ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
 runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"

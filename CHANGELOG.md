@@ -4,6 +4,61 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.24.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.24.0*
+
+This includes improvements to the transaction log state store implementation, and experimental support for accelerated
+compactions with Rust.
+
+State store:
+- Added a lambda to delete old transactions and snapshots.
+  - This is specific to the `DynamoDBTransactionLogStateStore` type.
+  - This may reduce the load on the transaction log by reducing the amount of data held.
+  - This limits retention of unneeded data.
+- Converted state store implementations to store data in Arrow format.
+  - This should mean faster loading of snapshots for the transaction log state store, and data for the S3 state store.
+
+Ingest:
+- Added an option to add files to the state store asynchronously.
+  - Converted the previous handler for committing compaction jobs asynchronously, to also handle adding files.
+  - All asynchronous state store updates for each Sleeper table are applied in a single lambda instance.
+  - This allows for higher throughput by reducing contention, particularly when using a transaction log.
+  - Can be turned on/off separately for ingest, bulk import and compaction.
+
+Compaction:
+- Added an option to run compactions on Rust instead of Java.
+  - This is currently experimental, but allows for much faster compaction on the same hardware.
+- Added a property for the number of retries on the compaction job queue.
+
+Reporting:
+- Added reporting of state store updates for compaction and ingest.
+  - Reports any delay between finishing and committing to the state store for compactions.
+  - Reports when files are added partway through an ingest job.
+- Added reporting of failures in compaction, bulk import and ingest jobs.
+
+Scripts:
+- Added a script to estimate partition split points for a Sleeper table based on a sample of data.
+
+Deployment:
+- Adjusted SQS queue names for consistency.
+
+Docker CLI:
+- Removed deployment Docker image for deploying a pre-built version of Sleeper (`sleeper deployment`).
+
+Documentation:
+- Added missing Javadoc to the state store module.
+- Added missing Javadoc to the ingest-core module.
+
+Bugfixes:
+- Restored Trino plugin's ability to interact with Sleeper files in S3 via the Hadoop file system.
+- Explicitly grants permission for the bulk import starter to add tags to a non-persistent EMR cluster.
+- Prevented truncating resource names deployed as part of Sleeper.
+- Fixed cases where an ingest or compaction has finished but is still displayed as in progress in the jobs report.
+- Prevented cases where compactions could run to completion but be unable to apply in the state store.
+  - Compaction tasks now wait for input files to be assigned in the state store before they start a compaction job.
+
 ## Version 0.23.0
 
 This contains the following improvements:

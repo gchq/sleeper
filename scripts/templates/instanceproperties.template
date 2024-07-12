@@ -964,6 +964,10 @@ sleeper.default.table.compaction.strategy.sizeratio.ratio=3
 # concurrently per partition. It can be overridden on a per-table basis.
 sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
 
+# Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction
+# support is experimental.
+sleeper.default.table.compaction.method=JAVA
+
 
 ## The following properties relate to queries.
 

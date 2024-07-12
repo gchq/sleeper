@@ -57,7 +57,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link CompactSortedFiles},
+ * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultSelector},
  * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
@@ -97,14 +97,17 @@ public class ECSCompactionTaskRunner {
             String taskId = UUID.randomUUID().toString();
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+
+            DefaultSelector compactionSelector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider, objectFactory,
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+
             WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider.byTableId(tablePropertiesProvider));
-            CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
-                    tablePropertiesProvider, stateStoreProvider, objectFactory);
+
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
                     new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    waitForFiles, compactSortedFiles, committerOrLambda, jobStatusStore, taskStatusStore, taskId);
+                    waitForFiles, committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();
