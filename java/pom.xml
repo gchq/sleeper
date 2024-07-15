@@ -198,7 +198,7 @@
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>10.0.2</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
-        <exec.plugin.version>3.2.0</exec.plugin.version>
+        <exec.plugin.version>3.3.0</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
