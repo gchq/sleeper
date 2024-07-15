@@ -38,4 +38,4 @@ COPY . .
 
 ENV PATH=/sleeper/bin:$PATH
 
-ENTRYPOINT [ "bash", "-i", "-l", "-c" ]
+CMD [ "bash" ]
