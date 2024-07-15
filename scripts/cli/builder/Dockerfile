@@ -54,4 +54,4 @@ RUN echo 'export HOSTNAME=$(cat /tmp/container.id)' >> ~/.bashrc
 
 WORKDIR /sleeper-builder
 
-CMD [ "bash" ]
+ENTRYPOINT [ "bash" ]
