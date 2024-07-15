@@ -9,7 +9,7 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.26.19):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.26.20):
 
 - Apache License, Version 2.0
 
@@ -203,7 +203,7 @@ Testcontainers (org.testcontainers:localstack:1.19.8, org.testcontainers:testcon
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.148.1):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.149.0):
 
 - Apache License, Version 2.0
 
