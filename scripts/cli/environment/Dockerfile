@@ -37,4 +37,5 @@ WORKDIR /sleeper
 COPY . .
 
 ENV PATH=/sleeper/bin:$PATH
-CMD [ "bash" ]
+
+ENTRYPOINT [ "bash", "-i", "-l", "-c" ]
