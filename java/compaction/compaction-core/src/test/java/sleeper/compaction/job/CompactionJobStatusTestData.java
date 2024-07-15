@@ -61,7 +61,7 @@ public class CompactionJobStatusTestData {
     public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary, Instant commitTime) {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                .finishedStatus(compactionFinishedStatus(summary))
                 .statusUpdate(compactionCommittedStatus(commitTime))
                 .build();
     }
@@ -75,7 +75,7 @@ public class CompactionJobStatusTestData {
     public static ProcessRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(startTime))
-                .finishedStatus(compactionFinishedStatusUncommitted(summary(startTime, finishTime, 10L, 10L)))
+                .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
                 .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
                 .build();
     }
@@ -86,11 +86,6 @@ public class CompactionJobStatusTestData {
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
-    }
-
-    public static CompactionJobFinishedStatus compactionFinishedStatusUncommitted(RecordsProcessedSummary summary) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateUpdate(true).build();
     }
 
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {

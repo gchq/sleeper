@@ -35,7 +35,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
@@ -107,7 +107,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatusUncommitted(summary(startedTime, finishedTime, 100, 100))))));
+                                    compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100))))));
         }
 
         @Test
@@ -127,7 +127,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatusUncommitted(summary(startedTime, finishedTime, 100, 100)),
+                                    compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100)),
                                     compactionCommittedStatus(committedTime)))));
         }
 
@@ -171,7 +171,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatusUncommitted(summary)))));
+                                    compactionFinishedStatus(summary)))));
         }
     }
 
@@ -374,10 +374,10 @@ class InMemoryCompactionJobStatusStoreTest {
                                     forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                                     forJobOnTask(job.getId(), taskId1,
                                             compactionStartedStatus(startedTime1),
-                                            compactionFinishedStatusUncommitted(summary1)),
+                                            compactionFinishedStatus(summary1)),
                                     forJobOnTask(job.getId(), taskId2,
                                             compactionStartedStatus(startedTime2),
-                                            compactionFinishedStatusUncommitted(summary2)))));
+                                            compactionFinishedStatus(summary2)))));
         }
 
         @Test
@@ -423,7 +423,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatusUncommitted(summary)))));
+                                    compactionFinishedStatus(summary)))));
         }
 
         @Test
@@ -443,7 +443,7 @@ class InMemoryCompactionJobStatusStoreTest {
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFinishedStatusUncommitted(summary),
+                                    compactionFinishedStatus(summary),
                                     compactionCommittedStatus(committedTime)))));
         }
 
@@ -481,7 +481,7 @@ class InMemoryCompactionJobStatusStoreTest {
                                     .build(),
                             ProcessRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime1))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(summary1))
+                                    .finishedStatus(compactionFinishedStatus(summary1))
                                     .statusUpdate(compactionCommittedStatus(committedTime1))
                                     .build()));
         }

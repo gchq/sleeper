@@ -88,7 +88,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobFinishedStatus.updateTimeAndSummary(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary)
-                        .committedBySeparateUpdate(true).build())
+                        .build())
                 .build());
     }
 

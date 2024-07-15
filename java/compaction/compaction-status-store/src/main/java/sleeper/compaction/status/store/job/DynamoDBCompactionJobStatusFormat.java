@@ -195,7 +195,6 @@ class DynamoDBCompactionJobStatusFormat {
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))
-                        .committedBySeparateUpdate(true)
                         .build();
             case UPDATE_TYPE_COMMITTED:
                 return CompactionJobCommittedStatus.commitAndUpdateTime(

@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -157,7 +157,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return jobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(defaultStartTime()))
-                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                        .finishedStatus(compactionFinishedStatus(defaultSummary()))
                         .build());
     }
 
@@ -169,7 +169,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return jobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                        .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                        .finishedStatus(compactionFinishedStatus(summary))
                         .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                         .build());
     }
