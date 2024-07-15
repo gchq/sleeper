@@ -1,54 +1,54 @@
 {
-    "name": "Nvidia RAPIDS dev container",
-    "build": {
-        "dockerfile": "../../java/compaction/compaction-gpu/docker/Dockerfile",
-        "target": "devcontainer"
+  "name": "Nvidia RAPIDS dev container",
+  "build": {
+    "dockerfile": "../../java/compaction/compaction-gpu/docker/Dockerfile",
+    "target": "devcontainer"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "eamodio.gitlens",
+        "ms-vscode.cpptools-extension-pack",
+        "xaver.clang-format",
+        "ms-vscode.cmake-tools",
+        "cheshirekow.cmake-format",
+        "cschlosser.doxdocgen",
+        "zxh404.vscode-proto3"
+      ]
+    }
+  },
+  "mounts": [
+    {
+      "source": "${localEnv:HOME}/.aws",
+      "target": "/home/rapids/.aws",
+      "type": "bind"
     },
-    "features": {
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-    },
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "vscjava.vscode-java-pack",
-                "eamodio.gitlens",
-                "ms-vscode.cpptools-extension-pack",
-                "xaver.clang-format",
-                "ms-vscode.cmake-tools",
-                "cheshirekow.cmake-format",
-                "cschlosser.doxdocgen",
-                "zxh404.vscode-proto3"
-            ]
-        }
-    },
-    "mounts": [
-        {
-            "source": "${localEnv:HOME}/.aws",
-            "target": "/home/rapids/.aws",
-            "type": "bind"
-        },
-        {
-            "source": "sleeper-bashhistory",
-            "target": "/commandhistory",
-            "type": "volume"
-        }
-    ],
-    "containerEnv": {
-        "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
-        "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
-        "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}",
-        "AWS_PROFILE": "${localEnv:AWS_PROFILE}",
-        "AWS_REGION": "${localEnv:AWS_REGION}",
-        "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
-        "ID": "${localEnv:ID}",
-        "INSTANCE_ID": "${localEnv:INSTANCE_ID}",
-        "VPC": "${localEnv:VPC}",
-        "SUBNET": "${localEnv:SUBNET}"
-    },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-    "workspaceFolder": "/workspace",
-    "runArgs": [
-        "--gpus",
-        "all"
-    ]
+    {
+      "source": "sleeper-bashhistory",
+      "target": "/commandhistory",
+      "type": "volume"
+    }
+  ],
+  "containerEnv": {
+    "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
+    "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
+    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}",
+    "AWS_PROFILE": "${localEnv:AWS_PROFILE}",
+    "AWS_REGION": "${localEnv:AWS_REGION}",
+    "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
+    "ID": "${localEnv:ID}",
+    "INSTANCE_ID": "${localEnv:INSTANCE_ID}",
+    "VPC": "${localEnv:VPC}",
+    "SUBNET": "${localEnv:SUBNET}"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "runArgs": [
+    "--gpus",
+    "all"
+  ]
 }
