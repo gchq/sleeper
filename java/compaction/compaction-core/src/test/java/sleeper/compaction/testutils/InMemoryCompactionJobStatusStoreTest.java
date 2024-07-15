@@ -484,7 +484,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addFinishedJobUncommitted(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).committedBySeparateUpdate(true).build());
+        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
         return job;
     }
 

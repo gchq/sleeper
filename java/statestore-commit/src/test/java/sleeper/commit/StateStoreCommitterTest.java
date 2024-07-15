@@ -289,7 +289,6 @@ public class StateStoreCommitterTest {
         compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
         compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
-                .committedBySeparateUpdate(true)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }

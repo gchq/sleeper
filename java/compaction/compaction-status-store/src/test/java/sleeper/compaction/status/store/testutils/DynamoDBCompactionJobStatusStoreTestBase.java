@@ -162,10 +162,14 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job) {
+        return finishedThenCommittedStatusWithDefaults(job, defaultSummary());
+    }
+
+    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
         return jobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
-                        .startedStatus(compactionStartedStatus(defaultStartTime()))
-                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                        .startedStatus(compactionStartedStatus(summary.getStartTime()))
+                        .finishedStatus(compactionFinishedStatusUncommitted(summary))
                         .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                         .build());
     }

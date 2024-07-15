@@ -47,7 +47,6 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -117,7 +116,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
-                .bool(JOB_COMMITTED_SEPARATELY, event.isCommittedBySeparateUpdate())
+                .bool(JOB_COMMITTED_SEPARATELY, true)
                 .build();
     }
 
@@ -196,7 +195,7 @@ class DynamoDBCompactionJobStatusFormat {
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))
-                        .committedBySeparateUpdate(getBooleanAttribute(item, JOB_COMMITTED_SEPARATELY))
+                        .committedBySeparateUpdate(true)
                         .build();
             case UPDATE_TYPE_COMMITTED:
                 return CompactionJobCommittedStatus.commitAndUpdateTime(
