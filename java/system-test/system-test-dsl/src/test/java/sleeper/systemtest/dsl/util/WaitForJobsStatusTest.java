@@ -256,16 +256,6 @@ public class WaitForJobsStatusTest {
         store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
     }
 
-    private void addUncommittedRun(CompactionJob job, Instant startTime, Duration duration, String taskId) {
-        store.fixUpdateTime(defaultUpdateTime(startTime));
-        store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
-        Instant finishTime = startTime.plus(duration);
-        store.fixUpdateTime(defaultUpdateTime(finishTime));
-        store.jobFinished(compactionJobFinished(job,
-                summary(startTime, finishTime, 100L, 100L))
-                .taskId(taskId).build());
-    }
-
     private void addFinishedRun(CompactionJob job, Instant startTime, Duration duration, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
         store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
