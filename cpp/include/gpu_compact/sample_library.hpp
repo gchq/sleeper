@@ -3,4 +3,6 @@
 
 #include <gpu_compact/sample_library_export.hpp>
 
+int factorial(int input) noexcept;
+
 #endif
