@@ -26,8 +26,8 @@ import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
 import sleeper.clients.teardown.WaitForStackToDelete;
+import sleeper.clients.teardown.WaitForStackToDelete.DeleteFailedException;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.PollWithRetries.TimedOutException;
 import sleeper.systemtest.drivers.cdk.TearDownInstancesException.TearDownFailure;
 
 import java.io.IOException;
@@ -85,7 +85,7 @@ public class TearDownMavenSystemTest {
             LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
             try {
                 WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
-            } catch (TimedOutException e) {
+            } catch (DeleteFailedException e) {
                 tearDownFailures.add(new TearDownFailure(instanceId, e));
             }
         }
@@ -103,7 +103,7 @@ public class TearDownMavenSystemTest {
             LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
             try {
                 WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
-            } catch (TimedOutException e) {
+            } catch (DeleteFailedException e) {
                 tearDownFailures.add(new TearDownFailure(instanceId, e));
             }
         }
@@ -111,7 +111,7 @@ public class TearDownMavenSystemTest {
             LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
             try {
                 WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
-            } catch (TimedOutException e) {
+            } catch (DeleteFailedException e) {
                 tearDownFailures.add(new TearDownFailure(shortId, e));
             }
         }
