@@ -68,7 +68,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
     private static final String COMMIT_TIME = "CommitTime";
-    private static final String JOB_COMMITTED_SEPARATELY = "JobCommittedAsSeparateUpdate";
     private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
     private static final String RECORDS_WRITTEN = "RecordsWritten";
@@ -116,7 +115,6 @@ class DynamoDBCompactionJobStatusFormat {
                 .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
-                .bool(JOB_COMMITTED_SEPARATELY, true)
                 .build();
     }
 
