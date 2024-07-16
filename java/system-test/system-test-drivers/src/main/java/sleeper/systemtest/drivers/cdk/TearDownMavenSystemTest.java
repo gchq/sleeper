@@ -16,12 +16,9 @@
 
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.teardown.RemoveECRRepositories;
@@ -69,57 +66,49 @@ public class TearDownMavenSystemTest {
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
-        try (CloudFormationClient cloudFormation = CloudFormationClient.create()) {
-            for (String instanceId : instanceIdsAndStandalone) {
-                LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
-                tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
-                try {
-                    cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
-                } catch (RuntimeException e) {
-                    LOGGER.warn("Failed deleting instance stack: " + instanceId, e);
-                }
+        CloudFormationClient cloudFormation = clients.getCloudFormation();
+        for (String instanceId : instanceIdsAndStandalone) {
+            LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
+            tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
+            try {
+                cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
+            } catch (RuntimeException e) {
+                LOGGER.warn("Failed deleting instance stack: " + instanceId, e);
             }
-            for (String instanceId : instanceIds) {
-                LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
-                WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        }
+        for (String instanceId : instanceIds) {
+            LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
+            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        }
+        for (String shortId : shortIds) {
+            LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
+            tearDownInstanceById.get(shortId).shutdownSystemProcesses();
+            try {
+                cloudFormation.deleteStack(builder -> builder.stackName(shortId));
+            } catch (RuntimeException e) {
+                LOGGER.warn("Failed deleting system test stack: " + shortId, e);
             }
-            for (String shortId : shortIds) {
-                LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
-                tearDownInstanceById.get(shortId).shutdownSystemProcesses();
-                try {
-                    cloudFormation.deleteStack(builder -> builder.stackName(shortId));
-                } catch (RuntimeException e) {
-                    LOGGER.warn("Failed deleting system test stack: " + shortId, e);
-                }
-            }
-            for (String instanceId : standaloneInstanceIds) {
-                LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
-                WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
-            }
-            for (String shortId : shortIds) {
-                LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
-                WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
-            }
+        }
+        for (String instanceId : standaloneInstanceIds) {
+            LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
+            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        }
+        for (String shortId : shortIds) {
+            LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
+            WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
         }
 
         for (String instanceId : instanceIdsAndStandalone) {
             tearDownInstanceById.get(instanceId).removeBucketsAndContainers();
         }
 
-        try (S3Client s3 = S3Client.create()) {
-            for (String shortId : shortIds) {
-                RemoveJarsBucket.remove(s3, buildJarsBucketName(shortId));
-            }
+        for (String shortId : shortIds) {
+            RemoveJarsBucket.remove(clients.getS3v2(), buildJarsBucketName(shortId));
         }
-        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-        try {
-            for (String shortId : shortIds) {
-                RemoveECRRepositories.remove(ecr,
-                        PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
-                        List.of(buildSystemTestECRRepoName(shortId)));
-            }
-        } finally {
-            ecr.shutdown();
+        for (String shortId : shortIds) {
+            RemoveECRRepositories.remove(clients.getEcr(),
+                    PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
+                    List.of(buildSystemTestECRRepoName(shortId)));
         }
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
