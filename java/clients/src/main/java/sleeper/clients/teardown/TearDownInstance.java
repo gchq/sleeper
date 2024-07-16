@@ -46,6 +46,7 @@ public class TearDownInstance {
     private final String instanceIdArg;
     private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
     private final Function<InstanceProperties, List<String>> getExtraEcrRepositories;
+    private final InstanceProperties instanceProperties;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
@@ -53,6 +54,7 @@ public class TearDownInstance {
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
         instanceIdArg = builder.instanceId;
+        instanceProperties = loadInstanceConfig();
         generatedDir = scriptsDir.resolve("generated");
     }
 
@@ -66,8 +68,6 @@ public class TearDownInstance {
     }
 
     public void tearDown() throws IOException, InterruptedException {
-        InstanceProperties instanceProperties = loadInstanceConfig();
-
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
         LOGGER.info("--------------------------------------------------------");
@@ -77,8 +77,7 @@ public class TearDownInstance {
         LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
         LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
 
-        new ShutdownSystemProcesses(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless())
-                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
+        shutdownSystemProcesses();
 
         LOGGER.info("Deleting deployed CloudFormation stack");
         try {
@@ -86,10 +85,21 @@ public class TearDownInstance {
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
-
         LOGGER.info("Waiting for CloudFormation stack to delete");
         WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
 
+        removeBucketsAndContainers();
+
+        LOGGER.info("Finished tear down");
+    }
+
+    public void shutdownSystemProcesses() throws InterruptedException {
+        LOGGER.info("Shutting down system processes");
+        new ShutdownSystemProcesses(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless())
+                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
+    }
+
+    public void removeBucketsAndContainers() throws InterruptedException, IOException {
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(clients.getS3v2(), instanceProperties.get(JARS_BUCKET));
         RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
@@ -100,8 +110,6 @@ public class TearDownInstance {
         } else {
             LOGGER.info("Generated directory not found");
         }
-
-        LOGGER.info("Finished tear down");
     }
 
     public static Builder builder() {

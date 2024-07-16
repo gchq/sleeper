@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
+import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
 import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.util.LoggedDuration;
@@ -34,6 +35,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -48,13 +51,20 @@ public class TearDownMavenSystemTest {
     }
 
     public static void tearDown(
-            Path scriptsDir, List<String> shortIds, List<String> shortInstanceNames, List<String> standaloneInstanceIds) throws IOException, InterruptedException {
+            Path scriptsDir, List<String> shortIds, List<String> shortInstanceNames, List<String> standaloneInstanceIds,
+            TearDownClients clients) throws IOException, InterruptedException {
         List<String> instanceIds = shortIds.stream()
                 .flatMap(shortId -> shortInstanceNames.stream()
                         .map(shortInstanceName -> shortId + "-" + shortInstanceName))
                 .collect(toUnmodifiableList());
         List<String> instanceIdsAndStandalone = Stream.concat(instanceIds.stream(), standaloneInstanceIds.stream())
                 .collect(toUnmodifiableList());
+        Map<String, TearDownInstance> tearDownInstanceById = Stream.concat(shortIds.stream(), instanceIdsAndStandalone.stream())
+                .collect(Collectors.toMap(instanceId -> instanceId, instanceId -> TearDownInstance.builder()
+                        .scriptsDir(scriptsDir)
+                        .instanceId(instanceId)
+                        .clients(clients)
+                        .build()));
         Instant startTime = Instant.now();
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
@@ -62,6 +72,7 @@ public class TearDownMavenSystemTest {
         try (CloudFormationClient cloudFormation = CloudFormationClient.create()) {
             for (String instanceId : instanceIdsAndStandalone) {
                 LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
+                tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
                 try {
                     cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
                 } catch (RuntimeException e) {
@@ -74,6 +85,7 @@ public class TearDownMavenSystemTest {
             }
             for (String shortId : shortIds) {
                 LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
+                tearDownInstanceById.get(shortId).shutdownSystemProcesses();
                 try {
                     cloudFormation.deleteStack(builder -> builder.stackName(shortId));
                 } catch (RuntimeException e) {
@@ -91,10 +103,7 @@ public class TearDownMavenSystemTest {
         }
 
         for (String instanceId : instanceIdsAndStandalone) {
-            TearDownInstance.builder()
-                    .scriptsDir(scriptsDir)
-                    .instanceId(instanceId)
-                    .tearDownWithDefaultClients();
+            tearDownInstanceById.get(instanceId).removeBucketsAndContainers();
         }
 
         try (S3Client s3 = S3Client.create()) {
@@ -112,7 +121,6 @@ public class TearDownMavenSystemTest {
         } finally {
             ecr.shutdown();
         }
-
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
@@ -129,6 +137,6 @@ public class TearDownMavenSystemTest {
         List<String> standaloneInstanceIds = optionalArgument(args, 3)
                 .map(names -> List.of(names.split(",")))
                 .orElse(List.of());
-        tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds);
+        TearDownClients.withDefaults(clients -> tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds, clients));
     }
 }
