@@ -135,10 +135,11 @@ public class CompactionJobStatusInPeriodTest {
         Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
         Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant middleTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant middleTime1 = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant middleTime2 = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:03.000Z");
         CompactionJobStatus status = jobCreated(job, beforeTime1,
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, middleTime)));
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, middleTime1), middleTime2));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
@@ -151,9 +152,10 @@ public class CompactionJobStatusInPeriodTest {
         Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant afterTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant afterTime1 = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant afterTime2 = Instant.parse("2022-09-23T11:44:05.000Z");
         CompactionJobStatus status = jobCreated(job, beforeTime1,
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, afterTime)));
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, afterTime1), afterTime2));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
@@ -183,8 +185,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant afterTime1 = Instant.parse("2022-09-23T11:44:02.000Z");
         Instant afterTime2 = Instant.parse("2022-09-23T11:44:03.000Z");
         Instant afterTime3 = Instant.parse("2022-09-23T11:44:33.000Z");
+        Instant afterTime4 = Instant.parse("2022-09-23T11:44:35.000Z");
         CompactionJobStatus status = jobCreated(job, afterTime1,
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(afterTime2, afterTime3)));
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(afterTime2, afterTime3), afterTime4));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
@@ -196,12 +199,13 @@ public class CompactionJobStatusInPeriodTest {
         Instant createTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant run1StartTime = Instant.parse("2022-09-23T11:45:00.000Z");
         Instant run1FinishTime = Instant.parse("2022-09-23T11:45:30.000Z");
+        Instant run1CommitTime = Instant.parse("2022-09-23T11:45:35.000Z");
         Instant periodStart = Instant.parse("2022-09-23T11:45:45.000Z");
         Instant run2StartTime = Instant.parse("2022-09-23T11:46:00.000Z");
         Instant periodEnd = Instant.parse("2022-09-23T12:00:00.000Z");
         CompactionJobStatus status = jobCreated(job, createTime,
                 startedCompactionRun(DEFAULT_TASK_ID, run2StartTime),
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run1StartTime, run1FinishTime)));
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run1StartTime, run1FinishTime), run1CommitTime));
 
         // When / Then
         assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();
@@ -214,10 +218,11 @@ public class CompactionJobStatusInPeriodTest {
         Instant run1StartTime = Instant.parse("2022-09-23T11:45:00.000Z");
         Instant run2StartTime = Instant.parse("2022-09-23T11:46:00.000Z");
         Instant run2FinishTime = Instant.parse("2022-09-23T11:46:30.000Z");
+        Instant run2CommitTime = Instant.parse("2022-09-23T11:46:35.000Z");
         Instant periodStart = Instant.parse("2022-09-23T12:00:00.000Z");
         Instant periodEnd = Instant.parse("2022-09-23T12:30:00.000Z");
         CompactionJobStatus status = jobCreated(job, createTime,
-                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run2StartTime, run2FinishTime)),
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run2StartTime, run2FinishTime), run2CommitTime),
                 startedCompactionRun(DEFAULT_TASK_ID, run1StartTime));
 
         // When / Then

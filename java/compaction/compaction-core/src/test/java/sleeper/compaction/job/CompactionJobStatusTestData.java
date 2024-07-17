@@ -52,7 +52,7 @@ public class CompactionJobStatusTestData {
         return ProcessRun.started(taskId, compactionStartedStatus(startTime));
     }
 
-    public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary) {
+    public static ProcessRun uncommittedCompactionRun(String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
