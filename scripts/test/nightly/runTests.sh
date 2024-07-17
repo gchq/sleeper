@@ -86,11 +86,9 @@ runMavenSystemTests() {
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     TEARDOWN_EXIT_CODE=$?
-    if [ $TEARDOWN_EXIT_CODE -ne 0 ] && [ $TEST_EXIT_CODE -eq 0 ]; then
+    if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
       TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
-      if [ $END_EXIT_CODE -eq 0 ]; then
-        END_EXIT_CODE=$TEARDOWN_EXIT_CODE
-      fi
+      END_EXIT_CODE=$TEARDOWN_EXIT_CODE
     fi
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
