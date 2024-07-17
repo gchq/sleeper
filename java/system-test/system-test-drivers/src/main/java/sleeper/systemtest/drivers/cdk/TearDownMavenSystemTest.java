@@ -70,11 +70,7 @@ public class TearDownMavenSystemTest {
         for (String instanceId : instanceIdsAndStandalone) {
             LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
             tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting instance stack: " + instanceId, e);
-            }
+            cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
         }
         for (String instanceId : instanceIds) {
             LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
@@ -83,11 +79,7 @@ public class TearDownMavenSystemTest {
         for (String shortId : shortIds) {
             LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
             tearDownInstanceById.get(shortId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(shortId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting system test stack: " + shortId, e);
-            }
+            cloudFormation.deleteStack(builder -> builder.stackName(shortId));
         }
         for (String instanceId : standaloneInstanceIds) {
             LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
