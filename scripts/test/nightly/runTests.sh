@@ -61,6 +61,7 @@ runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME=$2
     shift 2
+    TEST_EXIT_CODE=0
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
@@ -68,11 +69,11 @@ runMavenSystemTests() {
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
-    EXIT_CODE=$?
-    if [ $EXIT_CODE -ne 0 ]; then
-      END_EXIT_CODE=$EXIT_CODE
+    RUN_TESTS_EXIT_CODE=$?
+    if [ $RUN_TESTS_EXIT_CODE -ne 0 ]; then
+      END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
+      TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
-    echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
@@ -84,6 +85,14 @@ runMavenSystemTests() {
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    TEARDOWN_EXIT_CODE=$?
+    if [ $TEARDOWN_EXIT_CODE -ne 0 ] && [ $TEST_EXIT_CODE -eq 0 ]; then
+      TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
+      if [ $END_EXIT_CODE -eq 0 ]; then
+        END_EXIT_CODE=$TEARDOWN_EXIT_CODE
+      fi
+    fi
+    echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
 runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
