@@ -20,8 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -49,17 +47,15 @@ public class IngestRandomDataToDocker {
     private final TableProperties tableProperties;
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonSQS sqs;
     private final long numberOfRecords;
 
     public IngestRandomDataToDocker(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, long numberOfRecords) {
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.sqs = sqs;
         this.numberOfRecords = numberOfRecords;
     }
 
@@ -116,14 +112,13 @@ public class IngestRandomDataToDocker {
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
-            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, sqsClient, numberOfRecords)
+            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
                     .run();
         } finally {
             s3Client.shutdown();
