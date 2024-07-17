@@ -26,14 +26,11 @@ import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
 import sleeper.clients.teardown.WaitForStackToDelete;
-import sleeper.clients.teardown.WaitForStackToDelete.DeleteFailedException;
 import sleeper.core.util.LoggedDuration;
-import sleeper.systemtest.drivers.cdk.TearDownInstancesException.TearDownFailure;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,7 +49,7 @@ public class TearDownMavenSystemTest {
 
     public static void tearDown(
             Path scriptsDir, List<String> shortIds, List<String> shortInstanceNames, List<String> standaloneInstanceIds,
-            TearDownClients clients) throws IOException, InterruptedException, TearDownInstancesException {
+            TearDownClients clients) throws IOException, InterruptedException {
         List<String> instanceIds = shortIds.stream()
                 .flatMap(shortId -> shortInstanceNames.stream()
                         .map(shortInstanceName -> shortId + "-" + shortInstanceName))
@@ -69,51 +66,28 @@ public class TearDownMavenSystemTest {
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
-        List<TearDownFailure> tearDownFailures = new ArrayList<>();
         CloudFormationClient cloudFormation = clients.getCloudFormation();
         for (String instanceId : instanceIdsAndStandalone) {
             LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
             tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting instance stack: " + instanceId, e);
-                tearDownFailures.add(new TearDownFailure(instanceId, e));
-            }
+            cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
         }
         for (String instanceId : instanceIds) {
             LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
-            try {
-                WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
-            } catch (DeleteFailedException e) {
-                tearDownFailures.add(new TearDownFailure(instanceId, e));
-            }
+            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
         }
         for (String shortId : shortIds) {
             LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
             tearDownInstanceById.get(shortId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(shortId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting system test stack: " + shortId, e);
-                tearDownFailures.add(new TearDownFailure(shortId, e));
-            }
+            cloudFormation.deleteStack(builder -> builder.stackName(shortId));
         }
         for (String instanceId : standaloneInstanceIds) {
             LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
-            try {
-                WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
-            } catch (DeleteFailedException e) {
-                tearDownFailures.add(new TearDownFailure(instanceId, e));
-            }
+            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
         }
         for (String shortId : shortIds) {
             LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
-            try {
-                WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
-            } catch (DeleteFailedException e) {
-                tearDownFailures.add(new TearDownFailure(shortId, e));
-            }
+            WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
         }
 
         for (String instanceId : instanceIdsAndStandalone) {
@@ -129,9 +103,6 @@ public class TearDownMavenSystemTest {
                     List.of(buildSystemTestECRRepoName(shortId)));
         }
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
-        if (!tearDownFailures.isEmpty()) {
-            throw new TearDownInstancesException(tearDownFailures);
-        }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
