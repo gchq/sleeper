@@ -10,7 +10,7 @@ are available [here](docs/13-system-tests.md#performance-benchmarks)
 to version 0.24.0*
 
 This includes improvements to the transaction log state store implementation, and experimental support for accelerated
-compactions with Rust.
+compactions.
 
 State store:
 - Added a lambda to delete old transactions and snapshots.
@@ -28,7 +28,7 @@ Ingest:
   - Can be turned on/off separately for ingest, bulk import and compaction.
 
 Compaction:
-- Added an option to run compactions on Rust instead of Java.
+- Added an option to run compactions using Apache DataFusion instead of Java.
   - This is currently experimental, but allows for much faster compaction on the same hardware.
 - Added a property for the number of retries on the compaction job queue.
 
