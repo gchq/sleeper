@@ -9,11 +9,11 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.25.57):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.26.20):
 
 - Apache License, Version 2.0
 
-AWS CRT (software.amazon.awssdk.crt:aws-crt:0.29.19):
+AWS CRT (software.amazon.awssdk.crt:aws-crt:0.30.0):
 
 - Apache License, Version 2.0
 
@@ -21,7 +21,7 @@ AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.3):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.11.5):
+AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.12.0):
 
 - Apache License, Version 2.0
 
@@ -29,7 +29,7 @@ WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.2.5.Final):
 
 - Apache License, Version 2.0
 
-Woodstox (com.fasterxml.woodstox:woodstox-core:6.6.2):
+Woodstox (com.fasterxml.woodstox:woodstox-core:7.0.0):
 
 - Apache License, Version 2.0
 
@@ -45,11 +45,11 @@ Aircompressor (io.airlift:aircompressor:0.27):
 
 - Apache License, Version 2.0
 
-Protocol Buffers (com.google.protobuf:protobuf-java:4.26.1):
+Protocol Buffers (com.google.protobuf:protobuf-java:4.27.2):
 
 - The 3-Clause BSD License
 
-Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.39.1):
+Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.40):
 
 - Apache License, Version 2.0
 
@@ -65,7 +65,7 @@ Apache Kerby (org.apache.kerby:*:2.0.3):
 
 - Apache License, Version 2.0
 
-XNIO (org.jboss.xnio:xnio-api:3.8.14.Final):
+XNIO (org.jboss.xnio:xnio-api:3.8.16.Final):
 
 - Apache License, Version 2.0
 
@@ -91,11 +91,11 @@ Facebook Jcommon collections (com.facebook.jcommon:collections::0.1.32):
 
 - Apache License, Version 2.0
 
-Guava: Google Core Libraries For Java (com.google.guava:guava:33.2.0-jre):
+Guava: Google Core Libraries For Java (com.google.guava:guava:33.2.1-jre):
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.17.1, com.fasterxml.jackson.module:*:2.17.1)
+Fasterxml Jackson (com.fasterxml.jackson.core:*:2.17.2, com.fasterxml.jackson.module:*:2.17.2)
 
 - Apache License, Version 2.0
 
@@ -115,11 +115,11 @@ Commons IO (commons-io:commons-io:2.16.1):
 
 - Apache License, Version 2.0
 
-Apache Commons Configuration (org.apache.commons:commons-configuration2:2.10.1):
+Apache Commons Configuration (org.apache.commons:commons-configuration2:2.11.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Compress (org.apache.commons:commons-compress:1.26.1):
+Apache Commons Compress (org.apache.commons:commons-compress:1.26.2):
 
 - Apache License, Version 2.0
 
@@ -127,7 +127,7 @@ Apache Commons Text (org.apache.commons:commons-text:1.12.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Net (commons-net:commons-net:3.10.0):
+Apache Commons Net (commons-net:commons-net:3.11.1):
 
 - Apache License, Version 2.0
 
@@ -163,11 +163,11 @@ Apache Arrow (org.apache.arrow:*:11.0.0)
 
 - Apache License, Version 2.0
 
-Java Websocket (org.java-websocket:Java-WebSocket:1.5.6):
+Java Websocket (org.java-websocket:Java-WebSocket:1.5.7):
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.10.2):
+JUnit (org.junit.jupiter:junit-jupiter-*:5.10.3):
 
 - Eclipse Public License 1.0
 
@@ -175,15 +175,15 @@ Mockito (org.mockito:mockito-core:5.12.0):
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:24.2.0):
+ApprovalTests.Java (com.approvaltests:approvaltests:24.3.0):
 
 - Apache License, Version 2.0
 
-AssertJ (org.assertj:assertj-core:3.25.3):
+AssertJ (org.assertj:assertj-core:3.26.3):
 
 - Apache License, Version 2.0
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.2.7):
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.4.0):
 
 - Apache License, Version 2.0
 
@@ -203,7 +203,7 @@ Testcontainers (org.testcontainers:localstack:1.19.8, org.testcontainers:testcon
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.142.1):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.149.0):
 
 - Apache License, Version 2.0
 
@@ -223,17 +223,17 @@ Jersey Client (org.glassfish.jersey.core:jersey-client:2.43):
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Netty (io.netty:*:4.1.109.Final):
+Netty (io.netty:*:4.1.111.Final):
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.4.54.v20240208):
+Eclipse Jetty (org.eclipse.jetty:*:9.4.55.v20240627):
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
-JJWT (io.jsonwebtoken:*:0.12.5):
+JJWT (io.jsonwebtoken:*:0.12.6):
 
 - Apache License, Version 2.0
 
@@ -259,7 +259,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:9.2.0):
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:10.0.2):
 
 - Apache License, Version 2.0
 
@@ -342,7 +342,7 @@ object_store (https://github.com/apache/arrow-rs/tree/master/object_store)
 - Apache License, Version 2.0
 
 aws-config (https://github.com/awslabs/smithy-rs)
- 
+
 - Apache License, Version 2.0
 
 aws-credentials (https://github.com/awslabs/smithy-rs)
