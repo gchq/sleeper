@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -31,9 +33,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.net.URI;
@@ -46,20 +49,22 @@ public class IngestRandomDataToDocker {
     private final TableProperties tableProperties;
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
+    private final AmazonSQS sqs;
     private final long numberOfRecords;
 
     public IngestRandomDataToDocker(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, long numberOfRecords) {
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
+        this.sqs = sqs;
         this.numberOfRecords = numberOfRecords;
     }
 
     private void run() throws IOException {
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
+        SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
         systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3,
                 dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
@@ -71,7 +76,8 @@ public class IngestRandomDataToDocker {
                         .s3AsyncClient(buildS3AsyncClient(S3AsyncClient.builder()))
                         .instanceProperties(instanceProperties)
                         .build(),
-                systemTestProperties.testPropertiesOnly(), tableProperties);
+                AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties)),
+                systemTestProperties, tableProperties);
     }
 
     private static S3AsyncClient buildS3AsyncClient(S3AsyncClientBuilder builder) {
@@ -110,13 +116,14 @@ public class IngestRandomDataToDocker {
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
-            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
+            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, sqsClient, numberOfRecords)
                     .run();
         } finally {
             s3Client.shutdown();

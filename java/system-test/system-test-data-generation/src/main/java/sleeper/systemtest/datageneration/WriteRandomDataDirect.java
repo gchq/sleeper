@@ -15,7 +15,10 @@
  */
 package sleeper.systemtest.datageneration;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -23,9 +26,16 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.commit.AddFilesToStateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
+
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Runs a direct ingest to write random data.
@@ -37,27 +47,43 @@ public class WriteRandomDataDirect {
 
     public static void writeWithIngestFactory(
             SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) throws IOException {
+        StateStoreProvider stateStoreProvider = session.createStateStoreProvider();
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
                         .localDir("/mnt/scratch")
-                        .stateStoreProvider(session.createStateStoreProvider())
+                        .stateStoreProvider(stateStoreProvider)
                         .instanceProperties(session.instanceProperties())
                         .hadoopConfiguration(session.hadoopConfiguration())
                         .s3AsyncClient(session.s3Async())
                         .build(),
+                addFilesToStateStore(session.sqs(), session.instanceProperties(), session.tableProperties(), stateStoreProvider),
                 systemTestProperties, session.tableProperties());
     }
 
     public static void writeWithIngestFactory(
-            IngestFactory ingestFactory, SystemTestPropertyValues properties, TableProperties tableProperties) throws IOException {
+            IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
+            SystemTestPropertyValues testProperties, TableProperties tableProperties) throws IOException {
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(
-                WriteRandomData.createRecordIterator(properties, tableProperties));
+                WriteRandomData.createRecordIterator(testProperties, tableProperties));
 
-        try {
-            ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, recordIterator);
+        try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+                .addFilesToStateStore(addFilesToStateStore)
+                .build()) {
+            new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
         } catch (StateStoreException | IteratorCreationException e) {
             throw new IOException("Failed to write records using iterator", e);
+        }
+    }
+
+    private static AddFilesToStateStore addFilesToStateStore(
+            AmazonSQS sqsClient, InstanceProperties instanceProperties, TableProperties tableProperties,
+            StateStoreProvider stateStoreProvider) {
+        if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
+            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+                    requestBuilder -> requestBuilder.tableId(tableProperties.get(TABLE_ID)));
+        } else {
+            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
         }
     }
 }
