@@ -20,9 +20,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -33,6 +31,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -64,8 +63,7 @@ public class WriteRandomDataDirect {
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
             SystemTestPropertyValues testProperties, TableProperties tableProperties) throws IOException {
-        CloseableIterator<Record> recordIterator = new WrappedIterator<>(
-                WriteRandomData.createRecordIterator(testProperties, tableProperties));
+        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(testProperties, tableProperties);
 
         try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                 .addFilesToStateStore(addFilesToStateStore)
