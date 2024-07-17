@@ -365,7 +365,10 @@ Similar tracking is in place for ingest and bulk import.
 
 Most internal operations in a Sleeper instance operate on a schedule. We use CloudWatch scheduled rules to invoke these.
 For operations that apply against Sleeper tables, the scheduled rule will actually invoke a trigger lambda. The trigger
-lambda creates messages on an SQS FIFO queue to invoke a handler lambda, where each message is for single Sleeper table.
-When a lambda is triggered by a FIFO queue, AWS can ensure that for each message for the same
+lambda creates messages on an SQS FIFO queue to invoke a handler lambda, where each message is for a single Sleeper
+table. We use the table ID as the message group ID. When a lambda is triggered by the FIFO queue, AWS will ensure that
+only one instance of the lambda is active at a time for a given Sleeper table.
 
-TODO
+This ensures that the system can scale to an arbitrary number of tables. Each lambda will have the performance that we
+expect against a single table. Multiple instances of the same operation are prevented from running at once, e.g.
+compaction job creation, garbage collection.
