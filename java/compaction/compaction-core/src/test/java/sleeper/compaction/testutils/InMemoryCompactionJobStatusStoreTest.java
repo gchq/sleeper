@@ -466,9 +466,9 @@ class InMemoryCompactionJobStatusStoreTest {
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job, createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
-            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
             store.jobCommitted(compactionJobCommitted(job, committedTime1).taskId(taskId).jobRunId(runId1).build());
+            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
             store.jobFailed(compactionJobFailed(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
                     .failure(new RuntimeException("Could not commit same compaction twice")).build());
 
