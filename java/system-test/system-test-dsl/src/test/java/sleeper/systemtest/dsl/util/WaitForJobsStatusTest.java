@@ -93,19 +93,19 @@ public class WaitForJobsStatusTest {
         store.jobCreated(startedJob);
         store.jobCreated(uncommittedJob);
         store.jobCreated(finishedJob);
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:02Z"));
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
         store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
         store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task").build());
         store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task").build());
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:50:05Z"));
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         store.jobFinished(compactionJobFinished(uncommittedJob,
-                summary(Instant.parse("2023-09-18T14:48:01Z"), Duration.ofMinutes(2), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:03Z"), Duration.ofMinutes(2), 100L, 100L))
                 .taskId("finished-task").build());
         store.jobFinished(compactionJobFinished(finishedJob,
-                summary(Instant.parse("2023-09-18T14:48:02Z"), Duration.ofMinutes(2), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:04Z"), Duration.ofMinutes(2), 100L, 100L))
                 .taskId("finished-task").build());
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:11Z")).taskId("finished-task").build());
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:10Z"));
+        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:48:06Z")).taskId("finished-task").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
