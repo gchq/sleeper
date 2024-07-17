@@ -25,13 +25,11 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TableDataStack extends NestedStack {
 
@@ -41,12 +39,12 @@ public class TableDataStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
-        String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         dataBucket = Bucket.Builder
                 .create(this, "TableDataBucket")
-                .bucketName(String.join("-", "sleeper", instanceId, "table-data").toLowerCase(Locale.ROOT))
+                .bucketName(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "table-data"))
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)

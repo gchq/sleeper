@@ -22,13 +22,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import sleeper.clients.status.report.job.JsonProcessRunTime;
 import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobUpdateType;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -39,7 +42,8 @@ import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRu
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
-            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer())
+            .registerTypeAdapter(ProcessRunTime.class, JsonProcessRunTime.serializer())
+            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(IngestJobUpdateType::typeOfUpdate))
             .registerTypeAdapter(IngestJobStartedStatus.class, ingestJobStartedStatusJsonSerializer())
             .create();
     private final PrintStream out;

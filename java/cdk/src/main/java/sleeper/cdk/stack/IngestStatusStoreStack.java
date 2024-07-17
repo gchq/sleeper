@@ -25,9 +25,9 @@ public class IngestStatusStoreStack extends NestedStack {
     private final IngestStatusStoreResources resources;
 
     public IngestStatusStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
-        resources = IngestStatusStoreResources.from(this, instanceProperties, coreStacks);
+        resources = IngestStatusStoreResources.from(this, instanceProperties, policiesStack);
     }
 
     public IngestStatusStoreResources getResources() {

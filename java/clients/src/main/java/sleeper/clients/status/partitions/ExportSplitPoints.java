@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.facebook.collections.ByteArray;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.util.ClientUtils;
@@ -40,15 +39,17 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static sleeper.configuration.WriteSplitPoints.writeSplitPoints;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -120,7 +121,7 @@ public class ExportSplitPoints {
         }
         String instanceId = args[0];
         String tableName = args[1];
-        String outputFile = args[2];
+        Path outputFile = Paths.get(args[2]);
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
@@ -134,15 +135,8 @@ public class ExportSplitPoints {
             ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
             List<Object> splitPoints = exportSplitPoints.getSplitPoints();
 
-            try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8))) {
-                for (Object splitPoint : splitPoints) {
-                    if (splitPoint instanceof ByteArray) {
-                        writer.write(Base64.encodeBase64String(((ByteArray) splitPoint).getArray()));
-                    } else {
-                        writer.write(splitPoint.toString());
-                    }
-                    writer.write("\n");
-                }
+            try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+                writeSplitPoints(splitPoints, writer, false);
             }
         } finally {
             s3Client.shutdown();

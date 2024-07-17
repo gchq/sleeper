@@ -21,6 +21,9 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * An ingest job validated status for when the job was validated successfully.
+ */
 public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     private final Instant validationTime;
     private final Instant updateTime;
@@ -32,10 +35,26 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
         this.inputFileCount = inputFileCount;
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @param  updateTime     the update time
+     * @return                an instance of this class
+     */
     public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime, Instant updateTime) {
         return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime, updateTime);
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  inputFileCount the input file count
+     * @param  validationTime the validation time
+     * @param  updateTime     the update time
+     * @return                an instance of this class
+     */
     public static IngestJobAcceptedStatus from(int inputFileCount, Instant validationTime, Instant updateTime) {
         return new IngestJobAcceptedStatus(inputFileCount, validationTime, updateTime);
     }

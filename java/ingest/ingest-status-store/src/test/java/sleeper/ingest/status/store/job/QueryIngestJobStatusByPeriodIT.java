@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.time.Period;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
 
 public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -127,7 +127,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(rejectedUpdateTime);
 
         // When
-        store.jobValidated(ingestJobRejected(job, rejectedTime, "Test reason"));
+        store.jobValidated(rejectedEvent(job, rejectedTime, "Test reason"));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))

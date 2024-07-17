@@ -138,7 +138,7 @@ public interface CommonProperty {
             .defaultValue("1.4.0")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.task.runner.memory")
-            .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
+            .description("The amount of memory in MB for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
@@ -180,36 +180,62 @@ public interface CommonProperty {
                     "We may add the ability to use this in the CDK in the future.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
-    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.metadata.statestore.provider.cache.size")
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.statestore.provider.cache.size")
             .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.metadata.dynamo.pointintimerecovery")
+    UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.statestore.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the DynamoDB state store. " +
                     "This is set on the DynamoDB tables.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.metadata.s3.dynamo.pointintimerecovery")
+    UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.statestore.s3.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the S3 state store. " +
                     "This is set on the revision DynamoDB table.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.batch.size")
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.batch.size")
             .description("The number of tables to create transaction log snapshots for in a single invocation. This will be the batch size" +
                     " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshot.creation.lambda.period.minutes")
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes")
             .description("The frequency in minutes with which the transaction log snapshot creation lambda is run.")
             .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.batch.size")
+            .description("The number of tables to delete old transaction log snapshots for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.lambda.period.minutes")
+            .description("The frequency in minutes with which the transaction log snapshot deletion lambda is run.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.batch.size")
+            .description("The number of tables to delete old transaction log transactions for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes")
+            .description("The frequency in minutes with which the transaction log transaction deletion lambda is run.")
+            .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
@@ -235,7 +261,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.batch.table.lambdas.memory")
-            .description("The amount of memory for lambdas that create batches of tables to run some operation against, " +
+            .description("The amount of memory in MB for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("1024")
             .validationPredicate(Utils::isPositiveInteger)
@@ -248,6 +274,28 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.statestore.committer.lambda.memory")
+            .description("The amount of memory in MB for the lambda that commits state store updates.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.committer.lambda.timeout.seconds")
+            .description("The timeout for the lambda that commits state store updates in seconds.")
+            .defaultValue("900")
+            .validationPredicate(Utils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.committer.batch.size")
+            .description("The number of state store updates to be sent to the state store committer lambda in one invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
+            .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
+            .validationPredicate(value -> Utils.isListWithMaxSize(value, 5))
+            .runCdkDeployWhenChanged(true)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

@@ -1,35 +1,87 @@
 
 Compaction Job Status Report
 ----------------------------
-Details for job $(jobId1):
-State: IN PROGRESS
-Creation Time: 2022-10-12T10:00:00.001Z
+Details for job $(jobId3):
+State: FINISHED
+Creation time: 2022-10-12T10:00:00.001Z
 Partition ID: root
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-10-12T10:02:00.001Z
-Start Update Time: 2022-10-12T10:02:00.123Z
+Start time: 2022-10-12T10:02:00.001Z
+Start update time: 2022-10-12T10:02:00.123Z
 Not finished
 
 Run on task task2222-2222-2222-2222-222222222222
-Start Time: 2022-10-12T10:01:15.001Z
-Start Update Time: 2022-10-12T10:01:15.123Z
-Finish Time: 2022-10-12T10:01:45.001Z
-Finish Update Time: 2022-10-12T10:01:45.123Z
+Start time: 2022-10-12T10:01:15.001Z
+Start update time: 2022-10-12T10:01:15.123Z
+Finish time: 2022-10-12T10:01:45.001Z
+Finish update time: 2022-10-12T10:01:45.123Z
 Duration: 30s
-Records Read: 300
-Records Written: 200
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 6.67
+Records read: 300
+Records written: 150
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+State store commit time: 2022-10-12T10:02:00.001Z
+Delay between finish and commit: 15s
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-10-12T10:01:00.001Z
-Start Update Time: 2022-10-12T10:01:00.123Z
-Finish Time: 2022-10-12T10:01:20.001Z
-Finish Update Time: 2022-10-12T10:01:20.123Z
+Start time: 2022-10-12T10:01:00.001Z
+Start update time: 2022-10-12T10:01:00.123Z
+Finish time: 2022-10-12T10:01:30.001Z
+Finish update time: 2022-10-12T10:01:30.123Z
+Duration: 30s
+Records read: 300
+Records written: 150
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+State store commit time: 2022-10-12T10:01:45.001Z
+Delay between finish and commit: 15s
+--------------------------
+Details for job $(jobId2):
+State: IN_PROGRESS
+Creation time: 2022-10-11T10:00:00.001Z
+Partition ID: root
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-10-11T10:02:00.001Z
+Start update time: 2022-10-11T10:02:00.123Z
+Not finished
+
+Run on task task2222-2222-2222-2222-222222222222
+Start time: 2022-10-11T10:01:00.001Z
+Start update time: 2022-10-11T10:01:00.123Z
+Finish time: 2022-10-11T10:01:30.001Z
+Finish update time: 2022-10-11T10:01:30.123Z
+Duration: 30s
+Run failed, reasons:
+- Unexpected failure reading input file
+- Some temporary IO problem
+--------------------------
+Details for job $(jobId1):
+State: FINISHED
+Creation time: 2022-10-10T10:00:00.001Z
+Partition ID: root
+
+Run on task task2222-2222-2222-2222-222222222222
+Start time: 2022-10-10T10:01:15.001Z
+Start update time: 2022-10-10T10:01:15.123Z
+Finish time: 2022-10-10T10:01:45.001Z
+Finish update time: 2022-10-10T10:01:45.123Z
+Duration: 30s
+Run failed, reasons:
+- Compaction has already been committed
+- Failed database update
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-10-10T10:01:00.001Z
+Start update time: 2022-10-10T10:01:00.123Z
+Finish time: 2022-10-10T10:01:20.001Z
+Finish update time: 2022-10-10T10:01:20.123Z
 Duration: 20s
-Records Read: 300
-Records Written: 200
-Read Rate (reads per second): 15.00
-Write Rate (writes per second): 10.00
+Records read: 200
+Records written: 100
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+State store commit time: 2022-10-10T10:01:30.001Z
+Delay between finish and commit: 10s
 --------------------------

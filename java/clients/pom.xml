@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0</version>
+        <version>0.24.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,6 +35,11 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
             <version>${aws-java-sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

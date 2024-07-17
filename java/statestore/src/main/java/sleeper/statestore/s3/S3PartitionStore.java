@@ -25,10 +25,9 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +42,9 @@ import java.util.stream.Collectors;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
+/**
+ * A Sleeper table partition store where the state is held in S3, and revisions of the state are indexed in DynamoDB.
+ */
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
 
@@ -51,7 +53,7 @@ class S3PartitionStore implements PartitionStore {
     private final Schema tableSchema;
     private final String stateStorePath;
     private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreArrowFileStore dataStore;
 
     private S3PartitionStore(Builder builder) {
         conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
@@ -63,10 +65,10 @@ class S3PartitionStore implements PartitionStore {
                 .description("partitions")
                 .revisionIdKey(CURRENT_PARTITIONS_REVISION_ID_KEY)
                 .buildPathFromRevisionId(this::getPartitionsPath)
-                .loadAndWriteData(this::readPartitionsMapFromParquet, this::writePartitionsMapToParquet)
+                .loadAndWriteData(this::readPartitionsMap, this::writePartitionsMap)
                 .hadoopConf(conf)
                 .build();
-        stateStoreFileUtils = new StateStoreFileUtils(conf);
+        dataStore = new StateStoreArrowFileStore(conf);
     }
 
     public static Builder builder() {
@@ -93,7 +95,7 @@ class S3PartitionStore implements PartitionStore {
             return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
-        return readPartitionsFromParquet(path);
+        return readPartitions(path);
     }
 
     @Override
@@ -155,7 +157,7 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private String getPartitionsPath(S3RevisionId revisionId) {
-        return stateStorePath + "/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
+        return stateStorePath + "/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.arrow";
     }
 
     @Override
@@ -176,18 +178,18 @@ class S3PartitionStore implements PartitionStore {
         S3RevisionId revisionId = S3RevisionId.firstRevision(UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
         LOGGER.debug("Writing initial partition information (revisionId = {}, path = {})", revisionId, path);
-        writePartitionsToParquet(partitions, path);
+        writePartitions(partitions, path);
 
         // Update Dynamo
         s3RevisionIdStore.saveFirstPartitionRevision(revisionId);
     }
 
-    private Map<String, Partition> readPartitionsMapFromParquet(String path) throws StateStoreException {
-        return getMapFromPartitionIdToPartition(readPartitionsFromParquet(path));
+    private Map<String, Partition> readPartitionsMap(String path) throws StateStoreException {
+        return getMapFromPartitionIdToPartition(readPartitions(path));
     }
 
-    private void writePartitionsMapToParquet(Map<String, Partition> partitionsById, String path) throws StateStoreException {
-        writePartitionsToParquet(partitionsById.values(), path);
+    private void writePartitionsMap(Map<String, Partition> partitionsById, String path) throws StateStoreException {
+        writePartitions(partitionsById.values(), path);
     }
 
     private Map<String, Partition> getMapFromPartitionIdToPartition(List<Partition> partitions) throws StateStoreException {
@@ -202,28 +204,25 @@ class S3PartitionStore implements PartitionStore {
         return partitionIdToPartition;
     }
 
-    private void writePartitionsToParquet(Collection<Partition> partitions, String path) throws StateStoreException {
-        LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
+    private void writePartitions(Collection<Partition> partitions, String path) throws StateStoreException {
         try {
-            stateStoreFileUtils.savePartitions(path, partitions, tableSchema);
+            dataStore.savePartitions(path, partitions, tableSchema);
         } catch (IOException e) {
             throw new StateStoreException("Failed to save partitions", e);
         }
-        LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
 
-    private List<Partition> readPartitionsFromParquet(String path) throws StateStoreException {
-        LOGGER.debug("Loading partitions from {}", path);
-        List<Partition> partitions = new ArrayList<>();
+    private List<Partition> readPartitions(String path) throws StateStoreException {
         try {
-            stateStoreFileUtils.loadPartitions(path, tableSchema, partitions::add);
+            return dataStore.loadPartitions(path, tableSchema);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load partitions", e);
         }
-        LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
-        return partitions;
     }
 
+    /**
+     * Builder to create a partition store backed by S3.
+     */
     static final class Builder {
         private Configuration conf;
         private Schema tableSchema;

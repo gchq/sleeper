@@ -24,26 +24,33 @@ import java.util.List;
 
 public class SystemTestReporting {
 
-    private final ReportingContext context;
-    private final IngestReportsDriver ingestDriver;
-    private final CompactionReportsDriver compactionDriver;
+    private final SystemTestContext context;
 
     public SystemTestReporting(SystemTestContext context) {
-        SystemTestDrivers drivers = context.instance().adminDrivers();
-        this.context = context.reporting();
-        this.ingestDriver = drivers.ingestReports(context);
-        this.compactionDriver = drivers.compactionReports(context);
+        this.context = context;
     }
 
     public SystemTestIngestJobsReport ingestJobs() {
-        return new SystemTestIngestJobsReport(ingestDriver.jobs(context));
+        return new SystemTestIngestJobsReport(ingestDriver().jobs(context.reporting()));
     }
 
     public SystemTestCompactionJobsReport compactionJobs() {
-        return new SystemTestCompactionJobsReport(compactionDriver.jobs(context));
+        return new SystemTestCompactionJobsReport(compactionDriver().jobs(context.reporting()));
     }
 
     public List<CompactionTaskStatus> finishedCompactionTasks() {
-        return compactionDriver.tasks(context);
+        return compactionDriver().tasks(context.reporting());
+    }
+
+    private IngestReportsDriver ingestDriver() {
+        return adminDrivers().ingestReports(context);
+    }
+
+    private CompactionReportsDriver compactionDriver() {
+        return adminDrivers().compactionReports(context);
+    }
+
+    private SystemTestDrivers adminDrivers() {
+        return context.instance().adminDrivers();
     }
 }

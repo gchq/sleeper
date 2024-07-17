@@ -51,7 +51,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -760,7 +760,7 @@ public class SqsQueryProcessorLambdaIT {
                     .hadoopConfiguration(configuration)
                     .build();
             factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
-        } catch (IOException | StateStoreException | IteratorException e) {
+        } catch (IOException | StateStoreException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }

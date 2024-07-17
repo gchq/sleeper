@@ -23,6 +23,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A data structure to store the results of an ingest. Stores file references which were created, and the records
+ * read/written.
+ */
 public class IngestResult {
     private final List<FileReference> fileReferenceList;
     private final long recordsRead;
@@ -34,15 +38,34 @@ public class IngestResult {
         this.recordsWritten = recordsWritten;
     }
 
+    /**
+     * Creates an instance of this class where all records in all files were read and written.
+     *
+     * @param  fileReferenceList the file reference list
+     * @return                   an instance of this class
+     */
     public static IngestResult allReadWereWritten(List<FileReference> fileReferenceList) {
         long recordsWritten = recordsWritten(fileReferenceList);
         return new IngestResult(fileReferenceList, recordsWritten, recordsWritten);
     }
 
+    /**
+     * Creates an instance of this class where the provided number of records were read, and all records in all files
+     * were written.
+     *
+     * @param  recordsRead       the number of records read
+     * @param  fileReferenceList the file reference list
+     * @return                   an instance of this class
+     */
     public static IngestResult fromReadAndWritten(long recordsRead, List<FileReference> fileReferenceList) {
         return new IngestResult(fileReferenceList, recordsRead, recordsWritten(fileReferenceList));
     }
 
+    /**
+     * Creates an instance of this class where no files were created, and no records were read or written.
+     *
+     * @return an instance of this class
+     */
     public static IngestResult noFiles() {
         return new IngestResult(Collections.emptyList(), 0, 0);
     }
@@ -55,6 +78,11 @@ public class IngestResult {
         return Collections.unmodifiableList(fileReferenceList);
     }
 
+    /**
+     * Creates a records processed object from this class.
+     *
+     * @return a {@link RecordsProcessed} object
+     */
     public RecordsProcessed asRecordsProcessed() {
         return new RecordsProcessed(recordsRead, recordsWritten);
     }

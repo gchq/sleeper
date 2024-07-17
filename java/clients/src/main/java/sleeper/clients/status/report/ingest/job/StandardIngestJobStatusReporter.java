@@ -29,6 +29,8 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
+import sleeper.ingest.job.status.IngestJobFilesWrittenAndAdded;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusType;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.updatePrinters;
 import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
@@ -46,6 +49,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private final TableField stateField;
     private final TableField jobIdField;
     private final TableField inputFilesCount;
+    private final TableField addedFilesCount;
     private final TableWriterFactory tableFactory;
     private final StandardProcessRunReporter runReporter;
 
@@ -61,6 +65,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
+        addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -77,6 +82,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             tableFactory.tableBuilder()
                     .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
                             runReporter.getFinishedFields())
+                    .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
@@ -116,7 +122,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", status.getFurthestStatusType());
+        out.printf("State: %s%n", status.getFurthestRunStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
             printProcessJobRun(run);
@@ -124,22 +130,23 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printProcessJobRun(ProcessRun run) {
-        runReporter.printProcessJobRunWithUpdatePrinter(run,
-                printUpdateType(IngestJobValidatedStatus.class, this::printValidation));
-        if (IngestJobStatusType.of(run.getLatestUpdate()) == IN_PROGRESS) {
+        runReporter.printProcessJobRunWithUpdatePrinter(run, updatePrinters(
+                printUpdateType(IngestJobValidatedStatus.class, this::printValidation),
+                printUpdateType(IngestJobAddedFilesStatus.class, this::printAddedFiles)));
+        if (IngestJobStatusType.statusTypeOfJobRun(run) == IN_PROGRESS) {
             out.println("Not finished");
         }
     }
 
-    private void printValidation(IngestJobValidatedStatus status) {
-        out.printf("Validation Time: %s%n", status.getStartTime());
-        out.printf("Validation Update Time: %s%n", status.getUpdateTime());
-        if (status.isValid()) {
+    private void printValidation(IngestJobValidatedStatus update) {
+        out.printf("Validation time: %s%n", update.getStartTime());
+        out.printf("Validation update time: %s%n", update.getUpdateTime());
+        if (update.isValid()) {
             out.println("Job was accepted");
         } else {
             out.println("Job was rejected with reasons:");
-            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
-            rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) update;
+            rejectedStatus.getFailureReasons().forEach(reason -> out.printf("- %s%n", reason));
             if (rejectedStatus.getJsonMessage() != null) {
                 out.println();
                 out.println("Received JSON message:");
@@ -147,6 +154,11 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                 out.println();
             }
         }
+    }
+
+    private void printAddedFiles(IngestJobAddedFilesStatus update) {
+        out.printf("%s files written at: %s%n", update.getFileCount(), update.getWrittenTime());
+        out.printf("Files added to table at: %s%n", update.getUpdateTime());
     }
 
     private String prettyPrintJsonString(String json) {
@@ -162,7 +174,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
-        out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
+        out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunSuccessful).count());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
@@ -170,7 +182,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             Map<String, Integer> persistentEmrStepCount) {
         queueMessages.print(out);
         printPendingEmrStepCount(persistentEmrStepCount);
-        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
+        out.printf("Total jobs in report: %s%n", statusList.size());
+        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunInProgress).count());
     }
 
     private void printPendingEmrStepCount(Map<String, Integer> stepCount) {
@@ -198,7 +211,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, IngestJobStatusType.of(run.getLatestUpdate()));
+            row.value(stateField, IngestJobStatusType.statusTypeOfJobRun(run));
+            row.value(addedFilesCount, IngestJobFilesWrittenAndAdded.from(run).getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
         }));
     }

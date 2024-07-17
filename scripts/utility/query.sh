@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,4 +17,6 @@ set -e
 unset CDPATH
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.clients.QueryClient "$@"
+java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.QueryClient "$@"

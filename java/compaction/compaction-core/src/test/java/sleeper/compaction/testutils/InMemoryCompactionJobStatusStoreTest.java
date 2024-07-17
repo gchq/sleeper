@@ -24,15 +24,26 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -78,7 +89,7 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
-                            forJobOnTask(job.getId(), taskId, startedCompactionStatus(startedTime)))));
+                            forJobOnTask(job.getId(), taskId, compactionStartedStatus(startedTime)))));
         }
 
         @Test
@@ -96,8 +107,28 @@ class InMemoryCompactionJobStatusStoreTest {
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
-                                    startedCompactionStatus(startedTime),
-                                    finishedCompactionStatus(summary(startedTime, finishedTime, 100, 100))))));
+                                    compactionStartedStatus(startedTime),
+                                    compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100))))));
+        }
+
+        @Test
+        void shouldStoreFailedJob() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
+            String taskId = "test-task";
+            List<String> failureReasons = List.of("Something went wrong");
+            CompactionJob job = addFailedJob(createdTime,
+                    new ProcessRunTime(startedTime, finishedTime), taskId, failureReasons);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    compactionStartedStatus(startedTime),
+                                    compactionFailedStatus(new ProcessRunTime(startedTime, finishedTime), failureReasons)))));
         }
 
         @Test
@@ -111,16 +142,16 @@ class InMemoryCompactionJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job, createdTime);
-            store.jobStarted(job, startedTime, taskId);
-            store.jobFinished(job, summary, taskId);
+            store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
+            store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
-                                    startedCompactionStatus(startedTime),
-                                    finishedCompactionStatus(summary)))));
+                                    compactionStartedStatus(startedTime),
+                                    compactionFinishedStatus(summary)))));
         }
     }
 
@@ -204,7 +235,7 @@ class InMemoryCompactionJobStatusStoreTest {
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                                    forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
         @Test
@@ -247,7 +278,7 @@ class InMemoryCompactionJobStatusStoreTest {
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                                    forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
         @Test
@@ -292,7 +323,37 @@ class InMemoryCompactionJobStatusStoreTest {
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
-                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+                                    forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
+        }
+
+        @Test
+        void shouldGetJobInTimePeriodWhenFirstRunIsInPeriod() {
+            // Given
+            Instant createdTime = Instant.parse("2024-07-01T10:40:00Z");
+            Instant startedTime1 = Instant.parse("2024-07-01T10:41:00Z");
+            RecordsProcessedSummary summary1 = summary(startedTime1, Duration.ofMinutes(2), 100L, 100L);
+            Instant startedTime2 = Instant.parse("2024-07-01T10:41:10Z");
+            RecordsProcessedSummary summary2 = summary(startedTime2, Duration.ofMinutes(1), 100L, 100L);
+            String taskId1 = "test-task-1";
+            String taskId2 = "test-task-2";
+            CompactionJob job = dataHelper.singleFileCompaction();
+            store.jobCreated(job, createdTime);
+            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
+            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
+            store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
+            store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId1).build());
+
+            // When / Then
+            assertThat(store.getJobsInTimePeriod(tableId,
+                    Instant.parse("2024-07-01T10:42:30Z"),
+                    Instant.parse("2024-07-01T11:00:00Z")))
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                                    forJobOnTask(job.getId(), taskId1,
+                                            compactionStartedStatus(startedTime1), compactionFinishedStatus(summary1)),
+                                    forJobOnTask(job.getId(), taskId2,
+                                            compactionStartedStatus(startedTime2), compactionFinishedStatus(summary2)))));
         }
 
         @Test
@@ -318,6 +379,87 @@ class InMemoryCompactionJobStatusStoreTest {
         }
     }
 
+    @Nested
+    @DisplayName("Track asynchronous commit")
+    class TrackAsynchronousCommit {
+
+        @Test
+        void shouldTrackJobFinishedInTaskButNotYetCommitted() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            RecordsProcessedSummary summary = summary(
+                    startedTime, Duration.ofMinutes(1), 100, 100);
+            String taskId = "test-task";
+            CompactionJob job = addFinishedJobUncommitted(createdTime, summary, taskId);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    compactionStartedStatus(startedTime),
+                                    compactionFinishedStatusUncommitted(summary)))));
+        }
+
+        @Test
+        void shouldTrackJobFinishedAndCommitted() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            Instant committedTime = Instant.parse("2023-03-29T12:30:00Z");
+            RecordsProcessedSummary summary = summary(
+                    startedTime, Duration.ofMinutes(1), 100, 100);
+            String taskId = "test-task";
+            CompactionJob job = addFinishedJobCommitted(createdTime, summary, committedTime, taskId);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    compactionStartedStatus(startedTime),
+                                    compactionFinishedStatusUncommitted(summary),
+                                    compactionCommittedStatus(committedTime)))));
+        }
+
+        @Test
+        void shouldTrackJobStartedTwiceThenFinishedTwiceFromSameTask() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:00Z");
+            Instant startedTime1 = Instant.parse("2023-03-29T12:27:10Z");
+            RecordsProcessedSummary summary1 = summary(
+                    startedTime1, Duration.ofMinutes(1), 100, 100);
+            Instant startedTime2 = Instant.parse("2023-03-29T12:28:15Z");
+            RecordsProcessedSummary summary2 = summary(
+                    startedTime2, Duration.ofMinutes(1), 100, 100);
+            String taskId = "test-task";
+            String runId1 = "test-run-1";
+            String runId2 = "test-run-2";
+
+            // When
+            CompactionJob job = dataHelper.singleFileCompaction();
+            store.jobCreated(job, createdTime);
+            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
+            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
+            store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
+            store.jobFailed(compactionJobFailed(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
+                    .failure(new RuntimeException("Could not commit same compaction twice")).build());
+
+            // Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobCreated(job, createdTime,
+                            ProcessRun.builder().taskId(taskId)
+                                    .startedStatus(compactionStartedStatus(startedTime2))
+                                    .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
+                                    .build(),
+                            ProcessRun.builder().taskId(taskId)
+                                    .startedStatus(compactionStartedStatus(startedTime1))
+                                    .finishedStatus(compactionFinishedStatus(summary1))
+                                    .build()));
+        }
+    }
+
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
@@ -328,14 +470,35 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
         CompactionJob job = addCreatedJob(createdTime);
         store.fixUpdateTime(defaultUpdateTime(startedTime));
-        store.jobStarted(job, startedTime, taskId);
+        store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
         return job;
     }
 
     private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(job, summary, taskId);
+        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
+        return job;
+    }
+
+    private CompactionJob addFinishedJobUncommitted(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
+        CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
+        store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
+        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).committedBySeparateUpdate(true).build());
+        return job;
+    }
+
+    private CompactionJob addFinishedJobCommitted(Instant createdTime, RecordsProcessedSummary summary, Instant committedTime, String taskId) {
+        CompactionJob job = addFinishedJobUncommitted(createdTime, summary, taskId);
+        store.fixUpdateTime(defaultUpdateTime(committedTime));
+        store.jobCommitted(compactionJobCommitted(job, committedTime).taskId(taskId).build());
+        return job;
+    }
+
+    private CompactionJob addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+        CompactionJob job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
+        store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
+        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }

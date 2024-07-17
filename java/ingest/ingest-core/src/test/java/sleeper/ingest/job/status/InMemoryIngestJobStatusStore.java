@@ -15,8 +15,9 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -31,6 +32,9 @@ import java.util.stream.Stream;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
+/**
+ * An in-memory implementation of the ingest job status store.
+ */
 public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
 
@@ -62,17 +66,46 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
+    public void jobAddedFiles(IngestJobAddedFilesEvent event) {
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                .writtenTime(event.getWrittenTime())
+                                .updateTime(defaultUpdateTime(event.getWrittenTime()))
+                                .fileCount(event.getFileCount())
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(event.getTableId())
-                .map(jobs -> jobs.jobIdToUpdateRecords.get(event.getJobId()))
-                .orElseThrow(() -> new IllegalStateException("Job not started: " + event.getJobId()));
-        jobRecords.add(ProcessStatusUpdateRecord.builder()
-                .jobId(event.getJobId())
-                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
-                .jobRunId(event.getJobRunId())
-                .taskId(event.getTaskId())
-                .build());
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
+                                defaultUpdateTime(summary.getFinishTime()), summary)
+                                .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
+                                .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
+    public void jobFailed(IngestJobFailedEvent event) {
+        ProcessRunTime runTime = event.getRunTime();
+        existingJobRecords(event.getTableId(), event.getJobId())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJobId())
+                        .statusUpdate(ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
     }
 
     @Override
@@ -83,7 +116,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
         return streamAllJobs()
-                .filter(status -> status.getFurthestStatusType().equals(REJECTED))
+                .filter(status -> status.getFurthestRunStatusType().equals(REJECTED))
                 .collect(Collectors.toList());
     }
 
@@ -99,6 +132,12 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .flatMap(TableJobs::streamAllRecords));
     }
 
+    /**
+     * Streams all process status update records for a table.
+     *
+     * @param  tableId the table ID
+     * @return         a stream of {@link ProcessStatusUpdateRecord}
+     */
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableId) {
         return tableJobs(tableId)
                 .map(TableJobs::streamAllRecords)
@@ -109,6 +148,15 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
         return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
+    private List<ProcessStatusUpdateRecord> existingJobRecords(String tableId, String jobId) {
+        return tableJobs(tableId)
+                .map(jobs -> jobs.jobIdToUpdateRecords.get(jobId))
+                .orElseThrow(() -> new IllegalStateException("Job not started: " + jobId));
+    }
+
+    /**
+     * Stores job updates by job ID in memory.
+     */
     private static class TableJobs {
         private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 

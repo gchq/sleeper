@@ -22,6 +22,8 @@ import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
@@ -38,7 +40,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
  */
 public class StateStoreProvider {
     private final int cacheSize;
-    private final StateStoreLoader stateStoreFactory;
+    private final Factory stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
     private final Queue<String> tableIds;
 
@@ -47,17 +49,23 @@ public class StateStoreProvider {
         this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)::getStateStore);
     }
 
-    public StateStoreProvider(InstanceProperties instanceProperties, StateStoreLoader stateStoreFactory) {
+    public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    protected StateStoreProvider(int cacheSize, StateStoreLoader stateStoreFactory) {
+    protected StateStoreProvider(int cacheSize, Factory stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
         this.tableIdToStateStoreCache = new HashMap<>();
         this.tableIds = new ArrayQueue<>(cacheSize);
     }
 
+    /**
+     * Retrieves or creates the state store client for the given Sleeper table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 the state store
+     */
     public StateStore getStateStore(TableProperties tableProperties) {
         String tableId = tableProperties.get(TABLE_ID);
         if (!tableIdToStateStoreCache.containsKey(tableId)) {
@@ -71,7 +79,27 @@ public class StateStoreProvider {
         return tableIdToStateStoreCache.get(tableId);
     }
 
-    public interface StateStoreLoader {
+    /**
+     * Provides a helper to get a state store using a Sleeper table ID.
+     *
+     * @param  tablePropertiesProvider the table properties provider
+     * @return                         the helper
+     */
+    public GetStateStoreByTableId byTableId(TablePropertiesProvider tablePropertiesProvider) {
+        return tableId -> getStateStore(tablePropertiesProvider.getById(tableId));
+    }
+
+    /**
+     * Creates an instance of the state store client for a Sleeper table. Implemented by {@link StateStoreFactory}.
+     */
+    public interface Factory {
+
+        /**
+         * Creates a state store client.
+         *
+         * @param  tableProperties the Sleeper table properties
+         * @return                 the state store
+         */
         StateStore getStateStore(TableProperties tableProperties);
     }
 }

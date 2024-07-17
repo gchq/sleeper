@@ -29,7 +29,6 @@ import software.amazon.awscdk.services.iam.CfnInstanceProfileProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.ManagedPolicyProps;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
@@ -40,9 +39,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -55,7 +53,6 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
@@ -68,15 +65,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     public CommonEmrBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, BulkImportBucketStack importBucketStack, IngestStatusStoreStack statusStoreStack) {
+            CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
-        IngestStatusStoreResources statusStore = statusStoreStack.getResources();
-        statusStore.grantWriteJobEvent(ec2Role);
-        statusStore.grantWriteJobEvent(emrRole);
     }
 
     private static IRole createEc2Role(
@@ -86,7 +80,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
         IRole role = new Role(scope, "Ec2Role", RoleProps.builder()
-                .roleName("Sleeper-" + instanceProperties.get(ID) + "-EMR-EC2-Role")
+                .roleName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-ec2"))
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
@@ -134,7 +128,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
     }
 
     private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
-        String instanceId = instanceProperties.get(ID);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
         String vpc = instanceProperties.get(VPC_ID);
@@ -145,9 +139,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
                 Map.class));
 
-        ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(scope, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()
+        ManagedPolicy customEmrManagedPolicy = ManagedPolicy.Builder.create(scope, "CustomEMRManagedPolicy")
                 .description("Custom policy for EMR bulk import to operate in VPC")
-                .managedPolicyName("sleeper-" + instanceId + "-VPCPolicy")
+                .managedPolicyName(String.join("-", "sleeper", instanceId, "bulk-import-emr-in-vpc"))
                 .document(PolicyDocument.Builder.create().statements(Lists.newArrayList(
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("CreateSecurityGroupInVPC")
@@ -176,13 +170,13 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                 .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
                                 .build())))
                         .build())
-                .build());
+                .build();
 
-        ManagedPolicy emrManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServicePolicy", ManagedPolicyProps.builder()
-                .managedPolicyName("Sleeper-" + instanceId + "-DefaultEMRPolicy")
+        ManagedPolicy emrManagedPolicy = ManagedPolicy.Builder.create(scope, "DefaultEMRServicePolicy")
+                .managedPolicyName(String.join("-", "sleeper", instanceId, "bulk-import-emr"))
                 .description("Policy required for Sleeper Bulk import EMR cluster, based on the AmazonEMRServicePolicy_v2 policy")
                 .document(policyDoc)
-                .build());
+                .build();
 
         Role role = new Role(scope, "EmrRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
@@ -206,7 +200,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
         CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
         CfnJson jsonObject = new CfnJson(scope, "EMRSecurityConfigurationJSONObject", jsonProps);
         CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
-                .name(String.join("-", "sleeper", instanceProperties.get(ID), "EMRSecurityConfigurationProps"))
+                .name(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());

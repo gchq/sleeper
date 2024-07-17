@@ -106,12 +106,18 @@ public class InMemoryIngestByQueue {
         });
     }
 
+    public IngestJobStatusStore jobStore() {
+        return jobStore;
+    }
+
+    public IngestTaskStatusStore taskStore() {
+        return taskStore;
+    }
+
     private void finishJobs(SystemTestContext context, String taskId) {
         for (IngestJob queuedJob : queuedJobs) {
             IngestJob job = addTableId(queuedJob, context);
-            RecordsProcessedSummary summary = ingest(job, context);
-            jobStore.jobStarted(ingestJobStarted(taskId, job, summary.getStartTime()));
-            jobStore.jobFinished(ingestJobFinished(taskId, job, summary));
+            ingest(job, context, taskId);
         }
         queuedJobs.clear();
     }
@@ -136,7 +142,7 @@ public class InMemoryIngestByQueue {
         }
     }
 
-    private RecordsProcessedSummary ingest(IngestJob job, SystemTestContext context) {
+    private void ingest(IngestJob job, SystemTestContext context, String taskId) {
         Instant startTime = Instant.now();
         String fs = context.instance().getInstanceProperties().get(FILE_SYSTEM);
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
@@ -147,8 +153,11 @@ public class InMemoryIngestByQueue {
                 .ingest(tableProperties, sourceFiles.streamRecords(filesWithFs).iterator());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
 
-        return new RecordsProcessedSummary(
-                result.asRecordsProcessed(),
-                startTime, finishTime);
+        jobStore.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
+        jobStore.jobFinished(ingestJobFinished(job,
+                new RecordsProcessedSummary(
+                        result.asRecordsProcessed(),
+                        startTime, finishTime))
+                .taskId(taskId).fileReferencesAddedByJob(result.getFileReferenceList()).build());
     }
 }

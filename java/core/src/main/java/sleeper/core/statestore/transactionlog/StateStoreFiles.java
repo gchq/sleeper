@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,7 +46,7 @@ public class StateStoreFiles {
      */
     public Stream<FileReference> references() {
         return filesByFilename.values().stream()
-                .flatMap(file -> file.getInternalReferences().stream());
+                .flatMap(file -> file.getReferences().stream());
     }
 
     /**
@@ -53,8 +54,8 @@ public class StateStoreFiles {
      *
      * @return all files
      */
-    public Stream<AllReferencesToAFile> referencedAndUnreferenced() {
-        return filesByFilename.values().stream();
+    public Collection<AllReferencesToAFile> referencedAndUnreferenced() {
+        return filesByFilename.values();
     }
 
     /**
@@ -66,7 +67,7 @@ public class StateStoreFiles {
      */
     public Stream<String> unreferencedBefore(Instant maxUpdateTime) {
         return filesByFilename.values().stream()
-                .filter(file -> file.getTotalReferenceCount() == 0)
+                .filter(file -> file.getReferenceCount() == 0)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
                 .map(AllReferencesToAFile::getFilename)
                 .collect(toUnmodifiableList()).stream(); // Avoid concurrent modification during GC

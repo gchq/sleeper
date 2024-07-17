@@ -32,7 +32,6 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
 import software.amazon.awscdk.services.eks.FargateCluster;
-import software.amazon.awscdk.services.eks.FargateClusterProps;
 import software.amazon.awscdk.services.eks.FargateProfileOptions;
 import software.amazon.awscdk.services.eks.KubernetesManifest;
 import software.amazon.awscdk.services.eks.KubernetesVersion;
@@ -66,7 +65,6 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -74,7 +72,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -84,7 +81,6 @@ import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
@@ -101,15 +97,15 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks, IngestStatusStoreStack statusStoreStack,
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
-        String instanceId = instanceProperties.get(ID);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
-                .queueName(instanceId + "-BulkImportEKSDLQ")
+                .queueName(String.join("sleeper", instanceId, "BulkImportEKSDLQ"))
                 .build();
 
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
@@ -126,7 +122,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(instanceId + "-BulkImportEKSQ")
+                .queueName(String.join("sleeper", instanceId, "BulkImportEKSQ"))
                 .build();
 
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
@@ -139,8 +135,7 @@ public final class EksBulkImportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
+        String functionName = String.join("-", "sleeper", instanceId, "bulk-import-eks-starter");
 
         IFunction bulkImportJobStarter = bulkImportStarterJar.buildFunction(this, "BulkImportEKSJobStarter", builder -> builder
                 .functionName(functionName)
@@ -155,27 +150,23 @@ public final class EksBulkImportStack extends NestedStack {
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
-        statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
-        coreStacks.grantReadIngestSources(bulkImportJobStarter.getRole());
-        coreStacks.grantReadConfigAndPartitions(bulkImportJobStarter);
+        coreStacks.grantValidateBulkImport(bulkImportJobStarter.getRole());
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC", vpcLookupOptions);
 
-        Cluster bulkImportCluster = new FargateCluster(this, "EksBulkImportCluster", FargateClusterProps.builder()
-                .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(Locale.ROOT), "eksBulkImportCluster"))
+        String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
+        Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
+                .clusterName(uniqueBulkImportId)
                 .version(KubernetesVersion.of("1.24"))
                 .kubectlLayer(new KubectlV24Layer(this, "KubectlLayer"))
                 .vpc(vpc)
                 .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
-                .build());
+                .build();
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
-
-        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(ID)
-                .replace(".", "-") + "-eks-bulk-import", 63);
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
@@ -218,7 +209,6 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
-        statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

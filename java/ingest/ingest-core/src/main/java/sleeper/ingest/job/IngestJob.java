@@ -15,11 +15,15 @@
  */
 package sleeper.ingest.job;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * A job that will ingest data from one or more files to a Sleeper table. This involves taking the input files, sorting
+ * the data in them, writing the data to files split across partitions in the Sleeper table, and adding those new files
+ * to the state store.
+ */
 public class IngestJob {
     private final String id;
     private final String tableName;
@@ -89,6 +93,9 @@ public class IngestJob {
                 '}';
     }
 
+    /**
+     * Builder for creating ingest job objects.
+     */
     public static final class Builder {
         private String id;
         private String tableName;
@@ -98,28 +105,49 @@ public class IngestJob {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID. This must be unique across all jobs in the Sleeper table.
+         *
+         * @param  id the ingest job ID
+         * @return    the builder
+         */
         public Builder id(String id) {
             this.id = id;
             return this;
         }
 
+        /**
+         * Sets the name of the Sleeper table to write to.
+         *
+         * @param  tableName the table name
+         * @return           the builder
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Sets the internal ID of the Sleeper table to write to. This should only ever be set internally by
+         * Sleeper.
+         *
+         * @param  tableId the internal table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the list of input files.
+         *
+         * @param  files the list of input files
+         * @return       the builder
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
-        }
-
-        public Builder files(String... files) {
-            return files(Arrays.asList(files));
         }
 
         public IngestJob build() {

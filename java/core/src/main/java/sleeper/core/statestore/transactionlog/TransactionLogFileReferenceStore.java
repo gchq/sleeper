@@ -23,8 +23,10 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
@@ -72,9 +74,12 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(
-                jobId, partitionId, inputFiles, newReference));
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        try {
+            head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     @Override
@@ -98,8 +103,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         int foundUnreferenced = 0;
         boolean moreThanMax = false;
         StateStoreFiles state = files();
-        for (AllReferencesToAFile file : (Iterable<AllReferencesToAFile>) () -> state.referencedAndUnreferenced().iterator()) {
-            if (file.getTotalReferenceCount() < 1) {
+        for (AllReferencesToAFile file : state.referencedAndUnreferenced()) {
+            if (file.getReferenceCount() < 1) {
                 if (foundUnreferenced >= maxUnreferencedFiles) {
                     moreThanMax = true;
                     continue;

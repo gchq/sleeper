@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.statestore.StateStoreFileUtils;
+import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;
 
@@ -29,30 +29,30 @@ import java.io.IOException;
  */
 class TransactionLogSnapshotSerDe {
     private final Schema sleeperSchema;
-    private final StateStoreFileUtils stateStoreFileUtils;
+    private final StateStoreArrowFileStore dataStore;
 
     TransactionLogSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
         this.sleeperSchema = sleeperSchema;
-        this.stateStoreFileUtils = new StateStoreFileUtils(configuration);
+        this.dataStore = new StateStoreArrowFileStore(configuration);
     }
 
     void savePartitions(TransactionLogSnapshotMetadata snapshot, StateStorePartitions state) throws IOException {
-        stateStoreFileUtils.savePartitions(snapshot.getPath(), state, sleeperSchema);
+        dataStore.savePartitions(snapshot.getPath(), state.all(), sleeperSchema);
     }
 
     StateStorePartitions loadPartitions(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
-        stateStoreFileUtils.loadPartitions(snapshot.getPath(), sleeperSchema, partitions::put);
+        dataStore.loadPartitions(snapshot.getPath(), sleeperSchema).forEach(partitions::put);
         return partitions;
     }
 
     void saveFiles(TransactionLogSnapshotMetadata snapshot, StateStoreFiles state) throws IOException {
-        stateStoreFileUtils.saveFiles(snapshot.getPath(), state);
+        dataStore.saveFiles(snapshot.getPath(), state.referencedAndUnreferenced());
     }
 
     StateStoreFiles loadFiles(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStoreFiles files = new StateStoreFiles();
-        stateStoreFileUtils.loadFiles(snapshot.getPath(), files::add);
+        dataStore.loadFiles(snapshot.getPath()).forEach(files::add);
         return files;
     }
 }

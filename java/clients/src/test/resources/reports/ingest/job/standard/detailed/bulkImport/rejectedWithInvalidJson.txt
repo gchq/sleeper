@@ -6,8 +6,8 @@ State: REJECTED
 Number of input files: 2
 
 Run on task test-task-id
-Validation Time: 2023-06-05T17:20:00Z
-Validation Update Time: 2023-06-05T17:20:00.123Z
+Validation time: 2023-06-05T17:20:00Z
+Validation update time: 2023-06-05T17:20:00.123Z
 Job was rejected with reasons:
 - Test validation reason
 

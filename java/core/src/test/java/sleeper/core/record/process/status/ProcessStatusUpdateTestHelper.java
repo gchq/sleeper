@@ -15,12 +15,14 @@
  */
 package sleeper.core.record.process.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
+import java.util.List;
 
 /**
  * A helper for creating process status updates in tests.
@@ -69,6 +71,33 @@ public class ProcessStatusUpdateTestHelper {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
         return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  runDuration    the duration
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            ProcessRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
+        return failedStatus(startedStatus.getStartTime(), runDuration, failureReasons);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  startTime      the start time
+     * @param  runDuration    the duration
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            Instant startTime, Duration runDuration, List<String> failureReasons) {
+        ProcessRunTime runTime = new ProcessRunTime(startTime, runDuration);
+        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
     /**

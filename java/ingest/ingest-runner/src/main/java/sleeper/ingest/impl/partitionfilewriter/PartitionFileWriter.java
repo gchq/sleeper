@@ -31,8 +31,8 @@ public interface PartitionFileWriter {
      * Append a record to the partition file. This method must always be called with records increasing in sort
      * order.
      *
-     * @param  record      The record to append
-     * @throws IOException -
+     * @param  record      the record to append
+     * @throws IOException if there was a failure writing the file
      */
     void append(Record record) throws IOException;
 
@@ -40,8 +40,8 @@ public interface PartitionFileWriter {
      * Close the file, possibly asynchronously. When the returned future completes, the partition file should be in its
      * final storage and any intermediate data should be cleared.
      *
-     * @return             Details about the new partition file
-     * @throws IOException -
+     * @return             details about the new partition file
+     * @throws IOException if there was a failure writing the file
      */
     CompletableFuture<FileReference> close() throws IOException;
 

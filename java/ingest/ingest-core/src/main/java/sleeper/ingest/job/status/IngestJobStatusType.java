@@ -16,33 +16,77 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessRun;
 
-import java.util.stream.Stream;
+import java.util.Collection;
 
+/**
+ * Defines the states an ingest job can be in. Uses an order to find which run of the job determines the state of the
+ * job as a whole, as a job can be run multiple times. If there is a run of the job which is in progress or successful,
+ * any failed runs will be ignored for computing the status of the job.
+ */
 public enum IngestJobStatusType {
-    REJECTED(IngestJobRejectedStatus.class, 1),
-    ACCEPTED(IngestJobAcceptedStatus.class, 2),
-    IN_PROGRESS(IngestJobStartedStatus.class, 3),
-    FINISHED(ProcessFinishedStatus.class, 4);
+    REJECTED(1),
+    ACCEPTED(2),
+    FAILED(3),
+    IN_PROGRESS(4),
+    UNCOMMITTED(5),
+    FINISHED(6);
 
-    private final Class<?> statusUpdateClass;
     private final int order;
 
-    IngestJobStatusType(Class<?> statusUpdateClass, int order) {
-        this.statusUpdateClass = statusUpdateClass;
+    IngestJobStatusType(int order) {
         this.order = order;
     }
 
-    public int getOrder() {
-        return order;
+    public boolean isRunInProgress() {
+        return this == ACCEPTED || this == IN_PROGRESS;
     }
 
-    public static IngestJobStatusType of(ProcessStatusUpdate update) {
-        return Stream.of(values())
-                .filter(type -> type.statusUpdateClass.isInstance(update))
-                .findFirst().orElseThrow();
+    public boolean isEndOfJob() {
+        return this == REJECTED || this == FINISHED;
+    }
+
+    /**
+     * Gets the furthest status type for any run of an ingest job.
+     *
+     * @param  runStatusTypes the status types of runs in the job
+     * @return                the status type
+     */
+    public static IngestJobStatusType statusTypeOfFurthestRunOfJob(Collection<IngestJobStatusType> runStatusTypes) {
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
+        for (IngestJobStatusType runStatusType : runStatusTypes) {
+            furthestStatus.setIfFurther(runStatusType);
+        }
+        return furthestStatus.get();
+    }
+
+    /**
+     * Gets the status type for a run of an ingest job.
+     *
+     * @param  run the run
+     * @return     the status type
+     */
+    public static IngestJobStatusType statusTypeOfJobRun(ProcessRun run) {
+        return IngestJobUpdateType.typeOfFurthestUpdateInRun(run)
+                .statusTypeAfterThisInRun(run);
+    }
+
+    /**
+     * Tracks the furthest status in a job. An in progress or finished run will supersede a failed one.
+     */
+    private static class FurthestStatusTracker {
+        private IngestJobStatusType furthestStatus;
+
+        public void setIfFurther(IngestJobStatusType newStatus) {
+            if (furthestStatus == null || furthestStatus.order < newStatus.order) {
+                furthestStatus = newStatus;
+            }
+        }
+
+        public IngestJobStatusType get() {
+            return furthestStatus;
+        }
     }
 
 }

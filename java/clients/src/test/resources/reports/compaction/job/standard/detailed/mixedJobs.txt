@@ -1,34 +1,78 @@
 
 Compaction Job Status Report
 ----------------------------
-Details for job $(jobId3):
+Details for job $(jobId6):
 State: FINISHED
-Creation Time: 2022-09-19T13:33:12.001Z
+Creation time: 2022-09-22T13:33:12.001Z
+Partition ID: partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-22T13:34:12.001Z
+Start update time: 2022-09-22T13:34:12.123Z
+State store commit time: 2022-09-22T13:36:12.001Z
+--------------------------
+Details for job $(jobId5):
+State: FINISHED
+Creation time: 2022-09-21T13:33:12.001Z
+Partition ID: partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-21T13:34:12.001Z
+Start update time: 2022-09-21T13:34:12.123Z
+Finish time: 2022-09-21T13:35:12.001Z
+Finish update time: 2022-09-21T13:35:12.123Z
+Duration: 1m
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+State store commit time: 2022-09-21T13:36:12.001Z
+Delay between finish and commit: 1m
+--------------------------
+Details for job $(jobId4):
+State: UNCOMMITTED
+Creation time: 2022-09-20T13:33:12.001Z
+Partition ID: partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD
+
+Run on task task1111-1111-1111-1111-111111111111
+Start time: 2022-09-20T13:34:12.001Z
+Start update time: 2022-09-20T13:34:12.123Z
+Finish time: 2022-09-20T13:35:12.001Z
+Finish update time: 2022-09-20T13:35:12.123Z
+Duration: 1m
+Records read: 600
+Records written: 300
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+Not committed
+--------------------------
+Details for job $(jobId3):
+State: FAILED
+Creation time: 2022-09-19T13:33:12.001Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-09-19T13:34:12.001Z
-Start Update Time: 2022-09-19T13:34:12.123Z
-Finish Time: 2022-09-19T13:35:12.001Z
-Finish Update Time: 2022-09-19T13:35:12.123Z
+Start time: 2022-09-19T13:34:12.001Z
+Start update time: 2022-09-19T13:34:12.123Z
+Finish time: 2022-09-19T13:35:12.001Z
+Finish update time: 2022-09-19T13:35:12.123Z
 Duration: 1m
-Records Read: 600
-Records Written: 300
-Read Rate (reads per second): 10.00
-Write Rate (writes per second): 5.00
+Run failed, reasons:
+- Something went wrong
+- More details
 --------------------------
 Details for job $(jobId2):
-State: IN PROGRESS
-Creation Time: 2022-09-18T13:33:12.001Z
+State: IN_PROGRESS
+Creation time: 2022-09-18T13:33:12.001Z
 Partition ID: partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
 
 Run on task task1111-1111-1111-1111-111111111111
-Start Time: 2022-09-18T13:34:12.001Z
-Start Update Time: 2022-09-18T13:34:12.123Z
+Start time: 2022-09-18T13:34:12.001Z
+Start update time: 2022-09-18T13:34:12.123Z
 Not finished
 --------------------------
 Details for job $(jobId1):
 State: PENDING
-Creation Time: 2022-09-17T13:33:12.001Z
+Creation time: 2022-09-17T13:33:12.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------

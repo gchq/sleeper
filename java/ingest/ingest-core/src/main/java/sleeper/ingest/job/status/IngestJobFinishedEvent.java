@@ -17,14 +17,22 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 
+import java.util.List;
 import java.util.Objects;
 
+/**
+ * An event for when an ingest job was finished. Used in the ingest job status store.
+ */
 public class IngestJobFinishedEvent {
     private final String jobId;
     private final String tableId;
     private final RecordsProcessedSummary summary;
+    private final int numFilesWrittenByJob;
+    private final boolean committedBySeparateFileUpdates;
     private final String jobRunId;
     private final String taskId;
 
@@ -32,6 +40,8 @@ public class IngestJobFinishedEvent {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
+        numFilesWrittenByJob = Objects.requireNonNull(builder.numFilesWrittenByJob, "numFilesWrittenByJob must not be null");
+        committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
@@ -40,10 +50,13 @@ public class IngestJobFinishedEvent {
         return new Builder();
     }
 
-    public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(taskId).build();
-    }
-
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  job     the ingest job
+     * @param  summary the records processed summary
+     * @return         an instance of this class
+     */
     public static Builder ingestJobFinished(IngestJob job, RecordsProcessedSummary summary) {
         return builder().job(job).summary(summary);
     }
@@ -60,6 +73,14 @@ public class IngestJobFinishedEvent {
         return summary;
     }
 
+    public int getNumFilesWrittenByJob() {
+        return numFilesWrittenByJob;
+    }
+
+    public boolean isCommittedBySeparateFileUpdates() {
+        return committedBySeparateFileUpdates;
+    }
+
     public String getJobRunId() {
         return jobRunId;
     }
@@ -69,70 +90,149 @@ public class IngestJobFinishedEvent {
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        IngestJobFinishedEvent that = (IngestJobFinishedEvent) object;
-        return Objects.equals(jobId, that.jobId)
-                && Objects.equals(tableId, that.tableId) && Objects.equals(summary, that.summary)
-                && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
+    public int hashCode() {
+        return Objects.hash(jobId, tableId, summary, numFilesWrittenByJob, committedBySeparateFileUpdates, jobRunId, taskId);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(jobId, tableId, summary, jobRunId, taskId);
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof IngestJobFinishedEvent)) {
+            return false;
+        }
+        IngestJobFinishedEvent other = (IngestJobFinishedEvent) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(summary, other.summary)
+                && Objects.equals(numFilesWrittenByJob, other.numFilesWrittenByJob)
+                && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId);
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedEvent{" +
-                "jobId='" + jobId + '\'' +
-                ", tableId='" + tableId + '\'' +
-                ", summary=" + summary +
-                ", jobRunId='" + jobRunId + '\'' +
-                ", taskId='" + taskId + '\'' +
-                '}';
+        return "IngestJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedBySeparateFileUpdates="
+                + committedBySeparateFileUpdates + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
     }
 
+    /**
+     * Builder for ingest job finished event objects.
+     */
     public static final class Builder {
         private String jobId;
         private String tableId;
         private RecordsProcessedSummary summary;
+        private Integer numFilesWrittenByJob;
+        private boolean committedBySeparateFileUpdates;
         private String jobRunId;
         private String taskId;
 
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID and the table ID using the provided ingest job.
+         *
+         * @param  job the ingest job
+         * @return     the builder
+         */
         public Builder job(IngestJob job) {
             return jobId(job.getId())
                     .tableId(job.getTableId());
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  jobId the ingest job ID
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the records processed summary.
+         *
+         * @param  summary the records processed summary
+         * @return         the builder
+         */
         public Builder summary(RecordsProcessedSummary summary) {
             this.summary = summary;
             return this;
         }
 
+        /**
+         * Sets the number of files written during the job.
+         *
+         * @param  numFilesWrittenByJob the number of files
+         * @return                      the builder
+         */
+        public Builder numFilesWrittenByJob(int numFilesWrittenByJob) {
+            this.numFilesWrittenByJob = numFilesWrittenByJob;
+            return this;
+        }
+
+        /**
+         * Sets the files written during the job.
+         *
+         * @param  files the files
+         * @return       the builder
+         */
+        public Builder filesWrittenByJob(List<AllReferencesToAFile> files) {
+            return numFilesWrittenByJob(files.size());
+        }
+
+        /**
+         * Sets the file references added for all files written during the job.
+         *
+         * @param  fileReferences the file references
+         * @return                the builder
+         */
+        public Builder fileReferencesAddedByJob(List<FileReference> fileReferences) {
+            return filesWrittenByJob(AllReferencesToAFile.newFilesWithReferences(fileReferences));
+        }
+
+        /**
+         * Sets whether or not separate status updates are used for files added to the state store. If true, the job
+         * will only be committed when all files have been added.
+         *
+         * @param  committedBySeparateFileUpdates true if the job is committed by separate updates to add files
+         * @return                                the builder
+         */
+        public Builder committedBySeparateFileUpdates(boolean committedBySeparateFileUpdates) {
+            this.committedBySeparateFileUpdates = committedBySeparateFileUpdates;
+            return this;
+        }
+
+        /**
+         * Sets the job run ID.
+         *
+         * @param  jobRunId the job run ID
+         * @return          the builder
+         */
         public Builder jobRunId(String jobRunId) {
             this.jobRunId = jobRunId;
             return this;
         }
 
+        /**
+         * Sets the task ID.
+         *
+         * @param  taskId the task ID
+         * @return        the builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;

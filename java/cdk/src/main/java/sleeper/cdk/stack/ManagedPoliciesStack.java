@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -28,16 +27,12 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import javax.annotation.Nullable;
-
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -128,14 +123,9 @@ public class ManagedPoliciesStack extends NestedStack {
         invokeQueue.grantSendMessages(invokeSchedulesPolicy);
     }
 
-    // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
-    // This means SpotBugs complains if we pass that role into attachToRole.
-    // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
-    // even though attachToRole really requires the role to be non-null.
-    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public void grantReadIngestSources(@Nullable IRole role) {
+    public void grantReadIngestSources(IRole role) {
         if (readIngestSourcesPolicy != null) {
-            readIngestSourcesPolicy.attachToRole(Objects.requireNonNull(role));
+            readIngestSourcesPolicy.attachToRole(role);
         }
     }
 
@@ -149,7 +139,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
-                .managedPolicyName("sleeper-" + instanceProperties.get(ID) + "-" + id)
+                .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
                 .build();
     }
 

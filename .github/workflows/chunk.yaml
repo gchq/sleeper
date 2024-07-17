@@ -4,6 +4,10 @@ on:
       chunkId:
         required: true
         type: string
+      skipRust:
+        default: true
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -15,6 +19,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
+      - uses: dtolnay/rust-toolchain@1.79.0
+        if: ${{ ! inputs.skipRust }}
+      - name: Install cargo cross
+        run: cargo install cross
+        if: ${{ ! inputs.skipRust }}
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -34,11 +43,11 @@ jobs:
             -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
             >> $GITHUB_OUTPUT
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -DskipRust=${{ inputs.skipRust }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Test
         id: test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -DskipRust=${{ inputs.skipRust }} -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
         working-directory: ./java
       - name: Generate site
         id: site

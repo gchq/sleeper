@@ -65,61 +65,118 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // DynamoDBStateStore
-    CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+    CdkDefinedInstanceProperty ACTIVE_FILES_TABLELENAME = Index.propertyBuilder("sleeper.statestore.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty FILE_REFERENCE_COUNT_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.file.reference.count.table")
+    CdkDefinedInstanceProperty FILE_REFERENCE_COUNT_TABLENAME = Index.propertyBuilder("sleeper.statestore.dynamo.file.reference.count.table")
             .description("The name of the DynamoDB table holding metadata of the number of references to files " +
                     "in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.partition.table")
+    CdkDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.statestore.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // S3StateStore
-    CdkDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.metadata.s3.dynamo.revision.table")
+    CdkDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.statestore.s3.dynamo.revision.table")
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // TransactionLogStateStore
-    CdkDefinedInstanceProperty TRANSACTION_LOG_FILES_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.file.log.table")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_FILES_TABLENAME = Index.propertyBuilder("sleeper.statestore.transactionlog.dynamo.file.log.table")
             .description("The name of the DynamoDB table holding the state store file transaction log.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_PARTITIONS_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.partition.log.table")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_PARTITIONS_TABLENAME = Index.propertyBuilder("sleeper.statestore.transactionlog.dynamo.partition.log.table")
             .description("The name of the DynamoDB table holding the state store partition transaction log.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.all.snapshots.table")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME = Index.propertyBuilder("sleeper.statestore.transactionlog.dynamo.all.snapshots.table")
             .description("The name of the DynamoDB table holding information about all transaction log snapshots.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME = Index.propertyBuilder("sleeper.metadata.transactionlog.dynamo.latest.snapshots.table")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME = Index.propertyBuilder("sleeper.statestore.transactionlog.dynamo.latest.snapshots.table")
             .description("The name of the DynamoDB table holding information about latest transaction log snapshots.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.queue.url")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.creation.queue.url")
             .description("URL of the queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.queue.arn")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.creation.queue.arn")
             .description("The ARN of the queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.dlq.url")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.creation.dlq.url")
             .description("The URL of the dead letter queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.dlq.arn")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.creation.dlq.arn")
             .description("The ARN of the dead letter queue for transaction log snapshot creation requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_RULE = Index.propertyBuilder("sleeper.metadata.transactionlog.snapshots.creation.rule")
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_RULE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.creation.rule")
             .description("The name of the CloudWatch rule that triggers creation of transaction log snapshots.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.queue.url")
+            .description("URL of the queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.queue.arn")
+            .description("The ARN of the queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.dlq.url")
+            .description("The URL of the dead letter queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.dlq.arn")
+            .description("The ARN of the dead letter queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_RULE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshots.deletion.rule")
+            .description("The name of the CloudWatch rule that triggers deletion of transaction log snapshots.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.queue.url")
+            .description("URL of the queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.queue.arn")
+            .description("The ARN of the queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.dlq.url")
+            .description("The URL of the dead letter queue for transaction log snapshot deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_ARN = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.dlq.arn")
+            .description("The ARN of the dead letter queue for transaction log transaction deletion requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_RULE = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.rule")
+            .description("The name of the CloudWatch rule that triggers deletion of transaction log transactions.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    // State store commits
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_QUEUE_URL = Index.propertyBuilder("sleeper.statestore.committer.queue.url")
+            .description("The URL of the queue for statestore commit requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_QUEUE_ARN = Index.propertyBuilder("sleeper.statestore.committer.queue.arn")
+            .description("The ARN of the queue for statestore commit requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_DLQ_URL = Index.propertyBuilder("sleeper.statestore.committer.dlq.url")
+            .description("The URL of the dead letter queue for statestore commit requests.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_DLQ_ARN = Index.propertyBuilder("sleeper.statestore.committer.dlq.arn")
+            .description("The ARN of the dead letter queue for statestore commit requests.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
@@ -263,22 +320,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_COMMITTER_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.committer.queue.url")
-            .description("The URL of the queue for compaction job commit requests.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_COMMITTER_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.committer.queue.arn")
-            .description("The ARN of the queue for compaction job commit requests.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_COMMITTER_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.committer.dlq.url")
-            .description("The URL of the dead letter queue for compaction job commit requests.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    CdkDefinedInstanceProperty COMPACTION_JOB_COMMITTER_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.committer.dlq.arn")
-            .description("The ARN of the dead letter queue for compaction job commit requests.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
+
     CdkDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.task.creation.lambda.function")
             .description("The function name of the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

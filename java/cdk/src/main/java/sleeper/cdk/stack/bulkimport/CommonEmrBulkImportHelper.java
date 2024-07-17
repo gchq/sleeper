@@ -35,64 +35,62 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class CommonEmrBulkImportHelper {
 
     private final Construct scope;
-    private final String shortId;
+    private final String platform;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
     private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
-            Construct scope, String shortId, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, IngestStatusStoreResources ingestStatusStoreResources, List<IMetric> errorMetrics) {
+            Construct scope, String platform, InstanceProperties instanceProperties,
+            CoreStacks coreStacks, List<IMetric> errorMetrics) {
         this.scope = scope;
-        this.shortId = shortId;
+        this.platform = platform;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
-        this.statusStoreResources = ingestStatusStoreResources;
         this.errorMetrics = errorMetrics;
+        if (platform.length() > 16) {
+            throw new IllegalArgumentException("platform must be at most 16 characters to create short enough resource names");
+        }
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
     public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, Topic errorsTopic) {
-        String instanceId = instanceProperties.get(ID);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue queueForDLs = Queue.Builder
-                .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + shortId + "DLQ"))
+                .create(scope, "BulkImport" + platform + "JobDeadLetterQueue")
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + platform + "DLQ"))
                 .build();
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
                 .queue(queueForDLs)
                 .build();
 
-        createAlarmForDlq(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm",
-                "Alarms if there are any messages that have failed validation or failed to start a " + shortId + " Spark job",
+        createAlarmForDlq(scope, "BulkImport" + platform + "UndeliveredJobsAlarm",
+                "Alarms if there are any messages that have failed validation or failed to start a " + platform + " Spark job",
                 queueForDLs, errorsTopic);
 
-        errorMetrics.add(Utils.createErrorMetric("Bulk Import " + shortId + " Errors", queueForDLs, instanceProperties));
+        errorMetrics.add(Utils.createErrorMetric("Bulk Import " + platform + " Errors", queueForDLs, instanceProperties));
         Queue emrBulkImportJobQueue = Queue.Builder
-                .create(scope, "BulkImport" + shortId + "JobQueue")
+                .create(scope, "BulkImport" + platform + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(instanceId + "-BulkImport" + shortId + "Q")
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + platform + "Q"))
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
@@ -113,30 +111,27 @@ public class CommonEmrBulkImportHelper {
     public IFunction createJobStarterFunction(
             String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
             List<IRole> passRoles) {
-        String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "bulk-import", platform, "start");
 
-        IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + shortId + "JobStarter", builder -> builder
+        IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
-                .description("Function to start " + shortId + " bulk import jobs")
+                .description("Function to start " + platform + " bulk import jobs")
                 .memorySize(1024)
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLambdaLogGroup(scope, "BulkImport" + shortId + "JobStarterLogGroup", functionName, instanceProperties))
+                .logGroup(createLambdaLogGroup(scope, "BulkImport" + platform + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        coreStacks.grantReadConfigAndPartitions(function);
+        coreStacks.grantValidateBulkImport(function.getRole());
         importBucket.grantReadWrite(function);
-        coreStacks.grantReadIngestSources(function.getRole());
-        statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)

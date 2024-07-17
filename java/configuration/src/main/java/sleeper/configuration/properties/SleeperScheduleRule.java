@@ -33,6 +33,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class SleeperScheduleRule {
@@ -63,6 +65,12 @@ public class SleeperScheduleRule {
     // Rule that triggers transaction log snapshot creation
     public static final SleeperScheduleRule TRANSACTION_LOG_SNAPSHOT_CREATION = add(
             TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "%s-TransactionLogSnapshotCreationRule");
+    // Rule that triggers deletion of old transaction log snapshots
+    public static final SleeperScheduleRule TRANSACTION_LOG_SNAPSHOT_DELETION = add(
+            TRANSACTION_LOG_SNAPSHOT_DELETION_RULE, "%s-TransactionLogSnapshotDeletionRule");
+    // Rule that triggers deletion of old transaction log transactions
+    public static final SleeperScheduleRule TRANSACTION_LOG_TRANSACTION_DELETION = add(
+            TRANSACTION_LOG_TRANSACTION_DELETION_RULE, "%s-TransactionLogTransactionDeletionRule");
 
     private final InstanceProperty property;
     private final String nameFormat;

@@ -205,4 +205,21 @@ public class CompactionJobStatusInPeriodTest {
         // When / Then
         assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();
     }
+
+    @Test
+    public void shouldBeInPeriodWhenFirstRunIsInProgressAndSecondRunIsFinishedBeforePeriodBegins() {
+        // Given
+        Instant createTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant run1StartTime = Instant.parse("2022-09-23T11:45:00.000Z");
+        Instant run2StartTime = Instant.parse("2022-09-23T11:46:00.000Z");
+        Instant run2FinishTime = Instant.parse("2022-09-23T11:46:30.000Z");
+        Instant periodStart = Instant.parse("2022-09-23T12:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-09-23T12:30:00.000Z");
+        CompactionJobStatus status = jobCreated(job, createTime,
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run2StartTime, run2FinishTime)),
+                startedCompactionRun(DEFAULT_TASK_ID, run1StartTime));
+
+        // When / Then
+        assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();
+    }
 }

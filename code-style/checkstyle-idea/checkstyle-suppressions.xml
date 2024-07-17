@@ -56,10 +56,14 @@
     <suppress files="[\\/]splitter[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]statestore[\\/]src[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]statestore[\\/]src[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]ingest[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/]ingest-batcher.*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/]ingest-batcher.*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/]ingest-runner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/]ingest-runner[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/]ingest-starter[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/]ingest-starter[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/]ingest-status-store[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/]ingest-status-store[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]trino[\\/].*" id="missingJavadocMethod"/>

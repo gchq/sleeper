@@ -33,7 +33,7 @@ sleeper.table.gc.delay.minutes=15
 
 ## The following table properties relate to storing and retrieving metadata for tables.
 
-# The name of the class used for the metadata store. The default is DynamoDBTransactionLogStateStore.
+# The name of the class used for the state store. The default is DynamoDBTransactionLogStateStore.
 # Options are:
 # sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
 # sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots

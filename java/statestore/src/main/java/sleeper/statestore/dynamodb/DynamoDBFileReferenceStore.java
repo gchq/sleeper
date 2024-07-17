@@ -42,6 +42,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
@@ -50,6 +51,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -83,6 +85,9 @@ import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.PARTITION_
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.REFERENCES;
 import static sleeper.statestore.dynamodb.DynamoDBFileReferenceFormat.TABLE_ID;
 
+/**
+ * A Sleeper table file reference store where the state is held in DynamoDB.
+ */
 class DynamoDBFileReferenceStore implements FileReferenceStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileReferenceStore.class);
@@ -117,8 +122,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     private void addFile(AllReferencesToAFile file, Instant updateTime) throws StateStoreException {
-        addFileReferenceCount(file.getFilename(), file.getExternalReferenceCount(), updateTime);
-        for (FileReference reference : file.getInternalReferences()) {
+        addNewFileReferenceCount(file.getFilename(), updateTime);
+        for (FileReference reference : file.getReferences()) {
             addFileReference(reference, updateTime);
         }
     }
@@ -143,11 +148,11 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    private void addFileReferenceCount(String filename, int referenceCount, Instant updateTime) throws StateStoreException {
+    private void addNewFileReferenceCount(String filename, Instant updateTime) throws StateStoreException {
         try {
             TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                     .withTransactItems(
-                            new TransactWriteItem().withPut(putNewFileReferenceCount(filename, referenceCount, updateTime)))
+                            new TransactWriteItem().withPut(putNewFileReferenceCount(filename, 0, updateTime)))
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
@@ -243,21 +248,40 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) throws StateStoreException {
-        FileReference.validateNewReferenceForJobOutput(inputFiles, newReference);
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        List<ReplaceFileReferencesRequest> succeeded = new ArrayList<>();
+        List<ReplaceFileReferencesRequest> failed = new ArrayList<>();
+        List<Exception> failures = new ArrayList<>();
+        for (ReplaceFileReferencesRequest request : requests) {
+            try {
+                atomicallyReplaceFileReferencesWithNewOne(request);
+                succeeded.add(request);
+            } catch (StateStoreException | RuntimeException e) {
+                LOGGER.error("Failed replacing file references for job {}", request.getJobId(), e);
+                failures.add(e);
+                failed.add(request);
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new ReplaceRequestsFailedException(succeeded, failed, failures);
+        }
+    }
+
+    private void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+        FileReference newReference = request.getNewReference();
+        FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), newReference);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();
         List<TransactWriteItem> referenceCountUpdates = new ArrayList<>();
-        inputFiles.forEach(filename -> {
+        request.getInputFiles().forEach(filename -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
-                    .withKey(fileReferenceFormat.createActiveFileKey(partitionId, filename))
+                    .withKey(fileReferenceFormat.createActiveFileKey(request.getPartitionId(), filename))
                     .withExpressionAttributeNames(Map.of(
                             "#PartitionAndFilename", PARTITION_ID_AND_FILENAME,
                             "#JobId", JOB_ID))
-                    .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(jobId)))
+                    .withExpressionAttributeValues(Map.of(":jobid", createStringAttribute(request.getJobId())))
                     .withConditionExpression(
                             "attribute_exists(#PartitionAndFilename) and #JobId = :jobid")
                     .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
@@ -276,9 +300,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Removed {} file references and added 1 new file, capacity consumed = {}",
-                    inputFiles.size(), totalConsumed);
+                    request.getInputFiles().size(), totalConsumed);
         } catch (TransactionCanceledException e) {
-            throw FailedDynamoDBReplaceReferences.from(e, jobId, partitionId, inputFiles, newReference)
+            throw FailedDynamoDBReplaceReferences.from(e, request)
                     .buildStateStoreException(fileReferenceFormat);
         } catch (AmazonDynamoDBException e) {
             throw new StateStoreException("Failed to mark files ready for GC and add new files", e);
@@ -406,6 +430,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
     }
 
+    /**
+     * A check to determine why a conditional failure occurred for a given DynamoDB item.
+     */
     interface ConditionalFailureCheck {
         StateStoreException check(Map<String, AttributeValue> item);
     }
@@ -623,6 +650,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
      *
      * @param now Time to set to be the current time
      */
+    @Override
     public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
@@ -668,6 +696,9 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
     }
 
+    /**
+     * Builder to create a file reference store backed by DynamoDB.
+     */
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String activeTableName;

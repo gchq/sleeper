@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -34,6 +35,10 @@ import java.util.TreeMap;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
 
+/**
+ * Reads a DynamoDB transaction cancellation and converts it into a state store exception when replacing file
+ * references to apply the results of a job.
+ */
 class FailedDynamoDBReplaceReferences {
 
     private final TransactionCanceledException e;
@@ -61,22 +66,22 @@ class FailedDynamoDBReplaceReferences {
         this.addNewReferenceCountReason = addNewReferenceCountReason;
     }
 
-    static FailedDynamoDBReplaceReferences from(
-            TransactionCanceledException e, String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
+    static FailedDynamoDBReplaceReferences from(TransactionCanceledException e, ReplaceFileReferencesRequest request) {
+        int numInputFiles = request.getInputFiles().size();
         List<CancellationReason> reasons = e.getCancellationReasons();
         int reasonsOffset = 0;
-        List<CancellationReason> deleteOldReferenceReasons = reasons.subList(0, inputFiles.size());
-        reasonsOffset += inputFiles.size();
+        List<CancellationReason> deleteOldReferenceReasons = reasons.subList(0, numInputFiles);
+        reasonsOffset += numInputFiles;
         CancellationReason addNewReferenceReason = reasons.get(reasonsOffset);
         reasonsOffset++;
-        List<CancellationReason> decrementOldReferenceCountReasons = reasons.subList(reasonsOffset, reasonsOffset + inputFiles.size());
-        reasonsOffset += inputFiles.size();
+        List<CancellationReason> decrementOldReferenceCountReasons = reasons.subList(reasonsOffset, reasonsOffset + numInputFiles);
+        reasonsOffset += numInputFiles;
         CancellationReason addNewReferenceCountReason = reasons.get(reasonsOffset);
 
-        return new FailedDynamoDBReplaceReferences(e, jobId, partitionId,
-                inputFileReasonByFilename(inputFiles, deleteOldReferenceReasons),
-                inputFileReasonByFilename(inputFiles, decrementOldReferenceCountReasons),
-                newReference, addNewReferenceReason, addNewReferenceCountReason);
+        return new FailedDynamoDBReplaceReferences(e, request.getJobId(), request.getPartitionId(),
+                inputFileReasonByFilename(request.getInputFiles(), deleteOldReferenceReasons),
+                inputFileReasonByFilename(request.getInputFiles(), decrementOldReferenceCountReasons),
+                request.getNewReference(), addNewReferenceReason, addNewReferenceCountReason);
     }
 
     StateStoreException buildStateStoreException(DynamoDBFileReferenceFormat fileReferenceFormat) {

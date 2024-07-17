@@ -17,6 +17,12 @@ package sleeper.ingest.job;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -24,10 +30,8 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -41,12 +45,18 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -55,27 +65,30 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -85,142 +98,50 @@ class IngestJobRunnerIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(Service.S3, Service.SQS);
 
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder());
+    protected final AmazonSQS sqs = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
-    private final String instanceId = UUID.randomUUID().toString().substring(0, 18);
-    private final String tableName = UUID.randomUUID().toString();
-    private final String ingestDataBucketName = tableName + "-ingestdata";
-    private final String tableDataBucketName = tableName + "-tabledata";
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final String tableName = "test-table";
+    private final String tableId = UUID.randomUUID().toString();
+    private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
+    private final String ingestSourceBucketName = "ingest-source-" + UUID.randomUUID().toString();
+    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
     @TempDir
-    public java.nio.file.Path temporaryFolder;
-    private String currentLocalIngestDirectory;
-    private String currentLocalTableDataDirectory;
-
-    private static Stream<Arguments> parametersForTests() {
-        return Stream.of(
-                Arguments.of("arrow", "async", "s3a://"),
-                Arguments.of("arrow", "direct", "s3a://"),
-                Arguments.of("arrow", "direct", "file://"),
-                Arguments.of("arraylist", "async", "s3a://"),
-                Arguments.of("arraylist", "direct", "s3a://"),
-                Arguments.of("arraylist", "direct", "file://"));
-    }
+    public java.nio.file.Path localDir;
+    private Supplier<Instant> timeSupplier = Instant::now;
 
     @BeforeEach
     public void before() throws IOException {
-        s3.createBucket(tableDataBucketName);
-        s3.createBucket(ingestDataBucketName);
-        currentLocalIngestDirectory = createTempDirectory(temporaryFolder, null).toString();
-        currentLocalTableDataDirectory = createTempDirectory(temporaryFolder, null).toString();
+        s3.createBucket(dataBucketName);
+        s3.createBucket(ingestSourceBucketName);
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
     }
 
-    private InstanceProperties getInstanceProperties(String fileSystemPrefix,
-            String recordBatchType,
-            String partitionFileWriterType) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
-        instanceProperties.set(DATA_BUCKET, getTableDataBucket(fileSystemPrefix));
-        instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, recordBatchType);
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(Schema schema, String fileSystemPrefix,
-            String recordBatchType,
-            String partitionFileWriterType) {
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        return tableProperties;
-    }
-
-    private String getTableDataBucket(String fileSystemPrefix) {
-        switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
-            case "s3a://":
-                return tableDataBucketName;
-            case "file://":
-                return currentLocalTableDataDirectory;
-            default:
-                throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
-        }
-    }
-
-    private String getIngestBucket(String fileSystemPrefix) {
-        switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
-            case "s3a://":
-                return ingestDataBucketName;
-            case "file://":
-                return currentLocalIngestDirectory;
-            default:
-                throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
-        }
-    }
-
-    private List<String> writeParquetFilesForIngest(String fileSystemPrefix,
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            String subDirectory,
-            int numberOfFiles) throws IOException {
-        List<String> files = new ArrayList<>();
-
-        for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
-                    getIngestBucket(fileSystemPrefix), subDirectory, fileNo);
-            files.add(fileWithoutSystemPrefix);
-            Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            writeParquetFileForIngest(path, recordListAndSchema);
-        }
-
-        return files;
-    }
-
-    private void writeParquetFileForIngest(
-            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory
-                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
-        for (Record record : recordListAndSchema.recordList) {
-            writer.write(record);
-        }
-        writer.close();
-    }
-
-    @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
-    @MethodSource("parametersForTests")
-    void shouldIngestParquetFiles(String recordBatchType,
-            String partitionFileWriterType,
-            String fileSystemPrefix) throws Exception {
+    @Test
+    void shouldIngestParquetFiles() throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
-        List<String> files = writeParquetFilesForIngest(
-                fileSystemPrefix, recordListAndSchema, "", 2);
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
         List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
-        runIngestJob(
-                stateStore,
-                fileSystemPrefix,
-                recordBatchType,
-                partitionFileWriterType,
-                recordListAndSchema,
-                localDir,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
@@ -232,42 +153,29 @@ class IngestJobRunnerIT {
                 hadoopConfiguration);
     }
 
-    @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
-    @MethodSource("parametersForTests")
-    void shouldBeAbleToHandleAllFileFormats(String recordBatchType,
-            String partitionFileWriterType,
-            String fileSystemPrefix) throws Exception {
+    @Test
+    void shouldIgnoreFilesOfUnreadableFormats() throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<String> files = writeParquetFilesForIngest(
-                fileSystemPrefix, recordListAndSchema, "", 1);
-        String ingestBucket = getIngestBucket(fileSystemPrefix);
-        URI uri1 = new URI(fileSystemPrefix + ingestBucket + "/file-1.crc");
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 1);
+        URI uri1 = new URI("s3a://" + ingestSourceBucketName + "/file-1.crc");
         FileSystem.get(uri1, hadoopConfiguration).createNewFile(new Path(uri1));
-        files.add(ingestBucket + "/file-1.crc");
-        URI uri2 = new URI(fileSystemPrefix + ingestBucket + "/file-2.csv");
+        files.add(ingestSourceBucketName + "/file-1.crc");
+        URI uri2 = new URI("s3a://" + ingestSourceBucketName + "/file-2.csv");
         FileSystem.get(uri2, hadoopConfiguration).createNewFile(new Path(uri2));
-        files.add(ingestBucket + "/file-2.csv");
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
+        files.add(ingestSourceBucketName + "/file-2.csv");
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
-                stateStore,
-                fileSystemPrefix,
-                recordBatchType,
-                partitionFileWriterType,
-                recordListAndSchema,
-                localDir,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
@@ -279,11 +187,8 @@ class IngestJobRunnerIT {
                 hadoopConfiguration);
     }
 
-    @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem:{2}")
-    @MethodSource("parametersForTests")
-    void shouldIngestParquetFilesInNestedDirectories(String recordBatchType,
-            String partitionFileWriterType,
-            String fileSystemPrefix) throws Exception {
+    @Test
+    void shouldIngestParquetFilesInNestedDirectories() throws Exception {
         // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -295,8 +200,7 @@ class IngestJobRunnerIT {
                 .mapToObj(topLevelDirNo -> IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
                     try {
                         String dirName = String.format("dir-%d%s", topLevelDirNo, String.join("", Collections.nCopies(nestingNo, "/nested-dir")));
-                        return writeParquetFilesForIngest(
-                                fileSystemPrefix, recordListAndSchema, dirName, noOfFilesPerDirectory);
+                        return writeParquetFilesForIngest(recordListAndSchema, dirName, noOfFilesPerDirectory);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -304,24 +208,16 @@ class IngestJobRunnerIT {
                 .flatMap(List::stream).collect(Collectors.toList());
         List<Record> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
 
         // When
-        runIngestJob(
-                stateStore,
-                fileSystemPrefix,
-                recordBatchType,
-                partitionFileWriterType,
-                recordListAndSchema,
-                localDir,
-                files);
+        runIngestJob(stateStore, recordListAndSchema, files);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 160));
@@ -342,40 +238,30 @@ class IngestJobRunnerIT {
         RecordGenerator.RecordListAndSchema records2 = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(10, 20).boxed().collect(Collectors.toList()));
-        writeParquetFileForIngest(new Path("s3a://" + tableDataBucketName + "/ingest/file1.parquet"), records1);
-        writeParquetFileForIngest(new Path("s3a://" + ingestDataBucketName + "/ingest/file2.parquet"), records2);
+        writeParquetFileForIngest(new Path("s3a://" + dataBucketName + "/ingest/file1.parquet"), records1);
+        writeParquetFileForIngest(new Path("s3a://" + ingestSourceBucketName + "/ingest/file2.parquet"), records2);
 
         IngestJob ingestJob = IngestJob.builder()
-                .tableName(tableName).id("id").files(
-                        tableDataBucketName + "/ingest/file1.parquet",
-                        ingestDataBucketName + "/ingest/file2.parquet")
+                .tableName(tableName).tableId(tableId).id("id").files(List.of(
+                        dataBucketName + "/ingest/file1.parquet",
+                        ingestSourceBucketName + "/ingest/file2.parquet"))
                 .build();
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records1.recordList);
         expectedRecords.addAll(records2.recordList);
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
-        InstanceProperties instanceProperties = getInstanceProperties("s3a://", "arrow", "async");
-        TableProperties tableProperties = createTable(records1.sleeperSchema, "s3a://", "arrow", "async");
+        TableProperties tableProperties = createTableProperties(records1.sleeperSchema);
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(records1.sleeperSchema);
+        fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
         // When
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
-                instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
-                PropertiesReloader.neverReload(),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                localDir,
-                s3Async,
-                hadoopConfiguration)
-                .ingest(ingestJob);
+        runIngestJob(tableProperties, stateStore, ingestJob);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
@@ -385,32 +271,158 @@ class IngestJobRunnerIT {
                 new RecordGenerator.RecordListAndSchema(expectedRecords, records1.sleeperSchema),
                 actualFiles,
                 hadoopConfiguration);
+        assertThat(statusStore.getAllJobs(tableId)).containsExactly(
+                jobStatus(ingestJob, ProcessRun.builder()
+                        .taskId("test-task")
+                        .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
+                        .statusUpdate(ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))
+                        .build()));
+    }
+
+    @Test
+    void shouldCommitFilesAsynchronously() throws Exception {
+        // Given
+        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+                new LongType(),
+                LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
+        TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema);
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
+
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 1);
+        IngestJob job = IngestJob.builder()
+                .tableName(tableName)
+                .tableId(tableId)
+                .id("some-job")
+                .files(files)
+                .build();
+        fixTimes(Instant.parse("2024-06-20T15:10:00Z"), Instant.parse("2024-06-20T15:10:01Z"));
+
+        // When
+        runIngestJob(tableProperties, stateStore, job);
+
+        // Then
+        List<IngestAddFilesCommitRequest> commitRequests = getCommitRequestsFromQueue();
+        List<FileReference> actualFiles = commitRequests.stream()
+                .map(IngestAddFilesCommitRequest::getFileReferences)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
+        assertThat(localDir).isEmptyDirectory();
+        assertThat(actualFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
+        assertThat(commitRequests).containsExactly(IngestAddFilesCommitRequest.builder()
+                .ingestJob(job)
+                .taskId("test-task")
+                .jobRunId("test-job-run")
+                .fileReferences(actualFiles)
+                .writtenTime(Instant.parse("2024-06-20T15:10:01Z"))
+                .build());
+    }
+
+    private List<IngestAddFilesCommitRequest> getCommitRequestsFromQueue() {
+        String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+        ReceiveMessageResult result = sqs.receiveMessage(commitQueueUrl);
+        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(serDe::fromJson)
+                .collect(Collectors.toList());
     }
 
     private void runIngestJob(
             StateStore stateStore,
-            String fileSystemPrefix,
-            String recordBatchType,
-            String partitionFileWriterType,
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            String localDir,
             List<String> files) throws Exception {
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
+        TableProperties tableProperties = createTableProperties(recordListAndSchema.sleeperSchema);
+        IngestJob job = IngestJob.builder()
+                .tableName(tableName)
+                .tableId(tableProperties.get(TABLE_ID))
+                .id("id")
+                .files(files)
+                .build();
+        runIngestJob(tableProperties, stateStore, job);
+    }
+
+    private void runIngestJob(
+            TableProperties tableProperties,
+            StateStore stateStore,
+            IngestJob job) throws Exception {
+        statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
+        ingestJobRunner(instanceProperties, tableProperties, stateStore)
+                .ingest(job, "test-job-run");
+    }
+
+    private IngestJobRunner ingestJobRunner(InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            StateStore stateStore) throws Exception {
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+        return new IngestJobRunner(
+                ObjectFactory.noUserJars(),
                 instanceProperties,
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),
-                stateStoreProvider,
-                localDir,
-                s3Async,
-                hadoopConfiguration)
-                .ingest(IngestJob.builder()
-                        .tableName(tableName)
-                        .id("id")
-                        .files(files)
-                        .build());
+                stateStoreProvider, statusStore,
+                "test-task",
+                localDir.toString(),
+                s3Async, sqs,
+                hadoopConfiguration,
+                timeSupplier);
     }
+
+    private void fixTimes(Instant... times) {
+        timeSupplier = List.of(times).iterator()::next;
+    }
+
+    private String createFifoQueueGetUrl() {
+        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")));
+        return result.getQueueUrl();
+    }
+
+    private TableProperties createTableProperties(Schema schema) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_ID, tableId);
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    private List<String> writeParquetFilesForIngest(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            String subDirectory,
+            int numberOfFiles) throws IOException {
+        List<String> files = new ArrayList<>();
+
+        for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
+            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
+                    ingestSourceBucketName, subDirectory, fileNo);
+            files.add(fileWithoutSystemPrefix);
+            Path path = new Path("s3a://" + fileWithoutSystemPrefix);
+            writeParquetFileForIngest(path, recordListAndSchema);
+        }
+
+        return files;
+    }
+
+    private void writeParquetFileForIngest(
+            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
+        for (Record record : recordListAndSchema.recordList) {
+            writer.write(record);
+        }
+        writer.close();
+    }
+
 }

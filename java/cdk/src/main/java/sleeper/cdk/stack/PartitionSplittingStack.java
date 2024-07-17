@@ -41,7 +41,6 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -57,7 +56,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
@@ -114,14 +112,15 @@ public class PartitionSplittingStack extends NestedStack {
 
     private Queue createBatchQueues(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for batching tables
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue findPartitionsToSplitDlq = Queue.Builder
                 .create(this, "FindPartitionsToSplitDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "FindPartitionsToSplitDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "FindPartitionsToSplitDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue findPartitionsToSplitQueue = Queue.Builder
                 .create(this, "FindPartitionsToSplitBatchQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "FindPartitionsToSplitQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "FindPartitionsToSplitQ.fifo"))
                 .deadLetterQueue(
                         DeadLetterQueue.builder()
                                 .maxReceiveCount(1)
@@ -143,13 +142,14 @@ public class PartitionSplittingStack extends NestedStack {
 
     private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
         // Create queue for partition splitting job definitions
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "PartitionSplittingJobDLQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "PartitionSplittingJobDLQ"))
                 .build();
         Queue partitionSplittingJobQueue = Queue.Builder
                 .create(this, "PartitionSplittingJobQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "PartitionSplittingJobQueue"))
+                .queueName(String.join("-", "sleeper", instanceId, "PartitionSplittingJobQueue"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(partitionSplittingJobDlq)
@@ -181,8 +181,8 @@ public class PartitionSplittingStack extends NestedStack {
     }
 
     private void createTriggerFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "split-partition-trigger"));
+        String triggerFunctionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");
         IFunction triggerFunction = splitterJar.buildFunction(this, "FindPartitionsToSplitTriggerLambda", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform partition splitting for and puts them on a queue to be processed")
@@ -211,8 +211,8 @@ public class PartitionSplittingStack extends NestedStack {
     }
 
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "partition-splitting-find-to-split");
         IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(this, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state stores of the provided tables looking for partitions that need splitting")
@@ -231,8 +231,8 @@ public class PartitionSplittingStack extends NestedStack {
     }
 
     private void createSplitPartitionFunction(InstanceProperties instanceProperties, LambdaCode splitterJar, CoreStacks coreStacks, Map<String, String> environmentVariables) {
-        String splitFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "split-partition"));
+        String splitFunctionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "partition-splitting-handler");
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)

@@ -46,11 +46,9 @@ import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public final class WebSocketQueryStack extends NestedStack {
 
@@ -80,8 +78,8 @@ public final class WebSocketQueryStack extends NestedStack {
     protected void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode queryJar,
             CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "websocket-api-handler"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
         IFunction webSocketApiHandler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
@@ -96,7 +94,7 @@ public final class WebSocketQueryStack extends NestedStack {
         coreStacks.grantReadTablesConfig(webSocketApiHandler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")
-                .name("sleeper-" + instanceProperties.get(ID) + "-query-api")
+                .name(String.join("-", "sleeper", instanceId, "query-websocket-api"))
                 .description("Sleeper Query API")
                 .protocolType("WEBSOCKET")
                 .routeSelectionExpression("$request.body.action")

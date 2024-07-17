@@ -17,13 +17,17 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -104,5 +108,42 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
                 .containsExactly(jobStatus(job,
                         defaultJobStartedRun(job, startedTime2),
                         defaultJobFinishedRun(job, startedTime1, finishedTime1)));
+    }
+
+    @Test
+    public void shouldReturnUncommittedIngestJob() {
+        // Given
+        IngestJob job = jobWithFiles("test-file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:52:12.001Z");
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
+
+        // Then
+        assertThat(store.getUnfinishedJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        defaultJobFinishedButUncommittedStatus(job, startedTime, finishedTime, 1));
+    }
+
+    @Test
+    public void shouldExcludeSeparatelyCommittedIngestJob() {
+        // Given
+        IngestJob job = jobWithFiles("test-file");
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant writtenTime = Instant.parse("2022-12-14T13:52:00Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:52:12.001Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
+        List<FileReference> outputFiles = List.of(fileFactory.rootFile(123L));
+
+        // When
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
+        store.jobAddedFiles(defaultJobAddedFilesEvent(job, outputFiles, writtenTime));
+
+        // Then
+        assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
     }
 }

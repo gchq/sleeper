@@ -39,12 +39,10 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -65,8 +63,8 @@ public class VpcStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "vpc-check");
 
         IFunction vpcCheckLambda = jar.buildFunction(this, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)

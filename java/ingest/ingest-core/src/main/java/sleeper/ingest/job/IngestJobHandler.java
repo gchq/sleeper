@@ -15,12 +15,27 @@
  */
 package sleeper.ingest.job;
 
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
 
 import java.io.IOException;
 
+/**
+ * Runs an ingest job by sorting the input files, writing the files to a Sleeper table, and adding them to the
+ * state store.
+ */
 public interface IngestJobHandler {
-    IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
+    /**
+     * Runs an ingest job by sorting the input files, writing the files to a Sleeper table, and adding them to the
+     * state store.
+     *
+     * @param  job                       the ingest job to run
+     * @param  jobRunId                  the run ID for tracking the job in the status store
+     * @return                           an {@link IngestResult} object
+     * @throws IteratorCreationException if the Sleeper table iterator could not be created
+     * @throws StateStoreException       if an error occurs adding the files to the state store
+     * @throws IOException               if an error occurs reading or writing files
+     */
+    IngestResult ingest(IngestJob job, String jobRunId) throws IteratorCreationException, StateStoreException, IOException;
 }

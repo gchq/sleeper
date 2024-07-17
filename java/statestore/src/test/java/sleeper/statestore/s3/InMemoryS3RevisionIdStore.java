@@ -26,6 +26,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * An in-memory implementation of the index of S3 state store revisions. Used in tests with
+ * {@link S3StateStoreDataFile}.
+ */
 class InMemoryS3RevisionIdStore {
 
     private final Map<String, S3RevisionId> revisionByKey = new HashMap<>();

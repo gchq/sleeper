@@ -24,7 +24,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -79,7 +79,7 @@ public class LeafPartitionQueryExecutor {
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig);
             queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig());
-        } catch (IteratorException e) {
+        } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
 
@@ -134,7 +134,7 @@ public class LeafPartitionQueryExecutor {
             Schema schema,
             ObjectFactory objectFactory,
             String iteratorClassName,
-            String iteratorConfig) throws IteratorException {
+            String iteratorConfig) throws IteratorCreationException {
         if (iteratorClassName == null) {
             return null;
         }
@@ -142,7 +142,7 @@ public class LeafPartitionQueryExecutor {
         try {
             sortedRecordIterator = objectFactory.getObject(iteratorClassName, SortedRecordIterator.class);
         } catch (ObjectFactoryException e) {
-            throw new IteratorException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
+            throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
         }
         LOGGER.debug("Created iterator of class {}", iteratorClassName);
         sortedRecordIterator.init(iteratorConfig, schema);

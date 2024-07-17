@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
@@ -44,7 +44,7 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
             InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
-        this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
+        this.clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
     }
 

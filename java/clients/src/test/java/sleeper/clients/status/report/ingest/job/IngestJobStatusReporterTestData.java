@@ -16,7 +16,8 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.clients.status.report.StatusReporterTestHelper;
+import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
@@ -30,16 +31,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static sleeper.clients.status.report.StatusReporterTestHelper.job;
+import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.failedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestJobUncommitted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
@@ -50,38 +59,89 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
-        return mixedJobStatuses().stream()
-                .filter(status -> !status.isFinished())
-                .collect(Collectors.toList());
+        IngestJob job1 = createJob(1, 1);
+        Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
+
+        IngestJob job2 = createJob(2, 2);
+        Instant startTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
+
+        IngestJob job3 = createJob(3, 3);
+        Instant startTime3 = Instant.parse("2022-09-20T13:34:12.001Z");
+
+        IngestJob job4 = createJob(4, 4);
+        Instant startTime4 = Instant.parse("2022-09-21T13:34:12.001Z");
+
+        IngestJob job5 = createJob(5, 5);
+        Instant startTime5 = Instant.parse("2022-09-22T13:34:12.001Z");
+
+        return Arrays.asList(
+                jobStatus(job5, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job5, startTime5))
+                        .statusUpdate(ingestAddedFilesStatus(startTime5.plus(Duration.ofMinutes(1)), 2))
+                        .build()),
+                jobStatus(job4, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job4, startTime4))
+                        .finishedStatus(ingestFinishedStatusUncommitted(job4, summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
+                        .build()),
+                jobStatus(job3, failedIngestRun(job3, task(2),
+                        new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
+                        List.of("Unexpected failure", "Some IO problem"))),
+                jobStatus(job2, startedIngestRun(job2, task(1), startTime2)),
+                jobStatus(job1, acceptedRun(job1, startTime1)));
     }
 
     public static List<IngestJobStatus> mixedJobStatuses() {
-        IngestJob job1 = createJob(2, 1);
-        Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
+        IngestJob job1 = createJob(1, 1);
+        Instant startTime1 = Instant.parse("2022-09-21T13:34:12.001Z");
 
-        IngestJob job2 = createJob(3, 2);
-        Instant startTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
+        IngestJob job2 = createJob(2, 2);
+        Instant startTime2 = Instant.parse("2022-09-22T13:34:12.001Z");
 
-        IngestJob job3 = createJob(5, 3);
-        Instant startTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
+        IngestJob job3 = createJob(3, 3);
+        Instant startTime3 = Instant.parse("2022-09-23T13:34:12.001Z");
 
-        IngestJob job4 = createJob(6, 4);
-        Instant startTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
+        IngestJob job4 = createJob(4, 4);
+        Instant startTime4 = Instant.parse("2022-09-24T13:34:12.001Z");
+
+        IngestJob job5 = createJob(5, 5);
+        Instant startTime5 = Instant.parse("2022-09-25T13:34:12.001Z");
+
+        IngestJob job6 = createJob(6, 6);
+        Instant startTime6 = Instant.parse("2022-09-26T13:34:12.001Z");
+
+        IngestJob job7 = createJob(7, 7);
+        Instant startTime7 = Instant.parse("2022-09-27T13:34:12.001Z");
 
         return Arrays.asList(
-                finishedIngestJob(job4, StatusReporterTestHelper.task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300)),
-                startedIngestJob(job3, StatusReporterTestHelper.task(2), startTime3),
-                finishedIngestJob(job2, StatusReporterTestHelper.task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300)),
-                startedIngestJob(job1, StatusReporterTestHelper.task(1), startTime1));
+                jobStatus(job7, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job7, startTime7))
+                        .statusUpdate(ingestAddedFilesStatus(startTime7.plus(Duration.ofSeconds(55)), 2))
+                        .finishedStatus(ingestFinishedStatusUncommitted(job7, summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
+                        .build()),
+                jobStatus(job6, ProcessRun.builder()
+                        .taskId(task(3))
+                        .startedStatus(ingestStartedStatus(job6, startTime6))
+                        .statusUpdate(ingestAddedFilesStatus(startTime6.plus(Duration.ofMinutes(1)), 1))
+                        .build()),
+                finishedIngestJobUncommitted(job5, task(3), summary(startTime5, Duration.ofMinutes(1), 600, 300), 3),
+                finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300), 2),
+                startedIngestJob(job3, task(2), startTime3),
+                finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
+                failedIngestJob(job1, task(1),
+                        new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                        List.of("Something went wrong", "More details")));
     }
 
     public static List<IngestJobStatus> jobWithMultipleRuns() {
         IngestJob job = createJob(2, 1);
 
         return Collections.singletonList(jobStatus(job,
-                startedIngestRun(job, StatusReporterTestHelper.task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
-                finishedIngestRun(job, StatusReporterTestHelper.task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200)),
-                finishedIngestRun(job, StatusReporterTestHelper.task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200))));
+                startedIngestRun(job, task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
+                finishedIngestRun(job, task(2), summary(Instant.parse("2022-10-12T10:01:15.001Z"), Duration.ofSeconds(30), 300, 200), 2),
+                finishedIngestRun(job, task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200), 1)));
     }
 
     public static List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
@@ -91,10 +151,10 @@ public class IngestJobStatusReporterTestData {
         Instant startTime4 = Instant.parse("2022-10-13T14:02:10Z");
 
         return Arrays.asList(
-                finishedIngestJob(createJob(4, 1), "task-id", summary(startTime4, Duration.ofMillis(123_456), 1_234_000L, 1_234_000L)),
-                finishedIngestJob(createJob(3, 1), "task-id", summary(startTime3, Duration.ofMinutes(1), 1_000_600L, 500_300L)),
-                finishedIngestJob(createJob(2, 1), "task-id", summary(startTime2, Duration.ofHours(2), 1_000_600L, 500_300L)),
-                finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000)));
+                finishedIngestJob(createJob(4, 1), "task-id", summary(startTime4, Duration.ofMillis(123_456), 1_234_000L, 1_234_000L), 4),
+                finishedIngestJob(createJob(3, 1), "task-id", summary(startTime3, Duration.ofMinutes(1), 1_000_600L, 500_300L), 3),
+                finishedIngestJob(createJob(2, 1), "task-id", summary(startTime2, Duration.ofHours(2), 1_000_600L, 500_300L), 2),
+                finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000), 1));
     }
 
     public static List<IngestJobStatus> acceptedJob() {
@@ -127,7 +187,7 @@ public class IngestJobStatusReporterTestData {
 
     public static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
-                .id(StatusReporterTestHelper.job(jobNum))
+                .id(job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
                         .mapToObj(f -> String.format("test%1d.parquet", f))
                         .collect(Collectors.toList()))

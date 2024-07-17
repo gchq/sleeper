@@ -18,6 +18,7 @@ package sleeper.ingest.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.IngestResult;
@@ -27,9 +28,9 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
@@ -38,6 +39,7 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
  */
 public class IngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
+    private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
@@ -46,8 +48,10 @@ public class IngestTask {
     private final String taskId;
     private int totalNumberOfMessagesProcessed = 0;
 
-    public IngestTask(Supplier<Instant> timeSupplier, MessageReceiver messageReceiver, IngestJobHandler ingester,
+    public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
+            MessageReceiver messageReceiver, IngestJobHandler ingester,
             IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+        this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
@@ -56,13 +60,16 @@ public class IngestTask {
         this.taskId = taskId;
     }
 
+    /**
+     * Executes jobs from a queue, updating the status stores with progress of the task.
+     */
     public void run() {
         Instant startTime = timeSupplier.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-        Instant finishTime = handleMessages(startTime, taskFinishedBuilder::addJobSummary);
+        Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
@@ -70,7 +77,15 @@ public class IngestTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, Consumer<RecordsProcessedSummary> summaryConsumer) {
+    /**
+     * Receives messages, deserialising each message to an ingest job, then runs it. Updates the ingest job status
+     * store with progress on the job. These actions are repeated until no more messages are found.
+     *
+     * @param  startTime           the start time
+     * @param  taskFinishedBuilder the ingest task finished builder
+     * @return                     the finish time
+     */
+    private Instant handleMessages(Instant startTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
         while (true) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
@@ -80,18 +95,28 @@ public class IngestTask {
             try (MessageHandle message = messageOpt.get()) {
                 IngestJob job = message.getJob();
                 LOGGER.info("IngestJob is: {}", job);
+                String jobRunId = jobRunIdSupplier.get();
+                Instant jobStartTime = timeSupplier.get();
                 try {
-                    Instant jobStartTime = timeSupplier.get();
-                    jobStatusStore.jobStarted(ingestJobStarted(taskId, job, jobStartTime));
-                    IngestResult result = ingester.ingest(job);
+                    jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
+                            .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
+                    IngestResult result = ingester.ingest(job, jobRunId);
                     LOGGER.info("{} records were written", result.getRecordsWritten());
                     Instant jobFinishTime = timeSupplier.get();
                     RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                    jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
-                    summaryConsumer.accept(summary);
+                    jobStatusStore.jobFinished(ingestJobFinished(job, summary)
+                            .taskId(taskId).jobRunId(jobRunId)
+                            .committedBySeparateFileUpdates(true)
+                            .fileReferencesAddedByJob(result.getFileReferenceList())
+                            .build());
+                    taskFinishedBuilder.addJobSummary(summary);
                     message.completed(summary);
                     totalNumberOfMessagesProcessed++;
                 } catch (Exception e) {
+                    Instant jobFinishTime = timeSupplier.get();
+                    jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
+                            .taskId(taskId).jobRunId(jobRunId).failure(e)
+                            .build());
                     LOGGER.error("Failed processing ingest job, terminating task", e);
                     message.failed();
                     return timeSupplier.get();
@@ -100,18 +125,48 @@ public class IngestTask {
         }
     }
 
+    /**
+     * Receives ingest job messages. This is so that the message can be deleted or
+     * returned to the queue, depending on whether the ingest job succeeds or fails.
+     */
     @FunctionalInterface
     public interface MessageReceiver {
+        /**
+         * Receives a message.
+         *
+         * @return a {@link MessageHandle}, or an empty optional if there are no messages
+         */
         Optional<MessageHandle> receiveMessage();
     }
 
+    /**
+     * A message containing an ingest job. Used to control the message visibility of an SQS message.
+     */
     public interface MessageHandle extends AutoCloseable {
+        /**
+         * Reads the ingest job from the message.
+         *
+         * @return an {@link IngestJob}
+         */
         IngestJob getJob();
 
+        /**
+         * Called when a job completes successfully. This will delete the message from the queue, and may run further
+         * reporting on the job.
+         *
+         * @param summary the records processed summary for the finished job
+         */
         void completed(RecordsProcessedSummary summary);
 
+        /**
+         * Called when a job fails. This will return the message to the queue to be retried.
+         */
         void failed();
 
+        /**
+         * Called when this message handle is closed. This will stop the ingest task from updating SQS to keep the
+         * message assigned to the task. This is called whether the job succeeds or fails.
+         */
         void close();
     }
 }

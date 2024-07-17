@@ -197,7 +197,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
-            sleeper.connectToInstance(usingSystemTestDefaults("predeftable", () -> {
+            sleeper.connectToInstance(usingSystemTestDefaults("prdftbl", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
                 TableProperties tableProperties = createDslTableProperties(instanceProperties);
                 tableProperties.set(TABLE_NAME, "predefined-test-table");
@@ -213,7 +213,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
             // Given
-            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("nonametable", () -> {
+            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("nonmtbl", () -> {
                 InstanceProperties instanceProperties = createDslInstanceProperties();
                 TableProperties tableProperties = createDslTableProperties(instanceProperties);
                 tableProperties.unset(TABLE_NAME);
@@ -223,6 +223,29 @@ public class SleeperInstanceTablesTest {
             // When / Then
             assertThatThrownBy(() -> sleeper.connectToInstance(configuration))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Fail when no instance/table chosen")
+    class FailWithNoInstanceOrTable {
+
+        @Test
+        void shouldFailToIngestWhenNoInstanceConnected(SleeperSystemTest sleeper) {
+            // When / Then
+            assertThatThrownBy(() -> sleeper.ingest())
+                    .isInstanceOf(NoInstanceConnectedException.class);
+        }
+
+        @Test
+        void shouldFailToIngestWhenNoTableChosen(SleeperSystemTest sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            var ingest = sleeper.ingest().direct(null);
+
+            // When / Then
+            assertThatThrownBy(() -> ingest.numberedRecords(LongStream.of(1, 2, 3)))
+                    .isInstanceOf(NoTableChosenException.class);
         }
     }
 }

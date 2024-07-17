@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,4 +43,3 @@ echo_github_output_for_image() {
 
 echo_github_output_for_image sleeper-builder builder
 echo_github_output_for_image sleeper-local env
-echo_github_output_for_image sleeper-deployment deploy

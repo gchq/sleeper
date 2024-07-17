@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CompactionJobCommitRequestSerDeTest {
 
@@ -42,7 +43,7 @@ public class CompactionJobCommitRequestSerDeTest {
                 .outputFile("test-output.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobCommitRequest commit = new CompactionJobCommitRequest(job, "test-task",
+        CompactionJobCommitRequest commit = new CompactionJobCommitRequest(job, "test-task", "test-job-run",
                 new RecordsProcessedSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
@@ -53,5 +54,11 @@ public class CompactionJobCommitRequestSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commit);
         Approvals.verify(json);
+    }
+
+    @Test
+    void shouldFailToDeserialiseNonCompactionCommitRequest() {
+        assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

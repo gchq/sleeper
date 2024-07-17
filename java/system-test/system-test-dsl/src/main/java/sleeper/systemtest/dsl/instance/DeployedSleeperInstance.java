@@ -41,14 +41,14 @@ public final class DeployedSleeperInstance {
 
     private final DeployInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties;
-    private final InstanceAdminDriversWithRefresh instanceAdmin;
+    private final SystemTestDrivers instanceAdminDrivers;
 
     private DeployedSleeperInstance(
             DeployInstanceConfiguration configuration, InstanceProperties instanceProperties,
-            InstanceAdminDriversWithRefresh instanceAdmin) {
+            SystemTestDrivers instanceAdminDrivers) {
         this.configuration = configuration;
         this.instanceProperties = instanceProperties;
-        this.instanceAdmin = instanceAdmin;
+        this.instanceAdminDrivers = instanceAdminDrivers;
     }
 
     public static DeployedSleeperInstance loadOrDeployIfNeeded(
@@ -68,7 +68,7 @@ public final class DeployedSleeperInstance {
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
                 deployConfig, instanceProperties,
-                new InstanceAdminDriversWithRefresh(instanceProperties, assumeRoleDriver));
+                assumeRoleDriver.assumeAdminRole(instanceProperties));
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
         }
@@ -80,12 +80,12 @@ public final class DeployedSleeperInstance {
     }
 
     public SystemTestDrivers getInstanceAdminDrivers() {
-        return instanceAdmin.drivers();
+        return instanceAdminDrivers;
     }
 
     public void redeploy(SleeperInstanceDriver driver, SystemTestParameters parameters) {
         driver.redeploy(instanceProperties,
-                instanceAdmin.drivers().tables(parameters).createTablePropertiesProvider(instanceProperties)
+                instanceAdminDrivers.tables(parameters).createTablePropertiesProvider(instanceProperties)
                         .streamAllTables().collect(toUnmodifiableList()));
     }
 

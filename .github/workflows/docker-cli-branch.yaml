@@ -6,8 +6,6 @@ on:
       - '.github/workflows/docker-cli.yaml'
       - '.github/workflows/docker-cli-image.yaml'
       - '.github/scripts/planCliBuild.sh'
-      - 'scripts/Dockerfile'
-      - 'scripts/.dockerignore'
       - 'scripts/cli/**'
 
 jobs:

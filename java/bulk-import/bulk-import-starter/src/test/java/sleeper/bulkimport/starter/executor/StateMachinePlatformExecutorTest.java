@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.amazonaws.services.stepfunctions.model.StartExecutionResult;
@@ -56,12 +55,11 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 class StateMachinePlatformExecutorTest {
     private final AWSStepFunctions stepFunctions = mock(AWSStepFunctions.class);
-    private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
@@ -315,7 +313,8 @@ class StateMachinePlatformExecutorTest {
 
     private BulkImportExecutor createExecutorWithValidationTime(Instant validationTime) {
         return new BulkImportExecutor(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                stateStoreProvider, ingestJobStatusStore, amazonS3,
+                stateStoreProvider, ingestJobStatusStore, (job, jobRunId) -> {
+                },
                 createPlatformExecutor(), List.of(validationTime).iterator()::next);
     }
 

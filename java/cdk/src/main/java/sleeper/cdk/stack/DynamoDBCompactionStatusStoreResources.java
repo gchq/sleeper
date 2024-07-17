@@ -38,7 +38,7 @@ public final class DynamoDBCompactionStatusStoreResources implements CompactionS
     private final Table tasksTable;
 
     public DynamoDBCompactionStatusStoreResources(
-            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks) {
+            Construct scope, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -90,10 +90,10 @@ public final class DynamoDBCompactionStatusStoreResources implements CompactionS
                 .pointInTimeRecovery(false)
                 .build();
 
-        grantWriteJobEvent(coreStacks.getInvokeCompactionPolicyForGrants());
-        updatesTable.grantReadData(coreStacks.getReportingPolicyForGrants());
-        jobsTable.grantReadData(coreStacks.getReportingPolicyForGrants());
-        tasksTable.grantReadData(coreStacks.getReportingPolicyForGrants());
+        grantWriteJobEvent(policiesStack.getInvokeCompactionPolicyForGrants());
+        updatesTable.grantReadData(policiesStack.getReportingPolicyForGrants());
+        jobsTable.grantReadData(policiesStack.getReportingPolicyForGrants());
+        tasksTable.grantReadData(policiesStack.getReportingPolicyForGrants());
     }
 
     @Override

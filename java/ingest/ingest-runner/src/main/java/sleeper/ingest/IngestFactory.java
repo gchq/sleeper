@@ -22,7 +22,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -53,6 +55,7 @@ public class IngestFactory {
     private final InstanceProperties instanceProperties;
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
+    private final Supplier<String> fileNameGenerator;
 
     private IngestFactory(Builder builder) {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
@@ -63,19 +66,20 @@ public class IngestFactory {
                 () -> HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         // If S3AsyncClient is not set, a default client will be created if it is needed.
         s3AsyncClient = builder.s3AsyncClient;
+        fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
         try (recordIterator) {
             return ingestFromRecordIterator(tableProperties, recordIterator);
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
         }
@@ -85,14 +89,17 @@ public class IngestFactory {
         return new IngestRecords(createIngestCoordinator(tableProperties));
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(TableProperties tableProperties) {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
-                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
-                .build();
+                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+        return ingestCoordinatorBuilder(tableProperties).build();
     }
 
     private RecordBatchFactory<Record> standardRecordBatchFactory(
@@ -117,7 +124,7 @@ public class IngestFactory {
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties);
+            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties, fileNameGenerator);
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
@@ -126,6 +133,7 @@ public class IngestFactory {
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
                     .s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties)
+                    .fileNameGenerator(fileNameGenerator)
                     .build();
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
@@ -139,6 +147,7 @@ public class IngestFactory {
         private InstanceProperties instanceProperties;
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
+        private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
 
         private Builder() {
         }
@@ -191,6 +200,11 @@ public class IngestFactory {
          */
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;
+            return this;
+        }
+
+        public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
+            this.fileNameGenerator = fileNameGenerator;
             return this;
         }
 

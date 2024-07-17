@@ -21,14 +21,12 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-
-import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class InstanceRolesStack extends NestedStack {
     public InstanceRolesStack(
@@ -44,7 +42,7 @@ public class InstanceRolesStack extends NestedStack {
     private void createAdminRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         Role adminRole = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-admin-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .roleName("sleeper-admin-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
 
         policiesStack.instanceAdminPolicies().forEach(policy -> policy.attachToRole(adminRole));
@@ -56,7 +54,7 @@ public class InstanceRolesStack extends NestedStack {
     private void createIngestByQueueRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         Role ingestRole = Role.Builder.create(this, "IngestByQueueRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-ingest-by-queue-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .roleName("sleeper-ingest-by-queue-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
         policiesStack.getIngestByQueuePolicyForGrants().attachToRole(ingestRole);
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, ingestRole.getRoleArn());
@@ -65,7 +63,7 @@ public class InstanceRolesStack extends NestedStack {
     private void createDirectIngestRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         Role ingestRole = Role.Builder.create(this, "DirectIngestRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-ingest-direct-" + instanceProperties.get(ID).toLowerCase(Locale.ROOT))
+                .roleName("sleeper-ingest-direct-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
         policiesStack.getDirectIngestPolicyForGrants().attachToRole(ingestRole);
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, ingestRole.getRoleArn());

@@ -45,7 +45,6 @@ public class ProcessRunsRecordsOutOfOrderTest {
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
-        assertThat(runs.isFinished()).isTrue();
     }
 
     @Test
@@ -65,7 +64,6 @@ public class ProcessRunsRecordsOutOfOrderTest {
                         tuple(started3, null),
                         tuple(started2, null),
                         tuple(started1, null));
-        assertThat(runs.isFinished()).isFalse();
     }
 
     @Test
@@ -86,7 +84,6 @@ public class ProcessRunsRecordsOutOfOrderTest {
                         tuple(started3, finished),
                         tuple(started2, null),
                         tuple(started1, null));
-        assertThat(runs.isFinished()).isFalse();
     }
 
     @Test
@@ -108,6 +105,5 @@ public class ProcessRunsRecordsOutOfOrderTest {
                 .containsExactly(
                         tuple(TASK_ID_2, started2, finished2),
                         tuple(TASK_ID_1, started1, finished1));
-        assertThat(runs.isFinished()).isTrue();
     }
 }

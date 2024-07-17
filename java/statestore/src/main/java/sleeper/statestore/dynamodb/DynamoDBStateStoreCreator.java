@@ -48,6 +48,9 @@ public class DynamoDBStateStoreCreator {
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
 
+    /**
+     * Creates the DynamoDB tables.
+     */
     public void create() {
         createFileReferenceTables();
         createPartitionInfoTable();

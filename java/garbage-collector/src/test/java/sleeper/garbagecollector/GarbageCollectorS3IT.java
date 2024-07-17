@@ -58,6 +58,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 @Testcontainers
@@ -109,8 +110,8 @@ public class GarbageCollectorS3IT {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOne("job1", "root",
-                List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2);
+        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                "job1", "root", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
 
         // When
         GarbageCollector collector = createGarbageCollector(instanceProperties, stateStoreProvider);

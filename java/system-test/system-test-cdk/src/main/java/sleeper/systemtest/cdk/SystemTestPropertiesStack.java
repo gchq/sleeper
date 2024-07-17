@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
@@ -55,8 +54,8 @@ public class SystemTestPropertiesStack extends NestedStack {
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
 
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer"));
+        String functionName = String.join("-", "sleeper",
+                systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer");
 
         IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)

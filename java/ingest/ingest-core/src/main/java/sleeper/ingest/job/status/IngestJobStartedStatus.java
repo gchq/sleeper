@@ -20,6 +20,9 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status for ingest jobs that have started.
+ */
 public class IngestJobStartedStatus implements IngestJobInfoStatus {
 
     private final int inputFileCount;
@@ -38,14 +41,21 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         return new Builder();
     }
 
+    /**
+     * Creates a builder for this class, setting the start of run flag. This flag is used to separate multiple runs of a
+     * job on the same task. When a status update with this flag enabled is found, it indicates that a new run has
+     * been started. This also means that there is only 1 status update with this flag enabled for every run.
+     * <p>
+     * For ingest jobs, the job is started when an ingest task retrieves it from an SQS queue.
+     * For bulk import jobs, the job starts when the bulk import starter validates it and assigns it to a Spark cluster.
+     * When a bulk import job starts in the Spark cluster, that needs to not count as the start of the run, else the
+     * {@link ProcessRunsBuilder} would detect that as multiple runs.
+     *
+     * @param  startOfRun whether this status marks the start of a job run
+     * @return            the builder
+     */
     public static Builder withStartOfRun(boolean startOfRun) {
         return builder().isStartOfRun(startOfRun);
-    }
-
-    public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
-        return withStartOfRun(true).job(job)
-                .startTime(startTime).updateTime(updateTime)
-                .build();
     }
 
     public int getInputFileCount() {
@@ -97,6 +107,9 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
                 '}';
     }
 
+    /**
+     * Builder class for ingest job started status objects.
+     */
     public static final class Builder {
         private int inputFileCount;
         private Instant startTime;
@@ -106,27 +119,65 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         public Builder() {
         }
 
+        /**
+         * Sets the input file count using the provided ingest job.
+         *
+         * @param  job the ingest job
+         * @return     the builder
+         */
         public Builder job(IngestJob job) {
             return inputFileCount(job.getFiles().size());
         }
 
+        /**
+         * Sets the input file count.
+         *
+         * @param  inputFileCount the input file count
+         * @return                the builder
+         */
         public Builder inputFileCount(int inputFileCount) {
             this.inputFileCount = inputFileCount;
             return this;
         }
 
+        /**
+         * Sets the start time.
+         *
+         * @param  startTime the start time
+         * @return           the builder
+         */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
             return this;
         }
 
+        /**
+         * Sets the update time.
+         *
+         * @param  updateTime the update time
+         * @return            the builder
+         */
         public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
-        public Builder isStartOfRun(boolean isStandardIngest) {
-            this.isStartOfRun = isStandardIngest;
+        /**
+         * Sets whether this status represents the start of a job run. This flag is used to separate multiple runs of a
+         * job on the same task. When a status update with this flag enabled is found, it indicates that a new run has
+         * been started. This also means that there is only 1 status update with this flag enabled for every run.
+         * <p>
+         * For ingest jobs, the job is started when an ingest task retrieves it from an SQS queue.
+         * For bulk import jobs, the job starts when the bulk import starter validates it and assigns it to a Spark
+         * cluster.
+         * When a bulk import job starts in the Spark cluster, that needs to not count as the start of the run, else the
+         * {@link ProcessRunsBuilder} would detect that as multiple runs.
+         *
+         * @param  isStartOfRun whether this status represents the start of a job run
+         * @return              the builder
+         */
+        public Builder isStartOfRun(boolean isStartOfRun) {
+            this.isStartOfRun = isStartOfRun;
             return this;
         }
 

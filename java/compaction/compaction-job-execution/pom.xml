@@ -14,12 +14,13 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>compaction</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0</version>
+        <version>0.24.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -49,6 +50,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>compaction-status-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-rust</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -180,4 +186,4 @@
             </plugin>
         </plugins>
     </build>
-</project>
+</project>  

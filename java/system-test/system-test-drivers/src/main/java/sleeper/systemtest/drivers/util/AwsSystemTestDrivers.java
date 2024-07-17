@@ -99,8 +99,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     public AssumeAdminRoleDriver assumeAdminRole() {
-        return properties -> new AwsSystemTestDrivers(new SystemTestClients(
-                AssumeSleeperRole.instanceAdmin(clients.getSts(), properties)));
+        return properties -> new AwsSystemTestDrivers(new SystemTestClients(clients,
+                AssumeSleeperRole.instanceAdmin(properties)));
     }
 
     @Override
@@ -115,7 +115,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
-        return new AwsIngestSourceFilesDriver();
+        return new AwsIngestSourceFilesDriver(clients);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public QueryAllTablesDriver directQuery(SystemTestContext context) {
-        return DirectQueryDriver.allTablesDriver(context.instance());
+        return DirectQueryDriver.allTablesDriver(context.instance(), clients);
     }
 
     @Override

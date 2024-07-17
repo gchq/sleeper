@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -114,15 +115,18 @@ public class Utils {
         return sb.toString();
     }
 
-    public static String truncateToMaxSize(String input, int maxSize) {
-        if (input.length() > maxSize) {
-            return input.substring(0, maxSize);
-        }
-        return input;
-    }
-
-    public static String truncateTo64Characters(String input) {
-        return truncateToMaxSize(input, 64);
+    /**
+     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
+     * has a maximum length of 20 characters. See
+     * {@link sleeper.configuration.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     *
+     * @param  properties the instance properties
+     * @return            the cleaned up instance ID
+     */
+    public static String cleanInstanceId(InstanceProperties properties) {
+        return properties.get(ID)
+                .toLowerCase(Locale.ROOT)
+                .replace(".", "-");
     }
 
     /**
@@ -157,10 +161,11 @@ public class Utils {
     }
 
     public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
         AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-" + id)
+                .streamPrefix(logGroupName)
                 .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(instanceProperties.get(ID) + "-" + id)
+                        .logGroupName(logGroupName)
                         .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                         .build())
                 .build();

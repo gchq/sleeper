@@ -36,7 +36,7 @@ public class TableFilesStatistics {
     public static TableFilesStatistics from(AllReferencesToAllFiles files, Map<String, Partition> partitionById) {
 
         List<FileReference> fileReferences = files.getFilesWithReferences().stream()
-                .flatMap(file -> file.getInternalReferences().stream())
+                .flatMap(file -> file.getReferences().stream())
                 .collect(Collectors.toUnmodifiableList());
         List<FileReference> fileReferencesInLeafPartitions = fileReferences.stream()
                 .filter(f -> partitionById.containsKey(f.getPartitionId()))

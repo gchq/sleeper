@@ -79,21 +79,10 @@ jobs:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
     with:
-      mavenCmd: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
+      mavenCmd: ./scripts/cli/environment/buildMaven.sh package -Pquick -DskipRust --batch-mode -Dmaven.repo.local=../.m2/repository
       pushImages: ${{ inputs.pushImages }}
       context: ./scripts/cli/environment
       pushTag: ${{ needs.setup.outputs.envTag }}
       packageName: ${{ needs.setup.outputs.envPackage }}
-      platforms: ${{ needs.setup.outputs.platforms }}
-      buildUrl: ${{ needs.setup.outputs.buildUrl }}
-  deployment:
-    needs: setup
-    uses: ./.github/workflows/docker-cli-image.yaml
-    with:
-      mavenCmd: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
-      pushImages: ${{ inputs.pushImages }}
-      context: ./scripts
-      pushTag: ${{ needs.setup.outputs.deployTag }}
-      packageName: ${{ needs.setup.outputs.deployPackage }}
       platforms: ${{ needs.setup.outputs.platforms }}
       buildUrl: ${{ needs.setup.outputs.buildUrl }}

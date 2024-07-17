@@ -29,12 +29,18 @@ run_in_docker() {
   if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
     RUN_PARAMS+=(-it)
   fi
+  local TEMP_DIR=$(mktemp -d)
+  local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
+  # We ensure the container ID is available as a file inside the container
+  # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --add-host=host.docker.internal:host-gateway
+    --cidfile "$CONTAINER_ID_PATH"
+    -v "$CONTAINER_ID_PATH:/tmp/container.id"
+    --add-host "host.docker.internal=host-gateway"
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
-    -e IN_CLI_CONTAINER=true \
+    -e "IN_CLI_CONTAINER=true"
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
     -e AWS_SESSION_TOKEN
@@ -48,6 +54,8 @@ run_in_docker() {
     "$@"
   )
   docker run "${RUN_PARAMS[@]}"
+  rm "$CONTAINER_ID_PATH"
+  rmdir "$TEMP_DIR"
 }
 
 run_in_environment_docker() {
@@ -56,15 +64,12 @@ run_in_environment_docker() {
     sleeper-local:current "$@"
 }
 
-run_in_deployment_docker() {
-  run_in_docker \
-    -v "$HOME/.sleeper/generated:/sleeper/generated" \
-    sleeper-deployment:current "$@"
-}
-
 run_in_builder_docker() {
+  # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
+  # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
+    -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
     sleeper-builder:current "$@"
 }
@@ -78,7 +83,7 @@ parse_version(){
     CURRENT_VERSION=$(get_version | tr -d '\r\n')
     case $CURRENT_VERSION in
     *-SNAPSHOT)
-      VERSION="latest"
+      VERSION="develop"
       ;;
     *)
       # We could get the latest version from GitHub by querying this URL:
@@ -107,14 +112,13 @@ pull_docker_images(){
   parse_version "$@"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
-  pull_and_tag sleeper-deployment
 }
 
 upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_DIR=$(mktemp -d)
+  local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
@@ -148,8 +152,6 @@ elif [ "$COMMAND" == "cdk" ]; then
   run_in_environment_docker cdk "$@"
 elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
   get_version
-elif [ "$COMMAND" == "deployment" ]; then
-  run_in_deployment_docker "$@"
 elif [ "$COMMAND" == "builder" ]; then
   run_in_builder_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then

@@ -83,7 +83,9 @@ public class DashboardStack extends NestedStack {
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
-        dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();
+        dashboard = Dashboard.Builder.create(this, "dashboard")
+                .dashboardName(Utils.cleanInstanceId(instanceProperties))
+                .build();
 
         addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
@@ -188,9 +190,7 @@ public class DashboardStack extends NestedStack {
 
     private void addTableWidgets() {
         tableNames.forEach(tableName -> {
-            Map<String, String> dimensions = new HashMap<>();
-            dimensions.put("instanceId", instanceId);
-            dimensions.put("tableName", tableName);
+            Map<String, String> dimensions = createDimensionMap(instanceId, tableName);
 
             dashboard.addWidgets(
                     TextWidget.Builder.create()

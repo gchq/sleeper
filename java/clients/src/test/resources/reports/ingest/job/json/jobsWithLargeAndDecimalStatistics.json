@@ -10,22 +10,27 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-13T14:02:10Z",
               "updateTime": "2022-10-13T14:02:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:04:13.123Z",
+              "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 4,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1234000,
                   "recordsWritten": 1234000
                 },
-                "startTime": "2022-10-13T14:02:10Z",
-                "finishTime": "2022-10-13T14:04:13.456Z",
-                "durationInSeconds": 123.456,
+                "runTime": {
+                  "startTime": "2022-10-13T14:02:10Z",
+                  "finishTime": "2022-10-13T14:04:13.456Z",
+                  "durationInSeconds": 123.456,
+                  "timeInProcessInSeconds": 123.456
+                },
                 "recordsReadPerSecond": 9995.463970969415,
                 "recordsWrittenPerSecond": 9995.463970969415
               }
@@ -41,22 +46,27 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-13T14:01:10Z",
               "updateTime": "2022-10-13T14:01:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:02:10.123Z",
+              "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 3,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
                   "recordsWritten": 500300
                 },
-                "startTime": "2022-10-13T14:01:10Z",
-                "finishTime": "2022-10-13T14:02:10Z",
-                "durationInSeconds": 60.0,
+                "runTime": {
+                  "startTime": "2022-10-13T14:01:10Z",
+                  "finishTime": "2022-10-13T14:02:10Z",
+                  "durationInSeconds": 60.0,
+                  "timeInProcessInSeconds": 60.0
+                },
                 "recordsReadPerSecond": 16676.666666666668,
                 "recordsWrittenPerSecond": 8338.333333333334
               }
@@ -72,22 +82,27 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-13T12:01:10Z",
               "updateTime": "2022-10-13T12:01:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T14:01:10.123Z",
+              "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 2,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 1000600,
                   "recordsWritten": 500300
                 },
-                "startTime": "2022-10-13T12:01:10Z",
-                "finishTime": "2022-10-13T14:01:10Z",
-                "durationInSeconds": 7200.0,
+                "runTime": {
+                  "startTime": "2022-10-13T12:01:10Z",
+                  "finishTime": "2022-10-13T14:01:10Z",
+                  "durationInSeconds": 7200.0,
+                  "timeInProcessInSeconds": 7200.0
+                },
                 "recordsReadPerSecond": 138.97222222222223,
                 "recordsWrittenPerSecond": 69.48611111111111
               }
@@ -103,22 +118,27 @@
           "taskId": "task-id",
           "updates": [
             {
-              "type": "IngestJobStartedStatus",
+              "type": "STARTED",
               "inputFileCount": 1,
               "startTime": "2022-10-13T10:00:10Z",
               "updateTime": "2022-10-13T10:00:10.123Z"
             },
             {
-              "type": "ProcessFinishedStatus",
+              "type": "FINISHED",
               "updateTime": "2022-10-13T10:02:13.123Z",
+              "committedBySeparateFileUpdates": false,
+              "numFilesWrittenByJob": 1,
               "summary": {
                 "recordsProcessed": {
                   "recordsRead": 600000,
                   "recordsWritten": 300000
                 },
-                "startTime": "2022-10-13T10:00:10Z",
-                "finishTime": "2022-10-13T10:02:13.123Z",
-                "durationInSeconds": 123.123,
+                "runTime": {
+                  "startTime": "2022-10-13T10:00:10Z",
+                  "finishTime": "2022-10-13T10:02:13.123Z",
+                  "durationInSeconds": 123.123,
+                  "timeInProcessInSeconds": 123.123
+                },
                 "recordsReadPerSecond": 4873.175604882922,
                 "recordsWrittenPerSecond": 2436.587802441461
               }

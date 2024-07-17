@@ -27,9 +27,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.io.IOException;
@@ -40,12 +40,17 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestSourceFilesDriver.class);
+    private final SystemTestClients clients;
+
+    public AwsIngestSourceFilesDriver(SystemTestClients clients) {
+        this.clients = clients;
+    }
 
     public void writeFile(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             String path, boolean writeSketches, Iterator<Record> records) {
         Schema schema = tableProperties.getSchema();
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
+        Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(

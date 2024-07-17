@@ -55,18 +55,20 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private final AmazonS3 s3Client;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
+    private final SystemTestClients clients;
 
     public SQSQueryDriver(
-            SystemTestInstanceContext instance, AmazonSQS sqsClient, AmazonDynamoDB dynamoDBClient, AmazonS3 s3Client) {
+            SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqsClient = sqsClient;
-        this.dynamoDBClient = dynamoDBClient;
-        this.s3Client = s3Client;
+        this.sqsClient = clients.getSqs();
+        this.dynamoDBClient = clients.getDynamoDB();
+        this.s3Client = clients.getS3();
+        this.clients = clients;
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         return new QueryAllTablesSendAndWaitDriver(instance,
-                new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3()));
+                new SQSQueryDriver(instance, clients));
     }
 
     @Override
@@ -111,7 +113,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
                 instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET),
                 "query-" + query.getQueryId())
                 .getObjectSummaries().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object))
+                .flatMap(object -> ReadRecordsFromS3.getRecords(schema, object, clients.createHadoopConf()))
                 .collect(Collectors.toUnmodifiableList());
     }
 }

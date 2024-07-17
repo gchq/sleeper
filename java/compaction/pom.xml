@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0</version>
+        <version>0.24.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -31,7 +31,7 @@
         <module>compaction-job-creation</module>
         <module>compaction-job-creation-lambda</module>
         <module>compaction-job-execution</module>
-        <module>compaction-job-committer-lambda</module>
+        <module>compaction-rust</module>
         <module>compaction-status-store</module>
         <module>compaction-task-creation</module>
     </modules>

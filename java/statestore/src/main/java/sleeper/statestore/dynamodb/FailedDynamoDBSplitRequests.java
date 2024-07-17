@@ -35,6 +35,10 @@ import java.util.TreeMap;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.isConditionCheckFailure;
 
+/**
+ * Reads a DynamoDB transaction cancellation and converts it into a state store exception when splitting file
+ * references.
+ */
 class FailedDynamoDBSplitRequests {
 
     private final TransactionCanceledException e;
@@ -123,6 +127,9 @@ class FailedDynamoDBSplitRequests {
         return failureByFilename;
     }
 
+    /**
+     * Tracks failures for a single request to split a file reference.
+     */
     static class RequestReferenceFailures {
         private final SplitFileReferenceRequest request;
         private final CancellationReason reasonDeleteOldFailed;

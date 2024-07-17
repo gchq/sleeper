@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
@@ -72,8 +73,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> filesProcessed, FileReference newReference) throws StateStoreException {
-        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOne(jobId, partitionId, filesProcessed, newReference);
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(requests);
     }
 
     @Override

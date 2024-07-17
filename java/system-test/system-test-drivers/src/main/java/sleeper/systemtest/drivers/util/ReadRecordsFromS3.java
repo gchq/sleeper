@@ -25,7 +25,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,9 +36,8 @@ public class ReadRecordsFromS3 {
     private ReadRecordsFromS3() {
     }
 
-    public static Stream<Record> getRecords(Schema schema, S3ObjectSummary s3ObjectSummary) {
+    public static Stream<Record> getRecords(Schema schema, S3ObjectSummary s3ObjectSummary, Configuration conf) {
         String path = "s3a://" + s3ObjectSummary.getBucketName() + "/" + s3ObjectSummary.getKey();
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
         List<Record> records = new ArrayList<>();
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(conf).build();

@@ -32,7 +32,8 @@ import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
-            .description("The id of the deployment, when deploying standalone.")
+            .description("The id of the deployment, if deploying standalone.")
+            .validationPredicate(value -> value == null || value.length() <= 12)
             .editable(false).build();
     SystemTestProperty SYSTEM_TEST_ACCOUNT = Index.propertyBuilder("sleeper.systemtest.standalone.account")
             .description("The AWS account when deploying standalone.")
@@ -69,7 +70,7 @@ public interface SystemTestProperty extends InstanceProperty {
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("1024").runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
-            .description("The amount of memory for the containers that write random data, in MiB.\n" +
+            .description("The memory for the containers that write random data, in MiB.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("4096").runCdkDeployWhenChanged(true).build();

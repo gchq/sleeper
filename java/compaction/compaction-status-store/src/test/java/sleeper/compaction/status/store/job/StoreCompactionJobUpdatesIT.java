@@ -20,16 +20,22 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -44,7 +50,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -63,13 +69,75 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
-        store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldReportCompactionJobFailed() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        List<String> failureReasons = List.of("Something went wrong");
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFailed(compactionJobFailed(job, defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(failedStatusWithDefaults(job, failureReasons));
+    }
+
+    @Test
+    public void shouldReportCompactionJobUncommitted() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedUncommittedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldReportCompactionJobCommittedSeparately() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedThenCommittedStatusWithDefaults(job));
     }
 
     @Test
@@ -85,13 +153,15 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
         RecordsProcessed processed = new RecordsProcessed(100L, 100L);
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(processed, startTime1, finishTime1);
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(processed, startTime2, finishTime2);
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, startTime1, DEFAULT_TASK_ID);
-        store.jobStarted(job, startTime2, DEFAULT_TASK_ID_2);
-        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
-        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID_2);
+        store.jobStarted(compactionJobStarted(job, startTime1).taskId(DEFAULT_TASK_ID).build());
+        store.jobStarted(compactionJobStarted(job, startTime2).taskId(DEFAULT_TASK_ID_2).build());
+        store.jobFinished(compactionJobFinished(job, summary1).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, summary2).taskId(DEFAULT_TASK_ID_2).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -101,4 +171,55 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                         finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(processed, startTime1, finishTime1))));
     }
 
+    @Test
+    public void shouldStoreTimeInProcessWhenFinished() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(123L, 45L),
+                startedTime, finishedTime, timeInProcess);
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, summary).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedStatusWithDefaults(job, summary));
+    }
+
+    @Test
+    public void shouldStoreTimeInProcessWhenFailed() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Duration timeInProcess = Duration.ofSeconds(20);
+        ProcessRunTime runTime = new ProcessRunTime(
+                startedTime, finishedTime, timeInProcess);
+        List<String> failureReasons = List.of("Something went wrong", "More details");
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
+        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(failedStatusWithDefaults(job, runTime, failureReasons));
+    }
 }

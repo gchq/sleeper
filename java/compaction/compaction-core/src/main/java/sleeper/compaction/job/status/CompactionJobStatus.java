@@ -26,20 +26,32 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableSet;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 
 public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
     private final ProcessRuns jobRuns;
+    private final transient Set<CompactionJobStatusType> runStatusTypes;
+    private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
         jobRuns = builder.jobRuns;
+        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
+                .map(CompactionJobStatusType::statusTypeOfJobRun)
+                .collect(toUnmodifiableSet());
+        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
     }
 
@@ -84,8 +96,24 @@ public class CompactionJobStatus {
         return jobRuns.isStarted();
     }
 
-    public boolean isFinished() {
-        return jobRuns.isFinished();
+    public boolean isUnstartedOrInProgress() {
+        return !isStarted() || runStatusTypes.contains(IN_PROGRESS) || !runStatusTypes.contains(FINISHED);
+    }
+
+    public boolean isAnyRunInProgress() {
+        return runStatusTypes.contains(IN_PROGRESS);
+    }
+
+    public boolean isAnyRunSuccessful() {
+        return runStatusTypes.contains(FINISHED);
+    }
+
+    public boolean isAnyRunFailed() {
+        return runStatusTypes.contains(FAILED);
+    }
+
+    public boolean isAwaitingRetry() {
+        return runStatusTypes.contains(FAILED) && runStatusTypes.size() == 1;
     }
 
     public Instant getExpiryDate() {
@@ -102,11 +130,11 @@ public class CompactionJobStatus {
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (isFinished()) {
+        if (isUnstartedOrInProgress()) {
+            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
+        } else {
             return timeWindowQuery.isFinishedProcessInWindow(
                     createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
-        } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
         }
     }
 
@@ -114,8 +142,8 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public Optional<ProcessRun> getLatestRun() {
-        return jobRuns.getLatestRun();
+    public CompactionJobStatusType getFurthestRunStatusType() {
+        return furthestRunStatusType;
     }
 
     public static final class Builder {

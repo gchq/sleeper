@@ -17,22 +17,37 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
+import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
+import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFinished;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
@@ -72,6 +87,37 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
     }
 
     @Test
+    void shouldReportJobAddedFilesWhenFilesAddedAsynchronouslyWithOutOfSyncClock() {
+        // Given
+        String jobRunId = "test-run";
+        String taskId = "test-task";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+        Instant startTime = Instant.parse("2022-09-22T12:00:15Z");
+        Instant writtenTime = Instant.parse("2022-09-22T12:00:14Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+        List<AllReferencesToAFile> outputFiles = filesWithReferences(List.of(
+                fileFactory.rootFile("file1.parquet", 123),
+                fileFactory.rootFile("file2.parquet", 456)));
+
+        // When
+        store.jobAddedFiles(ingestJobAddedFiles(job, outputFiles, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(jobStatus(job, ProcessRun.builder()
+                        .taskId(taskId)
+                        .statusUpdate(IngestJobAddedFilesStatus.builder()
+                                .fileCount(2)
+                                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).build())
+                        .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                .inputFileCount(1)
+                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
+                        .build()));
+    }
+
+    @Test
     void shouldReportFinishedJob() {
         // Given
         String jobRunId = "test-run";
@@ -84,12 +130,35 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // When
         store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
         store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
-                        validationTime, summary)));
+                        validationTime, summary, 2)));
+    }
+
+    @Test
+    void shouldReportFailedJob() {
+        // Given
+        String jobRunId = "test-run";
+        String taskId = "test-task";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+        Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+        Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+        ProcessRunTime runTime = new ProcessRunTime(startTime, Duration.ofMinutes(10));
+        List<String> failureReasons = List.of("Something failed");
+
+        // When
+        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+        store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobFailed(ingestJobFailed(job, runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(jobStatus(job, acceptedRunWhichFailed(job, taskId,
+                        validationTime, runTime, failureReasons)));
     }
 }

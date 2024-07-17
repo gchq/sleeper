@@ -125,13 +125,6 @@
             <destName>lambda-jobSpecCreationLambda-${project.version}.jar</destName>
         </file>
         <file>
-            <source>
-                ${project.basedir}/../compaction/compaction-job-committer-lambda/target/compaction-job-committer-lambda-${project.version}-utility.jar
-            </source>
-            <outputDirectory>scripts/jars</outputDirectory>
-            <destName>lambda-jobCommitterLambda-${project.version}.jar</destName>
-        </file>
-        <file>
             <source>${project.basedir}/../garbage-collector/target/garbage-collector-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>

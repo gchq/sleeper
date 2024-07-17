@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.23.0</version>
+        <version>0.24.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,6 +34,15 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <!-- Arrow dependencies -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-vector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-memory-unsafe</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

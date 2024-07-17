@@ -30,11 +30,9 @@ import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapac
 import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.WorkerConfigurationProperty;
-import software.amazon.awscdk.services.emrserverless.CfnApplicationProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.ManagedPolicyProps;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
@@ -49,7 +47,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -64,7 +61,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -100,14 +96,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
-            IngestStatusStoreResources statusStoreResources,
             List<IMetric> errorMetrics) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
-                instanceProperties, importBucketStack, statusStoreResources, coreStacks);
+                instanceProperties, importBucketStack, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, statusStoreResources, errorMetrics);
+                "EMRServerless", instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);
@@ -138,15 +133,14 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     }
 
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
-        String instanceId = instanceProperties.get(ID);
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
         String repo = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO);
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 
-        CfnApplicationProps props = CfnApplicationProps.builder()
-                .name(String.join("-", "sleeper", instanceId))
+        CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
+                .name(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties)))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
@@ -161,8 +155,6 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         .subnetIds(instanceProperties.getList(SUBNETS))
                         .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
                 .build();
-
-        CfnApplication emrServerlessCluster = new CfnApplication(this, getArtifactId(), props);
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME,
                 emrServerlessCluster.getName());
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID,
@@ -215,11 +207,11 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
-            BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
+            BulkImportBucketStack bulkImportBucketStack,
             CoreStacks coreStacks) {
-        String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
-                .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
+                .roleName(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))
                 .description("The role assumed by the Bulk import EMR Serverless Application")
                 .managedPolicies(
                         List.of(createEmrServerlessManagedPolicy(instanceProperties)))
@@ -228,41 +220,37 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
 
         bulkImportBucketStack.getImportBucket().grantReadWrite(role);
-        statusStoreResources.grantWriteJobEvent(role);
         coreStacks.grantIngest(role);
         return role;
     }
 
     private ManagedPolicy createEmrServerlessManagedPolicy(InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
-        String instanceId = instanceProperties.get(ID);
-
-        return new ManagedPolicy(this,
-                "CustomEMRServerlessServicePolicy",
-                ManagedPolicyProps.builder()
-                        .managedPolicyName(
-                                String.join("-", "sleeper", instanceId, "EmrServerlessPolicy"))
-                        .description(
-                                "Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
-                        .document(PolicyDocument.Builder.create().statements(List.of(
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("PolicyStatementProps").effect(Effect.ALLOW)
-                                        .actions(List.of("s3:GetObject", "s3:ListBucket"))
-                                        .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
-                                                "arn:aws:s3:::*.elasticmapreduce/*"))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)
-                                        .actions(List.of("glue:GetDatabase", "glue:CreateDatabase",
-                                                "glue:GetDataBases", "glue:CreateTable",
-                                                "glue:GetTable", "glue:UpdateTable",
-                                                "glue:DeleteTable", "glue:GetTables",
-                                                "glue:GetPartition", "glue:GetPartitions",
-                                                "glue:CreatePartition", "glue:BatchCreatePartition",
-                                                "glue:GetUserDefinedFunctions"))
-                                        .resources(List.of("*")).build())))
-                                .build())
-                        .build());
+        return ManagedPolicy.Builder.create(this, "CustomEMRServerlessServicePolicy")
+                .managedPolicyName(
+                        String.join("-", "sleeper",
+                                Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))
+                .description("Policy required for Sleeper Bulk import EMR Serverless cluster, " +
+                        "based on the AmazonEMRServicePolicy_v2 policy")
+                .document(PolicyDocument.Builder.create().statements(List.of(
+                        new PolicyStatement(PolicyStatementProps.builder()
+                                .sid("PolicyStatementProps").effect(Effect.ALLOW)
+                                .actions(List.of("s3:GetObject", "s3:ListBucket"))
+                                .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
+                                        "arn:aws:s3:::*.elasticmapreduce/*"))
+                                .build()),
+                        new PolicyStatement(PolicyStatementProps.builder()
+                                .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)
+                                .actions(List.of("glue:GetDatabase", "glue:CreateDatabase",
+                                        "glue:GetDataBases", "glue:CreateTable",
+                                        "glue:GetTable", "glue:UpdateTable",
+                                        "glue:DeleteTable", "glue:GetTables",
+                                        "glue:GetPartition", "glue:GetPartitions",
+                                        "glue:CreatePartition", "glue:BatchCreatePartition",
+                                        "glue:GetUserDefinedFunctions"))
+                                .resources(List.of("*")).build())))
+                        .build())
+                .build();
     }
 
     public Queue getBulkImportJobQueue() {

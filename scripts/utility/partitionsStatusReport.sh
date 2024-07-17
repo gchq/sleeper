@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,4 +30,6 @@ TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.PartitionsStatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.status.report.PartitionsStatusReport "${INSTANCE_ID}" "${TABLE_NAME}"

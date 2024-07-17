@@ -18,8 +18,8 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
-import java.util.Arrays;
 import java.util.List;
 
 public interface CompactionProperty {
@@ -94,7 +94,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory")
-            .description("The amount of memory for the lambda that creates compaction jobs.")
+            .description("The amount of memory in MB for the lambda that creates compaction jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
@@ -104,23 +104,6 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.committer.lambda.memory")
-            .description("The amount of memory for the lambda that commits compaction jobs.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.committer.lambda.timeout.seconds")
-            .description("The timeout for the lambda that commits compaction jobs in seconds.")
-            .defaultValue("900")
-            .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_COMMITTER_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.committer.batch.size")
-            .description("The number of compacton jobs to be sent to the committer lambda in one invocation. " +
-                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
-            .defaultValue("10")
-            .validationPredicate(Utils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -131,6 +114,13 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.max.retries")
+            .description("The maximum number of times that a compaction job can be taken off the job definition queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the compaction job definition queue.")
+            .defaultValue("3")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
                     "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
@@ -144,7 +134,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory")
-            .description("The memory for a compaction task using an ARM64 architecture.\n" +
+            .description("The amount of memory in MB for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -156,7 +146,7 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory")
-            .description("The memory for a compaction task using an x86_64 architecture.\n" +
+            .description("The amount of memory in MB for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -164,7 +154,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")
-            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
+            .validationPredicate(CompactionECSLaunchType::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
@@ -259,6 +249,12 @@ public interface CompactionProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
+            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
+                    "experimental.")
+            .defaultValue("JAVA")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

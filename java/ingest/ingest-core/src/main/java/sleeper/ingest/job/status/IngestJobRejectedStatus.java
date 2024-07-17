@@ -24,6 +24,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * An ingest job validation status for when the job has failed validation.
+ */
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus, ProcessRunFinishedUpdate {
     private final Instant validationTime;
     private final Instant updateTime;
@@ -58,10 +61,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
         return inputFileCount;
     }
 
-    public List<String> getReasons() {
-        return reasons;
-    }
-
     public String getJsonMessage() {
         return jsonMessage;
     }
@@ -74,6 +73,16 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
     @Override
     public RecordsProcessedSummary getSummary() {
         return RecordsProcessedSummary.noProcessingDoneAtTime(validationTime);
+    }
+
+    @Override
+    public boolean isSuccessful() {
+        return false;
+    }
+
+    @Override
+    public List<String> getFailureReasons() {
+        return reasons;
     }
 
     @Override
@@ -113,6 +122,9 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
                 '}';
     }
 
+    /**
+     * Builder for ingest job rejected status objects.
+     */
     public static final class Builder {
         private Instant updateTime;
         private int inputFileCount = 0;
@@ -123,31 +135,67 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
         private Builder() {
         }
 
+        /**
+         * Sets the validation time.
+         *
+         * @param  validationTime the validation time
+         * @return                the builder
+         */
         public Builder validationTime(Instant validationTime) {
             this.validationTime = validationTime;
             return this;
         }
 
+        /**
+         * Sets the update time.
+         *
+         * @param  updateTime the update time
+         * @return            the builder
+         */
         public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
+        /**
+         * Sets the reasons for why the job was rejected.
+         *
+         * @param  reasons the list of reasons
+         * @return         the builder
+         */
         public Builder reasons(List<String> reasons) {
             this.reasons = reasons;
             return this;
         }
 
+        /**
+         * Sets the JSON message.
+         *
+         * @param  jsonMessage the JSON message
+         * @return             the builder
+         */
         public Builder jsonMessage(String jsonMessage) {
             this.jsonMessage = jsonMessage;
             return this;
         }
 
+        /**
+         * Sets the input file count.
+         *
+         * @param  inputFileCount the input file count
+         * @return                the builder
+         */
         public Builder inputFileCount(int inputFileCount) {
             this.inputFileCount = inputFileCount;
             return this;
         }
 
+        /**
+         * Sets the input file count using the ingest job.
+         *
+         * @param  job the ingest job
+         * @return     the builder
+         */
         public Builder job(IngestJob job) {
             return inputFileCount(job.getFileCount());
         }

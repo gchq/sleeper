@@ -31,10 +31,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -46,7 +50,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobStartedUpdate;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
@@ -111,29 +117,48 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         try {
             save(createJobCreatedUpdate(job, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed jobCreated for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving created event for job " + job.getId(), e);
         }
     }
 
     @Override
-    public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
+    public void jobStarted(CompactionJobStartedEvent event) {
         try {
-            save(createJobStartedUpdate(startTime, taskId, jobUpdateBuilder(job)));
+            save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed jobStarted for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
         }
     }
 
     @Override
-    public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+    public void jobFinished(CompactionJobFinishedEvent event) {
         try {
-            save(createJobFinishedUpdate(summary, taskId, jobUpdateBuilder(job)));
+            save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed jobFinished for job " + job.getId(), e);
+            throw new CompactionStatusStoreException("Failed saving finished event for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
+    public void jobCommitted(CompactionJobCommittedEvent event) {
+        try {
+            save(createJobCommittedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed saving committed event for job " + event.getJobId(), e);
+        }
+    }
+
+    @Override
+    public void jobFailed(CompactionJobFailedEvent event) {
+        try {
+            save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
         }
     }
 
     private void save(Map<String, AttributeValue> update) {
+        Instant startTime = Instant.now();
         TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -162,14 +187,19 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                                         ":expiry", update.get(EXPIRY_DATE))))));
         List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Added {} for job {}, capacity consumed = {}",
-                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID), totalCapacity);
+        LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID),
+                totalCapacity, LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {
+        return jobUpdateBuilder(job.getTableId(), job.getId());
+    }
+
+    private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {
         Instant timeNow = getTimeNow.get();
         Instant expiry = timeNow.plus(timeToLiveInSeconds, ChronoUnit.SECONDS);
-        return DynamoDBCompactionJobStatusFormat.jobUpdateBuilder(job, timeNow, expiry);
+        return DynamoDBCompactionJobStatusFormat.jobUpdateBuilder(tableId, jobId, timeNow, expiry);
     }
 
     @Override

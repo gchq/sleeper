@@ -34,6 +34,9 @@ public class SystemTestInstanceConfiguration {
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
         disableTransactionLogSnapshots = builder.disableTransactionLogSnapshots;
+        if (shortName.length() > 7) {
+            throw new IllegalArgumentException("Instance shortName must not be longer than 7 characters");
+        }
     }
 
     public static Builder builder() {

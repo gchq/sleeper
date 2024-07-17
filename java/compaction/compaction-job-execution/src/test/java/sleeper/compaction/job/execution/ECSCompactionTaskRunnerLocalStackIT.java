@@ -46,10 +46,12 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
@@ -68,8 +70,10 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -93,17 +97,17 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -300,8 +304,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(2);
             StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
+            doAnswer(invocation -> {
+                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
+                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
+            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -323,8 +329,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             // Given
             configureJobQueuesWithMaxReceiveCount(1);
             StateStore stateStore = mock(StateStore.class);
-            doThrow(new StateStoreException("Failed to update state store"))
-                    .when(stateStore).atomicallyReplaceFileReferencesWithNewOne(anyString(), anyString(), any(), any());
+            doAnswer(invocation -> {
+                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
+                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
+            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
@@ -367,19 +375,20 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
                 Instant.parse("2024-05-09T12:58:00Z")));    // Finished task
+        Queue<String> jobRunIds = new LinkedList<>(List.of("job-run-id"));
 
         // When
-        createTaskWithTimes("task-id", times::poll).run();
+        createTaskWithRunIdsAndTimes("task-id", jobRunIds::poll, times::poll).run();
 
         // Then
         // - The compaction job should not be on the input queue or DLQ
         assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
         assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL)).isEmpty();
         // - A compaction commit request should be on the job commit queue
-        assertThat(messagesOnQueue(COMPACTION_JOB_COMMITTER_QUEUE_URL))
+        assertThat(messagesOnQueue(STATESTORE_COMMITTER_QUEUE_URL))
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
-                        commitRequestOnQueue(job, "task-id",
+                        commitRequestOnQueue(job, "task-id", "job-run-id",
                                 new RecordsProcessedSummary(new RecordsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
@@ -424,31 +433,35 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         String jobCommitQueueUrl = sqs.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
-        instanceProperties.set(COMPACTION_JOB_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
     }
 
-    private CompactionTask createTaskWithTimes(String taskId, Supplier<Instant> timeSupplier) {
-        return createTask(taskId, stateStoreProvider, timeSupplier);
+    private CompactionTask createTaskWithRunIdsAndTimes(
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
+        return createTask(taskId, stateStoreProvider, jobRunIdSupplier, timeSupplier);
     }
 
     private CompactionTask createTask(String taskId) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
     private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
-        return createTask(taskId, stateStoreProvider, Instant::now);
+        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider, Supplier<Instant> timeSupplier) {
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties,
-                tablePropertiesProvider, stateStoreProvider,
-                ObjectFactory.noUserJars());
-        CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
+    private CompactionTask createTask(
+            String taskId, StateStoreProvider stateStoreProvider,
+            Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
+        DefaultSelector selector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider,
+                ObjectFactory.noUserJars(), configuration);
+        CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties), compactSortedFiles,
-                committer, jobStatusStore, taskStatusStore, taskId, timeSupplier, duration -> {
+                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
+                waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
+                committer, jobStatusStore, taskStatusStore, selector, taskId,
+                jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;
     }
@@ -514,8 +527,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private String commitRequestOnQueue(CompactionJob job, String taskId, RecordsProcessedSummary summary) {
-        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, summary));
+    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary summary) {
+        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {
@@ -533,5 +546,4 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             throw new RuntimeException("Failed reading records", e);
         }
     }
-
 }

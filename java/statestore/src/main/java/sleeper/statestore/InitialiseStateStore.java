@@ -38,6 +38,12 @@ public class InitialiseStateStore {
     private InitialiseStateStore() {
     }
 
+    /**
+     * Initialises a state store with a single root partition from the command line.
+     *
+     * @param  args                the command line arguments
+     * @throws StateStoreException if the state store initialisation fails
+     */
     public static void main(String[] args) throws StateStoreException {
         if (2 != args.length) {
             System.out.println("Usage: <instance-id> <table-name>");

@@ -59,7 +59,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
@@ -99,8 +98,8 @@ public class QueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        String tableName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-tracking-table"));
+        String tableName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
 
         Table queryTrackingTable = Table.Builder.create(this, "QueryTrackingTable")
                 .tableName(tableName)
@@ -161,8 +160,8 @@ public class QueryStack extends NestedStack {
      */
     private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
             IBucket jarsBucket, ITable queryTrackingTable) {
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-executor");
         IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
                 "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
@@ -210,8 +209,8 @@ public class QueryStack extends NestedStack {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
-        String leafQueryFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-leaf-partition"));
+        String leafQueryFunctionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
         IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
                 "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
@@ -258,7 +257,8 @@ public class QueryStack extends NestedStack {
      * @return                    the queue to be used for leaf partition queries
      */
     private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
-        String dlLeafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryDLQ");
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String dlLeafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
         Queue leafPartitionQueryDlq = Queue.Builder
                 .create(this, "LeafPartitionQueryDeadLetterQueue")
                 .queueName(dlLeafPartitionQueueName)
@@ -267,7 +267,7 @@ public class QueryStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(leafPartitionQueryDlq)
                 .build();
-        String leafPartitionQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-LeafPartitionQueryQueue");
+        String leafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryQueue");
         Queue leafPartitionQueryQueue = Queue.Builder
                 .create(this, "LeafPartitionQueryQueue")
                 .queueName(leafPartitionQueueName)
@@ -310,7 +310,8 @@ public class QueryStack extends NestedStack {
      * @return                    the queue created
      */
     private Queue setupResultsQueue(InstanceProperties instanceProperties) {
-        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryResultsQ");
+        String queueName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "QueryResultsQ");
         Queue resultsQueue = Queue.Builder
                 .create(this, "QueryResultsQueue")
                 .queueName(queueName)
@@ -344,7 +345,8 @@ public class QueryStack extends NestedStack {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase(Locale.ROOT))
+                .bucketName(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "query-results"))
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)

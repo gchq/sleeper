@@ -23,20 +23,32 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableSet;
+import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
+
+/**
+ * Stores the status of an ingest job. This is used for reporting on the state of ingest jobs.
+ */
 public class IngestJobStatus {
     private final String jobId;
     private final ProcessRuns jobRuns;
+    private final transient Set<IngestJobStatusType> runStatusTypes;
+    private final transient IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
+        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
+                .map(IngestJobStatusType::statusTypeOfJobRun)
+                .collect(toUnmodifiableSet());
+        furthestRunStatusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
     }
 
@@ -44,6 +56,14 @@ public class IngestJobStatus {
         return new Builder();
     }
 
+    /**
+     * Creates a stream of ingest job statuses from a stream of process status update records. The records passed into
+     * this method come from the underlying {@link IngestJobStatusStore}, and this constructor collects them, building
+     * them into a format used for reporting.
+     *
+     * @param  records the stream of {@link ProcessStatusUpdateRecord}s
+     * @return         a stream of ingest job statuses
+     */
     public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
                 .map(IngestJobStatus::from)
@@ -80,6 +100,12 @@ public class IngestJobStatus {
         return expiryDate;
     }
 
+    /**
+     * Checks whether the task ID is assigned to one or more job runs.
+     *
+     * @param  taskId the task ID to check
+     * @return        whether the task ID is assigned to one or more job runs
+     */
     public boolean isTaskIdAssigned(String taskId) {
         return jobRuns.isTaskIdAssigned(taskId);
     }
@@ -88,26 +114,48 @@ public class IngestJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public boolean isFinished() {
-        return jobRuns.isFinished();
+    /**
+     * Checks whether the job is unfinished. Counts as unfinished if a run of the job is accepted or in progress, or if
+     * all the runs of the job failed and it may be retried. If the job was rejected, it will not count as unfinished.
+     *
+     * @return true if the job is unfinished
+     */
+    public boolean isUnfinishedOrAnyRunInProgress() {
+        return runStatusTypes().anyMatch(IngestJobStatusType::isRunInProgress)
+                || runStatusTypes().noneMatch(IngestJobStatusType::isEndOfJob);
     }
 
-    public IngestJobStatusType getFurthestStatusType() {
-        return jobRuns.getRunsLatestFirst().stream()
-                .map(ProcessRun::getLatestUpdate)
-                .map(IngestJobStatusType::of)
-                .max(Comparator.comparing(IngestJobStatusType::getOrder))
-                .orElseThrow();
+    public boolean isAnyRunSuccessful() {
+        return runStatusTypes.contains(FINISHED);
     }
 
+    public boolean isAnyRunInProgress() {
+        return runStatusTypes().anyMatch(status -> status.isRunInProgress());
+    }
+
+    /**
+     * Checks whether one or more job runs were performed in a time window.
+     *
+     * @param  windowStartTime the start of the time window
+     * @param  windowEndTime   the end of the time window
+     * @return                 whether one or more job runs were performed in the time window
+     */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
-        if (isFinished()) {
+        if (isUnfinishedOrAnyRunInProgress()) {
+            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
+        } else {
             return timeWindowQuery.isFinishedProcessInWindow(
                     jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
-        } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
         }
+    }
+
+    public IngestJobStatusType getFurthestRunStatusType() {
+        return furthestRunStatusType;
+    }
+
+    private Stream<IngestJobStatusType> runStatusTypes() {
+        return runStatusTypes.stream();
     }
 
     @Override
@@ -138,6 +186,9 @@ public class IngestJobStatus {
                 '}';
     }
 
+    /**
+     * Builder class for ingest job status objects.
+     */
     public static final class Builder {
         private String jobId;
         private ProcessRuns jobRuns;
@@ -146,16 +197,34 @@ public class IngestJobStatus {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  jobId the ingest job ID
+         * @return       the builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the job runs.
+         *
+         * @param  jobRuns the job runs
+         * @return         the builder
+         */
         public Builder jobRuns(ProcessRuns jobRuns) {
             this.jobRuns = jobRuns;
             return this;
         }
 
+        /**
+         * Sets the expiry date. This is the date after which the job status will be removed from the status store.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
             return this;

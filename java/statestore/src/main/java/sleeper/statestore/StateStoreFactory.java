@@ -29,6 +29,10 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnaps
 
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
+/**
+ * Creates a client to access the state store for a Sleeper table. The client may not be thread safe, as it may cache
+ * the state.
+ */
 public class StateStoreFactory {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3;
@@ -42,6 +46,12 @@ public class StateStoreFactory {
         this.configuration = configuration;
     }
 
+    /**
+     * Creates a client to access a state store.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 the state store
+     */
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {

@@ -116,12 +116,12 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
                 "ingest-url", List.of(IngestJob.builder()
-                        .files("test-bucket/ingest.parquet")
+                        .files(List.of("test-bucket/ingest.parquet"))
                         .tableId("ingest-table")
                         .id("test-job-1")
                         .build()),
                 "bulk-import-url", List.of(IngestJob.builder()
-                        .files("test-bucket/bulk-import.parquet")
+                        .files(List.of("test-bucket/bulk-import.parquet"))
                         .tableId("bulk-import-table")
                         .id("test-job-2")
                         .build())));

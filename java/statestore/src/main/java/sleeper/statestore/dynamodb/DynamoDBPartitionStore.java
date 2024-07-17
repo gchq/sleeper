@@ -58,6 +58,9 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_ID;
 
+/**
+ * A Sleeper table partition store where the state is held in DynamoDB.
+ */
 class DynamoDBPartitionStore implements PartitionStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionStore.class);
@@ -223,6 +226,9 @@ class DynamoDBPartitionStore implements PartitionStore {
         }
     }
 
+    /**
+     * Builder to create a partition store backed by DynamoDB.
+     */
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoTableName;

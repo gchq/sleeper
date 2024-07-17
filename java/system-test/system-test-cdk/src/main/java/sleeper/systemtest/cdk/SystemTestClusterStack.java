@@ -48,7 +48,6 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -97,7 +96,8 @@ public class SystemTestClusterStack extends NestedStack {
         IVpc vpc = Vpc.fromLookup(this, "SystemTestVPC", vpcLookupOptions);
 
         // ECS cluster for tasks to write data
-        String clusterName = generateSystemTestClusterName(instanceProperties.get(ID));
+        String clusterName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "system-test-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
@@ -140,10 +140,5 @@ public class SystemTestClusterStack extends NestedStack {
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
                 .build());
-    }
-
-    public static String generateSystemTestClusterName(String instanceId) {
-        return Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(Locale.ROOT), "system-test-cluster"));
     }
 }

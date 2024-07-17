@@ -39,7 +39,6 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
@@ -50,7 +49,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
@@ -75,10 +73,9 @@ public class GarbageCollectorStack extends NestedStack {
         // Garbage collector code
         LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
 
-        String triggerFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector-trigger"));
-        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");
+        String functionName = String.join("-", "sleeper", instanceId, "garbage-collector");
 
         // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
         // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
@@ -127,12 +124,12 @@ public class GarbageCollectorStack extends NestedStack {
 
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "GCJobDeadLetterQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "GCJobDLQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "GCJobDLQ.fifo"))
                 .fifo(true)
                 .build();
         Queue queue = Queue.Builder
                 .create(this, "GCJobQueue")
-                .queueName(String.join("-", "sleeper", instanceProperties.get(ID), "GCJobQ.fifo"))
+                .queueName(String.join("-", "sleeper", instanceId, "GCJobQ.fifo"))
                 .deadLetterQueue(DeadLetterQueue.builder()
                         .maxReceiveCount(1)
                         .queue(deadLetterQueue)

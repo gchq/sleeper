@@ -34,9 +34,7 @@ public class JsonRecordsProcessedSummary {
     private static JsonElement createSummaryJson(RecordsProcessedSummary summary, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("recordsProcessed", context.serialize(summary.getRecordsProcessed()));
-        jsonObject.add("startTime", context.serialize(summary.getStartTime()));
-        jsonObject.add("finishTime", context.serialize(summary.getFinishTime()));
-        jsonObject.addProperty("durationInSeconds", summary.getDurationInSeconds());
+        jsonObject.add("runTime", context.serialize(summary.getRunTime()));
         jsonObject.addProperty("recordsReadPerSecond", summary.getRecordsReadPerSecond());
         jsonObject.addProperty("recordsWrittenPerSecond", summary.getRecordsWrittenPerSecond());
         return jsonObject;

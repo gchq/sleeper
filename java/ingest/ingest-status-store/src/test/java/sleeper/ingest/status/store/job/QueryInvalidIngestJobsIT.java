@@ -19,15 +19,16 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
+import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -39,8 +40,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(ingestJobRejected(job1, validationTime1, "Test reason 1"));
-        store.jobValidated(ingestJobRejected(job2, validationTime2, "Test reason 2"));
+        store.jobValidated(rejectedEvent(job1, validationTime1, "Test reason 1"));
+        store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -56,7 +57,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         String jobId = "invalid-job";
         String json = "{";
         Instant validationTime = Instant.parse("2023-11-06T10:36:00Z");
-        store.jobValidated(ingestJobRejected(jobId, json, validationTime, "Test reason"));
+        store.jobValidated(IngestJobValidatedEvent.ingestJobRejected(jobId, json, validationTime, "Test reason"));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -73,8 +74,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(ingestJobRejected(job, validationTime1, "Test reason 1"));
-        store.jobValidated(ingestJobRejected(job, validationTime2, "Test reason 2"));
+        store.jobValidated(rejectedEvent(job, validationTime1, "Test reason 1"));
+        store.jobValidated(rejectedEvent(job, validationTime2, "Test reason 2"));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -95,7 +96,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
 
         // When
         store.jobValidated(ingestJobAccepted(job1, validationTime1).build());
-        store.jobValidated(ingestJobRejected(job2, validationTime2, "Test reason 2"));
+        store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -112,7 +113,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(ingestJobRejected(job, validationTime1, "Test reason 1"));
+        store.jobValidated(rejectedEvent(job, validationTime1, "Test reason 1"));
         store.jobValidated(ingestJobAccepted(job, validationTime2).build());
 
         // Then

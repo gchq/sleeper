@@ -23,7 +23,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.execution.CompactSortedFiles;
+import sleeper.compaction.job.execution.StandardCompactor;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -34,7 +34,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Region;
@@ -44,7 +44,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -64,6 +63,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
@@ -90,6 +91,14 @@ public class InMemoryCompaction {
             finishTasks();
             return jobStore;
         }, properties -> taskStore);
+    }
+
+    public CompactionJobStatusStore jobStore() {
+        return jobStore;
+    }
+
+    public CompactionTaskStatusStore taskStore() {
+        return taskStore;
     }
 
     private class Driver implements CompactionDriver {
@@ -157,8 +166,8 @@ public class InMemoryCompaction {
         for (CompactionJob job : queuedJobsById.values()) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
-            jobStore.jobStarted(job, summary.getStartTime(), taskId);
-            jobStore.jobFinished(job, summary, taskId);
+            jobStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
+            jobStore.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
         }
         queuedJobsById.clear();
     }
@@ -180,13 +189,8 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore,
-                    CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_ATTEMPTS,
-                    new ExponentialBackoffWithJitter(CompactionJobCommitter.JOB_ASSIGNMENT_WAIT_RANGE));
+            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
@@ -209,9 +213,9 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
-            mergingIterator = CompactSortedFiles.getMergingIterator(
+            mergingIterator = StandardCompactor.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
-        } catch (IteratorException e) {
+        } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
         Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);

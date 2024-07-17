@@ -36,7 +36,7 @@ public class ProcessRun {
 
     private ProcessRun(Builder builder) {
         taskId = builder.taskId;
-        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
+        startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
         statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
     }
@@ -86,15 +86,19 @@ public class ProcessRun {
     }
 
     public boolean isFinished() {
-        return getFinishedStatus() != null;
+        return finishedStatus != null;
+    }
+
+    public boolean isFinishedSuccessfully() {
+        return finishedStatus != null && finishedStatus.isSuccessful();
     }
 
     public Instant getStartTime() {
-        return getStartedStatus().getStartTime();
+        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getStartTime).orElse(null);
     }
 
     public Instant getStartUpdateTime() {
-        return getStartedStatus().getUpdateTime();
+        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getUpdateTime).orElse(null);
     }
 
     /**
@@ -239,9 +243,9 @@ public class ProcessRun {
         }
 
         /**
-         * Sets the finished status.
+         * Sets the status update that ends the run.
          *
-         * @param  finishedStatus the finished status to set
+         * @param  finishedStatus the update to set
          * @return                the builder
          */
         public Builder finishedStatus(ProcessRunFinishedUpdate finishedStatus) {

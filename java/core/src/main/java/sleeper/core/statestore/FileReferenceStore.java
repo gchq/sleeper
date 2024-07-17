@@ -19,9 +19,8 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
 import java.time.Instant;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -62,8 +60,7 @@ public interface FileReferenceStore {
      * @throws StateStoreException        if the update fails for another reason
      */
     default void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences.stream())
-                .collect(Collectors.toUnmodifiableList()));
+        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences));
     }
 
     /**
@@ -109,7 +106,7 @@ public interface FileReferenceStore {
     void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException;
 
     /**
-     * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
+     * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
      * an output file. This will be used for compaction.
      * <p>
      * This will validate that the input files were assigned to the job.
@@ -117,21 +114,10 @@ public interface FileReferenceStore {
      * This will decrement the number of references for each of the input files. If no other references exist for those
      * files, they will become available for garbage collection.
      *
-     * @param  jobId                                   The ID of the job
-     * @param  partitionId                             The partition which the job operated on
-     * @param  inputFiles                              The filenames of the input files, whose references in this
-     *                                                 partition should be removed
-     * @param  newReference                            The reference to a new file, including metadata in the output
-     *                                                 partition
-     * @throws FileNotFoundException                   if any of the input files do not exist
-     * @throws FileReferenceNotFoundException          if any of the input files are not referenced in the partition
-     * @throws FileReferenceNotAssignedToJobException  if any of the input files are not assigned to the job
-     * @throws NewReferenceSameAsOldReferenceException if the output file has the same filename as any of the inputs
-     * @throws FileAlreadyExistsException              if the output file already exists
-     * @throws StateStoreException                     if the update fails for another reason
+     * @param  requests                       requests for jobs to each have their results atomically applied
+     * @throws ReplaceRequestsFailedException if any of the updates fail
      */
-    void atomicallyReplaceFileReferencesWithNewOne(String jobId, String partitionId, List<String> inputFiles,
-            FileReference newReference) throws StateStoreException;
+    void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException;
 
     /**
      * Atomically updates the job field of file references, as long as the job field is currently unset. This will be

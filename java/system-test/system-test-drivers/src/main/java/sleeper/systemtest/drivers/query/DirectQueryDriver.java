@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.drivers.query;
 
-import org.apache.hadoop.conf.Configuration;
-
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
@@ -28,6 +26,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -38,20 +37,25 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver implements QueryDriver {
-    private final SystemTestInstanceContext instance;
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
-    public DirectQueryDriver(SystemTestInstanceContext instance) {
+    private final SystemTestInstanceContext instance;
+    private final SystemTestClients clients;
+
+    public DirectQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
+        this.clients = clients;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
-        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance));
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients));
     }
 
     public List<Record> run(Query query) {
@@ -79,7 +83,7 @@ public class DirectQueryDriver implements QueryDriver {
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         try {
             QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                    stateStore, new Configuration(), Executors.newSingleThreadExecutor());
+                    stateStore, clients.createHadoopConf(), EXECUTOR_SERVICE);
             executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
             return executor;
         } catch (StateStoreException e) {

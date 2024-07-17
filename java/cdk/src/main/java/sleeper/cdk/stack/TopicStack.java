@@ -24,7 +24,6 @@ import sleeper.cdk.Utils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
  * Creates an SNS topic for alerts. This will email alerts if messages arrive on a dead-letter queue.
@@ -42,7 +41,8 @@ public class TopicStack extends NestedStack {
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         this.topic = Topic.Builder
                 .create(this, "ErrorsTopic")
-                .topicName(instanceProperties.get(ID) + "-ErrorsTopic")
+                .topicName(String.join("-", "sleeper",
+                        Utils.cleanInstanceId(instanceProperties), "ErrorsTopic"))
                 .build();
         String emailAddress = instanceProperties.get(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION);
         if (null != emailAddress && !emailAddress.isEmpty()) {

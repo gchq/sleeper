@@ -15,8 +15,11 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,17 +28,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface CompactionJobStatusStore {
-
     CompactionJobStatusStore NONE = new CompactionJobStatusStore() {
     };
 
     default void jobCreated(CompactionJob job) {
     }
 
-    default void jobStarted(CompactionJob job, Instant startTime, String taskId) {
+    default void jobStarted(CompactionJobStartedEvent event) {
     }
 
-    default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
+    default void jobFinished(CompactionJobFinishedEvent event) {
+    }
+
+    default void jobCommitted(CompactionJobCommittedEvent event) {
+    }
+
+    default void jobFailed(CompactionJobFailedEvent event) {
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {
@@ -52,7 +60,7 @@ public interface CompactionJobStatusStore {
 
     default List<CompactionJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
-                .filter(job -> !job.isFinished())
+                .filter(CompactionJobStatus::isUnstartedOrInProgress)
                 .collect(Collectors.toList());
     }
 

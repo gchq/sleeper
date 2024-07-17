@@ -16,7 +16,6 @@
 package sleeper.compaction.job.commit;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
@@ -26,15 +25,17 @@ public class CompactionJobCommitRequest {
 
     private final CompactionJob job;
     private final String taskId;
+    private final String jobRunId;
     private final Instant startTime;
     private final Instant finishTime;
     private final long recordsRead;
     private final long recordsWritten;
 
     public CompactionJobCommitRequest(
-            CompactionJob job, String taskId, RecordsProcessedSummary recordsProcessed) {
+            CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary recordsProcessed) {
         this.job = job;
         this.taskId = taskId;
+        this.jobRunId = jobRunId;
         this.startTime = recordsProcessed.getStartTime();
         this.finishTime = recordsProcessed.getFinishTime();
         this.recordsRead = recordsProcessed.getRecordsRead();
@@ -49,25 +50,29 @@ public class CompactionJobCommitRequest {
         return taskId;
     }
 
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
     public Instant getStartTime() {
         return startTime;
+    }
+
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
+    public long getRecordsRead() {
+        return recordsRead;
     }
 
     public long getRecordsWritten() {
         return recordsWritten;
     }
 
-    public RecordsProcessed buildRecordsProcessed() {
-        return new RecordsProcessed(recordsRead, recordsWritten);
-    }
-
-    public RecordsProcessedSummary buildRecordsProcessedSummary() {
-        return new RecordsProcessedSummary(buildRecordsProcessed(), startTime, finishTime);
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(job, taskId, startTime, finishTime, recordsRead, recordsWritten);
+        return Objects.hash(job, taskId, jobRunId, startTime, finishTime, recordsRead, recordsWritten);
     }
 
     @Override
@@ -79,14 +84,14 @@ public class CompactionJobCommitRequest {
             return false;
         }
         CompactionJobCommitRequest other = (CompactionJobCommitRequest) obj;
-        return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime)
-                && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
+        return Objects.equals(job, other.job) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(startTime, other.startTime)
+                && Objects.equals(finishTime, other.finishTime) && recordsRead == other.recordsRead && recordsWritten == other.recordsWritten;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead + ", recordsWritten="
-                + recordsWritten + "}";
+        return "CompactionJobCommitRequest{job=" + job + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", startTime=" + startTime + ", finishTime=" + finishTime + ", recordsRead=" + recordsRead
+                + ", recordsWritten=" + recordsWritten + "}";
     }
 
 }

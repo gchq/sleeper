@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.23.0</version>
+        <version>0.24.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -76,8 +76,16 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j2-impl</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.orc</groupId>
                     <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -24,7 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.execution.CompactionTask.MessageHandle;
+import sleeper.compaction.task.CompactionTask;
+import sleeper.compaction.task.CompactionTask.MessageHandle;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;

@@ -6,58 +6,58 @@ State: FINISHED
 Number of input files: 1
 
 Run on task task-id
-Start Time: 2022-10-13T14:02:10Z
-Start Update Time: 2022-10-13T14:02:10.123Z
-Finish Time: 2022-10-13T14:04:13.456Z
-Finish Update Time: 2022-10-13T14:04:13.123Z
+Start time: 2022-10-13T14:02:10Z
+Start update time: 2022-10-13T14:02:10.123Z
+Finish time: 2022-10-13T14:04:13.456Z
+Finish update time: 2022-10-13T14:04:13.123Z
 Duration: 2m 3.456s
-Records Read: 1,234,000
-Records Written: 1,234,000
-Read Rate (reads per second): 9,995.46
-Write Rate (writes per second): 9,995.46
+Records read: 1,234,000
+Records written: 1,234,000
+Read rate (reads per second): 9,995.46
+Write rate (writes per second): 9,995.46
 ------------------------
 Details for job $(jobId3):
 State: FINISHED
 Number of input files: 1
 
 Run on task task-id
-Start Time: 2022-10-13T14:01:10Z
-Start Update Time: 2022-10-13T14:01:10.123Z
-Finish Time: 2022-10-13T14:02:10Z
-Finish Update Time: 2022-10-13T14:02:10.123Z
+Start time: 2022-10-13T14:01:10Z
+Start update time: 2022-10-13T14:01:10.123Z
+Finish time: 2022-10-13T14:02:10Z
+Finish update time: 2022-10-13T14:02:10.123Z
 Duration: 1m
-Records Read: 1,000,600
-Records Written: 500,300
-Read Rate (reads per second): 16,676.67
-Write Rate (writes per second): 8,338.33
+Records read: 1,000,600
+Records written: 500,300
+Read rate (reads per second): 16,676.67
+Write rate (writes per second): 8,338.33
 ------------------------
 Details for job $(jobId2):
 State: FINISHED
 Number of input files: 1
 
 Run on task task-id
-Start Time: 2022-10-13T12:01:10Z
-Start Update Time: 2022-10-13T12:01:10.123Z
-Finish Time: 2022-10-13T14:01:10Z
-Finish Update Time: 2022-10-13T14:01:10.123Z
+Start time: 2022-10-13T12:01:10Z
+Start update time: 2022-10-13T12:01:10.123Z
+Finish time: 2022-10-13T14:01:10Z
+Finish update time: 2022-10-13T14:01:10.123Z
 Duration: 2h
-Records Read: 1,000,600
-Records Written: 500,300
-Read Rate (reads per second): 138.97
-Write Rate (writes per second): 69.49
+Records read: 1,000,600
+Records written: 500,300
+Read rate (reads per second): 138.97
+Write rate (writes per second): 69.49
 ------------------------
 Details for job $(jobId1):
 State: FINISHED
 Number of input files: 1
 
 Run on task task-id
-Start Time: 2022-10-13T10:00:10Z
-Start Update Time: 2022-10-13T10:00:10.123Z
-Finish Time: 2022-10-13T10:02:13.123Z
-Finish Update Time: 2022-10-13T10:02:13.123Z
+Start time: 2022-10-13T10:00:10Z
+Start update time: 2022-10-13T10:00:10.123Z
+Finish time: 2022-10-13T10:02:13.123Z
+Finish update time: 2022-10-13T10:02:13.123Z
 Duration: 2m 3.123s
-Records Read: 600,000
-Records Written: 300,000
-Read Rate (reads per second): 4,873.18
-Write Rate (writes per second): 2,436.59
+Records read: 600,000
+Records written: 300,000
+Read rate (reads per second): 4,873.18
+Write rate (writes per second): 2,436.59
 ------------------------

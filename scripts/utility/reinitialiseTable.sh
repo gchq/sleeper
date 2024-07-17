@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,9 +29,10 @@ INSTANCE_ID=$1
 TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+ARROW_FLAGS="--add-opens java.base/java.nio=ALL-UNNAMED"
 
 if [[ -z $3 ]]; then
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}"
+  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.status.update.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}"
 else
   DELETE_PARTITIONS=$3
   echo "Optional parameter for <delete-partitions> recognised and set to" "${DELETE_PARTITIONS}"
@@ -41,11 +42,11 @@ else
     if [[ -n $5 ]]; then
       SPLIT_POINTS_FILE_ENCODED=$5
       echo "Optional parameter for <split-points-file-base64-encoded> recognised and set to" "${SPLIT_POINTS_FILE_ENCODED}"
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
+      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.status.update.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
     else
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
+      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.status.update.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
     fi
   else
-    java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}" "${DELETE_PARTITIONS}"
+    java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.status.update.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}" "${DELETE_PARTITIONS}"
   fi
 fi

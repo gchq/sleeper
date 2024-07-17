@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y \
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in \
-        arm64) ssmArch='ubuntu_arm64' ;; \
-        *) ssmArch='ubuntu_64bit' ;; \
+    arm64) ssmArch='ubuntu_arm64' ;; \
+    *) ssmArch='ubuntu_64bit' ;; \
     esac; \
     curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/$ssmArch/session-manager-plugin.deb" -o "session-manager-plugin.deb"
 RUN dpkg -i session-manager-plugin.deb
@@ -36,5 +36,6 @@ RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-environment\[\e[0m\]: \w #
 WORKDIR /sleeper
 COPY . .
 
-ENV PATH /sleeper/bin:$PATH
-CMD bash
+ENV PATH=/sleeper/bin:$PATH
+
+CMD [ "bash" ]

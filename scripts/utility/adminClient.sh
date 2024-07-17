@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,4 +24,6 @@ fi
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.AdminClient "${SCRIPTS_DIR}" "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.AdminClient "${SCRIPTS_DIR}" "$@"
