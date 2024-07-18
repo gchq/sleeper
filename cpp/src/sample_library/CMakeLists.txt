@@ -1,14 +1,20 @@
 include(GenerateExportHeader)
 
+include(FetchContent)
+FetchContent_Declare(
+  gRPC
+  GIT_REPOSITORY https://github.com/grpc/grpc
+  GIT_TAG        v1.65.1
+)
+set(FETCHCONTENT_QUIET OFF)
+FetchContent_MakeAvailable(gRPC)
 
 add_library(sample_library sample_library.cpp)
-
-
 
 add_library(gpu_compact::sample_library ALIAS sample_library)
 
 target_link_libraries(sample_library PRIVATE gpu_compact_options gpu_compact_warnings)
-
+target_link_libraries(sample_library PRIVATE grpc++)
 target_include_directories(sample_library ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                                                                   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 

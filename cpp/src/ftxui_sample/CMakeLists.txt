@@ -12,6 +12,7 @@ target_link_system_libraries(
           fmt::fmt
           spdlog::spdlog
           lefticus::tools
+          gpu_compact::sample_library
         )
 
 target_include_directories(intro PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

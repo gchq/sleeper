@@ -6,9 +6,12 @@
 #include <random>
 
 #include <CLI/CLI.hpp>
+#include <fmt/core.h>
 #include <spdlog/spdlog.h>
 
 #include <lefticus/tools/non_promoting_ints.hpp>
+
+#include <gpu_compact/sample_library.hpp>
 
 // This file will be generated automatically when cur_you run the CMake
 // configuration step. It creates a namespace called `gpu_compact`. You can modify
@@ -29,14 +32,7 @@ int main(int argc, const char **argv)
         app.add_flag("--version", show_version, "Show version information");
 
         bool is_turn_based = false;
-        auto *turn_based = app.add_flag("--turn_based", is_turn_based);
-
-        bool is_loop_based = false;
-        auto *loop_based = app.add_flag("--loop_based", is_loop_based);
-
-        turn_based->excludes(loop_based);
-        loop_based->excludes(turn_based);
-
+        app.add_flag("--turn_based", is_turn_based);
 
         CLI11_PARSE(app, argc, argv);
 
@@ -45,12 +41,7 @@ int main(int argc, const char **argv)
             return EXIT_SUCCESS;
         }
 
-        // if (is_turn_based) {
-        //     consequence_game();
-        // } else {
-        //     game_iteration_canvas();
-        // }
-
+        fmt::print("Factorial of {} is {}\n", 2, factorial(2));
     } catch (const std::exception &e) {
         spdlog::error("Unhandled exception in main: {}", e.what());
     }

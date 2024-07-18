@@ -25,7 +25,6 @@ project(
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
-
 gpu_compact_setup_options()
 
 gpu_compact_global_options()
@@ -95,7 +94,7 @@ endif()
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT intro)
 
 if(CMAKE_SKIP_INSTALL_RULES)
-  return()
+      return()
 endif()
 
 include(cmake/PackageProject.cmake)
