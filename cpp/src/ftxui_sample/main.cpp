@@ -5,7 +5,7 @@
 
 #include <random>
 
-#include <CLI/CLI.hpp
+#include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
 
 #include <lefticus/tools/non_promoting_ints.hpp>
