@@ -17,11 +17,9 @@ package sleeper.compaction.strategy.impl;
 
 import sleeper.core.statestore.FileReference;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class CompactionUtils {
 
@@ -29,21 +27,8 @@ public class CompactionUtils {
     }
 
     public static List<FileReference> getFilesInAscendingOrder(String tableName, List<FileReference> fileReferences) {
-        // Create map of number of records in file to files, sorted by number of records in file
-        SortedMap<Long, List<FileReference>> recordsToFiles = new TreeMap<>();
-        for (FileReference fileReference : fileReferences) {
-            if (!recordsToFiles.containsKey(fileReference.getNumberOfRecords())) {
-                recordsToFiles.put(fileReference.getNumberOfRecords(), new ArrayList<>());
-            }
-            recordsToFiles.get(fileReference.getNumberOfRecords()).add(fileReference);
-        }
-
-        // Convert to list of FileReferences in ascending order of number of records
-        List<FileReference> fileReferenceList = new ArrayList<>();
-        for (Map.Entry<Long, List<FileReference>> entry : recordsToFiles.entrySet()) {
-            fileReferenceList.addAll(entry.getValue());
-        }
-
-        return fileReferenceList;
+        return fileReferences.stream()
+                .sorted(Comparator.comparingLong(FileReference::getNumberOfRecords))
+                .collect(Collectors.toList());
     }
 }
