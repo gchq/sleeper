@@ -353,9 +353,13 @@ class InMemoryCompactionJobStatusStoreTest {
             // Given
             Instant createdTime = Instant.parse("2024-07-01T10:40:00Z");
             Instant startedTime1 = Instant.parse("2024-07-01T10:41:00Z");
-            RecordsProcessedSummary summary1 = summary(startedTime1, Duration.ofMinutes(2), 100L, 100L);
+            Instant finishedTime1 = Instant.parse("2024-07-01T10:43:00Z");
+            Instant committedTime1 = Instant.parse("2024-07-01T10:44:10Z");
+            RecordsProcessedSummary summary1 = summary(startedTime1, finishedTime1, 100L, 100L);
             Instant startedTime2 = Instant.parse("2024-07-01T10:41:10Z");
-            RecordsProcessedSummary summary2 = summary(startedTime2, Duration.ofMinutes(1), 100L, 100L);
+            Instant finishedTime2 = Instant.parse("2024-07-01T10:42:10Z");
+            Instant committedTime2 = Instant.parse("2024-07-01T10:42:20Z");
+            RecordsProcessedSummary summary2 = summary(startedTime2, finishedTime2, 100L, 100L);
             String taskId1 = "test-task-1";
             String taskId2 = "test-task-2";
             CompactionJob job = dataHelper.singleFileCompaction();
@@ -363,7 +367,9 @@ class InMemoryCompactionJobStatusStoreTest {
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
             store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
+            store.jobCommitted(compactionJobCommitted(job, committedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId1).build());
+            store.jobCommitted(compactionJobCommitted(job, committedTime1).taskId(taskId1).build());
 
             // When / Then
             assertThat(store.getJobsInTimePeriod(tableId,
@@ -374,10 +380,12 @@ class InMemoryCompactionJobStatusStoreTest {
                                     forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                                     forJobOnTask(job.getId(), taskId1,
                                             compactionStartedStatus(startedTime1),
-                                            compactionFinishedStatus(summary1)),
+                                            compactionFinishedStatus(summary1),
+                                            compactionCommittedStatus(committedTime1)),
                                     forJobOnTask(job.getId(), taskId2,
                                             compactionStartedStatus(startedTime2),
-                                            compactionFinishedStatus(summary2)))));
+                                            compactionFinishedStatus(summary2),
+                                            compactionCommittedStatus(committedTime2)))));
         }
 
         @Test
