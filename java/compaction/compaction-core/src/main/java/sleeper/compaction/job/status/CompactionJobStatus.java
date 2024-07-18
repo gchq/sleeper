@@ -133,9 +133,22 @@ public class CompactionJobStatus {
         if (isUnstartedOrInProgress()) {
             return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
         } else {
-            return timeWindowQuery.isFinishedProcessInWindow(
-                    createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
+            if (isAnyRunSuccessful()) {
+                return timeWindowQuery.isFinishedProcessInWindow(
+                        createdStatus.getUpdateTime(), getCommitUpdateTime(jobRuns));
+            } else {
+                return timeWindowQuery.isFinishedProcessInWindow(
+                        createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
+            }
         }
+    }
+
+    private static Instant getCommitUpdateTime(ProcessRuns jobRuns) {
+        return jobRuns.getRunsLatestFirst().stream()
+                .filter(ProcessRun::isFinishedSuccessfully)
+                .flatMap(run -> run.getLastStatusOfType(CompactionJobCommittedStatus.class).stream())
+                .map(CompactionJobCommittedStatus::getUpdateTime)
+                .findFirst().orElseThrow();
     }
 
     public List<ProcessRun> getJobRuns() {
