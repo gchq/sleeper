@@ -26,26 +26,21 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioLeafStrategy.class);
 
-    private String tableName;
     private int ratio;
     private int compactionFilesBatchSize;
     private CompactionJobFactory factory;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
-        tableName = tableProperties.get(TABLE_NAME);
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
@@ -58,7 +53,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(fileReferences);
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
             LOGGER.info("For partition {} there is no list of files that meet the criteria", partitionId);
-            return Collections.EMPTY_LIST;
+            return List.of();
         }
         LOGGER.info("For partition {} there is a list of {} files that meet the criteria", partitionId, filesThatMeetCriteria.size());
 
@@ -93,7 +88,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     private List<FileReference> getListOfFilesThatMeetsCriteria(List<FileReference> fileReferences) {
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, fileReferences);
+        List<FileReference> filesInAscendingOrder = new ArrayList<>(fileReferences);
 
         while (filesInAscendingOrder.size() > 1) {
             List<Long> fileSizes = filesInAscendingOrder.stream().map(FileReference::getNumberOfRecords).collect(Collectors.toList());

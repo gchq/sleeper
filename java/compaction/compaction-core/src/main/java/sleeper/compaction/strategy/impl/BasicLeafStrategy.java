@@ -28,7 +28,6 @@ import sleeper.core.statestore.FileReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -52,9 +51,8 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> fileReferences) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> filesInAscendingOrder) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, fileReferences);
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();

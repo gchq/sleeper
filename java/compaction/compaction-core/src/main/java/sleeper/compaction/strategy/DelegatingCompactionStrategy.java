@@ -28,6 +28,7 @@ import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -72,6 +73,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         this.filesWithNoJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() == null)
+                .sorted(Comparator.comparingLong(FileReference::getNumberOfRecords))
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
     }
 
