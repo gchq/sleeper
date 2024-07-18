@@ -86,20 +86,14 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
-        return createJobsForLeafPartition(partitionId,
-                filesWithJobIdByPartitionId.getOrDefault(partitionId, List.of()),
-                filesWithNoJobIdByPartitionId.getOrDefault(partitionId, List.of()));
-    }
-
-    private List<CompactionJob> createJobsForLeafPartition(
-            String partitionId, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
-
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, activeFilesWithJobId);
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId,
+                filesWithJobIdByPartitionId.getOrDefault(partitionId, List.of()));
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
-        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId, activeFilesWithNoJobId);
+        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId,
+                filesWithNoJobIdByPartitionId.getOrDefault(partitionId, List.of()));
         LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);

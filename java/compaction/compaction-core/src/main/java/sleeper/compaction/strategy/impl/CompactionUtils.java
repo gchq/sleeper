@@ -15,10 +15,6 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
@@ -26,20 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public class CompactionUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionUtils.class);
 
     private CompactionUtils() {
-    }
-
-    public static List<FileReference> getFilesInAscendingOrder(String tableName, Partition partition, List<FileReference> fileReferences) {
-        // Get files in this partition
-        return getFilesInAscendingOrder(tableName, fileReferences
-                .stream()
-                .filter(f -> f.getPartitionId().equals(partition.getId()))
-                .collect(Collectors.toList()));
     }
 
     public static List<FileReference> getFilesInAscendingOrder(String tableName, List<FileReference> fileReferences) {
