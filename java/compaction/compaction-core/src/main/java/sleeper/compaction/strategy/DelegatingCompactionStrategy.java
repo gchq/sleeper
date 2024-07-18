@@ -43,7 +43,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
     private Map<String, List<FileReference>> filesWithJobIdByPartitionId;
     private Map<String, List<FileReference>> filesWithNoJobIdByPartitionId;
-    private List<Partition> partitions;
+    private List<Partition> leafPartitions;
     private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -63,22 +63,22 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         this.table = tableProperties.getStatus();
+        this.leafPartitions = partitions.stream()
+                .filter(Partition::isLeafPartition)
+                .collect(Collectors.toList());
         this.filesWithJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() != null)
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         this.filesWithNoJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() == null)
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        this.partitions = partitions;
     }
 
     public List<CompactionJob> createCompactionJobs() {
         // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (Partition partition : partitions) {
-            if (partition.isLeafPartition()) {
-                compactionJobs.addAll(createJobsForLeafPartition(partition));
-            }
+        for (Partition partition : leafPartitions) {
+            compactionJobs.addAll(createJobsForLeafPartition(partition));
         }
 
         return compactionJobs;
