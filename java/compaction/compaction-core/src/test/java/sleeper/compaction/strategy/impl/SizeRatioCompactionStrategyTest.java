@@ -64,12 +64,12 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
+        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
@@ -85,12 +85,12 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         List<FileReference> fileReferences = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
             fileReferences.add(fileReference);
         }
+        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
@@ -104,7 +104,6 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         //  - First batch that meet criteria
         //  - 9, 9, 9, 9, 10
         //  - Second batch that meet criteria
@@ -121,6 +120,7 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("A5", 10),
                 fileReferenceFactory.rootFile("B4", 90),
                 fileReferenceFactory.rootFile("A4", 9));
+        strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
@@ -137,7 +137,6 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "2");
         SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         //  - First batch that meet criteria
         //  - 9, 9, 9, 9, 10
         //  - Second batch that meet criteria
@@ -159,6 +158,7 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("B4", 90),
                 fileReferenceFactory.rootFile("C3", 200),
                 fileReferenceFactory.rootFile("A4", 9));
+        strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());

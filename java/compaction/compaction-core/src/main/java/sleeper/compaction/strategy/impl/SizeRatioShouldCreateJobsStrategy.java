@@ -39,8 +39,8 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     }
 
     @Override
-    public long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
-        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(partition.getId(), activeFilesWithJobId);
+    public long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId) {
+        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(activeFilesWithJobId);
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
             LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs", partition.getId(), numConcurrentCompactionJobs);
             return 0;
@@ -50,9 +50,8 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
         return maxNumberOfJobsToCreate;
     }
 
-    private long getNumberOfCurrentCompactionJobs(String partitionId, List<FileReference> activeFilesWithJobId) {
+    private long getNumberOfCurrentCompactionJobs(List<FileReference> activeFilesWithJobId) {
         return activeFilesWithJobId.stream()
-                .filter(f -> f.getPartitionId().equals(partitionId))
                 .map(FileReference::getJobId)
                 .collect(Collectors.toSet())
                 .size();

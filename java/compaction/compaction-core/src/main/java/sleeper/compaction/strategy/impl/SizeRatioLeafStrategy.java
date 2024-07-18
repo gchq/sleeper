@@ -56,7 +56,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileReference> fileReferences) {
         // Find files that meet criteria, i.e. sum of file sizes excluding largest
         // is >= ratio * largest file size.
-        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(partition, fileReferences);
+        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(fileReferences);
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
             LOGGER.info("For partition {} there is no list of files that meet the criteria", partition.getId());
             return Collections.EMPTY_LIST;
@@ -94,8 +94,8 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         return compactionJobs;
     }
 
-    private List<FileReference> getListOfFilesThatMeetsCriteria(Partition partition, List<FileReference> fileReferences) {
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
+    private List<FileReference> getListOfFilesThatMeetsCriteria(List<FileReference> fileReferences) {
+        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, fileReferences);
 
         while (filesInAscendingOrder.size() > 1) {
             List<Long> fileSizes = filesInAscendingOrder.stream().map(FileReference::getNumberOfRecords).collect(Collectors.toList());

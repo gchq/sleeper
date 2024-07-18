@@ -28,10 +28,8 @@ import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +41,9 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
+    private Map<String, List<FileReference>> filesWithJobIdByPartitionId;
+    private Map<String, List<FileReference>> filesWithNoJobIdByPartitionId;
+    private Map<String, Partition> partitionsById;
     private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -57,48 +58,44 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, List<FileReference> fileReferences, List<Partition> partitions) {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         table = tableProperties.getStatus();
+        filesWithJobIdByPartitionId = fileReferences.stream()
+                .filter(file -> file.getJobId() != null)
+                .collect(Collectors.groupingBy(FileReference::getPartitionId));
+        filesWithNoJobIdByPartitionId = fileReferences.stream()
+                .filter(file -> file.getJobId() == null)
+                .collect(Collectors.groupingBy(FileReference::getPartitionId));
+        partitionsById = partitions.stream()
+                .collect(Collectors.toMap(Partition::getId, partition -> partition));
     }
 
     @Override
     public List<CompactionJob> createCompactionJobs(List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId, List<Partition> allPartitions) {
-        // Get list of partition ids from the above files
-        Set<String> partitionIds = activeFilesWithNoJobId.stream()
-                .map(FileReference::getPartitionId)
-                .collect(Collectors.toSet());
-
-        // Get map from partition id to partition
-        Map<String, Partition> partitionIdToPartition = new HashMap<>();
-        for (Partition partition : allPartitions) {
-            partitionIdToPartition.put(partition.getId(), partition);
-        }
-
         // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (String partitionId : partitionIds) {
-            Partition partition = partitionIdToPartition.get(partitionId);
-            if (null == partition) {
-                throw new RuntimeException("Cannot find partition for partition id "
-                        + partitionId + " in table " + table);
-            }
-
+        for (Partition partition : partitionsById.values()) {
             if (partition.isLeafPartition()) {
-                compactionJobs.addAll(createJobsForLeafPartition(partition, activeFilesWithJobId, activeFilesWithNoJobId));
+                compactionJobs.addAll(createJobsForLeafPartition(partition));
             }
         }
 
         return compactionJobs;
     }
 
+    private List<CompactionJob> createJobsForLeafPartition(Partition partition) {
+        return createJobsForLeafPartition(partition,
+                filesWithJobIdByPartitionId.getOrDefault(partition.getId(), List.of()),
+                filesWithNoJobIdByPartitionId.getOrDefault(partition.getId(), List.of()));
+    }
+
     private List<CompactionJob> createJobsForLeafPartition(
             Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
 
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(
-                partition, activeFilesWithJobId, activeFilesWithNoJobId);
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partition, activeFilesWithJobId);
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }

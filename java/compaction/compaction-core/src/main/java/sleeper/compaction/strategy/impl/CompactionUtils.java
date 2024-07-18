@@ -36,15 +36,16 @@ public class CompactionUtils {
 
     public static List<FileReference> getFilesInAscendingOrder(String tableName, Partition partition, List<FileReference> fileReferences) {
         // Get files in this partition
-        List<FileReference> files = fileReferences
+        return getFilesInAscendingOrder(tableName, fileReferences
                 .stream()
                 .filter(f -> f.getPartitionId().equals(partition.getId()))
-                .collect(Collectors.toList());
-        LOGGER.info("Creating jobs for leaf partition {} in table {} (there are {} files for this partition)", partition.getId(), tableName, files.size());
+                .collect(Collectors.toList()));
+    }
 
+    public static List<FileReference> getFilesInAscendingOrder(String tableName, List<FileReference> fileReferences) {
         // Create map of number of records in file to files, sorted by number of records in file
         SortedMap<Long, List<FileReference>> recordsToFiles = new TreeMap<>();
-        for (FileReference fileReference : files) {
+        for (FileReference fileReference : fileReferences) {
             if (!recordsToFiles.containsKey(fileReference.getNumberOfRecords())) {
                 recordsToFiles.put(fileReference.getNumberOfRecords(), new ArrayList<>());
             }

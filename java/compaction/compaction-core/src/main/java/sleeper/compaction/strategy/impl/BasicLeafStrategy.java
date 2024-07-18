@@ -55,7 +55,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     @Override
     public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileReference> fileReferences) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
+        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, fileReferences);
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();

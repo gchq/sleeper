@@ -27,9 +27,9 @@ public interface ShouldCreateJobsStrategy {
     default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
     }
 
-    long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId);
+    long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId);
 
     static ShouldCreateJobsStrategy yes() {
-        return (partition, activeFilesWithJobId, activeFilesWithNoJobId) -> Long.MAX_VALUE;
+        return (partition, activeFilesWithJobId) -> Long.MAX_VALUE;
     }
 }
