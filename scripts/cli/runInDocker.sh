@@ -29,16 +29,18 @@ run_in_docker() {
   if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
     RUN_PARAMS+=(-it)
   fi
+  local TEMP_DIR=$(mktemp -d)
+  local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
   # We ensure the container ID is available as a file inside the container
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --cidfile /tmp/container.id
-    -v /tmp/container.id:/tmp/container.id
-    --add-host=host.docker.internal:host-gateway
+    --cidfile "$CONTAINER_ID_PATH"
+    -v "$CONTAINER_ID_PATH:/tmp/container.id"
+    --add-host "host.docker.internal=host-gateway"
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
-    -e IN_CLI_CONTAINER=true \
+    -e "IN_CLI_CONTAINER=true"
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
     -e AWS_SESSION_TOKEN
@@ -51,8 +53,9 @@ run_in_docker() {
     -e SUBNET
     "$@"
   )
-  [ -f "/tmp/container.id" ] && rm "/tmp/container.id"
   docker run "${RUN_PARAMS[@]}"
+  rm "$CONTAINER_ID_PATH"
+  rmdir "$TEMP_DIR"
 }
 
 run_in_environment_docker() {
@@ -115,7 +118,7 @@ upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_DIR=$(mktemp -d)
+  local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
