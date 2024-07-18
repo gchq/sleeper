@@ -306,7 +306,7 @@ class InMemoryCompactionJobStatusStoreTest {
         @Test
         void shouldGetNoJobsWhenNoneForGivenTask() {
             // Given
-            addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
+            addFinishedJobUncommitted(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
                             100, 100),
@@ -391,7 +391,7 @@ class InMemoryCompactionJobStatusStoreTest {
         @Test
         void shouldGetNoJobsWhenNoneInGivenPeriod() {
             // Given
-            addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
+            addFinishedJobUncommitted(Instant.parse("2023-03-29T15:10:12Z"),
                     summary(Instant.parse("2023-03-29T15:11:12Z"),
                             Instant.parse("2023-03-29T15:12:12Z"),
                             100, 100),
@@ -506,13 +506,6 @@ class InMemoryCompactionJobStatusStoreTest {
         CompactionJob job = addCreatedJob(createdTime);
         store.fixUpdateTime(defaultUpdateTime(startedTime));
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
-        return job;
-    }
-
-    private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
-        CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
-        store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
         return job;
     }
 
