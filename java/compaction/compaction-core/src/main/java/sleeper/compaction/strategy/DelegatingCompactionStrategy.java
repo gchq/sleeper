@@ -43,7 +43,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
     private Map<String, List<FileReference>> filesWithJobIdByPartitionId;
     private Map<String, List<FileReference>> filesWithNoJobIdByPartitionId;
-    private List<Partition> leafPartitions;
+    private List<String> leafPartitionIds;
     private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -63,8 +63,9 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         this.table = tableProperties.getStatus();
-        this.leafPartitions = partitions.stream()
+        this.leafPartitionIds = partitions.stream()
                 .filter(Partition::isLeafPartition)
+                .map(Partition::getId)
                 .collect(Collectors.toList());
         this.filesWithJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() != null)
@@ -77,33 +78,33 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     public List<CompactionJob> createCompactionJobs() {
         // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (Partition partition : leafPartitions) {
-            compactionJobs.addAll(createJobsForLeafPartition(partition));
+        for (String partitionId : leafPartitionIds) {
+            compactionJobs.addAll(createJobsForLeafPartition(partitionId));
         }
 
         return compactionJobs;
     }
 
-    private List<CompactionJob> createJobsForLeafPartition(Partition partition) {
-        return createJobsForLeafPartition(partition,
-                filesWithJobIdByPartitionId.getOrDefault(partition.getId(), List.of()),
-                filesWithNoJobIdByPartitionId.getOrDefault(partition.getId(), List.of()));
+    private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
+        return createJobsForLeafPartition(partitionId,
+                filesWithJobIdByPartitionId.getOrDefault(partitionId, List.of()),
+                filesWithNoJobIdByPartitionId.getOrDefault(partitionId, List.of()));
     }
 
     private List<CompactionJob> createJobsForLeafPartition(
-            Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
+            String partitionId, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
 
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partition.getId(), activeFilesWithJobId);
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, activeFilesWithJobId);
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
-        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition.getId(), activeFilesWithNoJobId);
-        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), table);
+        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId, activeFilesWithNoJobId);
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partition.getId(), table);
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
         return jobs;
     }
 }
