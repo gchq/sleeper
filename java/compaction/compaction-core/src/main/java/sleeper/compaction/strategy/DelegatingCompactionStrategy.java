@@ -78,12 +78,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     public List<CompactionJob> createCompactionJobs() {
-        // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (String partitionId : leafPartitionIds) {
             compactionJobs.addAll(createJobsForLeafPartition(partitionId));
         }
-
         return compactionJobs;
     }
 

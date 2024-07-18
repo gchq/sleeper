@@ -27,5 +27,5 @@ public interface LeafPartitionCompactionStrategy {
 
     void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
-    List<CompactionJob> createJobsForLeafPartition(String partition, List<FileReference> activeFilesWithNoJobId);
+    List<CompactionJob> createJobsForLeafPartition(String partition, List<FileReference> filesInAscendingOrder);
 }

@@ -47,10 +47,10 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> fileReferences) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> filesInAscendingOrder) {
         // Find files that meet criteria, i.e. sum of file sizes excluding largest
         // is >= ratio * largest file size.
-        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(fileReferences);
+        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(filesInAscendingOrder);
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
             LOGGER.info("For partition {} there is no list of files that meet the criteria", partitionId);
             return List.of();
