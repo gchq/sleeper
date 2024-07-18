@@ -40,23 +40,18 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJob(
+        CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile("file1", 123L)),
-                partition.getId());
-        CompactionJob job2 = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        store.jobCreated(job);
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobCreated(job2, ignoredUpdateTime()),
-                        jobCreated(job1, ignoredUpdateTime()));
+                        jobCreated(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -64,26 +59,21 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile("file1", 123L)),
-                partition.getId());
-        CompactionJob job2 = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile("file2", 456L)),
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile("file1", 456L)),
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
-        store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobCreated(job2, ignoredUpdateTime(),
-                                uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary())),
-                        jobCreated(job1, ignoredUpdateTime()));
+                        jobCreated(job, ignoredUpdateTime(),
+                                uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary())));
     }
 
     @Test
