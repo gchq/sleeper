@@ -23,7 +23,6 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileReference> fileReferences) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> fileReferences) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, fileReferences);
 
@@ -64,8 +63,8 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), partition, tableName);
-                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
+                        filesForJob.size(), partitionId, tableName);
+                compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
                 filesForJob.clear();
             }
         }

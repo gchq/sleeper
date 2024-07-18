@@ -22,7 +22,6 @@ import sleeper.compaction.strategy.ShouldCreateJobsStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;
@@ -39,10 +38,11 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     }
 
     @Override
-    public long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId) {
+    public long maxCompactionJobsToCreate(String partitionId, List<FileReference> activeFilesWithJobId) {
         long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(activeFilesWithJobId);
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
-            LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs", partition.getId(), numConcurrentCompactionJobs);
+            LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
+                    partitionId, numConcurrentCompactionJobs);
             return 0;
         }
         long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
