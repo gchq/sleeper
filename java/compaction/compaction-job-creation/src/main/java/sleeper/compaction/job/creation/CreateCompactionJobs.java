@@ -111,7 +111,7 @@ public class CreateCompactionJobs {
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         compactionStrategy.init(instanceProperties, tableProperties, fileReferences, allPartitions);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs();
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {

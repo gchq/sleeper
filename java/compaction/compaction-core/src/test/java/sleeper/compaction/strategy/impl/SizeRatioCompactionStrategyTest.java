@@ -72,7 +72,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -93,7 +93,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -123,7 +123,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
+        List<CompactionJob> jobs = strategy.createCompactionJobs();
 
         // Then
         assertThat(jobs).hasSize(2);
@@ -161,7 +161,7 @@ public class SizeRatioCompactionStrategyTest {
         strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> jobs = strategy.createCompactionJobs(List.of(), shuffledFiles, partitionTree.getAllPartitions());
+        List<CompactionJob> jobs = strategy.createCompactionJobs();
 
         // Then
         assertThat(jobs).hasSize(3);

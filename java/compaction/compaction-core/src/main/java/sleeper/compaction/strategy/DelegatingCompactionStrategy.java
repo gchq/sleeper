@@ -43,7 +43,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
     private Map<String, List<FileReference>> filesWithJobIdByPartitionId;
     private Map<String, List<FileReference>> filesWithNoJobIdByPartitionId;
-    private Map<String, Partition> partitionsById;
+    private List<Partition> partitions;
     private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -62,22 +62,20 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        table = tableProperties.getStatus();
-        filesWithJobIdByPartitionId = fileReferences.stream()
+        this.table = tableProperties.getStatus();
+        this.filesWithJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() != null)
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        filesWithNoJobIdByPartitionId = fileReferences.stream()
+        this.filesWithNoJobIdByPartitionId = fileReferences.stream()
                 .filter(file -> file.getJobId() == null)
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        partitionsById = partitions.stream()
-                .collect(Collectors.toMap(Partition::getId, partition -> partition));
+        this.partitions = partitions;
     }
 
-    @Override
-    public List<CompactionJob> createCompactionJobs(List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId, List<Partition> allPartitions) {
+    public List<CompactionJob> createCompactionJobs() {
         // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (Partition partition : partitionsById.values()) {
+        for (Partition partition : partitions) {
             if (partition.isLeafPartition()) {
                 compactionJobs.addAll(createJobsForLeafPartition(partition));
             }
