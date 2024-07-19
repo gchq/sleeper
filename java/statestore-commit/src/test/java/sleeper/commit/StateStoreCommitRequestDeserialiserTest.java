@@ -18,10 +18,10 @@ package sleeper.commit;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequest;
-import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
@@ -62,7 +62,7 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     @Test
-    void shouldDeserialiseCompactionFileAssignmentCommitRequest() {
+    void shouldDeserialiseCompactionJobIdAssignmentCommitRequest() {
         // Given
         CompactionJob job1 = CompactionJob.builder()
                 .tableId("test-table")
@@ -78,12 +78,13 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .outputFile("test-output-2.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionFileAssignmentCommitRequest fileAssignmentRequest = CompactionFileAssignmentCommitRequest.forJobs(List.of(job1, job2));
-        String jsonString = new CompactionFileAssignmentCommitRequestSerDe().toJson(fileAssignmentRequest);
+        CompactionJobIdAssignmentCommitRequest jobIdAssignmentRequest = CompactionJobIdAssignmentCommitRequest.forJobsOnTable(
+                List.of(job1, job2), "test-table");
+        String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
 
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionFileAssignment(fileAssignmentRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionFileAssignment(jobIdAssignmentRequest));
     }
 
     @Test

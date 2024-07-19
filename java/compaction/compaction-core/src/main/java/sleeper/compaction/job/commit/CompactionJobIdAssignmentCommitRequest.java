@@ -24,16 +24,19 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class CompactionFileAssignmentCommitRequest {
-    private List<AssignJobIdRequest> assignJobIdRequests;
+public class CompactionJobIdAssignmentCommitRequest {
+    private final String tableId;
+    private final List<AssignJobIdRequest> assignJobIdRequests;
 
-    public static CompactionFileAssignmentCommitRequest forJobs(List<CompactionJob> jobs) {
-        return new CompactionFileAssignmentCommitRequest(jobs.stream()
+    public static CompactionJobIdAssignmentCommitRequest forJobsOnTable(List<CompactionJob> jobs, String tableId) {
+        return new CompactionJobIdAssignmentCommitRequest(jobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()),
+                tableId);
     }
 
-    public CompactionFileAssignmentCommitRequest(List<AssignJobIdRequest> assignJobIdRequests) {
+    public CompactionJobIdAssignmentCommitRequest(List<AssignJobIdRequest> assignJobIdRequests, String tableId) {
+        this.tableId = tableId;
         this.assignJobIdRequests = assignJobIdRequests;
     }
 
@@ -47,10 +50,10 @@ public class CompactionFileAssignmentCommitRequest {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof CompactionFileAssignmentCommitRequest)) {
+        if (!(obj instanceof CompactionJobIdAssignmentCommitRequest)) {
             return false;
         }
-        CompactionFileAssignmentCommitRequest other = (CompactionFileAssignmentCommitRequest) obj;
+        CompactionJobIdAssignmentCommitRequest other = (CompactionJobIdAssignmentCommitRequest) obj;
         return Objects.equals(assignJobIdRequests, other.assignJobIdRequests);
     }
 
