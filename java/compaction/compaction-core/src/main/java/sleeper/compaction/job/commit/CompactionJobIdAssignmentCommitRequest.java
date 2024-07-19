@@ -42,7 +42,7 @@ public class CompactionJobIdAssignmentCommitRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(assignJobIdRequests);
+        return Objects.hash(tableId, assignJobIdRequests);
     }
 
     @Override
@@ -54,12 +54,12 @@ public class CompactionJobIdAssignmentCommitRequest {
             return false;
         }
         CompactionJobIdAssignmentCommitRequest other = (CompactionJobIdAssignmentCommitRequest) obj;
-        return Objects.equals(assignJobIdRequests, other.assignJobIdRequests);
+        return Objects.equals(tableId, other.tableId) && Objects.equals(assignJobIdRequests, other.assignJobIdRequests);
     }
 
     @Override
     public String toString() {
-        return "CompactionFileAssignmentCommitRequest{assignJobIdRequests=" + assignJobIdRequests + "}";
+        return "CompactionJobIdAssignmentCommitRequest{tableId=" + tableId + ", assignJobIdRequests=" + assignJobIdRequests + "}";
     }
 
 }
