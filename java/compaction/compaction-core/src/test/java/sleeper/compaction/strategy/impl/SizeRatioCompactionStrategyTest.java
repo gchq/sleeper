@@ -29,7 +29,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -109,7 +108,6 @@ public class SizeRatioCompactionStrategyTest {
                 .singlePartition("root")
                 .buildTree();
         FileReference fileReference = FileReference.builder()
-                .jobId(UUID.randomUUID().toString())
                 .filename("file1.parquet")
                 .partitionId("root")
                 .jobId("test-job")

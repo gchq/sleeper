@@ -29,7 +29,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -157,7 +156,6 @@ public class BasicCompactionStrategyTest {
                 .singlePartition("root")
                 .buildTree();
         FileReference fileReference = FileReference.builder()
-                .jobId(UUID.randomUUID().toString())
                 .filename("file1.parquet")
                 .partitionId("root")
                 .jobId("test-job")
