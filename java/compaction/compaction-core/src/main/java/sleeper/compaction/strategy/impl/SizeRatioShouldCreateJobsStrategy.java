@@ -46,7 +46,6 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
             return 0;
         }
         long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
-        LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         return maxNumberOfJobsToCreate;
     }
 

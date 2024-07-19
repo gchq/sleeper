@@ -52,10 +52,10 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         // is >= ratio * largest file size.
         List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(filesInAscendingOrder);
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
-            LOGGER.info("For partition {} there is no list of files that meet the criteria", partitionId);
+            LOGGER.debug("For partition {} there is no list of files that meet the criteria", partitionId);
             return List.of();
         }
-        LOGGER.info("For partition {} there is a list of {} files that meet the criteria", partitionId, filesThatMeetCriteria.size());
+        LOGGER.debug("For partition {} there is a list of {} files that meet the criteria", partitionId, filesThatMeetCriteria.size());
 
         // Iterate through these files, batching into groups of compactionFilesBatchSize
         // and creating a job for each group as long as it meets the criteria.
@@ -106,13 +106,13 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             return false;
         }
         long largestFileSize = fileSizesInAscendingOrder.get(fileSizesInAscendingOrder.size() - 1);
-        LOGGER.info("Largest file size is {}", largestFileSize);
+        LOGGER.debug("Largest file size is {}", largestFileSize);
         long sumOfOtherFileSizes = 0L;
         for (int i = 0; i < fileSizesInAscendingOrder.size() - 1; i++) {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
-        LOGGER.info("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.debug("Sum of other file sizes is {}", sumOfOtherFileSizes);
+        LOGGER.debug("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }
