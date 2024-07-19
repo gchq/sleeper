@@ -29,6 +29,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -139,6 +140,30 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
         strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
+
+        // When
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+
+        // Then
+        assertThat(compactionJobs).isEmpty();
+    }
+
+    @Test
+    public void shouldCreateNoJobsWhenFileInLeafPartitionIsAssignedToAJob() {
+        // Given
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .singlePartition("root")
+                .buildTree();
+        FileReference fileReference = FileReference.builder()
+                .jobId(UUID.randomUUID().toString())
+                .filename("file1.parquet")
+                .partitionId("root")
+                .jobId("test-job")
+                .numberOfRecords(123L)
+                .build();
+        strategy.init(instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
