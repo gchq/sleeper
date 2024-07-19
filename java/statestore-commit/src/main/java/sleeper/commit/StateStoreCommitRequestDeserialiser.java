@@ -77,7 +77,7 @@ public class StateStoreCommitRequestDeserialiser {
                 case INGEST_ADD_FILES:
                     return StateStoreCommitRequest.forIngestAddFiles(
                             context.deserialize(requestObj, IngestAddFilesCommitRequest.class));
-                case COMPACTION_FILE_ASSIGNMENT:
+                case COMPACTION_JOB_ID_ASSIGNMENT:
                     return StateStoreCommitRequest.forCompactionFileAssignment(
                             context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
                 default:

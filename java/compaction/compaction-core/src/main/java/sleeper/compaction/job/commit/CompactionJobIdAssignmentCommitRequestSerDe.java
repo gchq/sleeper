@@ -45,7 +45,7 @@ public class CompactionJobIdAssignmentCommitRequestSerDe {
 
     public CompactionJobIdAssignmentCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.COMPACTION_FILE_ASSIGNMENT == wrappedRequest.type) {
+        if (CommitRequestType.COMPACTION_JOB_ID_ASSIGNMENT == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         throw new IllegalArgumentException("Unexpected request type");
@@ -56,7 +56,7 @@ public class CompactionJobIdAssignmentCommitRequestSerDe {
         private final CompactionJobIdAssignmentCommitRequest request;
 
         WrappedCommitRequest(CompactionJobIdAssignmentCommitRequest request) {
-            this.type = CommitRequestType.COMPACTION_FILE_ASSIGNMENT;
+            this.type = CommitRequestType.COMPACTION_JOB_ID_ASSIGNMENT;
             this.request = request;
         }
     }
