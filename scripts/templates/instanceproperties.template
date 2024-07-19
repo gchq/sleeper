@@ -1225,7 +1225,7 @@ sleeper.default.ingest.partition.file.writer.type=async
 # If true, compaction job ID assignment commit requests will be sent to the state store committer
 # lambda to be performed asynchronously. If false, compaction job ID assignments will be committed
 # synchronously in the compaction job creation lambda.
-sleeper.default.compaction.job.id.assignment.commit.async=true
+sleeper.default.compaction.job.id.assignment.commit.async=false
 
 # If true, compaction job commit requests will be sent to the state store committer lambda to be
 # performed asynchronously. If false, compaction jobs will be committed synchronously by compaction
