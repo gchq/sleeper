@@ -24,10 +24,10 @@ RUN wget -O- "https://apt.corretto.aws/corretto.key" | apt-key add -
 RUN echo 'deb https://apt.corretto.aws stable main' | tee /etc/apt/sources.list.d/corretto.list
 
 # Install Clang
-RUN wget -O "llvm.sh" "https://apt.llvm.org/llvm.sh" && chmod u+x llvm.sh && ./llvm.sh 18 all
+RUN wget -O "llvm.sh" "https://apt.llvm.org/llvm.sh" && chmod u+x llvm.sh && ./llvm.sh 18
 
 # The above line will run an apt update so now we install Java
-RUN apt-get install -y java-17-amazon-corretto-jdk make cmake gcc-13 g++-13 maven ccache cppcheck doxygen iwyu
+RUN apt-get install -y java-17-amazon-corretto-jdk make cmake cmake-format cmake-curses-gui gcc-13 g++-13 clang-format-18 clang-tidy-18 clang-tools-18 maven ccache cppcheck doxygen iwyu
 
 # Install aws
 RUN wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && unzip awscliv2.zip && ./aws/install
