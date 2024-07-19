@@ -36,4 +36,25 @@ function(gpu_compact_setup_dependencies)
     cpmaddpackage("gh:lefticus/tools#update_build_system")
   endif()
 
+  if(NOT TARGET grpc++)
+    cpmaddpackage(
+      NAME
+      gRPC
+      GITHUB_REPOSITORY
+      grpc/grpc
+      GIT_TAG
+      v1.65.1
+      GIT_SHALLOW
+      true
+      GIT_PROGRESS
+      true
+      VERSION
+      1.65.1
+      GIT_SHALLOW
+      true
+      GIT_PROGRESS
+      true)
+
+  endif()
+
 endfunction()
