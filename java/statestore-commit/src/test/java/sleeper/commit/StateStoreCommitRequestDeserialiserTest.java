@@ -84,7 +84,7 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionFileAssignment(jobIdAssignmentRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
     }
 
     @Test

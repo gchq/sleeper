@@ -39,12 +39,12 @@ public class StateStoreCommitRequest {
     }
 
     /**
-     * Creates a request to commit the assignment of files to a compaction job.
+     * Creates a request to commit the assignment of job ID to files in a compaction job.
      *
-     * @param  request the compaction job commit request
+     * @param  request the compaction job ID assignment commit request
      * @return         a state store commit request
      */
-    public static StateStoreCommitRequest forCompactionFileAssignment(CompactionJobIdAssignmentCommitRequest request) {
+    public static StateStoreCommitRequest forCompactionJobIdAssignment(CompactionJobIdAssignmentCommitRequest request) {
         return new StateStoreCommitRequest(request);
     }
 

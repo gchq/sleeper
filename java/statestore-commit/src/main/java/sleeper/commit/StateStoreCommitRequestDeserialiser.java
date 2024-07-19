@@ -78,7 +78,7 @@ public class StateStoreCommitRequestDeserialiser {
                     return StateStoreCommitRequest.forIngestAddFiles(
                             context.deserialize(requestObj, IngestAddFilesCommitRequest.class));
                 case COMPACTION_JOB_ID_ASSIGNMENT:
-                    return StateStoreCommitRequest.forCompactionFileAssignment(
+                    return StateStoreCommitRequest.forCompactionJobIdAssignment(
                             context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
