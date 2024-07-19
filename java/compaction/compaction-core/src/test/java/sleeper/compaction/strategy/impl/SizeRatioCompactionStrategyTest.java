@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -120,6 +121,28 @@ public class SizeRatioCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).isEmpty();
+    }
+
+    @Test
+    void shouldCreateOneJobWhenTwoBatchesCanBeCreatedButLimitOfOneJobPerPartitionIsSet() {
+        // Given
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        tableProperties.setNumber(SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, 1);
+        SizeRatioCompactionStrategy strategy = new SizeRatioCompactionStrategy();
+        List<FileReference> fileReferences = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
+            fileReferences.add(fileReference);
+        }
+        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
+
+        // When
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+
+        // Then
+        assertThat(compactionJobs).containsExactly(
+                jobWithFiles(compactionJobs.get(0), List.of(
+                        "file-0", "file-1", "file-2", "file-3", "file-4")));
     }
 
     @Test
