@@ -15,6 +15,7 @@
  */
 package sleeper.commit;
 
+import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
@@ -34,6 +35,16 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest request) {
+        return new StateStoreCommitRequest(request);
+    }
+
+    /**
+     * Creates a request to commit the assignment of files to a compaction job.
+     *
+     * @param  request the compaction job commit request
+     * @return         a state store commit request
+     */
+    public static StateStoreCommitRequest forCompactionFileAssignment(CompactionFileAssignmentCommitRequest request) {
         return new StateStoreCommitRequest(request);
     }
 

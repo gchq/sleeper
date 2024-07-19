@@ -18,6 +18,8 @@ package sleeper.commit;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequest;
+import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.core.record.process.RecordsProcessed;
@@ -57,6 +59,31 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseCompactionFileAssignmentCommitRequest() {
+        // Given
+        CompactionJob job1 = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job-1")
+                .inputFiles(List.of("file1.parquet", "file2.parquet"))
+                .outputFile("test-output-1.parquet")
+                .partitionId("test-partition-id")
+                .build();
+        CompactionJob job2 = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job-2")
+                .inputFiles(List.of("file3.parquet", "file4.parquet"))
+                .outputFile("test-output-2.parquet")
+                .partitionId("test-partition-id")
+                .build();
+        CompactionFileAssignmentCommitRequest fileAssignmentRequest = CompactionFileAssignmentCommitRequest.forJobs(List.of(job1, job2));
+        String jsonString = new CompactionFileAssignmentCommitRequestSerDe().toJson(fileAssignmentRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forCompactionFileAssignment(fileAssignmentRequest));
     }
 
     @Test

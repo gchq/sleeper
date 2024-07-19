@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
+import sleeper.compaction.job.commit.CompactionFileAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.util.GsonConfig;
@@ -76,6 +77,9 @@ public class StateStoreCommitRequestDeserialiser {
                 case INGEST_ADD_FILES:
                     return StateStoreCommitRequest.forIngestAddFiles(
                             context.deserialize(requestObj, IngestAddFilesCommitRequest.class));
+                case COMPACTION_FILE_ASSIGNMENT:
+                    return StateStoreCommitRequest.forCompactionFileAssignment(
+                            context.deserialize(requestObj, CompactionFileAssignmentCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }
