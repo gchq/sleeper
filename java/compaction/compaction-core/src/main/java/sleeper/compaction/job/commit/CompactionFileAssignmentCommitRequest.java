@@ -19,27 +19,30 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactionFileAssignmentCommitRequest {
-    private List<AssignJobIdRequest> assignJobIdRequests;
+    private final Map<String, List<AssignJobIdRequest>> assignJobIdRequestsByTable;
 
     public static CompactionFileAssignmentCommitRequest forJobs(List<CompactionJob> jobs) {
-        return new CompactionFileAssignmentCommitRequest(jobs.stream()
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()));
+        return new CompactionFileAssignmentCommitRequest(
+                jobs.stream().collect(
+                        Collectors.groupingBy(CompactionJob::getTableId,
+                                Collectors.mapping(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()),
+                                        Collectors.toList()))));
     }
 
-    public CompactionFileAssignmentCommitRequest(List<AssignJobIdRequest> assignJobIdRequests) {
-        this.assignJobIdRequests = assignJobIdRequests;
+    public CompactionFileAssignmentCommitRequest(Map<String, List<AssignJobIdRequest>> assignJobIdRequestsByTable) {
+        this.assignJobIdRequestsByTable = assignJobIdRequestsByTable;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(assignJobIdRequests);
+        return Objects.hash(assignJobIdRequestsByTable);
     }
 
     @Override
@@ -51,12 +54,12 @@ public class CompactionFileAssignmentCommitRequest {
             return false;
         }
         CompactionFileAssignmentCommitRequest other = (CompactionFileAssignmentCommitRequest) obj;
-        return Objects.equals(assignJobIdRequests, other.assignJobIdRequests);
+        return Objects.equals(assignJobIdRequestsByTable, other.assignJobIdRequestsByTable);
     }
 
     @Override
     public String toString() {
-        return "CompactionFileAssignmentCommitRequest{assignJobIdRequests=" + assignJobIdRequests + "}";
+        return "CompactionFileAssignmentCommitRequest{assignJobIdRequestsByTable=" + assignJobIdRequestsByTable + "}";
     }
 
 }

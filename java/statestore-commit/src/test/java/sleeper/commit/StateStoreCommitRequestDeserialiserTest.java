@@ -65,14 +65,14 @@ public class StateStoreCommitRequestDeserialiserTest {
     void shouldDeserialiseCompactionFileAssignmentCommitRequest() {
         // Given
         CompactionJob job1 = CompactionJob.builder()
-                .tableId("test-table")
+                .tableId("test-table-1")
                 .jobId("test-job-1")
                 .inputFiles(List.of("file1.parquet", "file2.parquet"))
                 .outputFile("test-output-1.parquet")
                 .partitionId("test-partition-id")
                 .build();
         CompactionJob job2 = CompactionJob.builder()
-                .tableId("test-table")
+                .tableId("test-table-2")
                 .jobId("test-job-2")
                 .inputFiles(List.of("file3.parquet", "file4.parquet"))
                 .outputFile("test-output-2.parquet")
