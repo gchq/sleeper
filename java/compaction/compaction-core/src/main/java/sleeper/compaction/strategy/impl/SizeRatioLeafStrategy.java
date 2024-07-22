@@ -53,7 +53,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         // is >= ratio * largest file size.
         List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(index.getFilesWithNoJobIdInPartition(partitionId));
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
-            LOGGER.debug("For partition {} there is no list of files that meet the criteria", partitionId);
+            LOGGER.info("For partition {} there is no list of files that meet the criteria", partitionId);
             return List.of();
         }
         LOGGER.debug("For partition {} there is a list of {} files that meet the criteria", partitionId, filesThatMeetCriteria.size());
@@ -107,13 +107,13 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             return false;
         }
         long largestFileSize = fileSizesInAscendingOrder.get(fileSizesInAscendingOrder.size() - 1);
-        LOGGER.debug("Largest file size is {}", largestFileSize);
+        LOGGER.info("Largest file size is {}", largestFileSize);
         long sumOfOtherFileSizes = 0L;
         for (int i = 0; i < fileSizesInAscendingOrder.size() - 1; i++) {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
-        LOGGER.debug("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.debug("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.info("Sum of other file sizes is {}", sumOfOtherFileSizes);
+        LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }
