@@ -31,7 +31,6 @@ public class CompactionStrategyIndex {
                 .filter(Partition::isLeafPartition)
                 .map(partition -> FilesInPartition.forPartition(tableStatus, partition.getId(), allFileReferences))
                 .collect(Collectors.toList());
-
     }
 
     public List<FilesInPartition> getFilesInLeafPartitions() {
