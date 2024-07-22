@@ -24,7 +24,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +38,6 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
@@ -55,8 +53,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties, List<FileReference> fileReferences, List<Partition> partitions) {
         leafStrategy.init(instanceProperties, tableProperties);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        table = tableProperties.getStatus();
-        CompactionStrategyIndex index = new CompactionStrategyIndex(fileReferences, partitions);
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, partitions);
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (String partitionId : index.getLeafPartitionIds()) {
@@ -73,12 +70,12 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(filesInPartition);
         LOGGER.info("Defined {} compaction job{} for partition {}, table {}",
-                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), table);
+                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
         LOGGER.info("Created {} compaction job{} for partition {}, table {}",
-                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), table);
+                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         return jobs;
     }
 }

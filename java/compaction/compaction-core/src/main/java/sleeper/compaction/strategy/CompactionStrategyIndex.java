@@ -17,6 +17,7 @@ package sleeper.compaction.strategy;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.table.TableStatus;
 
 import java.util.Comparator;
 import java.util.List;
@@ -27,15 +28,17 @@ import java.util.stream.Collectors;
 public class CompactionStrategyIndex {
     private final List<String> leafPartitionIds;
     private final Map<String, FilesInPartition> filesByPartitionId;
+    private final TableStatus tableStatus;
 
-    public CompactionStrategyIndex(List<FileReference> allFileReferences, List<Partition> allPartitions) {
+    public CompactionStrategyIndex(TableStatus tableStatus, List<FileReference> allFileReferences, List<Partition> allPartitions) {
+        this.tableStatus = tableStatus;
         this.leafPartitionIds = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
                 .collect(Collectors.toList());
         this.filesByPartitionId = leafPartitionIds.stream()
                 .collect(Collectors.toMap(partitionId -> partitionId,
-                        partitionId -> FilesInPartition.forPartition(partitionId, allFileReferences)));
+                        partitionId -> FilesInPartition.forPartition(tableStatus, partitionId, allFileReferences)));
     }
 
     public List<String> getLeafPartitionIds() {
@@ -44,20 +47,21 @@ public class CompactionStrategyIndex {
 
     public FilesInPartition getFilesInPartition(String partitionId) {
         return Optional.ofNullable(filesByPartitionId.get(partitionId))
-                .orElseGet(() -> FilesInPartition.noFiles());
+                .orElseGet(() -> FilesInPartition.noFiles(tableStatus));
     }
 
     public static class FilesInPartition {
         private final List<FileReference> filesWithJobId;
         private final List<FileReference> filesWithNoJobIdInAscendingOrder;
         private final String partitionId;
+        private final TableStatus tableStatus;
 
-        static FilesInPartition noFiles() {
-            return new FilesInPartition(null, List.of(), List.of());
+        static FilesInPartition noFiles(TableStatus tableStatus) {
+            return new FilesInPartition(tableStatus, null, List.of(), List.of());
         }
 
-        static FilesInPartition forPartition(String partitionId, List<FileReference> allFileReferences) {
-            return new FilesInPartition(partitionId,
+        static FilesInPartition forPartition(TableStatus tableStatus, String partitionId, List<FileReference> allFileReferences) {
+            return new FilesInPartition(tableStatus, partitionId,
                     allFileReferences.stream()
                             .filter(file -> partitionId.equals(file.getPartitionId()))
                             .filter(file -> file.getJobId() != null)
@@ -69,7 +73,8 @@ public class CompactionStrategyIndex {
                             .collect(Collectors.toList()));
         }
 
-        FilesInPartition(String partitionId, List<FileReference> filesWithJobId, List<FileReference> filesWithNoJobIdInAscendingOrder) {
+        FilesInPartition(TableStatus tableStatus, String partitionId, List<FileReference> filesWithJobId, List<FileReference> filesWithNoJobIdInAscendingOrder) {
+            this.tableStatus = tableStatus;
             this.partitionId = partitionId;
             this.filesWithJobId = filesWithJobId;
             this.filesWithNoJobIdInAscendingOrder = filesWithNoJobIdInAscendingOrder;
@@ -85,6 +90,10 @@ public class CompactionStrategyIndex {
 
         public String getPartitionId() {
             return partitionId;
+        }
+
+        public TableStatus getTableStatus() {
+            return tableStatus;
         }
     }
 }

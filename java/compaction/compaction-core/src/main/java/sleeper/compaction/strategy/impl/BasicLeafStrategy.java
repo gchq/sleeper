@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * A simple leaf partition compaction strategy to compact all files over the batch size. Iterates through a list of
@@ -41,14 +40,12 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
     private CompactionJobFactory factory;
-    private String tableName;
     private int compactionFilesBatchSize;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        tableName = tableProperties.get(TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        this.factory = new CompactionJobFactory(instanceProperties, tableProperties);
+        factory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     @Override
@@ -63,15 +60,18 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), filesInPartition.getPartitionId(), tableName);
+                        filesForJob.size(), filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
                 compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                 filesForJob.clear();
             }
         }
         if (filesWithNoJobId.isEmpty()) {
-            LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs", filesInPartition.getPartitionId(), tableName);
+            LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs",
+                    filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         } else if (compactionJobs.isEmpty()) {
-            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}", filesInPartition.getPartitionId(), tableName, compactionFilesBatchSize);
+            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
+                    filesInPartition.getPartitionId(), filesInPartition.getTableStatus(),
+                    compactionFilesBatchSize);
         }
         return compactionJobs;
     }
