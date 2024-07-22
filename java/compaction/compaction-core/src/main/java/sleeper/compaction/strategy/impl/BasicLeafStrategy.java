@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -51,12 +52,13 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> filesInAscendingOrder) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
+        List<FileReference> filesWithNoJobId = index.getFilesWithNoJobIdInPartition(partitionId);
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();
-        for (FileReference fileReference : filesInAscendingOrder) {
+        for (FileReference fileReference : filesWithNoJobId) {
             filesForJob.add(fileReference);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
@@ -66,7 +68,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
                 filesForJob.clear();
             }
         }
-        if (filesInAscendingOrder.isEmpty()) {
+        if (filesWithNoJobId.isEmpty()) {
             LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs", partitionId, tableName);
         } else if (compactionJobs.isEmpty()) {
             LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}", partitionId, tableName, compactionFilesBatchSize);

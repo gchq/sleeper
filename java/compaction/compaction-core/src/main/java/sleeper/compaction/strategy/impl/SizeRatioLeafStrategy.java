@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -47,10 +48,10 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, List<FileReference> filesInAscendingOrder) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index) {
         // Find files that meet criteria, i.e. sum of file sizes excluding largest
         // is >= ratio * largest file size.
-        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(filesInAscendingOrder);
+        List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(index.getFilesWithNoJobIdInPartition(partitionId));
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
             LOGGER.debug("For partition {} there is no list of files that meet the criteria", partitionId);
             return List.of();

@@ -19,7 +19,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
@@ -27,5 +26,5 @@ public interface LeafPartitionCompactionStrategy {
 
     void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
-    List<CompactionJob> createJobsForLeafPartition(String partition, List<FileReference> filesInAscendingOrder);
+    List<CompactionJob> createJobsForLeafPartition(String partition, CompactionStrategyIndex index);
 }
