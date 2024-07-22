@@ -100,10 +100,10 @@ public class WaitForJobsStatusTest {
         store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         store.jobFinished(compactionJobFinished(uncommittedJob,
-                summary(Instant.parse("2023-09-18T14:48:03Z"), Instant.parse("2023-09-18T14:50:03Z"), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
                 .taskId("finished-task").build());
         store.jobFinished(compactionJobFinished(finishedJob,
-                summary(Instant.parse("2023-09-18T14:48:04Z"), Instant.parse("2023-09-18T14:50:04Z"), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
                 .taskId("finished-task").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
         store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task").build());
