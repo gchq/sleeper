@@ -59,7 +59,8 @@ public class WaitForJobsStatusTest {
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
         store.jobStarted(validatedIngestJobStarted(startedJob, Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
         store.jobStarted(validatedIngestJobStarted(finishedJob, Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
-        store.jobFinished(ingestJobFinished(finishedJob, summary(Instant.parse("2022-09-22T13:33:32Z"), Duration.ofMinutes(2), 100L, 100L))
+        store.jobFinished(ingestJobFinished(finishedJob,
+                summary(Instant.parse("2022-09-22T13:33:32Z"), Instant.parse("2022-09-22T13:35:32Z"), 100L, 100L))
                 .jobRunId("finished-run").taskId("finished-task").numFilesWrittenByJob(2).build());
 
         // When
@@ -99,13 +100,13 @@ public class WaitForJobsStatusTest {
         store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         store.jobFinished(compactionJobFinished(uncommittedJob,
-                summary(Instant.parse("2023-09-18T14:48:03Z"), Duration.ofMinutes(2), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:03Z"), Instant.parse("2023-09-18T14:50:03Z"), 100L, 100L))
                 .taskId("finished-task").build());
         store.jobFinished(compactionJobFinished(finishedJob,
-                summary(Instant.parse("2023-09-18T14:48:04Z"), Duration.ofMinutes(2), 100L, 100L))
+                summary(Instant.parse("2023-09-18T14:48:04Z"), Instant.parse("2023-09-18T14:50:04Z"), 100L, 100L))
                 .taskId("finished-task").build());
-        store.fixUpdateTime(Instant.parse("2023-09-18T14:48:10Z"));
-        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:48:06Z")).taskId("finished-task").build());
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
+        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
@@ -135,7 +136,7 @@ public class WaitForJobsStatusTest {
         // First run
         addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), "test-task");
         // Second run
-        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), Duration.ofMinutes(2), "test-task");
+        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
@@ -158,7 +159,7 @@ public class WaitForJobsStatusTest {
         CompactionJob jobRunTwice = compactionJob("finished-job", "5.parquet", "6.parquet");
         addCreatedJob(jobRunTwice, Instant.parse("2023-09-18T14:47:00Z"));
         // First run
-        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "task-1");
+        addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:48:00Z"), Instant.parse("2023-09-18T14:50:00Z"), "task-1");
         // Second run
         addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "task-2");
 
@@ -187,7 +188,7 @@ public class WaitForJobsStatusTest {
         // First run
         addUnfinishedRun(finishedJob, Instant.parse("2023-09-18T14:47:00Z"), "test-task");
         // Second run
-        addFinishedRun(finishedJob, Instant.parse("2023-09-18T14:48:00Z"), Duration.ofMinutes(2), "test-task");
+        addFinishedRun(finishedJob, Instant.parse("2023-09-18T14:48:00Z"), Instant.parse("2023-09-18T14:50:00Z"), "test-task");
 
         // First run
         addUnfinishedRun(inProgressJob, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
@@ -256,10 +257,10 @@ public class WaitForJobsStatusTest {
         store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
     }
 
-    private void addFinishedRun(CompactionJob job, Instant startTime, Duration duration, String taskId) {
+    private void addFinishedRun(CompactionJob job, Instant startTime, Instant finishTime, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
         store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
-        Instant finishTime = startTime.plus(duration);
+
         store.fixUpdateTime(defaultUpdateTime(finishTime));
         store.jobFinished(compactionJobFinished(job,
                 summary(startTime, finishTime, 100L, 100L))
