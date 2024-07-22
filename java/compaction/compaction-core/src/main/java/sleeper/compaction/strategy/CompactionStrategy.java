@@ -25,7 +25,6 @@ import java.util.List;
 
 public interface CompactionStrategy {
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, List<FileReference> fileReferences, List<Partition> partitions);
-
-    List<CompactionJob> createCompactionJobs();
+    List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
+            List<FileReference> fileReferences, List<Partition> partitions);
 }

@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -53,13 +52,17 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         this.shouldCreateJobsStrategy = shouldCreateJobsStrategy;
     }
 
-    @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, List<FileReference> fileReferences, List<Partition> partitions) {
-        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
-        leafStrategy.init(instanceProperties, tableProperties, factory);
+    public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties, List<FileReference> fileReferences, List<Partition> partitions) {
+        leafStrategy.init(instanceProperties, tableProperties);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         table = tableProperties.getStatus();
         index = new CompactionStrategyIndex(fileReferences, partitions);
+
+        List<CompactionJob> compactionJobs = new ArrayList<>();
+        for (String partitionId : index.getLeafPartitionIds()) {
+            compactionJobs.addAll(createJobsForLeafPartition(partitionId));
+        }
+        return compactionJobs;
     }
 
     public List<CompactionJob> createCompactionJobs() {

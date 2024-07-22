@@ -41,10 +41,10 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private CompactionJobFactory factory;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        this.factory = factory;
+        this.factory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     @Override

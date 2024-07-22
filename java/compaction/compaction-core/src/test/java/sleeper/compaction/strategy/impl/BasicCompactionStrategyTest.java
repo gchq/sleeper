@@ -74,10 +74,10 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -105,10 +105,10 @@ public class BasicCompactionStrategyTest {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
             fileReferences.add(fileReference);
         }
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
@@ -138,10 +138,10 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -161,10 +161,10 @@ public class BasicCompactionStrategyTest {
                 .jobId("test-job")
                 .numberOfRecords(123L)
                 .build();
-        strategy.init(instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -189,10 +189,10 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference6 = factory.partitionFile("right", "file6", 600L);
         List<FileReference> fileReferences = List.of(
                 fileReference1, fileReference2, fileReference3, fileReference4, fileReference5, fileReference6);
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).hasSize(3);

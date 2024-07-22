@@ -70,10 +70,10 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -91,10 +91,10 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, (long) Math.pow(2, i + 1));
             fileReferences.add(fileReference);
         }
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -114,10 +114,10 @@ public class SizeRatioCompactionStrategyTest {
                 .jobId("test-job")
                 .numberOfRecords(123L)
                 .build();
-        strategy.init(instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -134,10 +134,10 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        strategy.init(instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs();
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -166,10 +166,10 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("A5", 10),
                 fileReferenceFactory.rootFile("B4", 90),
                 fileReferenceFactory.rootFile("A4", 9));
-        strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> jobs = strategy.createCompactionJobs();
+        List<CompactionJob> jobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
         assertThat(jobs).hasSize(2);
@@ -204,10 +204,10 @@ public class SizeRatioCompactionStrategyTest {
                 fileReferenceFactory.rootFile("B4", 90),
                 fileReferenceFactory.rootFile("C3", 200),
                 fileReferenceFactory.rootFile("A4", 9));
-        strategy.init(instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // When
-        List<CompactionJob> jobs = strategy.createCompactionJobs();
+        List<CompactionJob> jobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
         assertThat(jobs).hasSize(3);

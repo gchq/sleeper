@@ -45,10 +45,10 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private int compactionFilesBatchSize;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tableName = tableProperties.get(TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        this.factory = factory;
+        this.factory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     @Override
