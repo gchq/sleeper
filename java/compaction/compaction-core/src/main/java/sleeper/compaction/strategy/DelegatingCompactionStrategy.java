@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -38,7 +39,6 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private CompactionStrategyIndex index;
     private TableStatus table;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -56,27 +56,29 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         leafStrategy.init(instanceProperties, tableProperties);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         table = tableProperties.getStatus();
-        index = new CompactionStrategyIndex(fileReferences, partitions);
+        CompactionStrategyIndex index = new CompactionStrategyIndex(fileReferences, partitions);
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (String partitionId : index.getLeafPartitionIds()) {
-            compactionJobs.addAll(createJobsForLeafPartition(partitionId));
+            compactionJobs.addAll(createJobsForLeafPartition(index.getFilesInPartition(partitionId)));
         }
         return compactionJobs;
     }
 
-    private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, index.getFilesInPartition(partitionId));
+    private List<CompactionJob> createJobsForLeafPartition(FilesInPartition filesInPartition) {
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(filesInPartition);
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
-        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId, index.getFilesInPartition(partitionId));
-        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
+        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(filesInPartition);
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}",
+                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), table);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}",
+                jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), table);
         return jobs;
     }
 }

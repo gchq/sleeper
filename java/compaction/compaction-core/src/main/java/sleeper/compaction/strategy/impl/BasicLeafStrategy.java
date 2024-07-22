@@ -52,7 +52,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, FilesInPartition filesInPartition) {
+    public List<CompactionJob> createJobsForLeafPartition(FilesInPartition filesInPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileReference> filesWithNoJobId = filesInPartition.getFilesWithNoJobIdInAscendingOrder();
 
@@ -63,15 +63,15 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), partitionId, tableName);
-                compactionJobs.add(factory.createCompactionJob(filesForJob, partitionId));
+                        filesForJob.size(), filesInPartition.getPartitionId(), tableName);
+                compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                 filesForJob.clear();
             }
         }
         if (filesWithNoJobId.isEmpty()) {
-            LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs", partitionId, tableName);
+            LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs", filesInPartition.getPartitionId(), tableName);
         } else if (compactionJobs.isEmpty()) {
-            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}", partitionId, tableName, compactionFilesBatchSize);
+            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}", filesInPartition.getPartitionId(), tableName, compactionFilesBatchSize);
         }
         return compactionJobs;
     }
