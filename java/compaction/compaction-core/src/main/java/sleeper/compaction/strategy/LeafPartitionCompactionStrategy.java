@@ -26,5 +26,5 @@ public interface LeafPartitionCompactionStrategy {
 
     void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
-    List<CompactionJob> createJobsForLeafPartition(String partition, CompactionStrategyIndex index);
+    List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index);
 }
