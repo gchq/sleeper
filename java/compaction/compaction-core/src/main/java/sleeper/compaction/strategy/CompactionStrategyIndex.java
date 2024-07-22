@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
-    private final Map<String, List<FileReference>> filesWithJobIdByPartitionId;
-    private final Map<String, List<FileReference>> filesWithNoJobIdByPartitionId;
+    private final Map<String, FilesInPartition> filesByPartitionId;
     private final List<String> leafPartitionIds;
 
     public CompactionStrategyIndex(List<FileReference> allFileReferences, List<Partition> allPartitions) {
@@ -33,25 +32,51 @@ public class CompactionStrategyIndex {
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        this.filesWithJobIdByPartitionId = allFileReferences.stream()
-                .filter(file -> file.getJobId() != null)
-                .collect(Collectors.groupingBy(FileReference::getPartitionId));
-        this.filesWithNoJobIdByPartitionId = allFileReferences.stream()
-                .filter(file -> file.getJobId() == null)
-                .sorted(Comparator.comparingLong(FileReference::getNumberOfRecords))
-                .collect(Collectors.groupingBy(FileReference::getPartitionId));
+        this.filesByPartitionId = leafPartitionIds.stream()
+                .collect(Collectors.toMap(partitionId -> partitionId,
+                        partitionId -> FilesInPartition.forPartition(partitionId, allFileReferences)));
     }
 
-    public List<FileReference> getFilesWithJobIdInPartition(String partitionId) {
-        return filesWithJobIdByPartitionId.getOrDefault(partitionId, List.of());
-    }
-
-    public List<FileReference> getFilesWithNoJobIdInPartition(String partitionId) {
-        return filesWithNoJobIdByPartitionId.getOrDefault(partitionId, List.of());
+    public FilesInPartition getFilesInPartition(String partitionId) {
+        return filesByPartitionId.getOrDefault(partitionId, FilesInPartition.noFiles());
     }
 
     public List<String> getLeafPartitionIds() {
         return leafPartitionIds;
     }
 
+    public static class FilesInPartition {
+        private final List<FileReference> filesWithJobId;
+        private final List<FileReference> filesWithNoJobIdInAscendingOrder;
+
+        static FilesInPartition noFiles() {
+            return new FilesInPartition(List.of(), List.of());
+        }
+
+        static FilesInPartition forPartition(String partitionId, List<FileReference> allFileReferences) {
+            return new FilesInPartition(
+                    allFileReferences.stream()
+                            .filter(file -> partitionId.equals(file.getPartitionId()))
+                            .filter(file -> file.getJobId() != null)
+                            .collect(Collectors.toList()),
+                    allFileReferences.stream()
+                            .filter(file -> partitionId.equals(file.getPartitionId()))
+                            .filter(file -> file.getJobId() == null)
+                            .sorted(Comparator.comparing(FileReference::getNumberOfRecords))
+                            .collect(Collectors.toList()));
+        }
+
+        FilesInPartition(List<FileReference> filesWithJobId, List<FileReference> filesWithNoJobIdInAscendingOrder) {
+            this.filesWithJobId = filesWithJobId;
+            this.filesWithNoJobIdInAscendingOrder = filesWithNoJobIdInAscendingOrder;
+        }
+
+        public List<FileReference> getFilesWithJobId() {
+            return filesWithJobId;
+        }
+
+        public List<FileReference> getFilesWithNoJobIdInAscendingOrder() {
+            return filesWithNoJobIdInAscendingOrder;
+        }
+    }
 }

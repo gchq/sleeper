@@ -54,7 +54,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     @Override
     public List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesWithNoJobId = index.getFilesWithNoJobIdInPartition(partitionId);
+        List<FileReference> filesWithNoJobId = index.getFilesInPartition(partitionId).getFilesWithNoJobIdInAscendingOrder();
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();

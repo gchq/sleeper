@@ -40,7 +40,7 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
 
     @Override
     public long maxCompactionJobsToCreate(String partitionId, CompactionStrategyIndex index) {
-        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(index.getFilesWithJobIdInPartition(partitionId));
+        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(index.getFilesInPartition(partitionId).getFilesWithJobId());
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
             LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
                     partitionId, numConcurrentCompactionJobs);
