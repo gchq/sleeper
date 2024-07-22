@@ -17,18 +17,15 @@ package sleeper.compaction.strategy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.FileReference;
-
-import java.util.List;
 
 public interface ShouldCreateJobsStrategy {
 
     default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
     }
 
-    long maxCompactionJobsToCreate(String partitionId, List<FileReference> filesWithJobId);
+    long maxCompactionJobsToCreate(String partitionId, CompactionStrategyIndex index);
 
     static ShouldCreateJobsStrategy yes() {
-        return (partitionId, filesWithJobId) -> Long.MAX_VALUE;
+        return (partitionId, index) -> Long.MAX_VALUE;
     }
 }

@@ -71,8 +71,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId,
-                index.getFilesWithJobIdInPartition(partitionId));
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, index);
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }
