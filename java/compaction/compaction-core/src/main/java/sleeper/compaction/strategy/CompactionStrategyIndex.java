@@ -24,22 +24,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
-    private final List<String> leafPartitionIds;
     private final List<FilesInPartition> filesInLeafPartitions;
 
     public CompactionStrategyIndex(TableStatus tableStatus, List<FileReference> allFileReferences, List<Partition> allPartitions) {
-        this.leafPartitionIds = allPartitions.stream()
+        this.filesInLeafPartitions = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
-                .map(Partition::getId)
-                .collect(Collectors.toList());
-        this.filesInLeafPartitions = leafPartitionIds.stream()
-                .map(partitionId -> FilesInPartition.forPartition(tableStatus, partitionId, allFileReferences))
+                .map(partition -> FilesInPartition.forPartition(tableStatus, partition.getId(), allFileReferences))
                 .collect(Collectors.toList());
 
-    }
-
-    public List<String> getLeafPartitionIds() {
-        return leafPartitionIds;
     }
 
     public List<FilesInPartition> getFilesInLeafPartitions() {
