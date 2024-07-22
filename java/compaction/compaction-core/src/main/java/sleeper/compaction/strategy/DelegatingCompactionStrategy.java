@@ -56,8 +56,8 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, partitions);
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (String partitionId : index.getLeafPartitionIds()) {
-            compactionJobs.addAll(createJobsForLeafPartition(index.getFilesInPartition(partitionId)));
+        for (FilesInPartition filesInPartition : index.getFilesInLeafPartitions()) {
+            compactionJobs.addAll(createJobsForLeafPartition(filesInPartition));
         }
         return compactionJobs;
     }
