@@ -18,7 +18,7 @@ package sleeper.compaction.strategy.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.strategy.CompactionStrategyIndex;
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.ShouldCreateJobsStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -39,8 +39,8 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     }
 
     @Override
-    public long maxCompactionJobsToCreate(String partitionId, CompactionStrategyIndex index) {
-        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(index.getFilesInPartition(partitionId).getFilesWithJobId());
+    public long maxCompactionJobsToCreate(String partitionId, FilesInPartition filesInPartition) {
+        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(filesInPartition.getFilesWithJobId());
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
             LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
                     partitionId, numConcurrentCompactionJobs);

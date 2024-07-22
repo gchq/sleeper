@@ -16,6 +16,7 @@
 package sleeper.compaction.strategy;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -25,5 +26,5 @@ public interface LeafPartitionCompactionStrategy {
 
     void init(InstanceProperties instanceProperties, TableProperties tableProperties);
 
-    List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index);
+    List<CompactionJob> createJobsForLeafPartition(String partitionId, FilesInPartition filesInPartition);
 }

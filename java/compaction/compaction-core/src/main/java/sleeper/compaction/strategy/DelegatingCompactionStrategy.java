@@ -66,12 +66,12 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
-        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, index);
+        long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, index.getFilesInPartition(partitionId));
         if (maxNumberOfJobsToCreate < 1) {
             return Collections.emptyList();
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
-        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId, index);
+        List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partitionId, index.getFilesInPartition(partitionId));
         LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "" : "s", partitionId, table);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);

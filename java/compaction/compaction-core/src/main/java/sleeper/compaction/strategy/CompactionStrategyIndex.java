@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
-    private final Map<String, FilesInPartition> filesByPartitionId;
     private final List<String> leafPartitionIds;
+    private final Map<String, FilesInPartition> filesByPartitionId;
 
     public CompactionStrategyIndex(List<FileReference> allFileReferences, List<Partition> allPartitions) {
         this.leafPartitionIds = allPartitions.stream()
@@ -37,12 +37,12 @@ public class CompactionStrategyIndex {
                         partitionId -> FilesInPartition.forPartition(partitionId, allFileReferences)));
     }
 
-    public FilesInPartition getFilesInPartition(String partitionId) {
-        return filesByPartitionId.getOrDefault(partitionId, FilesInPartition.noFiles());
-    }
-
     public List<String> getLeafPartitionIds() {
         return leafPartitionIds;
+    }
+
+    public FilesInPartition getFilesInPartition(String partitionId) {
+        return filesByPartitionId.getOrDefault(partitionId, FilesInPartition.noFiles());
     }
 
     public static class FilesInPartition {

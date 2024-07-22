@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.strategy.CompactionStrategyIndex;
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -52,9 +52,9 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(String partitionId, CompactionStrategyIndex index) {
+    public List<CompactionJob> createJobsForLeafPartition(String partitionId, FilesInPartition filesInPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesWithNoJobId = index.getFilesInPartition(partitionId).getFilesWithNoJobIdInAscendingOrder();
+        List<FileReference> filesWithNoJobId = filesInPartition.getFilesWithNoJobIdInAscendingOrder();
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();

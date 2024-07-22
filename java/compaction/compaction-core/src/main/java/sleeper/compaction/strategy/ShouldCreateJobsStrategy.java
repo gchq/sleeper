@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.strategy;
 
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -23,9 +24,9 @@ public interface ShouldCreateJobsStrategy {
     default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
     }
 
-    long maxCompactionJobsToCreate(String partitionId, CompactionStrategyIndex index);
+    long maxCompactionJobsToCreate(String partitionId, FilesInPartition filesInPartition);
 
     static ShouldCreateJobsStrategy yes() {
-        return (partitionId, index) -> Long.MAX_VALUE;
+        return (partitionId, filesInPartition) -> Long.MAX_VALUE;
     }
 }
