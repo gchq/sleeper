@@ -21,6 +21,7 @@ import sleeper.core.statestore.FileReference;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
@@ -42,7 +43,8 @@ public class CompactionStrategyIndex {
     }
 
     public FilesInPartition getFilesInPartition(String partitionId) {
-        return filesByPartitionId.getOrDefault(partitionId, FilesInPartition.noFiles());
+        return Optional.ofNullable(filesByPartitionId.get(partitionId))
+                .orElseGet(() -> FilesInPartition.noFiles());
     }
 
     public static class FilesInPartition {
