@@ -65,14 +65,6 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         return compactionJobs;
     }
 
-    public List<CompactionJob> createCompactionJobs() {
-        List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (String partitionId : index.getLeafPartitionIds()) {
-            compactionJobs.addAll(createJobsForLeafPartition(partitionId));
-        }
-        return compactionJobs;
-    }
-
     private List<CompactionJob> createJobsForLeafPartition(String partitionId) {
         long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(partitionId, index);
         if (maxNumberOfJobsToCreate < 1) {
