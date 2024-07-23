@@ -332,3 +332,49 @@ logic to be inserted into the compaction or query path. This logic could be used
 aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
 function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
 iterators can be found in `sleeper.core.iterator.impl`.
+
+## Status stores
+
+Sleeper includes stores that track the status of jobs as they pass through the system. These status updates are stored
+separately from the state of each Sleeper table. The table state is held in the state store, whereas the status stores
+are used for reporting.
+
+The status stores allow us to report on how a job has been run, either successfully or with failures. We also report
+when a job runs on a specific task, and the status and statistics of each task.
+
+Here a task usually means an ECS task, that runs in an AWS ECS cluster. It is started by a scheduled process, it listens
+for jobs on an SQS queue, and processes jobs from the queue until there are no jobs available for a certain period.
+
+As an example, here's a normal lifecycle of a compaction job, starting from an idle instance of Sleeper with nothing
+running:
+
+1. A scheduled rule runs a lambda to create compaction jobs.
+2. The lambda adds a number of compaction jobs to the SQS queue.
+3. A scheduled rule runs a lambda to create tasks in the compaction ECS cluster.
+4. The lambda checks the number of compaction jobs on the queue and creates tasks to run them.
+5. A compaction task starts, finds a job on the queue, and runs it. Once there are no more jobs it terminates.
+
+Updates are tracked in the status store when a compaction job is created, started in a task, finished in the task, and
+when it's committed to the Sleeper table by updating the state store.
+
+Updates are also tracked for a task when when it starts and when it terminates.
+
+Similar tracking is in place for ingest and bulk import. The available reports are documented
+under [checking the status of the system](06-status.md).
+
+## Scheduled rules scaling across tables
+
+Most internal operations in a Sleeper instance operate on a schedule. We use CloudWatch scheduled rules to invoke these.
+For operations that apply against Sleeper tables, we use an SQS FIFO queue to ensure the system can scale to an
+arbitrary number of tables.
+
+The scheduled rule actually invokes a trigger lambda. The trigger lambda creates messages on an SQS FIFO queue to
+invoke a handler lambda, where each message is for a single Sleeper table. We use the table ID as the message group ID.
+When a lambda is triggered by a FIFO queue, AWS ensures that only one instance of the lambda is active at a time per
+message group, in this case for a given Sleeper table:
+
+<https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/>
+
+Because of this binding from table ID to lambda instance, each lambda will perform as we would expect with a single
+Sleeper table. This also prevents multiple instances of the same operation from running at once, e.g. compaction job
+creation, garbage collection.
