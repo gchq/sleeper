@@ -41,7 +41,7 @@ public interface AssignJobIdToFiles {
         return (assignJobIdRequests, tableId) -> queueSender.send(new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableId));
     }
 
-    public interface AssignJobIdQueueSender {
+    interface AssignJobIdQueueSender {
         void send(CompactionJobIdAssignmentCommitRequest commitRequest);
 
         static AssignJobIdQueueSender bySqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
