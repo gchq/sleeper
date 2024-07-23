@@ -19,22 +19,64 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableStatus;
 
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
     private final List<FilesInPartition> filesInLeafPartitions;
 
     public CompactionStrategyIndex(TableStatus tableStatus, List<FileReference> allFileReferences, List<Partition> allPartitions) {
-        this.filesInLeafPartitions = allPartitions.stream()
+        Map<String, FilesInAscendingOrder> filesWithNoJobIdByPartition = new HashMap<>();
+        Map<String, List<FileReference>> filesWithJobIdByPartition = new HashMap<>();
+        Set<String> leafPartitionIds = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
-                .map(partition -> FilesInPartition.forPartition(tableStatus, partition.getId(), allFileReferences))
+                .map(Partition::getId)
+                .collect(Collectors.toSet());
+
+        allFileReferences.stream()
+                .filter(file -> leafPartitionIds.contains(file.getPartitionId()))
+                .forEach(file -> {
+                    String partitionId = file.getPartitionId();
+                    if (!filesWithNoJobIdByPartition.containsKey(partitionId)) {
+                        filesWithNoJobIdByPartition.put(partitionId, new FilesInAscendingOrder());
+                    }
+                    if (!filesWithJobIdByPartition.containsKey(partitionId)) {
+                        filesWithJobIdByPartition.put(partitionId, new ArrayList<>());
+                    }
+                    if (file.getJobId() == null) {
+                        filesWithNoJobIdByPartition.get(partitionId).add(file);
+                    } else {
+                        filesWithJobIdByPartition.get(partitionId).add(file);
+                    }
+                });
+        this.filesInLeafPartitions = leafPartitionIds.stream()
+                .map(partition -> new FilesInPartition(tableStatus, partition,
+                        filesWithNoJobIdByPartition.getOrDefault(partition, new FilesInAscendingOrder()).values(),
+                        filesWithJobIdByPartition.getOrDefault(partition, List.of())))
                 .collect(Collectors.toList());
     }
 
     public List<FilesInPartition> getFilesInLeafPartitions() {
         return filesInLeafPartitions;
+    }
+
+    private class FilesInAscendingOrder {
+        private SortedMap<Long, FileReference> files = new TreeMap<>();
+
+        void add(FileReference file) {
+            files.put(file.getNumberOfRecords(), file);
+        }
+
+        List<FileReference> values() {
+            return new ArrayList<>(files.values());
+        }
     }
 
     public static class FilesInPartition {
@@ -43,20 +85,7 @@ public class CompactionStrategyIndex {
         private final String partitionId;
         private final TableStatus tableStatus;
 
-        static FilesInPartition forPartition(TableStatus tableStatus, String partitionId, List<FileReference> allFileReferences) {
-            return new FilesInPartition(tableStatus, partitionId,
-                    allFileReferences.stream()
-                            .filter(file -> partitionId.equals(file.getPartitionId()))
-                            .filter(file -> file.getJobId() != null)
-                            .collect(Collectors.toList()),
-                    allFileReferences.stream()
-                            .filter(file -> partitionId.equals(file.getPartitionId()))
-                            .filter(file -> file.getJobId() == null)
-                            .sorted(Comparator.comparing(FileReference::getNumberOfRecords))
-                            .collect(Collectors.toList()));
-        }
-
-        FilesInPartition(TableStatus tableStatus, String partitionId, List<FileReference> filesWithJobId, List<FileReference> filesWithNoJobIdInAscendingOrder) {
+        FilesInPartition(TableStatus tableStatus, String partitionId, List<FileReference> filesWithNoJobIdInAscendingOrder, List<FileReference> filesWithJobId) {
             this.tableStatus = tableStatus;
             this.partitionId = partitionId;
             this.filesWithJobId = filesWithJobId;
@@ -77,6 +106,28 @@ public class CompactionStrategyIndex {
 
         public TableStatus getTableStatus() {
             return tableStatus;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(filesWithJobId, filesWithNoJobIdInAscendingOrder, partitionId, tableStatus);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof FilesInPartition))
+                return false;
+            FilesInPartition other = (FilesInPartition) obj;
+            return Objects.equals(filesWithJobId, other.filesWithJobId) && Objects.equals(filesWithNoJobIdInAscendingOrder, other.filesWithNoJobIdInAscendingOrder)
+                    && Objects.equals(partitionId, other.partitionId) && Objects.equals(tableStatus, other.tableStatus);
+        }
+
+        @Override
+        public String toString() {
+            return "FilesInPartition{filesWithJobId=" + filesWithJobId + ", filesWithNoJobIdInAscendingOrder=" + filesWithNoJobIdInAscendingOrder + ", partitionId=" + partitionId + ", tableStatus="
+                    + tableStatus + "}";
         }
     }
 }
