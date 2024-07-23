@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_EXECUTION_LIMIT;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -297,6 +298,37 @@ public class CreateCompactionJobsTest {
                         .inputFiles(List.of("file1"))
                         .outputFile(job.getOutputFile())
                         .partitionId("L")
+                        .build());
+                assertThat(stateStore.getFileReferences())
+                        .containsExactly(
+                                withJobId(fileReference1, job.getId()));
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
+
+            //Given normal compactation we set a limit for the execution to be less than the entries present 
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+
+            FileReference fileReference1 = factory.rootFile("file1", 200L);
+            stateStore.addFiles(List.of(fileReference1));
+
+            // When we force create jobs
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+
+            assertThat(jobs).satisfiesExactly(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
                         .build());
                 assertThat(stateStore.getFileReferences())
                         .containsExactly(

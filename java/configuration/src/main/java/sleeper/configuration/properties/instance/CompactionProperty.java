@@ -34,6 +34,14 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
+    UserDefinedInstanceProperty COMPACTION_JOB_EXECUTION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.execution.limit")
+            .description("The maximum number of compaction jobs that are to be executed as part of single invocation. " +
+                    "If greater than jobs created, random allocations are actioned")
+            .defaultValue("10000")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
