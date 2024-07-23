@@ -146,7 +146,7 @@ public class CreateCompactionJobsIT {
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                     assertThat(job.getPartitionId()).isEqualTo("root");
-                    assertThat(receiveAssignmJobIdQueueMessage().getMessages())
+                    assertThat(receiveAssignJobIdQueueMessage().getMessages())
                             .extracting(this::readAssignJobIdRequest).singleElement()
                             .isEqualTo(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
                 });
@@ -167,7 +167,7 @@ public class CreateCompactionJobsIT {
         }
     }
 
-    private ReceiveMessageResult receiveAssignmJobIdQueueMessage() {
+    private ReceiveMessageResult receiveAssignJobIdQueueMessage() {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
