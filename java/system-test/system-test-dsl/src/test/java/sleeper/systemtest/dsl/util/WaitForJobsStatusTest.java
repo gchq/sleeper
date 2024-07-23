@@ -96,17 +96,17 @@ public class WaitForJobsStatusTest {
         store.jobCreated(finishedJob);
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
         store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
-        store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task").build());
-        store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task").build());
+        store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
+        store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         store.jobFinished(compactionJobFinished(uncommittedJob,
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
-                .taskId("finished-task").build());
+                .taskId("finished-task-1").build());
         store.jobFinished(compactionJobFinished(finishedJob,
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
-                .taskId("finished-task").build());
+                .taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task").build());
+        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
