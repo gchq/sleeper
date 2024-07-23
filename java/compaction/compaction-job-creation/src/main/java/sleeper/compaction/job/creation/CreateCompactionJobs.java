@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,17 +70,6 @@ public class CreateCompactionJobs {
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
     private AssignJobIdQueueSender assignJobIdQueueSender;
-
-    public CreateCompactionJobs(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            JobSender jobSender,
-            CompactionJobStatusStore jobStatusStore,
-            Mode mode,
-            AmazonSQS sqsClient) {
-        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
-                AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
-    }
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
