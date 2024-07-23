@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -61,6 +62,7 @@ import static sleeper.compaction.job.status.CompactionJobStartedEvent.compaction
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
@@ -183,6 +185,27 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatusUncommitted(summary))
                                     .build()));
+        }
+    }
+
+    @Nested
+    @DisplayName("Assign job ID to files")
+    class AssignJobIdToFiles {
+        @Test
+        void shouldApplyCompactionJobIdAssignmentCommitRequest() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+
+            // When
+            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))), "test-table");
+            committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
         }
     }
 

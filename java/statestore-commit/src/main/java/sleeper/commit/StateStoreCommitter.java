@@ -22,6 +22,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
@@ -78,6 +79,8 @@ public class StateStoreCommitter {
             apply((CompactionJobCommitRequest) requestObj);
         } else if (requestObj instanceof IngestAddFilesCommitRequest) {
             apply((IngestAddFilesCommitRequest) requestObj);
+        } else if (requestObj instanceof CompactionJobIdAssignmentCommitRequest) {
+            apply((CompactionJobIdAssignmentCommitRequest) requestObj);
         }
     }
 
@@ -120,4 +123,8 @@ public class StateStoreCommitter {
         }
     }
 
+    private void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.assignJobIds(request.getAssignJobIdRequests());
+    }
 }

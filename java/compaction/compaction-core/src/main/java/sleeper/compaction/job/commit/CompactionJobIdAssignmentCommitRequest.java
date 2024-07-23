@@ -40,6 +40,14 @@ public class CompactionJobIdAssignmentCommitRequest {
         this.assignJobIdRequests = assignJobIdRequests;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
+    public List<AssignJobIdRequest> getAssignJobIdRequests() {
+        return assignJobIdRequests;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(tableId, assignJobIdRequests);
