@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 
 public class CompactionStrategyIndexTest {
     private final TableStatus tableStatus = TableStatus.uniqueIdAndName("test-table-id", "test-table", true);
@@ -108,9 +109,9 @@ public class CompactionStrategyIndexTest {
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root");
             FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
-            FileReference file1 = assignedToJob(factory.rootFile("file1.parquet", 123L), "job1");
-            FileReference file2 = assignedToJob(factory.rootFile("file2.parquet", 456L), "job2");
-            FileReference file3 = assignedToJob(factory.rootFile("file3.parquet", 789L), "job3");
+            FileReference file1 = withJobId("job1", factory.rootFile("file1.parquet", 123L));
+            FileReference file2 = withJobId("job2", factory.rootFile("file2.parquet", 456L));
+            FileReference file3 = withJobId("job3", factory.rootFile("file3.parquet", 789L));
             List<FileReference> allFileReferences = List.of(file1, file2, file3);
 
             // When
@@ -128,9 +129,9 @@ public class CompactionStrategyIndexTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L);
             FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
-            FileReference file1 = assignedToJob(factory.partitionFile("L", "file1.parquet", 120L), "job1");
-            FileReference file2 = assignedToJob(factory.partitionFile("R", "file2.parquet", 456L), "job2");
-            FileReference file3 = assignedToJob(factory.partitionFile("R", "file3.parquet", 789L), "job3");
+            FileReference file1 = withJobId("job1", factory.partitionFile("L", "file1.parquet", 120L));
+            FileReference file2 = withJobId("job2", factory.partitionFile("R", "file2.parquet", 456L));
+            FileReference file3 = withJobId("job3", factory.partitionFile("R", "file3.parquet", 789L));
             List<FileReference> allFileReferences = List.of(file1, file2, file3);
 
             // When
@@ -141,10 +142,6 @@ public class CompactionStrategyIndexTest {
                     .containsExactlyInAnyOrder(
                             assignedFilesInPartition("L", List.of(file1)),
                             assignedFilesInPartition("R", List.of(file2, file3)));
-        }
-
-        private FileReference assignedToJob(FileReference fileReference, String jobId) {
-            return fileReference.toBuilder().jobId(jobId).build();
         }
     }
 
