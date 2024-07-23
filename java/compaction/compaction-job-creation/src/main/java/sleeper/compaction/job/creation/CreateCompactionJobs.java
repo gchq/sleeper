@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -68,19 +70,33 @@ public class CreateCompactionJobs {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
+    private AssignJobIdQueueSender assignJobIdQueueSender;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
-            Mode mode) {
+            Mode mode,
+            AmazonSQS sqsClient) {
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
+                AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
+    }
+
+    public CreateCompactionJobs(ObjectFactory objectFactory,
+            InstanceProperties instanceProperties,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore,
+            Mode mode,
+            AssignJobIdQueueSender assignJobIdQueueSender) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
+        this.assignJobIdQueueSender = assignJobIdQueueSender;
     }
 
     public enum Mode {
@@ -122,7 +138,7 @@ public class CreateCompactionJobs {
         }
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
-            assignJobIdsToFiles = AssignJobIdToFiles.bySqs(null, instanceProperties);
+            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
         } else {
             assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
         }

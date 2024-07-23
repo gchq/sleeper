@@ -35,6 +35,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -155,6 +156,7 @@ public class CreateCompactionJobsIT {
         return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStore.NONE, Mode.STRATEGY);
+                CompactionJobStatusStore.NONE, Mode.STRATEGY,
+                AssignJobIdQueueSender.bySqs(sqs, instanceProperties));
     }
 }

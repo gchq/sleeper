@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
@@ -57,6 +58,7 @@ public class CreateCompactionJobsTest {
     private final CompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
     private final TableProperties tableProperties = createTable();
     private final StateStore stateStore = createStateStore(tableProperties);
+    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
     private final List<CompactionJob> jobs = new ArrayList<>();
 
     @Nested
@@ -330,7 +332,7 @@ public class CreateCompactionJobsTest {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode);
+                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add);
     }
 
     private TableProperties createTable() {

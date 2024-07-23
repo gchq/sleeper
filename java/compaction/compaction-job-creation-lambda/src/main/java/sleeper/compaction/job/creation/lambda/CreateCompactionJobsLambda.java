@@ -34,6 +34,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -91,7 +92,8 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         createJobs = new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY);
+                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY,
+                AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
     }
 
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {

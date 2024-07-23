@@ -40,6 +40,10 @@ public class CompactionJobIdAssignmentCommitRequest {
         this.assignJobIdRequests = assignJobIdRequests;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(tableId, assignJobIdRequests);
@@ -61,5 +65,4 @@ public class CompactionJobIdAssignmentCommitRequest {
     public String toString() {
         return "CompactionJobIdAssignmentCommitRequest{tableId=" + tableId + ", assignJobIdRequests=" + assignJobIdRequests + "}";
     }
-
 }

@@ -37,16 +37,23 @@ public interface AssignJobIdToFiles {
         return (assignJobIdRequests, tableId) -> stateStore.assignJobIds(assignJobIdRequests);
     }
 
-    static AssignJobIdToFiles bySqs(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
-        return (assignJobIdRequests, tableId) -> {
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableId);
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(serDe.toJson(request))
-                    .withMessageGroupId(tableId)
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-        };
+    static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {
+        return (assignJobIdRequests, tableId) -> queueSender.send(new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableId));
     }
+
+    public interface AssignJobIdQueueSender {
+        void send(CompactionJobIdAssignmentCommitRequest commitRequest);
+
+        static AssignJobIdQueueSender bySqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+            CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
+            return (request) -> {
+                sqsClient.sendMessage(new SendMessageRequest()
+                        .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                        .withMessageBody(serDe.toJson(request))
+                        .withMessageGroupId(request.getTableId())
+                        .withMessageDeduplicationId(UUID.randomUUID().toString()));
+            };
+        }
+    }
+
 }

@@ -21,6 +21,7 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.StandardCompactor;
@@ -67,6 +68,7 @@ import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactio
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
+    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
@@ -157,7 +159,7 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), jobStore, mode);
+                    instance.getStateStoreProvider(), jobSender(), jobStore, mode, jobIdAssignmentRequests::add);
         }
     }
 
