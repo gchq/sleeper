@@ -110,10 +110,12 @@ public class CompactionStrategyIndex {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (!(obj instanceof FilesInPartition))
+            }
+            if (!(obj instanceof FilesInPartition)) {
                 return false;
+            }
             FilesInPartition other = (FilesInPartition) obj;
             return Objects.equals(filesWithJobId, other.filesWithJobId) && Objects.equals(filesWithNoJobIdInAscendingOrder, other.filesWithNoJobIdInAscendingOrder)
                     && Objects.equals(partitionId, other.partitionId) && Objects.equals(tableStatus, other.tableStatus);
