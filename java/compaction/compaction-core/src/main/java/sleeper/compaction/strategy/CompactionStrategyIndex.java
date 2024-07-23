@@ -60,7 +60,7 @@ public class CompactionStrategyIndex {
         return filesInLeafPartitions;
     }
 
-    private class FilesInAscendingOrder {
+    private static class FilesInAscendingOrder {
         private List<FileReference> files = new ArrayList<>();
 
         void add(FileReference file) {
