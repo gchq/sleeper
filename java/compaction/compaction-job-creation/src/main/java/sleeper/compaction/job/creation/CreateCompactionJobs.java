@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.instance.CompactionProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -39,8 +40,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -117,10 +120,32 @@ public class CreateCompactionJobs {
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
         }
+        int executionLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_EXECUTION_LIMIT);
+        if (compactionJobs.size() > executionLimit) {
+            compactionJobs = reduceCompactionJobsDownToExecutionLimit(compactionJobs, executionLimit);
+        }
+
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
             batchCreateJobs(stateStore, batch);
         }
+    }
+
+    private List<CompactionJob> reduceCompactionJobsDownToExecutionLimit(List<CompactionJob> compactionJobs, int executionLimit) {
+        Random rand = new Random();
+        List<CompactionJob> outList = new ArrayList<CompactionJob>();
+
+        IntStream.range(0, executionLimit)
+                .forEach(loopIndex -> {
+                    //Randomly select index of element from size of source array
+                    int compactionIndexSelected = rand.nextInt(compactionJobs.size());
+                    //Copy job from the old compactation array into the new one and remove the selected on from the reference array 
+                    //so that it isn't selected again
+                    outList.add(compactionJobs.get(compactionIndexSelected));
+                    compactionJobs.remove(compactionIndexSelected);
+                });
+
+        return outList;
     }
 
     private void batchCreateJobs(StateStore stateStore, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {

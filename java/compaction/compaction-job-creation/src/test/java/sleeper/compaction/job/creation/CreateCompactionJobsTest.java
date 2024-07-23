@@ -309,7 +309,7 @@ public class CreateCompactionJobsTest {
         @Test
         void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
 
-            //Given normal compactation we set a limit for the execution to be less than the entries present 
+            //Given normal compactation we set a limit for the execution to be less than the entries present
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
             instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
