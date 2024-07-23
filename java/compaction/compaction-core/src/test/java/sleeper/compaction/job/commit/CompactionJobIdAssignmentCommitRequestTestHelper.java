@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactionJobIdAssignmentCommitRequestTestHelper {
+    private CompactionJobIdAssignmentCommitRequestTestHelper() {
+    }
+
     public static CompactionJobIdAssignmentCommitRequest requestToAssignFilesToJobs(List<CompactionJob> jobs, String tableId) {
         return new CompactionJobIdAssignmentCommitRequest(jobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
