@@ -45,8 +45,10 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
@@ -304,6 +306,45 @@ public class CreateCompactionJobsTest {
                         .containsExactly(
                                 withJobId(fileReference1, job.getId()));
                 verifyJobCreationReported(job);
+            });
+        }
+    }
+
+    @Nested
+    @DisplayName("Assign job IDs asynchronously")
+    class AssignJobIdsAsynchronously {
+        @Test
+        public void shouldSendAssignJobIdRequestToQueue() throws Exception {
+            // Given
+            tableProperties.set(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "true");
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference fileReference1 = factory.rootFile("file1", 200L);
+            FileReference fileReference2 = factory.rootFile("file2", 200L);
+            FileReference fileReference3 = factory.rootFile("file3", 200L);
+            FileReference fileReference4 = factory.rootFile("file4", 200L);
+            List<FileReference> fileReferences = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
+            stateStore.addFiles(fileReferences);
+
+            // When
+            createJobs(Mode.STRATEGY);
+
+            // Then
+            assertThat(jobs).singleElement().satisfies(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1", "file2", "file3", "file4"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                assertThat(stateStore.getFileReferences())
+                        .containsExactlyElementsOf(fileReferences);
+                verifyJobCreationReported(job);
+                assertThat(jobIdAssignmentCommitRequests)
+                        .containsExactly(new CompactionJobIdAssignmentCommitRequest(List.of(
+                                assignJobOnPartitionToFiles(job.getId(), "root", List.of("file1", "file2", "file3", "file4"))),
+                                tableProperties.get(TABLE_ID)));
             });
         }
     }
