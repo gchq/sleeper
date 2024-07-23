@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
@@ -147,7 +148,7 @@ public class CreateCompactionJobsIT {
                     assertThat(job.getPartitionId()).isEqualTo("root");
                     assertThat(receiveAssignmJobIdQueueMessage().getMessages())
                             .extracting(this::readAssignJobIdRequest).singleElement()
-                            .isEqualTo(CompactionJobIdAssignmentCommitRequest.forJobsOnTable(List.of(job), tableProperties.get(TABLE_ID)));
+                            .isEqualTo(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
                 });
     }
 
