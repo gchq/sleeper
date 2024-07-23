@@ -67,6 +67,25 @@ public class CompactionStrategyIndexTest {
     }
 
     @Test
+    void shouldIndexMultipleFilesWithSameNumberOfRecords() {
+        // Given
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                .rootFirst("root");
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 100L);
+        FileReference file3 = factory.rootFile("file3.parquet", 100L);
+        List<FileReference> allFileReferences = List.of(file1, file2, file3);
+
+        // When
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, allFileReferences, partitionsBuilder.buildList());
+
+        // Then
+        assertThat(index.getFilesInLeafPartitions())
+                .containsExactly(new FilesInPartition(tableStatus, "root", List.of(file1, file2, file3), List.of()));
+    }
+
+    @Test
     void shouldIndexMultipleLeafPartitionsWithMultipleFiles() {
         // Given
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)

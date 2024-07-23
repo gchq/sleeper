@@ -20,13 +20,12 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
@@ -44,16 +43,10 @@ public class CompactionStrategyIndex {
                 .filter(file -> leafPartitionIds.contains(file.getPartitionId()))
                 .forEach(file -> {
                     String partitionId = file.getPartitionId();
-                    if (!filesWithNoJobIdByPartition.containsKey(partitionId)) {
-                        filesWithNoJobIdByPartition.put(partitionId, new FilesInAscendingOrder());
-                    }
-                    if (!filesWithJobIdByPartition.containsKey(partitionId)) {
-                        filesWithJobIdByPartition.put(partitionId, new ArrayList<>());
-                    }
                     if (file.getJobId() == null) {
-                        filesWithNoJobIdByPartition.get(partitionId).add(file);
+                        filesWithNoJobIdByPartition.computeIfAbsent(partitionId, key -> new FilesInAscendingOrder()).add(file);
                     } else {
-                        filesWithJobIdByPartition.get(partitionId).add(file);
+                        filesWithJobIdByPartition.computeIfAbsent(partitionId, key -> new ArrayList<>()).add(file);
                     }
                 });
         this.filesInLeafPartitions = leafPartitionIds.stream()
@@ -68,14 +61,16 @@ public class CompactionStrategyIndex {
     }
 
     private class FilesInAscendingOrder {
-        private SortedMap<Long, FileReference> files = new TreeMap<>();
+        private List<FileReference> files = new ArrayList<>();
 
         void add(FileReference file) {
-            files.put(file.getNumberOfRecords(), file);
+            files.add(file);
         }
 
         List<FileReference> values() {
-            return new ArrayList<>(files.values());
+            return files.stream()
+                    .sorted(Comparator.comparing(FileReference::getNumberOfRecords))
+                    .collect(Collectors.toList());
         }
     }
 
