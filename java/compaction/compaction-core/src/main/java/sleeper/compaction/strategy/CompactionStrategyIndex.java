@@ -43,10 +43,6 @@ public class CompactionStrategyIndex {
         private final String partitionId;
         private final TableStatus tableStatus;
 
-        static FilesInPartition noFiles(TableStatus tableStatus) {
-            return new FilesInPartition(tableStatus, null, List.of(), List.of());
-        }
-
         static FilesInPartition forPartition(TableStatus tableStatus, String partitionId, List<FileReference> allFileReferences) {
             return new FilesInPartition(tableStatus, partitionId,
                     allFileReferences.stream()
