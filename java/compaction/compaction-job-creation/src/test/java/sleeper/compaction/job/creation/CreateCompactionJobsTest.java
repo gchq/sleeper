@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -67,6 +68,7 @@ public class CreateCompactionJobsTest {
         @Test
         public void shouldCompactAllFilesInSinglePartition() throws Exception {
             // Given
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
             FileReference fileReference1 = factory.rootFile("file1", 200L);
@@ -98,6 +100,7 @@ public class CreateCompactionJobsTest {
         @Test
         public void shouldCompactFilesInDifferentPartitions() throws Exception {
             // Given
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", "ddd")
@@ -145,6 +148,7 @@ public class CreateCompactionJobsTest {
         @Test
         public void shouldCreateCompactionJobAfterPreSplittingFiles() throws Exception {
             // Given
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", "ddd")
