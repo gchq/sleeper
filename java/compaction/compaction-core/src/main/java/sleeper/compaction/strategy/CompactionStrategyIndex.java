@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
@@ -34,10 +33,10 @@ public class CompactionStrategyIndex {
     public CompactionStrategyIndex(TableStatus tableStatus, List<FileReference> allFileReferences, List<Partition> allPartitions) {
         Map<String, FilesInAscendingOrder> filesWithNoJobIdByPartition = new HashMap<>();
         Map<String, List<FileReference>> filesWithJobIdByPartition = new HashMap<>();
-        Set<String> leafPartitionIds = allPartitions.stream()
+        List<String> leafPartitionIds = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         allFileReferences.stream()
                 .filter(file -> leafPartitionIds.contains(file.getPartitionId()))

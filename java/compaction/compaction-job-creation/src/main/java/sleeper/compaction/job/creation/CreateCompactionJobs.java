@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.instance.CompactionProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -39,8 +40,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -65,6 +70,8 @@ public class CreateCompactionJobs {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
+    private final Supplier<String> jobIdSupplier;
+    private final Random random;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -72,12 +79,25 @@ public class CreateCompactionJobs {
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode) {
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode, () -> UUID.randomUUID().toString(), new Random());
+    }
+
+    public CreateCompactionJobs(ObjectFactory objectFactory,
+            InstanceProperties instanceProperties,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore,
+            Mode mode,
+            Supplier<String> jobIdSupplier,
+            Random random) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
+        this.jobIdSupplier = jobIdSupplier;
+        this.random = random;
     }
 
     public enum Mode {
@@ -105,17 +125,40 @@ public class CreateCompactionJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(instanceProperties, tableProperties, fileReferences, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactory, fileReferences, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
-            createJobsFromLeftoverFiles(tableProperties, fileReferences, allPartitions, compactionJobs);
+            createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
         }
+        int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
+        if (compactionJobs.size() > creationLimit) {
+            compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
+        }
+
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
             batchCreateJobs(stateStore, batch);
         }
+    }
+
+    private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
+        List<CompactionJob> outList = new ArrayList<CompactionJob>();
+
+        IntStream.range(0, creationLimit)
+                .forEach(loopIndex -> {
+                    //Randomly select index of element from size of source array
+                    int compactionIndexSelected = random.nextInt(compactionJobs.size());
+                    //Copy job from the old compaction array into the new one and remove the selected on from the reference array
+                    //so that it isn't selected again
+                    outList.add(compactionJobs.get(compactionIndexSelected));
+                    compactionJobs.remove(compactionIndexSelected);
+                });
+
+        return outList;
     }
 
     private void batchCreateJobs(StateStore stateStore, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
@@ -137,7 +180,7 @@ public class CreateCompactionJobs {
     }
 
     private void createJobsFromLeftoverFiles(
-            TableProperties tableProperties, List<FileReference> fileReferences,
+            TableProperties tableProperties, CompactionJobFactory factory, List<FileReference> fileReferences,
             List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
         List<FileReference> fileReferencesWithNoJobId = fileReferences.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), tableProperties.getStatus());
@@ -159,22 +202,25 @@ public class CreateCompactionJobs {
                 .filter(fileReference -> leafPartitionIds.contains(fileReference.getPartitionId()))
                 .forEach(fileReference -> filesByPartitionId.computeIfAbsent(fileReference.getPartitionId(),
                         (key) -> new ArrayList<>()).add(fileReference));
-        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
-        for (Map.Entry<String, List<FileReference>> fileByPartitionId : filesByPartitionId.entrySet()) {
+        for (Partition partition : allPartitions) {
+            List<FileReference> partitionFiles = filesByPartitionId.get(partition.getId());
+            if (partitionFiles == null) {
+                continue;
+            }
             List<FileReference> filesForJob = new ArrayList<>();
-            for (FileReference fileReference : fileByPartitionId.getValue()) {
+            for (FileReference fileReference : partitionFiles) {
                 filesForJob.add(fileReference);
                 if (filesForJob.size() >= batchSize) {
                     LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                            filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
-                    compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+                            filesForJob.size(), partition.getId(), tableProperties.get(TABLE_NAME));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
                     filesForJob.clear();
                 }
             }
             if (!filesForJob.isEmpty()) {
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
-                compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+                        filesForJob.size(), partition.getId(), tableProperties.get(TABLE_NAME));
+                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
             }
         }
         LOGGER.info("Created {} jobs from {} leftover files for table {}",
