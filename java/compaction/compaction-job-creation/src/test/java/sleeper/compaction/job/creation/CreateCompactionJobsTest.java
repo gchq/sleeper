@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -236,38 +235,6 @@ public class CreateCompactionJobsTest {
             assertThat(jobs).containsExactly(
                     jobFactory.createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
                     jobFactory.createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldCreateJobsWhereLimitIsExceededButAllFilesNotCompacted() throws Exception {
-            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
-            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "100");
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-
-            // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
-                    .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", "ddd")
-                    .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.partitionFile("B", "file1", 200L);
-            FileReference fileReference2 = factory.partitionFile("B", "file2", 200L);
-            FileReference fileReference3 = factory.partitionFile("C", "file3", 200L);
-            FileReference fileReference4 = factory.partitionFile("C", "file4", 200L);
-            stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
-
-            // When
-            createJobs(Mode.STRATEGY, fixJobIds("test-job"));
-
-            //Random for selection of tasks with a forced seed for repeatability
-            //Random rand = new Random(0);
-
-            //Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileReference1, fileReference2), "B"));
         }
     }
 
