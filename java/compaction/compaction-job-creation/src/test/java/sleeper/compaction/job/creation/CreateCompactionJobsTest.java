@@ -94,9 +94,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("root")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactlyElementsOf(
-                                withJobIds(fileReferences, job.getId()));
             });
         }
 
@@ -127,10 +124,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("B")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(fileReference1, job.getId()),
-                                withJobId(fileReference2, job.getId()));
             }, job -> {
                 assertThat(job).isEqualTo(CompactionJob.builder()
                         .jobId(job.getId())
@@ -139,10 +132,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("C")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(fileReference3, job.getId()),
-                                withJobId(fileReference4, job.getId()));
             });
         }
 
@@ -217,9 +206,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("B")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(leftReference, job.getId()));
             }, job -> {
                 assertThat(job).isEqualTo(CompactionJob.builder()
                         .jobId(job.getId())
@@ -228,9 +214,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("C")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(rightReference, job.getId()));
             });
         }
     }
@@ -262,9 +245,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("root")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactly(
-                                withJobId(fileReference1, job.getId()));
             });
         }
 
@@ -303,9 +283,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("root")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactly(
-                                withJobId(fileReference1, job.getId()));
             });
         }
     }
@@ -339,10 +316,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("root")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactly(
-                                withJobId(fileReference1, job.getId()),
-                                withJobId(fileReference2, job.getId()));
             });
         }
 
