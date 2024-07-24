@@ -214,19 +214,27 @@ public class CreateCompactionJobsTest {
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
             instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "bbb")
+                    .splitToNewChildren("L", "LL", "LR", "aaa")
+                    .buildList());
 
-            FileReference fileReference1 = factory.rootFile("file1", 200L);
-            stateStore.addFiles(List.of(fileReference1));
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference fileReference1 = factory.partitionFile("R", "file1", 200L);
+            FileReference fileReference2 = factory.partitionFile("LL", "file2", 200L);
+            FileReference fileReference3 = factory.partitionFile("LR", "file3", 200L);
+            stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"));
 
             // Then
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileReference1), "root"));
+                    jobFactory.createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
+                    jobFactory.createCompactionJob("partition-LL-job", List.of(fileReference2), "LL"),
+                    jobFactory.createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
         }
 
         @Test
