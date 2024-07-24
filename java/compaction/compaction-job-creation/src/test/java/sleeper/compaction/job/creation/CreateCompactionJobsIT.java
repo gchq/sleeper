@@ -147,10 +147,9 @@ public class CreateCompactionJobsIT {
                 .findFirst().orElseThrow();
         assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         assertThat(job.getPartitionId()).isEqualTo("root");
-        CompactionJobIdAssignmentCommitRequest jobIdAssignRequest = receiveAssignJobIdQueueMessage().getMessages().stream()
-                .map(this::readAssignJobIdRequest)
-                .findFirst().orElseThrow();
-        assertThat(jobIdAssignRequest).isEqualTo(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+        assertThat(receiveAssignJobIdQueueMessage().getMessages().stream()
+                .map(this::readAssignJobIdRequest))
+                .containsExactly(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
     }
 
     private ReceiveMessageResult receiveJobQueueMessage() {
