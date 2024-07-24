@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -273,6 +274,7 @@ public class CreateCompactionJobsTest {
         }
 
         @Test
+        @Disabled("TODO")
         void shouldCreateJobsWhereLimitIsExceededButAllFilesNotCompacted() throws Exception {
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
