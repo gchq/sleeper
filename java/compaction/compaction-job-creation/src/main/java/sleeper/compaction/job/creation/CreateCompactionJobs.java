@@ -69,7 +69,7 @@ public class CreateCompactionJobs {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
-    private AssignJobIdQueueSender assignJobIdQueueSender;
+    private final AssignJobIdQueueSender assignJobIdQueueSender;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
