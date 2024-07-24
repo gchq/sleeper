@@ -407,6 +407,33 @@ public class CreateCompactionJobsTest {
                             withJobId(fileOne, "test-job"),
                             withJobId(fileTwo, "test-job"));
         }
+
+        @Test
+        void shouldAssignFilesToMultipleCompactionJobs() throws Exception {
+            // Given we have files for compaction
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "aaa")
+                    .buildList());
+
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference leftFile = factory.partitionFile("L", "leftFile", 1L);
+            FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
+            stateStore.addFiles(List.of(leftFile, rightFile));
+
+            // When
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
+
+            // Then
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("left-job", List.of(leftFile), "L"),
+                    jobFactory.createCompactionJob("right-job", List.of(rightFile), "R"));
+            assertThat(stateStore.getFileReferences())
+                    .containsExactly(
+                            withJobId(leftFile, "left-job"),
+                            withJobId(rightFile, "right-job"));
+        }
     }
 
     @Nested
