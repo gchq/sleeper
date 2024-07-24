@@ -41,7 +41,6 @@ import sleeper.statestore.FixedStateStoreProvider;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -418,10 +417,6 @@ public class CreateCompactionJobsTest {
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 jobs::add, jobStatusStore, mode, jobIdSupplier);
-    }
-
-    private Supplier<String> randomJobIds() {
-        return () -> UUID.randomUUID().toString();
     }
 
     private Supplier<String> fixJobIds(String... jobIds) {
