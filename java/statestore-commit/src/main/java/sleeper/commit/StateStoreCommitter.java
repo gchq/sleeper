@@ -30,6 +30,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
@@ -125,6 +126,11 @@ public class StateStoreCommitter {
 
     private void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
-        stateStore.assignJobIds(request.getAssignJobIdRequests());
+        try {
+            stateStore.assignJobIds(request.getAssignJobIdRequests());
+        } catch (FileReferenceAssignedToJobException e) {
+            LOGGER.info("One or more files are already assigned to a job, skipping request", e);
+            return;
+        }
     }
 }
