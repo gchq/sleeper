@@ -374,10 +374,39 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("L")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactly(
-                                withJobId(fileReference1, job.getId()));
+
             });
+        }
+    }
+
+    @Nested
+    @DisplayName("Assign Input Files To Job in State Store")
+    class AssignInputFiles {
+
+        @Test
+        void shouldAssignMultipleFilesToCompactionJob() throws Exception {
+            // Given we have files for compaction
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .singlePartition("1")
+                    .buildList());
+
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference fileOne = factory.rootFile("fileOne", 1L);
+            FileReference fileTwo = factory.rootFile("fileTwo", 2L);
+            stateStore.addFiles(List.of(fileOne, fileTwo));
+
+            // When
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+
+            // Then
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            CompactionJob testJob = jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
+
+            assertThat(jobs).containsExactly(testJob);
+            assertThat(stateStore.getFileReferences())
+                    .containsExactly(
+                            withJobId(fileOne, "test-job"),
+                            withJobId(fileTwo, "test-job"));
         }
     }
 
