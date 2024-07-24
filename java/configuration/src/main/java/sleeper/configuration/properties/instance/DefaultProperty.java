@@ -261,7 +261,7 @@ public interface DefaultProperty {
             .description("If true, compaction job ID assignment commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, compaction job ID assignments will be committed " +
                     "synchronously in the compaction job creation lambda.")
-            .defaultValue("false")
+            .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.commit.async")
