@@ -35,9 +35,9 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
-    UserDefinedInstanceProperty COMPACTION_JOB_EXECUTION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.execution.limit")
-            .description("The maximum number of compaction jobs that are to be executed as part of single invocation. " +
-                    "If greater than jobs created, random allocations are actioned")
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.creation.limit")
+            .description("The maximum number of compaction jobs that are to be created as part of single invocation. " +
+                    "If this limit is exceeded, the selection of jobs is randomised.")
             .defaultValue("10000")
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

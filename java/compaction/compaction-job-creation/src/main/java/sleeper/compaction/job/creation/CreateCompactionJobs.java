@@ -138,7 +138,7 @@ public class CreateCompactionJobs {
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, jobFactory, allPartitions, fileReferencesWithNoJobId, compactionJobs);
         }
-        int executionLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_EXECUTION_LIMIT);
+        int executionLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
         if (compactionJobs.size() > executionLimit) {
             compactionJobs = reduceCompactionJobsDownToExecutionLimit(compactionJobs, executionLimit);
         }
