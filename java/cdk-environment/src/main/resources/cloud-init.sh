@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2024 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,11 @@ LOGIN_HOME=/home/$LOGIN_USER
 # Get Updates
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update && sudo apt -y dist-upgrade
+
+# Install Nix
+if [ ! -d /nix ]; then
+  runuser --login "$LOGIN_USER" -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes"
+fi
 
 # Install latest Docker
 sudo apt remove -y docker.io containerd runc

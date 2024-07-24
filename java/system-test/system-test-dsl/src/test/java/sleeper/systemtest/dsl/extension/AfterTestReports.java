@@ -21,7 +21,7 @@ import sleeper.systemtest.dsl.reporting.SystemTestReports;
 
 public class AfterTestReports extends AfterTestReportsBase<SystemTestReports.SystemTestBuilder> {
 
-    AfterTestReports(SystemTestContext context) {
+    public AfterTestReports(SystemTestContext context) {
         super(() -> SystemTestReports.builder(context));
     }
 }

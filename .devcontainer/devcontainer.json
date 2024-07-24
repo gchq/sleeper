@@ -1,6 +1,6 @@
 {
   "name": "Sleeper dev container",
-  "image": "ghcr.io/gchq/sleeper-builder",
+  "image": "ghcr.io/gchq/sleeper-builder:develop",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
@@ -8,7 +8,10 @@
     "vscode": {
       "extensions": [
         "vscjava.vscode-java-pack",
-        "eamodio.gitlens"
+        "shengchen.vscode-checkstyle",
+        "eamodio.gitlens",
+        "1yib.rust-bundle",
+        "mhutchie.git-graph"
       ]
     }
   },
@@ -16,6 +19,21 @@
     {
       "source": "${localEnv:HOME}/.aws",
       "target": "/root/.aws",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.m2",
+      "target": "/root/.m2",
+      "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.ssh",
+      "target": "/root/.ssh",
+      "type": "bind"
+    },
+    {
+      "source": "${localWorkspaceFolder}",
+      "target": "${localWorkspaceFolder}",
       "type": "bind"
     }
   ],
@@ -30,5 +48,6 @@
     "INSTANCE_ID": "${localEnv:INSTANCE_ID}",
     "VPC": "${localEnv:VPC}",
     "SUBNET": "${localEnv:SUBNET}"
-  }
+  },
+  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 > /tmp/container.id"
 }

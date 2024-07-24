@@ -206,6 +206,9 @@ sleeper.statestore.committer.lambda.timeout.seconds=900
 # This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.committer.batch.size=10
 
+# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
+# sleeper.ecs.security.groups=
+
 
 ## The following properties relate to standard ingest.
 
@@ -964,6 +967,10 @@ sleeper.default.table.compaction.strategy.sizeratio.ratio=3
 # Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running
 # concurrently per partition. It can be overridden on a per-table basis.
 sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
+
+# Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction
+# support is experimental.
+sleeper.default.table.compaction.method=JAVA
 
 
 ## The following properties relate to queries.

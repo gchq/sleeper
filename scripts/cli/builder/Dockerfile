@@ -17,17 +17,36 @@ FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
     maven \
+    openjdk-17-jdk \
+    openjdk-17-source \
     git \
     python3 \
     pip \
     python3.10-venv \
     zip \
     jq \
+    gcc g++ cmake make \
+    pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+# Change install location because the default is in the home directory, which is overwritten by Dev Containers
+ENV RUSTUP_HOME=/rust/.rustup
+ENV CARGO_HOME=/rust/.cargo
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
+RUN $CARGO_HOME/bin/cargo install cross
+
+# Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
+ENV PATH=$CARGO_HOME/bin:$PATH
+
+# Set variable telling cross-rs Rust cross compiler that it is already inside a container
+ENV CROSS_CONTAINER_IN_CONTAINER=true
 
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
 
+COPY entrypoint.sh /entrypoint.sh
+
 WORKDIR /sleeper-builder
 
-CMD bash
+ENTRYPOINT [ "/entrypoint.sh" ]

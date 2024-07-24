@@ -136,14 +136,12 @@ public class IngestJobRunner implements IngestJobHandler {
             }
         }
 
-        // Concatenate iterators into one iterator
-        CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-
-        // Run the ingest
+        // Concatenate iterators into one iterator and run the ingest
         IngestResult result;
-        try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
-                .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
-                .build()) {
+        try (CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
+                IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+                        .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
+                        .build()) {
             result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);

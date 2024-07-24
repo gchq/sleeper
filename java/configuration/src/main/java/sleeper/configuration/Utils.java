@@ -22,6 +22,7 @@ import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -180,6 +181,11 @@ public class Utils {
         return parseAndCheckInteger(string, num -> num >= 0 && num <= maxValue);
     }
 
+    public static boolean isListWithMaxSize(String input, int maxSize) {
+        List<String> values = SleeperPropertyValues.readList(input);
+        return values.size() <= maxSize;
+    }
+
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {
         try {
             return check.test(Integer.parseInt(string));
@@ -208,4 +214,5 @@ public class Utils {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString)
                 .map(String::toLowerCase).collect(Collectors.toList()).toString();
     }
+
 }

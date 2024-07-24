@@ -16,6 +16,8 @@ Records read: 1,000,600
 Records written: 500,300
 Read rate (reads per second): 138.97
 Write rate (writes per second): 69.49
+State store commit time: 2022-10-13T14:01:30Z
+Delay between finish and commit: 20s
 --------------------------
 Details for job $(jobId1):
 State: FINISHED
@@ -32,4 +34,6 @@ Records read: 600
 Records written: 300
 Read rate (reads per second): 4,878.05
 Write rate (writes per second): 2,439.02
+State store commit time: 2022-10-13T12:00:30Z
+Delay between finish and commit: 19.877s
 --------------------------

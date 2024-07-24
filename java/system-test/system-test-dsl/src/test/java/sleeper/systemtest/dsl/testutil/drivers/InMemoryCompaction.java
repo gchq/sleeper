@@ -23,7 +23,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.execution.CompactSortedFiles;
+import sleeper.compaction.job.execution.StandardCompactor;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -91,6 +91,14 @@ public class InMemoryCompaction {
             finishTasks();
             return jobStore;
         }, properties -> taskStore);
+    }
+
+    public CompactionJobStatusStore jobStore() {
+        return jobStore;
+    }
+
+    public CompactionTaskStatusStore taskStore() {
+        return taskStore;
     }
 
     private class Driver implements CompactionDriver {
@@ -205,7 +213,7 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
-            mergingIterator = CompactSortedFiles.getMergingIterator(
+            mergingIterator = StandardCompactor.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);

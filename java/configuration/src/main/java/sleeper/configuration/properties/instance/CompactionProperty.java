@@ -18,8 +18,8 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
-import java.util.Arrays;
 import java.util.List;
 
 public interface CompactionProperty {
@@ -162,7 +162,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")
-            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
+            .validationPredicate(CompactionECSLaunchType::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
@@ -257,6 +257,12 @@ public interface CompactionProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
+            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
+                    "experimental.")
+            .defaultValue("JAVA")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
