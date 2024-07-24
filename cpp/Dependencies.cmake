@@ -40,14 +40,10 @@ function(gpu_compact_setup_dependencies)
     cpmaddpackage(
       NAME
       gRPC
-      GIT_SHALLOW 1
       GITHUB_REPOSITORY
       grpc/grpc
-      GIT_SHALLOW 1
       VERSION
-      1.65.1
-      GIT_SHALLOW 1
-)
+      1.65.1)
 
   endif()
 

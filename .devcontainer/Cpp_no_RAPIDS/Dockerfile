@@ -1,5 +1,5 @@
 # A C++ Nvidia RAPIDS development image
-FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11 AS base
+FROM ubuntu:22.04 AS base
 
 USER root
 # Install tools
@@ -7,6 +7,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install 
 
 # Use shell form for redirection and enable sudo
 ARG USERNAME=rapids
+ARG USER_UID=1001
+ARG USER_GID=$USER_UID
+
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME
 RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME
 RUN chmod 0440 /etc/sudoers.d/$USERNAME
 
@@ -34,10 +39,6 @@ RUN apt-get install -y java-17-amazon-corretto-jdk make cmake cmake-format cmake
 # Install aws
 RUN wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && unzip awscliv2.zip && ./aws/install
 
-# Drop to normal user
-USER $USERNAME 
-WORKDIR /home/rapids
-
 FROM build AS devcontainer
 USER root
 # This is to enable persistent BASH history
@@ -53,4 +54,4 @@ WORKDIR /home/rapids
 
 FROM base AS runner
 COPY test_file.txt /home/rapids/
-ENTRYPOINT [ "/bin/bash", "-c", "nvidia-smi; cat CMakeLists.txt" ]
+ENTRYPOINT [ "/bin/bash", "-c", "cat CMakeLists.txt" ]
