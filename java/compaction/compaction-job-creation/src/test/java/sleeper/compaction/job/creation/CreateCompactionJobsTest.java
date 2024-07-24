@@ -38,7 +38,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -50,12 +49,14 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
 public class CreateCompactionJobsTest {
 
-    private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2024-02-13T11:19:00Z");
     private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
@@ -141,10 +142,10 @@ public class CreateCompactionJobsTest {
                     jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file1", "file2"), "B"),
                     jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file1", "file2"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
-                    withJobId(referenceForChildPartition(fileReference1, "B"), "partition-b-job"),
-                    withJobId(referenceForChildPartition(fileReference2, "B"), "partition-b-job"),
-                    withJobId(referenceForChildPartition(fileReference1, "C"), "partition-c-job"),
-                    withJobId(referenceForChildPartition(fileReference2, "C"), "partition-c-job"));
+                    withJobId("partition-b-job", splitFile(fileReference1, "B")),
+                    withJobId("partition-b-job", splitFile(fileReference2, "B")),
+                    withJobId("partition-c-job", splitFile(fileReference1, "C")),
+                    withJobId("partition-c-job", splitFile(fileReference2, "C")));
         }
 
         @Test
@@ -158,8 +159,8 @@ public class CreateCompactionJobsTest {
                     .buildList());
             FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
             FileReference fileReference = factory.partitionFile("A", "file", 200L);
-            FileReference leftReference = referenceForChildPartition(fileReference, "B");
-            FileReference rightReference = referenceForChildPartition(fileReference, "C");
+            FileReference leftReference = splitFile(fileReference, "B");
+            FileReference rightReference = splitFile(fileReference, "C");
             stateStore.addFiles(List.of(leftReference, rightReference));
 
             // When
@@ -171,8 +172,8 @@ public class CreateCompactionJobsTest {
                     jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file"), "B"),
                     jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
-                    withJobId(leftReference, "partition-b-job"),
-                    withJobId(rightReference, "partition-c-job"));
+                    withJobId("partition-b-job", leftReference),
+                    withJobId("partition-c-job", rightReference));
         }
     }
 
@@ -311,8 +312,8 @@ public class CreateCompactionJobsTest {
                     jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1"));
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
-                            withJobId(fileOne, "test-job"),
-                            withJobId(fileTwo, "test-job"));
+                            withJobId("test-job", fileOne),
+                            withJobId("test-job", fileTwo));
         }
 
         @Test
@@ -338,8 +339,8 @@ public class CreateCompactionJobsTest {
                     jobFactory.createCompactionJob("right-job", List.of(rightFile), "R"));
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
-                            withJobId(leftFile, "left-job"),
-                            withJobId(rightFile, "right-job"));
+                            withJobId("left-job", leftFile),
+                            withJobId("right-job", rightFile));
         }
     }
 
@@ -402,10 +403,6 @@ public class CreateCompactionJobsTest {
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),
                     jobCreated(leftJob, DEFAULT_UPDATE_TIME));
         }
-    }
-
-    private FileReference withJobId(FileReference fileReference, String jobId) {
-        return fileReference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
     private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
