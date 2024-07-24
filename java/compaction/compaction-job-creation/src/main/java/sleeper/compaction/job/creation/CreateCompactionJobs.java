@@ -138,9 +138,9 @@ public class CreateCompactionJobs {
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, jobFactory, allPartitions, fileReferencesWithNoJobId, compactionJobs);
         }
-        int executionLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
-        if (compactionJobs.size() > executionLimit) {
-            compactionJobs = reduceCompactionJobsDownToExecutionLimit(compactionJobs, executionLimit);
+        int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
+        if (compactionJobs.size() > creationLimit) {
+            compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
         }
 
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
@@ -149,10 +149,10 @@ public class CreateCompactionJobs {
         }
     }
 
-    private List<CompactionJob> reduceCompactionJobsDownToExecutionLimit(List<CompactionJob> compactionJobs, int executionLimit) {
+    private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
         List<CompactionJob> outList = new ArrayList<CompactionJob>();
 
-        IntStream.range(0, executionLimit)
+        IntStream.range(0, creationLimit)
                 .forEach(loopIndex -> {
                     //Randomly select index of element from size of source array
                     int compactionIndexSelected = random.nextInt(compactionJobs.size());

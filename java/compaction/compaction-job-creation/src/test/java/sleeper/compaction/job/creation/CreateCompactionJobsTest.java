@@ -208,8 +208,8 @@ public class CreateCompactionJobsTest {
     @DisplayName("Limit compaction numbers to single lambda invocation")
     class CompactionJobLimitationsForInvocation {
         @Test
-        void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
-            // Given normal compaction we set a limit for the execution to be less than the entries present
+        void shouldCreateJobsLimitedDownToCreationLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
+            // Given normal compaction we set a limit for the creation to be less than the entries present
             Random rand = new Random(0);
 
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
