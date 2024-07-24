@@ -121,7 +121,34 @@ public class CreateCompactionJobsTest {
     class HandleSplitFileReferences {
 
         @Test
-        public void shouldPreSplitFilesOneLevelDownPartitionTreeBeforeCreatingCompactionJobs() throws Exception {
+        public void shouldPreSplitFilesOneLevelDownPartitionTreeBeforeCreatingNoCompactionJobs() throws Exception {
+            // Given
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "ddd")
+                    .splitToNewChildren("B", "B1", "B2", "aaa")
+                    .splitToNewChildren("C", "C1", "C2", "fff")
+                    .buildList());
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference fileReference1 = factory.partitionFile("A", "file1", 200L);
+            FileReference fileReference2 = factory.partitionFile("A", "file2", 200L);
+            stateStore.addFiles(List.of(fileReference1, fileReference2));
+
+            // When
+            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+
+            // Then
+            assertThat(jobs).isEmpty();
+            assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
+                    splitFile(fileReference1, "B"),
+                    splitFile(fileReference2, "B"),
+                    splitFile(fileReference1, "C"),
+                    splitFile(fileReference2, "C"));
+        }
+
+        @Test
+        public void shouldPreSplitFilesOneLevelDownPartitionTreeBeforeCreatingCompactionJobsOnLeafPartitions() throws Exception {
             // Given
             tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema)
