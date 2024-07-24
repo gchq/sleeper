@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -68,6 +70,7 @@ public class CreateCompactionJobs {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
+    private final Supplier<String> jobIdSupplier;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -75,12 +78,23 @@ public class CreateCompactionJobs {
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode) {
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode, () -> UUID.randomUUID().toString());
+    }
+
+    public CreateCompactionJobs(ObjectFactory objectFactory,
+            InstanceProperties instanceProperties,
+            StateStoreProvider stateStoreProvider,
+            JobSender jobSender,
+            CompactionJobStatusStore jobStatusStore,
+            Mode mode,
+            Supplier<String> jobIdSupplier) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
+        this.jobIdSupplier = jobIdSupplier;
     }
 
     public enum Mode {
@@ -112,13 +126,14 @@ public class CreateCompactionJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        compactionStrategy.init(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
+        compactionStrategy.init(instanceProperties, tableProperties, jobFactory);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
-            createJobsFromLeftoverFiles(tableProperties, fileReferencesWithNoJobId, allPartitions, compactionJobs);
+            createJobsFromLeftoverFiles(tableProperties, jobFactory, allPartitions, fileReferencesWithNoJobId, compactionJobs);
         }
         int executionLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_EXECUTION_LIMIT);
         if (compactionJobs.size() > executionLimit) {
@@ -167,8 +182,9 @@ public class CreateCompactionJobs {
     }
 
     private void createJobsFromLeftoverFiles(
-            TableProperties tableProperties, List<FileReference> activeFileReferencesWithNoJobId,
-            List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+            TableProperties tableProperties, CompactionJobFactory factory,
+            List<Partition> allPartitions, List<FileReference> activeFileReferencesWithNoJobId,
+            List<CompactionJob> compactionJobs) {
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
         int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
@@ -187,7 +203,6 @@ public class CreateCompactionJobs {
                 .filter(fileReference -> leafPartitionIds.contains(fileReference.getPartitionId()))
                 .forEach(fileReference -> filesByPartitionId.computeIfAbsent(fileReference.getPartitionId(),
                         (key) -> new ArrayList<>()).add(fileReference));
-        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         for (Map.Entry<String, List<FileReference>> fileByPartitionId : filesByPartitionId.entrySet()) {
             List<FileReference> filesForJob = new ArrayList<>();
             for (FileReference fileReference : fileByPartitionId.getValue()) {

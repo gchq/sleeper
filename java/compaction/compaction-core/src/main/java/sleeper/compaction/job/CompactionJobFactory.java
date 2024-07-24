@@ -55,7 +55,12 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJob(
             List<FileReference> files, String partition) {
-        CompactionJob job = createCompactionJobBuilder(files, partition).build();
+        return createCompactionJob(jobIdSupplier.get(), files, partition);
+    }
+
+    public CompactionJob createCompactionJob(
+            String jobId, List<FileReference> files, String partition) {
+        CompactionJob job = createCompactionJobBuilder(jobId, files, partition).build();
 
         LOGGER.info("Created compaction job of id {} to compact {} files in partition {} to output file {}",
                 job.getId(), files.size(), partition, job.getOutputFile());
@@ -63,7 +68,7 @@ public class CompactionJobFactory {
         return job;
     }
 
-    private CompactionJob.Builder createCompactionJobBuilder(List<FileReference> files, String partition) {
+    private CompactionJob.Builder createCompactionJobBuilder(String jobId, List<FileReference> files, String partition) {
         for (FileReference fileReference : files) {
             if (!partition.equals(fileReference.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
@@ -71,7 +76,6 @@ public class CompactionJobFactory {
             }
         }
 
-        String jobId = jobIdSupplier.get();
         String outputFile = fileNameFactory.jobPartitionFile(jobId, partition);
         return CompactionJob.builder()
                 .tableId(tableId)

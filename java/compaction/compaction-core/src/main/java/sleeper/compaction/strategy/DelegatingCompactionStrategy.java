@@ -57,8 +57,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     }
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         table = tableProperties.getStatus();
