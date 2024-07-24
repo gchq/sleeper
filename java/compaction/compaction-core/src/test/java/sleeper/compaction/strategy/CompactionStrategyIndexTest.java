@@ -132,8 +132,4 @@ public class CompactionStrategyIndexTest {
     private FilesInPartition unassignedFilesInPartition(String partitionId, List<FileReference> unassignedFiles) {
         return new FilesInPartition(tableStatus, partitionId, unassignedFiles, List.of());
     }
-
-    private FilesInPartition assignedFilesInPartition(String partitionId, List<FileReference> assignedFiles) {
-        return new FilesInPartition(tableStatus, partitionId, List.of(), assignedFiles);
-    }
 }
