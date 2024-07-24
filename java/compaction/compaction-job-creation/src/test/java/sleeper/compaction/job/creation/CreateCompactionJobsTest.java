@@ -409,10 +409,6 @@ public class CreateCompactionJobsTest {
         return fileReference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(DEFAULT_UPDATE_TIME).build();
     }
 
-    private void createJobs(CreateCompactionJobs.Mode mode) throws Exception {
-        jobCreator(mode, randomJobIds()).createJobs(tableProperties);
-    }
-
     private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
         jobCreator(mode, jobIdSupplier).createJobs(tableProperties);
     }
