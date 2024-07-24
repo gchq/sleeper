@@ -34,6 +34,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
@@ -62,7 +63,8 @@ public class CompactionTest {
         void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
             // Given
             sleeper.updateTableProperties(Map.of(
-                    COMPACTION_FILES_BATCH_SIZE, "5"));
+                    COMPACTION_FILES_BATCH_SIZE, "5",
+                    COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "false"));
             // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
             RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
             sleeper.ingest().direct(tempDir)
@@ -86,7 +88,8 @@ public class CompactionTest {
             // Given
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
+                    COMPACTION_FILES_BATCH_SIZE, "2",
+                    COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "false"));
             RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
             sleeper.ingest().direct(tempDir)
                     .numberedRecords(numbers.range(0, 25))
@@ -125,7 +128,8 @@ public class CompactionTest {
             // Given a compaction strategy which will always compact two files together
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
+                    COMPACTION_FILES_BATCH_SIZE, "2",
+                    COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "false"));
             // A file which we add to all 4 leaf partitions
             sleeper.sourceFiles().inDataBucket().writeSketches()
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
@@ -153,7 +157,8 @@ public class CompactionTest {
             // Given a compaction strategy which will always compact two files together
             sleeper.updateTableProperties(Map.of(
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
+                    COMPACTION_FILES_BATCH_SIZE, "2",
+                    COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "false"));
             // And a file which we add to the root partition
             sleeper.sourceFiles().inDataBucket().writeSketches()
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
