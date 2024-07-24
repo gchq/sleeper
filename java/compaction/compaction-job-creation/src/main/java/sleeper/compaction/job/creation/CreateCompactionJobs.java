@@ -139,7 +139,7 @@ public class CreateCompactionJobs {
                 .forEach(loopIndex -> {
                     //Randomly select index of element from size of source array
                     int compactionIndexSelected = rand.nextInt(compactionJobs.size());
-                    //Copy job from the old compactation array into the new one and remove the selected on from the reference array 
+                    //Copy job from the old compaction array into the new one and remove the selected on from the reference array
                     //so that it isn't selected again
                     outList.add(compactionJobs.get(compactionIndexSelected));
                     compactionJobs.remove(compactionIndexSelected);
