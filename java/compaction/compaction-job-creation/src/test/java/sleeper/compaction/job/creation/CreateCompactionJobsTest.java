@@ -235,6 +235,82 @@ public class CreateCompactionJobsTest {
     }
 
     @Nested
+    @DisplayName("Limit compaction numbers to single lambda invocation")
+    class CompactionJobLimitationsForInvocation {
+        @Test
+        void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
+
+            //Given normal compaction we set a limit for the execution to be less than the entries present
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+
+            FileReference fileReference1 = factory.rootFile("file1", 200L);
+            stateStore.addFiles(List.of(fileReference1));
+
+            // When we force create jobs
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+
+            assertThat(jobs).satisfiesExactly(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                assertThat(stateStore.getFileReferences())
+                        .containsExactly(
+                                withJobId(fileReference1, job.getId()));
+                verifyJobCreationReported(job);
+            });
+        }
+
+        @Test
+        void shouldCreateJobsWhereLimitIsExceededButAllFilesNotCompacted() throws Exception {
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
+            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "100");
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+            // Given
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "ddd")
+                    .buildList());
+            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+            FileReference fileReference1 = factory.partitionFile("B", "file1", 200L);
+            FileReference fileReference2 = factory.partitionFile("B", "file2", 200L);
+            FileReference fileReference3 = factory.partitionFile("C", "file3", 200L);
+            FileReference fileReference4 = factory.partitionFile("C", "file4", 200L);
+            stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+
+            // When
+            createJobs(Mode.STRATEGY);
+
+            //Random for selection of tasks with a forced seed for repeatability
+            //Random rand = new Random(0);
+
+            //Then
+            assertThat(jobs).satisfiesExactly(job -> {
+                assertThat(job).isEqualTo(CompactionJob.builder()
+                        .jobId(job.getId())
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .inputFiles(List.of("file1"))
+                        .outputFile(job.getOutputFile())
+                        .partitionId("root")
+                        .build());
+                assertThat(stateStore.getFileReferences())
+                        .containsExactly(
+                                withJobId(fileReference1, job.getId()));
+                verifyJobCreationReported(job);
+            });
+        }
+    }
+
+    @Nested
     @DisplayName("Compact all files")
     class CompactAllFiles {
 
@@ -298,37 +374,6 @@ public class CreateCompactionJobsTest {
                         .inputFiles(List.of("file1"))
                         .outputFile(job.getOutputFile())
                         .partitionId("L")
-                        .build());
-                assertThat(stateStore.getFileReferences())
-                        .containsExactly(
-                                withJobId(fileReference1, job.getId()));
-                verifyJobCreationReported(job);
-            });
-        }
-
-        @Test
-        void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
-
-            //Given normal compactation we set a limit for the execution to be less than the entries present
-            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
-            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-
-            FileReference fileReference1 = factory.rootFile("file1", 200L);
-            stateStore.addFiles(List.of(fileReference1));
-
-            // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-
-            assertThat(jobs).satisfiesExactly(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("root")
                         .build());
                 assertThat(stateStore.getFileReferences())
                         .containsExactly(
