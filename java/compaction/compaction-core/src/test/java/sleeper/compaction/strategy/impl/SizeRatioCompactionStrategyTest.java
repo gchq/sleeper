@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -70,15 +71,15 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
+        CompactionJobFactory jobFactory = fixJobIds(List.of("job1"));
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
-                jobWithFiles(compactionJobs.get(0), List.of(
-                        "file-0", "file-1", "file-2", "file-3", "file-4", "file-5", "file-6", "file-7")));
+                jobFactory.createCompactionJob("job1", fileReferences, "root"));
     }
 
     @Test
@@ -94,7 +95,8 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, fixJobIds(List.of("job1")),
+                fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -117,7 +119,8 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, List.of(fileReference), partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, fixJobIds(List.of("job1")),
+                List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -134,15 +137,15 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
+        CompactionJobFactory jobFactory = fixJobIds(List.of("job1"));
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fileReferences, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
-                jobWithFiles(compactionJobs.get(0), List.of(
-                        "file-0", "file-1", "file-2", "file-3", "file-4")));
+                jobFactory.createCompactionJob("job1", fileReferences, "root"));
     }
 
     @Test
@@ -155,26 +158,40 @@ public class SizeRatioCompactionStrategyTest {
         //  - Second batch that meet criteria
         //  - 90, 90, 90, 90, 100
         //  - Collectively they all meet the criteria as well
-        List<FileReference> shuffledFiles = List.of(
-                fileReferenceFactory.rootFile("B1", 90),
+        List<FileReference> firstBatch = List.of(
                 fileReferenceFactory.rootFile("A1", 9),
                 fileReferenceFactory.rootFile("A2", 9),
-                fileReferenceFactory.rootFile("B5", 100),
+                fileReferenceFactory.rootFile("A3", 9),
+                fileReferenceFactory.rootFile("A4", 9),
+                fileReferenceFactory.rootFile("A5", 10));
+        List<FileReference> secondBatch = List.of(
+                fileReferenceFactory.rootFile("B1", 90),
                 fileReferenceFactory.rootFile("B2", 90),
                 fileReferenceFactory.rootFile("B3", 90),
-                fileReferenceFactory.rootFile("A3", 9),
-                fileReferenceFactory.rootFile("A5", 10),
                 fileReferenceFactory.rootFile("B4", 90),
-                fileReferenceFactory.rootFile("A4", 9));
+                fileReferenceFactory.rootFile("B5", 100));
+
+        List<FileReference> shuffledFiles = List.of(
+                secondBatch.get(0),
+                firstBatch.get(0),
+                firstBatch.get(1),
+                secondBatch.get(4),
+                secondBatch.get(1),
+                secondBatch.get(2),
+                firstBatch.get(2),
+                firstBatch.get(4),
+                secondBatch.get(3),
+                firstBatch.get(3));
+        CompactionJobFactory jobFactory = fixJobIds(List.of("job1", "job2"));
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactory, shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(jobs).hasSize(2);
-        assertThat(jobs.get(0)).isEqualTo(jobWithFiles(jobs.get(0), List.of("A1", "A2", "A3", "A4", "A5")));
-        assertThat(jobs.get(1)).isEqualTo(jobWithFiles(jobs.get(1), List.of("B1", "B2", "B3", "B4", "B5")));
+        assertThat(jobs).containsExactly(
+                jobFactory.createCompactionJob("job1", firstBatch, "root"),
+                jobFactory.createCompactionJob("job2", secondBatch, "root"));
     }
 
     @Test
@@ -190,41 +207,50 @@ public class SizeRatioCompactionStrategyTest {
         //  - Third batch that meets criteria and is smaller than batch size
         //  - 200, 200, 200
         //  - Collectively they all meet the criteria as well
-        List<FileReference> shuffledFiles = List.of(
-                fileReferenceFactory.rootFile("B1", 90),
+        List<FileReference> firstBatch = List.of(
                 fileReferenceFactory.rootFile("A1", 9),
-                fileReferenceFactory.rootFile("C1", 200),
                 fileReferenceFactory.rootFile("A2", 9),
-                fileReferenceFactory.rootFile("B5", 100),
+                fileReferenceFactory.rootFile("A3", 9),
+                fileReferenceFactory.rootFile("A4", 9),
+                fileReferenceFactory.rootFile("A5", 10));
+        List<FileReference> secondBatch = List.of(
+                fileReferenceFactory.rootFile("B1", 90),
                 fileReferenceFactory.rootFile("B2", 90),
                 fileReferenceFactory.rootFile("B3", 90),
-                fileReferenceFactory.rootFile("A3", 9),
-                fileReferenceFactory.rootFile("A5", 10),
-                fileReferenceFactory.rootFile("C2", 200),
                 fileReferenceFactory.rootFile("B4", 90),
-                fileReferenceFactory.rootFile("C3", 200),
-                fileReferenceFactory.rootFile("A4", 9));
+                fileReferenceFactory.rootFile("B5", 100));
+        List<FileReference> thirdBatch = List.of(
+                fileReferenceFactory.rootFile("C1", 200),
+                fileReferenceFactory.rootFile("C2", 200),
+                fileReferenceFactory.rootFile("C3", 200));
+        List<FileReference> shuffledFiles = List.of(
+                secondBatch.get(0),
+                firstBatch.get(0),
+                thirdBatch.get(0),
+                firstBatch.get(1),
+                secondBatch.get(4),
+                secondBatch.get(1),
+                secondBatch.get(2),
+                firstBatch.get(2),
+                firstBatch.get(4),
+                thirdBatch.get(1),
+                secondBatch.get(3),
+                thirdBatch.get(2),
+                firstBatch.get(3));
+        CompactionJobFactory jobFactory = fixJobIds(List.of("job1", "job2", "job3"));
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, shuffledFiles, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactory, shuffledFiles, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(jobs).hasSize(3);
-        assertThat(jobs.get(0)).isEqualTo(jobWithFiles(jobs.get(0), List.of("A1", "A2", "A3", "A4", "A5")));
-        assertThat(jobs.get(1)).isEqualTo(jobWithFiles(jobs.get(1), List.of("B1", "B2", "B3", "B4", "B5")));
-        assertThat(jobs.get(2)).isEqualTo(jobWithFiles(jobs.get(2), List.of("C1", "C2", "C3")));
+        assertThat(jobs).containsExactly(
+                jobFactory.createCompactionJob("job1", firstBatch, "root"),
+                jobFactory.createCompactionJob("job2", secondBatch, "root"),
+                jobFactory.createCompactionJob("job3", thirdBatch, "root"));
     }
 
-    private CompactionJob jobWithFiles(CompactionJob job, List<String> files) {
-        return CompactionJob.builder()
-                .tableId("table-id")
-                .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("root")
-                .inputFiles(files)
-                .outputFile("file://databucket/table-id/data/partition_root/" + job.getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null)
-                .build();
+    private CompactionJobFactory fixJobIds(List<String> jobIds) {
+        return new CompactionJobFactory(instanceProperties, tableProperties, jobIds.iterator()::next);
     }
 }
