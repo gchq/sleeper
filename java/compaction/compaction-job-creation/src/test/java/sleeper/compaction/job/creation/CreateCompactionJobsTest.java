@@ -134,9 +134,14 @@ public class CreateCompactionJobsTest {
                         .build());
             });
         }
+    }
+
+    @Nested
+    @DisplayName("Handle files split into multiple references")
+    class HandleSplitFileReferences {
 
         @Test
-        public void shouldCreateCompactionJobAfterPreSplittingFiles() throws Exception {
+        public void shouldPreSplitFilesOneLevelDownPartitionTreeBeforeCreatingCompactionJobs() throws Exception {
             // Given
             tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema)
@@ -149,7 +154,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            createJobs(Mode.STRATEGY);
+            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
@@ -160,10 +165,6 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("B")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(referenceForChildPartition(fileReference1, "B"), job.getId()),
-                                withJobId(referenceForChildPartition(fileReference2, "B"), job.getId()));
             }, job -> {
                 assertThat(job).isEqualTo(CompactionJob.builder()
                         .jobId(job.getId())
@@ -172,11 +173,12 @@ public class CreateCompactionJobsTest {
                         .outputFile(job.getOutputFile())
                         .partitionId("C")
                         .build());
-                assertThat(stateStore.getFileReferences())
-                        .contains(
-                                withJobId(referenceForChildPartition(fileReference1, "C"), job.getId()),
-                                withJobId(referenceForChildPartition(fileReference2, "C"), job.getId()));
             });
+            assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId(referenceForChildPartition(fileReference1, "B"), "partition-b-job"),
+                    withJobId(referenceForChildPartition(fileReference2, "B"), "partition-b-job"),
+                    withJobId(referenceForChildPartition(fileReference1, "C"), "partition-c-job"),
+                    withJobId(referenceForChildPartition(fileReference2, "C"), "partition-c-job"));
         }
 
         @Test
@@ -195,7 +197,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftReference, rightReference));
 
             // When
-            createJobs(Mode.STRATEGY);
+            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
@@ -215,6 +217,9 @@ public class CreateCompactionJobsTest {
                         .partitionId("C")
                         .build());
             });
+            assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId(leftReference, "partition-b-job"),
+                    withJobId(rightReference, "partition-c-job"));
         }
     }
 
