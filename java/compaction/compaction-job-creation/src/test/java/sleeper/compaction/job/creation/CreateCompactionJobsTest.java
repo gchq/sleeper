@@ -40,6 +40,7 @@ import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -209,11 +210,12 @@ public class CreateCompactionJobsTest {
     class CompactionJobLimitationsForInvocation {
         @Test
         void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
-
             // Given normal compaction we set a limit for the execution to be less than the entries present
+            Random rand = new Random(0);
+
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
+            instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "2");
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "bbb")
@@ -227,13 +229,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"));
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
 
             // Then
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
                     jobFactory.createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
-                    jobFactory.createCompactionJob("partition-LL-job", List.of(fileReference2), "LL"),
                     jobFactory.createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
         }
 
@@ -440,15 +441,19 @@ public class CreateCompactionJobsTest {
         }
     }
 
-    private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
-        jobCreator(mode, jobIdSupplier).createJobs(tableProperties);
+    private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
+        jobCreator(mode, jobIdSupplier, random).createJobs(tableProperties);
     }
 
-    private CreateCompactionJobs jobCreator(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
+    private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
+        jobCreator(mode, jobIdSupplier, new Random()).createJobs(tableProperties);
+    }
+
+    private CreateCompactionJobs jobCreator(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode, jobIdSupplier);
+                jobs::add, jobStatusStore, mode, jobIdSupplier, random);
     }
 
     private Supplier<String> fixJobIds(String... jobIds) {

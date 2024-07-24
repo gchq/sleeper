@@ -71,6 +71,7 @@ public class CreateCompactionJobs {
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
     private final Supplier<String> jobIdSupplier;
+    private final Random random;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -78,7 +79,7 @@ public class CreateCompactionJobs {
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode) {
-        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode, () -> UUID.randomUUID().toString());
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode, () -> UUID.randomUUID().toString(), new Random());
     }
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
@@ -87,7 +88,8 @@ public class CreateCompactionJobs {
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
-            Supplier<String> jobIdSupplier) {
+            Supplier<String> jobIdSupplier,
+            Random random) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
@@ -95,6 +97,7 @@ public class CreateCompactionJobs {
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
         this.jobIdSupplier = jobIdSupplier;
+        this.random = random;
     }
 
     public enum Mode {
@@ -147,13 +150,12 @@ public class CreateCompactionJobs {
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToExecutionLimit(List<CompactionJob> compactionJobs, int executionLimit) {
-        Random rand = new Random();
         List<CompactionJob> outList = new ArrayList<CompactionJob>();
 
         IntStream.range(0, executionLimit)
                 .forEach(loopIndex -> {
                     //Randomly select index of element from size of source array
-                    int compactionIndexSelected = rand.nextInt(compactionJobs.size());
+                    int compactionIndexSelected = random.nextInt(compactionJobs.size());
                     //Copy job from the old compaction array into the new one and remove the selected on from the reference array
                     //so that it isn't selected again
                     outList.add(compactionJobs.get(compactionIndexSelected));
