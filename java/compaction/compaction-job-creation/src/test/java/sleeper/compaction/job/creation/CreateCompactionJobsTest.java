@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
@@ -83,18 +82,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(fileReferences);
 
             // When
-            createJobs(Mode.STRATEGY);
+            createJobs(Mode.STRATEGY, fixJobIds("test-job"));
 
             // Then
-            assertThat(jobs).singleElement().satisfies(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1", "file2", "file3", "file4"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("root")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", fileReferences, "root"));
         }
 
         @Test
@@ -113,26 +106,13 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
-            createJobs(Mode.STRATEGY);
+            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1", "file2"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("B")
-                        .build());
-            }, job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file3", "file4"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("C")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("partition-b-job", List.of(fileReference1, fileReference2), "B"),
+                    jobFactory.createCompactionJob("partition-c-job", List.of(fileReference3, fileReference4), "C"));
         }
     }
 
@@ -157,23 +137,10 @@ public class CreateCompactionJobsTest {
             createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1", "file2"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("B")
-                        .build());
-            }, job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1", "file2"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("C")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file1", "file2"), "B"),
+                    jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file1", "file2"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId(referenceForChildPartition(fileReference1, "B"), "partition-b-job"),
                     withJobId(referenceForChildPartition(fileReference2, "B"), "partition-b-job"),
@@ -200,23 +167,10 @@ public class CreateCompactionJobsTest {
             createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of(leftReference.getFilename()))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("B")
-                        .build());
-            }, job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of(rightReference.getFilename()))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("C")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file"), "B"),
+                    jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId(leftReference, "partition-b-job"),
                     withJobId(rightReference, "partition-c-job"));
@@ -229,7 +183,7 @@ public class CreateCompactionJobsTest {
         @Test
         void shouldCreateJobsLimitedDownToExecutionLimitWhenTheCompactionJobsExceedTheValue() throws Exception {
 
-            //Given normal compaction we set a limit for the execution to be less than the entries present
+            // Given normal compaction we set a limit for the execution to be less than the entries present
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
             instanceProperties.set(COMPACTION_JOB_EXECUTION_LIMIT, "150");
@@ -240,17 +194,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
-            assertThat(jobs).satisfiesExactly(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("root")
-                        .build());
-            });
+            // Then
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", List.of(fileReference1), "root"));
         }
 
         @Test
@@ -274,21 +223,15 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
-            createJobs(Mode.STRATEGY);
+            createJobs(Mode.STRATEGY, fixJobIds("test-job"));
 
             //Random for selection of tasks with a forced seed for repeatability
             //Random rand = new Random(0);
 
             //Then
-            assertThat(jobs).satisfiesExactly(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("root")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", List.of(fileReference1, fileReference2), "B"));
         }
     }
 
@@ -310,18 +253,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-            assertThat(jobs).satisfiesExactly(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1", "file2"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("root")
-                        .build());
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", List.of(fileReference1, fileReference2), "root"));
         }
 
         @Test
@@ -341,19 +278,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFile(fileReference1);
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-            assertThat(jobs).satisfiesExactly(job -> {
-                assertThat(job).isEqualTo(CompactionJob.builder()
-                        .jobId(job.getId())
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("file1"))
-                        .outputFile(job.getOutputFile())
-                        .partitionId("L")
-                        .build());
-
-            });
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", List.of(fileReference1), "L"));
         }
     }
 
@@ -473,12 +403,6 @@ public class CreateCompactionJobsTest {
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),
                     jobCreated(leftJob, DEFAULT_UPDATE_TIME));
         }
-    }
-
-    private List<FileReference> withJobIds(List<FileReference> fileReferences, String jobId) {
-        return fileReferences.stream()
-                .map(reference -> withJobId(reference, jobId))
-                .collect(Collectors.toList());
     }
 
     private FileReference withJobId(FileReference fileReference, String jobId) {
