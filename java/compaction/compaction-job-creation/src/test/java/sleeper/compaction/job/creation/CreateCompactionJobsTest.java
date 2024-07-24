@@ -380,7 +380,7 @@ public class CreateCompactionJobsTest {
     }
 
     @Nested
-    @DisplayName("Assign Input Files To Job in State Store")
+    @DisplayName("Assign input files to job in state store")
     class AssignInputFiles {
 
         @Test
@@ -400,9 +400,8 @@ public class CreateCompactionJobsTest {
 
             // Then
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            CompactionJob testJob = jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
-
-            assertThat(jobs).containsExactly(testJob);
+            assertThat(jobs).containsExactly(
+                    jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1"));
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
                             withJobId(fileOne, "test-job"),
@@ -429,13 +428,13 @@ public class CreateCompactionJobsTest {
             jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
 
             // When we create compaction jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("right-job", "left-job"));
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
-            assertThat(jobs).containsExactly(rightJob, leftJob);
+            assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),
                     jobCreated(leftJob, DEFAULT_UPDATE_TIME));
@@ -458,13 +457,13 @@ public class CreateCompactionJobsTest {
             jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
 
             // When we create compaction jobs
-            createJobs(Mode.STRATEGY, fixJobIds("right-job", "left-job"));
+            createJobs(Mode.STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
-            assertThat(jobs).containsExactly(rightJob, leftJob);
+            assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),
                     jobCreated(leftJob, DEFAULT_UPDATE_TIME));

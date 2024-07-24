@@ -203,21 +203,25 @@ public class CreateCompactionJobs {
                 .filter(fileReference -> leafPartitionIds.contains(fileReference.getPartitionId()))
                 .forEach(fileReference -> filesByPartitionId.computeIfAbsent(fileReference.getPartitionId(),
                         (key) -> new ArrayList<>()).add(fileReference));
-        for (Map.Entry<String, List<FileReference>> fileByPartitionId : filesByPartitionId.entrySet()) {
+        for (Partition partition : allPartitions) {
+            List<FileReference> partitionFiles = filesByPartitionId.get(partition.getId());
+            if (partitionFiles == null) {
+                continue;
+            }
             List<FileReference> filesForJob = new ArrayList<>();
-            for (FileReference fileReference : fileByPartitionId.getValue()) {
+            for (FileReference fileReference : partitionFiles) {
                 filesForJob.add(fileReference);
                 if (filesForJob.size() >= batchSize) {
                     LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                            filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
-                    compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+                            filesForJob.size(), partition.getId(), tableProperties.get(TABLE_NAME));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
                     filesForJob.clear();
                 }
             }
             if (!filesForJob.isEmpty()) {
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), fileByPartitionId.getKey(), tableProperties.get(TABLE_NAME));
-                compactionJobs.add(factory.createCompactionJob(filesForJob, fileByPartitionId.getKey()));
+                        filesForJob.size(), partition.getId(), tableProperties.get(TABLE_NAME));
+                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
             }
         }
         LOGGER.info("Created {} jobs from {} leftover files for table {}",

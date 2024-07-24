@@ -28,9 +28,7 @@ import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,19 +68,11 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
                 .map(FileReference::getPartitionId)
                 .collect(Collectors.toSet());
 
-        // Get map from partition id to partition
-        Map<String, Partition> partitionIdToPartition = new HashMap<>();
-        for (Partition partition : allPartitions) {
-            partitionIdToPartition.put(partition.getId(), partition);
-        }
-
         // Loop through partitions for the active files with no job id
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        for (String partitionId : partitionIds) {
-            Partition partition = partitionIdToPartition.get(partitionId);
-            if (null == partition) {
-                throw new RuntimeException("Cannot find partition for partition id "
-                        + partitionId + " in table " + table);
+        for (Partition partition : allPartitions) {
+            if (!partitionIds.contains(partition.getId())) {
+                continue;
             }
 
             if (partition.isLeafPartition()) {
