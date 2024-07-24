@@ -50,8 +50,9 @@ public class CompactionStrategyIndex {
                     }
                 });
         this.filesInLeafPartitions = leafPartitionIds.stream()
+                .filter(filesWithNoJobIdByPartition::containsKey)
                 .map(partition -> new FilesInPartition(tableStatus, partition,
-                        filesWithNoJobIdByPartition.getOrDefault(partition, new FilesInAscendingOrder()).values(),
+                        filesWithNoJobIdByPartition.get(partition).values(),
                         filesWithJobIdByPartition.getOrDefault(partition, List.of())))
                 .collect(Collectors.toList());
     }

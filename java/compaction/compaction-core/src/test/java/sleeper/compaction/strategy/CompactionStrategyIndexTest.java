@@ -30,7 +30,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 
 public class CompactionStrategyIndexTest {
     private final TableStatus tableStatus = TableStatus.uniqueIdAndName("test-table-id", "test-table", true);
@@ -100,53 +99,8 @@ public class CompactionStrategyIndexTest {
         }
     }
 
-    @Nested
-    @DisplayName("Assigned files")
-    class AssignedFiles {
-        @Test
-        void shouldIndexOneLeafPartitionWithMultipleFiles() {
-            // Given
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .rootFirst("root");
-            FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
-            FileReference file1 = withJobId("job1", factory.rootFile("file1.parquet", 123L));
-            FileReference file2 = withJobId("job2", factory.rootFile("file2.parquet", 456L));
-            FileReference file3 = withJobId("job3", factory.rootFile("file3.parquet", 789L));
-            List<FileReference> allFileReferences = List.of(file1, file2, file3);
-
-            // When
-            CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, allFileReferences, partitionsBuilder.buildList());
-
-            // Then
-            assertThat(index.getFilesInLeafPartitions())
-                    .containsExactly(assignedFilesInPartition("root", List.of(file1, file2, file3)));
-        }
-
-        @Test
-        void shouldIndexMultipleLeafPartitionsWithMultipleFiles() {
-            // Given
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 123L);
-            FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
-            FileReference file1 = withJobId("job1", factory.partitionFile("L", "file1.parquet", 120L));
-            FileReference file2 = withJobId("job2", factory.partitionFile("R", "file2.parquet", 456L));
-            FileReference file3 = withJobId("job3", factory.partitionFile("R", "file3.parquet", 789L));
-            List<FileReference> allFileReferences = List.of(file1, file2, file3);
-
-            // When
-            CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, allFileReferences, partitionsBuilder.buildList());
-
-            // Then
-            assertThat(index.getFilesInLeafPartitions())
-                    .containsExactlyInAnyOrder(
-                            assignedFilesInPartition("L", List.of(file1)),
-                            assignedFilesInPartition("R", List.of(file2, file3)));
-        }
-    }
-
     @Test
-    void shouldIndexOneLeafPartitionWithNoFiles() {
+    void shouldIgnoreLeafPartitionsWithNoFiles() {
         // Given
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                 .rootFirst("root");
@@ -155,8 +109,7 @@ public class CompactionStrategyIndexTest {
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, List.of(), partitionsBuilder.buildList());
 
         // Then
-        assertThat(index.getFilesInLeafPartitions())
-                .containsExactly(new FilesInPartition(tableStatus, "root", List.of(), List.of()));
+        assertThat(index.getFilesInLeafPartitions()).isEmpty();
     }
 
     @Test
@@ -173,10 +126,7 @@ public class CompactionStrategyIndexTest {
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, allFileReferences, partitionsBuilder.buildList());
 
         // Then
-        assertThat(index.getFilesInLeafPartitions())
-                .containsExactlyInAnyOrder(
-                        new FilesInPartition(tableStatus, "L", List.of(), List.of()),
-                        new FilesInPartition(tableStatus, "R", List.of(), List.of()));
+        assertThat(index.getFilesInLeafPartitions()).isEmpty();
     }
 
     private FilesInPartition unassignedFilesInPartition(String partitionId, List<FileReference> unassignedFiles) {
