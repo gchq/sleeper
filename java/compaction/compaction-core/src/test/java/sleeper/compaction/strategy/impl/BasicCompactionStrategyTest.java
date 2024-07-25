@@ -29,6 +29,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -95,8 +96,10 @@ public class BasicCompactionStrategyTest {
         for (int i = 0; i < 100; i++) {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
             fileReferences.add(fileReference);
-            filesInAscendingOrder.add(0, fileReference);
+            filesInAscendingOrder.add(fileReference);
         }
+        // We add files in descending order of size, so need to reverse the list afterwards
+        Collections.reverse(filesInAscendingOrder);
         CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
