@@ -10,6 +10,6 @@ target_link_system_libraries(
   spdlog::spdlog
   lefticus::tools
   gpu_compact::sample_library)
-target_link_libraries(intro PRIVATE grpc++)
+target_link_libraries(intro PRIVATE grpc::grpc)
 
 target_include_directories(intro PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")

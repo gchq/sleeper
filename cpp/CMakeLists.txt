@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.28)
+
+# Enable CMake policy from latest current version
+if(${CMAKE_VERSION} VERSION_LESS 3.12)
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+endif()
 
 # This template attempts to be "fetch_content"-able
 # so that it works well with tools like CPM or other
@@ -57,7 +62,7 @@ add_library(gpu_compact::gpu_compact_warnings ALIAS gpu_compact_warnings)
 add_subdirectory(configured_files)
 
 # Adding the src:
-# add_subdirectory(src)
+add_subdirectory(src)
 
 # Don't even look at tests if we're not top level
 if(NOT PROJECT_IS_TOP_LEVEL)
@@ -67,19 +72,19 @@ endif()
 # Adding the tests:
 include(CTest)
 
-# if(BUILD_TESTING)
-#   message(AUTHOR_WARNING "Building Tests. Be sure to check out test/constexpr_tests.cpp for constexpr testing")
-#   add_subdirectory(test)
-# endif()
+if(BUILD_TESTING)
+  message(AUTHOR_WARNING "Building Tests. Be sure to check out test/constexpr_tests.cpp for constexpr testing")
+  add_subdirectory(test)
+endif()
 
-# if(gpu_compact_BUILD_FUZZ_TESTS)
-#   message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
-#   if(NOT gpu_compact_ENABLE_ADDRESS_SANITIZER AND NOT gpu_compact_ENABLE_THREAD_SANITIZER)
-#     message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
-#   endif()
-#   add_subdirectory(fuzz_test)
+if(gpu_compact_BUILD_FUZZ_TESTS)
+  message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
+  if(NOT gpu_compact_ENABLE_ADDRESS_SANITIZER AND NOT gpu_compact_ENABLE_THREAD_SANITIZER)
+    message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
+  endif()
+  add_subdirectory(fuzz_test)
 
-# endif()
+endif()
 
 # If MSVC is being used, and ASAN is enabled, we need to set the debugger environment
 # so that it behaves well with MSVC's debugger, and we can run the target from visual studio
@@ -100,14 +105,14 @@ include(cmake/PackageProject.cmake)
 
 # Add other targets that you want installed here, by default we just package the one executable
 # we know we want to ship
-# gpu_compact_package_project(
-#   TARGETS
-#   intro
-#   gpu_compact_options
-#   gpu_compact_warnings
-#   # FIXME: this does not work! CK
-#   # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
-# )
+gpu_compact_package_project(
+  TARGETS
+  intro
+  gpu_compact_options
+  gpu_compact_warnings
+  # FIXME: this does not work! CK
+  # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
+)
 
 # Experience shows that explicit package naming can help make it easier to sort
 # out potential ABI related issues before they start, while helping you

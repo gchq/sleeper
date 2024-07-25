@@ -19,13 +19,13 @@ if(grpc_INCLUDES AND grpc_LIBRARIES)
 endif(grpc_INCLUDES AND grpc_LIBRARIES)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(PC_grpc REQUIRED grpc++>=1.31.0)
+pkg_check_modules(PC_grpc REQUIRED grpc++>=1.30.2)
 
 find_path(
   grpc_INCLUDE_DIR
   NAMES grpcpp.h
   PATHS ${PC_grpc_INCLUDE_DIRS}
-  PATH_SUFFIXES grpc REQUIRED)
+  PATH_SUFFIXES grpcpp REQUIRED)
 find_library(
   grpc_LIBRARY
   NAMES grpc++
