@@ -22,8 +22,6 @@ if [ "$#" -lt 1 ]; then
 fi
 
 HOME_IN_IMAGE=/root
-VERSION="latest"
-GIT_REF="develop"
 REMOTE_TAG="latest"
 
 run_in_docker() {
@@ -91,9 +89,9 @@ upgrade_cli() {
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images "$VERSION"
+  "$TEMP_PATH" cli pull-images latest
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
@@ -107,7 +105,7 @@ upgrade_cli() {
 
 pull_and_tag() {
   IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
   LOCAL_IMAGE="$IMAGE_NAME:current"
 
   docker pull "$REMOTE_IMAGE"
