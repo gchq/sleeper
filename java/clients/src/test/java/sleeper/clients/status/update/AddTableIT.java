@@ -29,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -110,6 +111,17 @@ public class AddTableIT {
         // When / Then
         assertThatThrownBy(() -> addTable(tableProperties))
                 .isInstanceOf(TableAlreadyExistsException.class);
+    }
+
+    @Test
+    void shouldFailToAddTableIfNameNotSet() throws Exception {
+        // Given
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.unset(TABLE_NAME);
+
+        // When / Then
+        assertThatThrownBy(() -> addTable(tableProperties))
+                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     @Test

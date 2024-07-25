@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.utility.DockerImageName;
@@ -27,9 +25,7 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
-public class LocalStackSystemTestExtension extends SleeperSystemTestExtension implements AfterAllCallback {
-
-    private final LocalStackContainer container;
+public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
     public LocalStackSystemTestExtension() {
         this(startContainer());
@@ -37,12 +33,6 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension im
 
     private LocalStackSystemTestExtension(LocalStackContainer container) {
         super(setupContext(container));
-        this.container = container;
-    }
-
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        container.close();
     }
 
     @SuppressWarnings("resource") // Will be closed by extension

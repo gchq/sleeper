@@ -23,22 +23,21 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.eclipse.jetty.io.RuntimeIOException;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
+import sleeper.clients.status.update.AddTable;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -117,13 +116,10 @@ public class DeployDockerInstance {
         instanceProperties.saveToS3(s3Client);
 
         for (TableProperties tableProperties : tables) {
-            S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
             try {
-                StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, configuration)
-                        .getStateStore(tableProperties);
-                stateStore.initialise();
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
+                new AddTable(s3Client, dynamoDB, instanceProperties, tableProperties, configuration).run();
+            } catch (IOException e) {
+                throw new RuntimeIOException(e);
             }
         }
 

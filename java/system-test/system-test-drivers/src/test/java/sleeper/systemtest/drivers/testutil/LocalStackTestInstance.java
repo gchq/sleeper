@@ -24,6 +24,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
+import java.util.function.Consumer;
+
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
@@ -45,8 +47,22 @@ public class LocalStackTestInstance {
             .build();
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", LocalStackTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdftbl", LocalStackTestInstance::buildPredefinedTableConfiguration);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdftnn", LocalStackTestInstance::buildPredefinedTableConfigurationNoName);
 
     private static DeployInstanceConfiguration buildMainConfiguration() {
+        return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "system-test"));
+    }
+
+    private static DeployInstanceConfiguration buildPredefinedTableConfiguration() {
+        return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "predefined-test-table"));
+    }
+
+    private static DeployInstanceConfiguration buildPredefinedTableConfigurationNoName() {
+        return buildConfigurationWithTableProperties(properties -> properties.unset(TABLE_NAME));
+    }
+
+    private static DeployInstanceConfiguration buildConfigurationWithTableProperties(Consumer<TableProperties> setTableProperties) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
@@ -54,7 +70,8 @@ public class LocalStackTestInstance {
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(DEFAULT_SCHEMA);
-        tableProperties.set(TABLE_NAME, "system-test");
+        setTableProperties.accept(tableProperties);
+
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)
