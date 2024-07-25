@@ -76,7 +76,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
                 // Create job for these files if they meet criteria
                 List<Long> fileSizes = filesForJob.stream().map(FileReference::getNumberOfRecords).collect(Collectors.toList());
                 if (meetsCriteria(fileSizes)) {
-                    LOGGER.debug("Creating a job to compact {} files in partition {}", filesForJob.size(), filesInPartition.getPartitionId());
+                    LOGGER.info("Creating a job to compact {} files in partition {}", filesForJob.size(), filesInPartition.getPartitionId());
                     compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                     filesForJob.clear();
                     position += j;

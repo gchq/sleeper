@@ -29,7 +29,6 @@ import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -77,10 +76,13 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     private List<CompactionJob> createJobsForLeafPartition(FilesInPartition filesInPartition) {
         long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(filesInPartition);
         if (maxNumberOfJobsToCreate < 1) {
-            return Collections.emptyList();
+            return List.of();
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(filesInPartition);
+        if (jobs.isEmpty()) {
+            return List.of();
+        }
         LOGGER.info("Defined {} compaction job{} for partition {}, table {}",
                 jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         jobs = jobs.subList(0, (int) Math.min(jobs.size(), maxNumberOfJobsToCreate));
