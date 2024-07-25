@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.22)
 
 # Enable CMake policy from latest current version
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
