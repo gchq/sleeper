@@ -34,11 +34,11 @@ public class HadoopConfigurationLocalStackUtils {
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
         Configuration configuration = new Configuration();
-        configure(configuration, container);
+        configureHadoop(configuration, container);
         return configuration;
     }
 
-    public static void configure(Configuration configuration, LocalStackContainer container) {
+    public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(HadoopConfigurationLocalStackUtils.class.getClassLoader());
         configuration.set("fs.s3a.endpoint", container.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");

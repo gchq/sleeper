@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
@@ -64,6 +65,7 @@ public class SystemTestClients {
     private final AwsRegionProvider regionProvider;
     private final AmazonS3 s3;
     private final S3Client s3V2;
+    private final S3AsyncClient s3Async;
     private final AmazonDynamoDB dynamoDB;
     private final AWSSecurityTokenService sts;
     private final StsClient stsV2;
@@ -85,6 +87,7 @@ public class SystemTestClients {
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
         s3V2 = builder.s3V2;
+        s3Async = builder.s3Async;
         dynamoDB = builder.dynamoDB;
         sts = builder.sts;
         stsV2 = builder.stsV2;
@@ -112,6 +115,7 @@ public class SystemTestClients {
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(AmazonS3ClientBuilder.defaultClient())
                 .s3V2(S3Client.create())
+                .s3Async(S3AsyncClient.create())
                 .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
                 .sts(AWSSecurityTokenServiceClientBuilder.defaultClient())
                 .stsV2(StsClient.create())
@@ -139,6 +143,7 @@ public class SystemTestClients {
                 .regionProvider(regionProvider)
                 .s3(v1.buildClient(AmazonS3ClientBuilder.standard()))
                 .s3V2(v2.buildClient(S3Client.builder()))
+                .s3Async(v2.buildClient(S3AsyncClient.builder()))
                 .dynamoDB(v1.buildClient(AmazonDynamoDBClientBuilder.standard()))
                 .sts(v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard()))
                 .stsV2(v2.buildClient(StsClient.builder()))
@@ -163,6 +168,10 @@ public class SystemTestClients {
 
     public S3Client getS3V2() {
         return s3V2;
+    }
+
+    public S3AsyncClient getS3Async() {
+        return s3Async;
     }
 
     public AmazonDynamoDB getDynamoDB() {
@@ -242,6 +251,7 @@ public class SystemTestClients {
         private AwsRegionProvider regionProvider;
         private AmazonS3 s3;
         private S3Client s3V2;
+        private S3AsyncClient s3Async;
         private AmazonDynamoDB dynamoDB;
         private AWSSecurityTokenService sts;
         private StsClient stsV2;
@@ -274,6 +284,11 @@ public class SystemTestClients {
 
         public Builder s3V2(S3Client s3V2) {
             this.s3V2 = s3V2;
+            return this;
+        }
+
+        public Builder s3Async(S3AsyncClient s3Async) {
+            this.s3Async = s3Async;
             return this;
         }
 

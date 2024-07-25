@@ -125,7 +125,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
-        return new AwsDirectIngestDriver(context.instance());
+        return new AwsDirectIngestDriver(context.instance(), clients);
     }
 
     @Override

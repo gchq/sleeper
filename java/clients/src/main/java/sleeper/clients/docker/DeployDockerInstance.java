@@ -39,17 +39,22 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
@@ -96,39 +101,48 @@ public class DeployDockerInstance {
     }
 
     public void deploy(String instanceId) {
-        InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
+        InstanceProperties instanceProperties = PopulateInstanceProperties.populateDefaultsFromInstanceId(
+                new InstanceProperties(), instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
         extraTableProperties.accept(tableProperties);
+        deploy(instanceProperties, List.of(tableProperties));
+    }
+
+    public void deploy(InstanceProperties instanceProperties, List<TableProperties> tables) {
+        setForcedInstanceProperties(instanceProperties);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
 
         instanceProperties.saveToS3(s3Client);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
-        try {
-            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, configuration)
-                    .getStateStore(tableProperties);
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
+
+        for (TableProperties tableProperties : tables) {
+            S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
+            try {
+                StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, configuration)
+                        .getStateStore(tableProperties);
+                stateStore.initialise();
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
         CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
     }
 
-    private static InstanceProperties generateInstanceProperties(String instanceId) {
-        InstanceProperties instanceProperties = PopulateInstanceProperties.populateDefaultsFromInstanceId(
-                new InstanceProperties(), instanceId);
+    private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.get(ID);
+        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(OPTIONAL_STACKS, "IngestStack,CompactionStack,PartitionSplittingStack,QueryStack");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, instanceId + "-IngestJobQ");
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
         instanceProperties.set(INGEST_SOURCE_BUCKET, "sleeper-" + instanceId + "-ingest-source");
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, instanceId + "-CompactionJobQ");
-        return instanceProperties;
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
+        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
