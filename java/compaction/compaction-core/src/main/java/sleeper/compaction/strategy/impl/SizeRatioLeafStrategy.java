@@ -76,7 +76,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
                 // Create job for these files if they meet criteria
                 List<Long> fileSizes = filesForJob.stream().map(FileReference::getNumberOfRecords).collect(Collectors.toList());
                 if (meetsCriteria(fileSizes)) {
-                    LOGGER.info("Creating a job to compact {} files in partition {}", filesForJob.size(), filesInPartition.getPartitionId());
+                    LOGGER.debug("Creating a job to compact {} files in partition {}", filesForJob.size(), filesInPartition.getPartitionId());
                     compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                     filesForJob.clear();
                     position += j;
@@ -108,13 +108,13 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             return false;
         }
         long largestFileSize = fileSizesInAscendingOrder.get(fileSizesInAscendingOrder.size() - 1);
-        LOGGER.info("Largest file size is {}", largestFileSize);
+        LOGGER.trace("Largest file size is {}", largestFileSize);
         long sumOfOtherFileSizes = 0L;
         for (int i = 0; i < fileSizesInAscendingOrder.size() - 1; i++) {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
-        LOGGER.info("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.trace("Sum of other file sizes is {}", sumOfOtherFileSizes);
+        LOGGER.trace("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }
