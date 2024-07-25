@@ -22,6 +22,9 @@ if [ "$#" -lt 1 ]; then
 fi
 
 HOME_IN_IMAGE=/root
+VERSION="latest"
+GIT_REF="develop"
+REMOTE_TAG="latest"
 
 run_in_docker() {
   local RUN_PARAMS
@@ -78,44 +81,12 @@ get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
 
-parse_version(){
-  if [ "$#" -lt 1 ]; then
-    CURRENT_VERSION=$(get_version | tr -d '\r\n')
-    case $CURRENT_VERSION in
-    *-SNAPSHOT)
-      VERSION="develop"
-      ;;
-    *)
-      # We could get the latest version from GitHub by querying this URL:
-      # https://github.com/gchq/sleeper/releases/latest
-      # At time of writing, this shows no releases. Once we have full releases on GitHub, we could use that.
-      echo "Please specify version to upgrade to"
-      return 1
-      ;;
-    esac
-  else
-    VERSION=$1
-  fi
-
-  GIT_REF="$VERSION"
-  REMOTE_TAG="$VERSION"
-  if [ "$VERSION" == "main" ]; then
-    REMOTE_TAG="latest"
-  elif [ "$VERSION" == "latest" ]; then
-    GIT_REF="main"
-  elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
-    REMOTE_TAG=${VERSION:1}
-  fi
-}
-
 pull_docker_images(){
-  parse_version "$@"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
 }
 
 upgrade_cli() {
-  parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
