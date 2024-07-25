@@ -20,7 +20,7 @@ import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-public class CompactionOutputFileNameFactory {
+public class CompactionOutputFileNameFactory implements FileNameFactory {
 
     private final String outputFilePrefix;
 

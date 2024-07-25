@@ -35,21 +35,23 @@ public class CompactionJobFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
     private final String tableId;
-    private final CompactionOutputFileNameFactory fileNameFactory;
+    private final FileNameFactory fileNameFactory;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        this(instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+        this(instanceProperties, tableProperties,
+                CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties),
+                () -> UUID.randomUUID().toString());
     }
 
-    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
+    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, FileNameFactory fileNameFactory, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
+        this.fileNameFactory = fileNameFactory;
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 tableProperties.getStatus(), fileNameFactory.getOutputFilePrefix());
     }
