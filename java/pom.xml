@@ -14,8 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
@@ -64,7 +64,7 @@
         -->
         <spark.version>3.4.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
-        <parquet-hadoop.version>1.13.1</parquet-hadoop.version>
+        <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.8</joom.spark.platform.version>
         <!--
         Hadoop AWS uses an old version of wildfly-openssl.
