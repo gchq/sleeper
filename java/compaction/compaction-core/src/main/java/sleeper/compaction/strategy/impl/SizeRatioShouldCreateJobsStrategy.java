@@ -46,9 +46,7 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
                     filesInPartition.getPartitionId(), numConcurrentCompactionJobs);
             return 0;
         }
-        long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
-        LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
-        return maxNumberOfJobsToCreate;
+        return maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
     }
 
     private long getNumberOfCurrentCompactionJobs(List<FileReference> filesWithJobId) {
