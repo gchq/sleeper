@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 
 public class CompactionStrategyIndexTest {
     private final TableStatus tableStatus = TableStatus.uniqueIdAndName("test-table-id", "test-table", true);
@@ -107,6 +108,21 @@ public class CompactionStrategyIndexTest {
 
         // When
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, List.of(), partitionsBuilder.buildList());
+
+        // Then
+        assertThat(index.getFilesInLeafPartitions()).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreLeafPartitionsWithOnlyAssignedFiles() {
+        // Given
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                .rootFirst("root");
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
+        FileReference file = withJobId("job1", factory.rootFile("file.parquet", 120L));
+
+        // When
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, List.of(file), partitionsBuilder.buildList());
 
         // Then
         assertThat(index.getFilesInLeafPartitions()).isEmpty();
