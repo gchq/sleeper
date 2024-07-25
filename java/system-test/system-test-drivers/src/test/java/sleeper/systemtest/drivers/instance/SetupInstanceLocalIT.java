@@ -31,7 +31,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_IN
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 
 @LocalStackDslTest
-public class SetupInstanceIT {
+public class SetupInstanceLocalIT {
     @TempDir
     private Path tempDir;
 
