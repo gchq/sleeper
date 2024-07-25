@@ -8,43 +8,55 @@ function(gpu_compact_setup_dependencies)
   # For each dependency, see if it's
   # already been provided to us by a parent project
 
-  if(NOT TARGET fmtlib::fmtlib)
-    cpmaddpackage("gh:fmtlib/fmt#9.1.0")
-  endif()
+  #   if(NOT TARGET fmtlib::fmtlib)
+  #     cpmaddpackage("gh:fmtlib/fmt#9.1.0")
+  #   endif()
 
-  if(NOT TARGET spdlog::spdlog)
-    cpmaddpackage(
-      NAME
-      spdlog
-      VERSION
-      1.11.0
-      GITHUB_REPOSITORY
-      "gabime/spdlog"
-      OPTIONS
-      "SPDLOG_FMT_EXTERNAL ON")
-  endif()
+  #   if(NOT TARGET spdlog::spdlog)
+  #     cpmaddpackage(
+  #       NAME
+  #       spdlog
+  #       VERSION
+  #       1.11.0
+  #       GITHUB_REPOSITORY
+  #       "gabime/spdlog"
+  #       OPTIONS
+  #       "SPDLOG_FMT_EXTERNAL ON")
+  #   endif()
 
-  if(NOT TARGET Catch2::Catch2WithMain)
-    cpmaddpackage("gh:catchorg/Catch2@3.3.2")
-  endif()
+  #   if(NOT TARGET Catch2::Catch2WithMain)
+  #     cpmaddpackage("gh:catchorg/Catch2@3.3.2")
+  #   endif()
 
-  if(NOT TARGET CLI11::CLI11)
-    cpmaddpackage("gh:CLIUtils/CLI11@2.3.2")
-  endif()
+  #   if(NOT TARGET CLI11::CLI11)
+  #     cpmaddpackage("gh:CLIUtils/CLI11@2.3.2")
+  #   endif()
 
-  if(NOT TARGET tools::tools)
-    cpmaddpackage("gh:lefticus/tools#update_build_system")
-  endif()
+  #   if(NOT TARGET tools::tools)
+  #     cpmaddpackage("gh:lefticus/tools#update_build_system")
+  #   endif()
 
-  if(NOT TARGET grpc++)
-    cpmaddpackage(
-      NAME
-      gRPC
-      GITHUB_REPOSITORY
-      grpc/grpc
-      VERSION
-      1.65.1)
-
-  endif()
+  find_package(Git)
+  find_package(Protobuf REQUIRED)
+  #   if(NOT TARGET grpc++)
+  #     cpmaddpackage(
+  #       NAME
+  #       gRPC
+  #       LOG_DOWNLOAD 1
+  #       DOWNLOAD_COMMAND
+  #       echo
+  #       DOWNLOAD_COMMAND echo 1
+  #       ${CMAKE_SOURCE_DIR}/git_wrap.sh clone
+  #       --recurse-submodules
+  #       --depth=1
+  #       --progress
+  #       --shallow-submodules
+  #       --branch
+  #       v1.65.1
+  #       --config
+  #       advice.detachedHead=false
+  #       https://github.com/grpc/grpc.git
+  #       grpc-src)
+  #   endif()
 
 endfunction()
