@@ -41,9 +41,13 @@ public class CompactionJobFactory {
     private final Supplier<String> jobIdSupplier;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this(instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+    }
+
+    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         this(instanceProperties, tableProperties,
                 CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties),
-                () -> UUID.randomUUID().toString());
+                jobIdSupplier);
     }
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, FileNameFactory fileNameFactory, Supplier<String> jobIdSupplier) {
