@@ -22,9 +22,11 @@ import sleeper.core.table.TableStatus;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CompactionStrategyIndex {
@@ -33,10 +35,10 @@ public class CompactionStrategyIndex {
     public CompactionStrategyIndex(TableStatus tableStatus, List<FileReference> allFileReferences, List<Partition> allPartitions) {
         Map<String, FilesInAscendingOrder> filesWithNoJobIdByPartition = new HashMap<>();
         Map<String, List<FileReference>> filesWithJobIdByPartition = new HashMap<>();
-        List<String> leafPartitionIds = allPartitions.stream()
+        Set<String> leafPartitionIds = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
                 .map(Partition::getId)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         allFileReferences.stream()
                 .filter(file -> leafPartitionIds.contains(file.getPartitionId()))
