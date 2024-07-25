@@ -145,7 +145,7 @@ public class SizeRatioCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).containsExactly(
-                jobFactory.createCompactionJob("job1", fileReferences, "root"));
+                jobFactory.createCompactionJob("job1", fileReferences.subList(0, 5), "root"));
     }
 
     @Test
