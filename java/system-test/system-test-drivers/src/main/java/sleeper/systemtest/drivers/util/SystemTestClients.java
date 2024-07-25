@@ -56,7 +56,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -79,7 +79,7 @@ public class SystemTestClients {
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
-    private final BiFunction<SystemTestClients, AssumeSleeperRole, SystemTestClients> assumeRoleClientsBuilder;
+    private final boolean skipAssumeRole;
 
     private SystemTestClients(Builder builder) {
         regionProvider = builder.regionProvider;
@@ -100,7 +100,7 @@ public class SystemTestClients {
         cloudWatchEvents = builder.cloudWatchEvents;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
-        assumeRoleClientsBuilder = builder.assumeRoleClientsBuilder;
+        skipAssumeRole = builder.skipAssumeRole;
     }
 
     public static Builder builder() {
@@ -129,10 +129,9 @@ public class SystemTestClients {
     }
 
     public SystemTestClients assumeRole(AssumeSleeperRole assumeRole) {
-        return assumeRoleClientsBuilder.apply(this, assumeRole);
-    }
-
-    private SystemTestClients assumeRoleWithSts(AssumeSleeperRole assumeRole) {
+        if (skipAssumeRole) {
+            return this;
+        }
         AssumeSleeperRoleV1 v1 = assumeRole.forAwsV1(sts);
         AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(stsV2);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
@@ -258,7 +257,7 @@ public class SystemTestClients {
         private AmazonCloudWatchEvents cloudWatchEvents;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
-        private BiFunction<SystemTestClients, AssumeSleeperRole, SystemTestClients> assumeRoleClientsBuilder = SystemTestClients::assumeRoleWithSts;
+        private boolean skipAssumeRole = false;
 
         private Builder() {
         }
@@ -353,8 +352,16 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder skipAssumeRole() {
-            assumeRoleClientsBuilder = (clients, assumeRole) -> clients;
+        public Builder configureHadoopSetter(Consumer<Configuration> configureHadoop) {
+            this.configureHadoop = conf -> {
+                configureHadoop.accept(conf);
+                return conf;
+            };
+            return this;
+        }
+
+        public Builder skipAssumeRole(boolean skipAssumeRole) {
+            this.skipAssumeRole = skipAssumeRole;
             return this;
         }
 

@@ -34,6 +34,11 @@ public class HadoopConfigurationLocalStackUtils {
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
         Configuration configuration = new Configuration();
+        configure(configuration, container);
+        return configuration;
+    }
+
+    public static void configure(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(HadoopConfigurationLocalStackUtils.class.getClassLoader());
         configuration.set("fs.s3a.endpoint", container.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
@@ -47,6 +52,5 @@ public class HadoopConfigurationLocalStackUtils {
         // configuration.set("fs.s3a.connection.timeout", "1000");
         // configuration.set("fs.s3a.connection.establish.timeout", "1");
         // configuration.set("fs.s3a.attempts.maximum", "1");
-        return configuration;
     }
 }
