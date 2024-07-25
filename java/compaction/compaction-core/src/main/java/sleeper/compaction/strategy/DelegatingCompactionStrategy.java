@@ -25,7 +25,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.util.LoggedDuration;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,14 +55,22 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, List<FileReference> fileReferences,
             List<Partition> partitions) {
+        Instant startTime = Instant.now();
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, partitions);
-
+        if (index.getFilesInLeafPartitions().isEmpty()) {
+            LOGGER.info("No unassigned files found in leaf partitions, skipping compaction job creation, took {}",
+                    LoggedDuration.withShortOutput(startTime, Instant.now()));
+            return List.of();
+        }
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (FilesInPartition filesInPartition : index.getFilesInLeafPartitions()) {
             compactionJobs.addAll(createJobsForLeafPartition(filesInPartition));
         }
+        LOGGER.info("Created {} compaction jobs across {} leaf partitions, took {}",
+                compactionJobs.size(), index.getFilesInLeafPartitions().size(),
+                LoggedDuration.withShortOutput(startTime, Instant.now()));
         return compactionJobs;
     }
 
