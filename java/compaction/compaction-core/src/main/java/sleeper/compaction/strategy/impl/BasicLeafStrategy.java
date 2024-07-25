@@ -65,11 +65,8 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
                 filesForJob.clear();
             }
         }
-        if (filesWithNoJobId.isEmpty()) {
-            LOGGER.info("No unassigned files in partition {} in table {}, cannot create jobs",
-                    filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
-        } else if (compactionJobs.isEmpty()) {
-            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
+        if (compactionJobs.isEmpty()) {
+            LOGGER.debug("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
                     filesInPartition.getPartitionId(), filesInPartition.getTableStatus(),
                     compactionFilesBatchSize);
         }
