@@ -22,10 +22,15 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
+import java.time.Duration;
 import java.util.List;
 
 public interface CompactionStrategy {
 
     List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
             CompactionJobFactory factory, List<FileReference> fileReferences, List<Partition> partitions);
+
+    default Duration getLoadIndexDuration() {
+        return Duration.ofSeconds(1);
+    }
 }
