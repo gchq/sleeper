@@ -23,6 +23,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.SplitIntoBatches;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_ADD_FILES_COMMIT_BATCH_SIZE;
 
 @FunctionalInterface
 public interface AddFilesToStateStore {
@@ -61,15 +63,18 @@ public interface AddFilesToStateStore {
             Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
         return references -> {
-            IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
-                    .fileReferences(references);
-            requestConfig.accept(requestBuilder);
-            IngestAddFilesCommitRequest request = requestBuilder.build();
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(serDe.toJson(request))
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
+            SplitIntoBatches.splitListIntoBatchesOf(instanceProperties.getInt(INGEST_ADD_FILES_COMMIT_BATCH_SIZE), references)
+                    .forEach(batch -> {
+                        IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
+                                .fileReferences(batch);
+                        requestConfig.accept(requestBuilder);
+                        IngestAddFilesCommitRequest request = requestBuilder.build();
+                        sqsClient.sendMessage(new SendMessageRequest()
+                                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                                .withMessageBody(serDe.toJson(request))
+                                .withMessageGroupId(request.getTableId())
+                                .withMessageDeduplicationId(UUID.randomUUID().toString()));
+                    });
         };
     }
 }

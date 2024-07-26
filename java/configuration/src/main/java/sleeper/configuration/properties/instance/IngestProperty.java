@@ -103,6 +103,11 @@ public interface IngestProperty {
             .defaultValue("20")
             .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+    UserDefinedInstanceProperty INGEST_ADD_FILES_COMMIT_BATCH_SIZE = IngestProperty.Index.propertyBuilder("sleeper.ingest.add.files.commit.batch.sise")
+            .description("The maximum number of files that can be sent in an ingest add files commit request.")
+            .defaultValue("1000")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
