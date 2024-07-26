@@ -129,6 +129,23 @@ public class CompactionStrategyIndexTest {
     }
 
     @Test
+    void shouldIndexUnassignedFilesInLeafPartitions() {
+        // Given
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                .rootFirst("root");
+        FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
+        FileReference file1 = factory.rootFile("file.parquet", 120L);
+        FileReference file2 = withJobId("job1", factory.rootFile("file.parquet", 120L));
+
+        // When
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, List.of(file1, file2), partitionsBuilder.buildList());
+
+        // Then
+        assertThat(index.getFilesInLeafPartitions()).containsExactly(
+                new FilesInPartition(tableStatus, "root", List.of(file1), List.of(file2)));
+    }
+
+    @Test
     void shouldIgnoreFilesInNonLeafPartitions() {
         // Given
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
