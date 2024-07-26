@@ -6,6 +6,13 @@ protobuf_generate_cpp(
 
 add_library(gpu_proto ${GPU_PROTO_SRC} ${GPU_PROTO_HDRS})
 
+message(STATUS ${GPU_PROTO_HDRS})
+cmake_path(
+  GET
+  GPU_PROTO_HDRS
+  PARENT_PATH
+  GPU_PROTO_INCLUDE)
+target_include_directories(gpu_proto PUBLIC ${GPU_PROTO_INCLUDE})
 target_link_libraries(gpu_proto PRIVATE gpu_compact::gpu_compact_options
 )# Don't enable compiler warnings on Protobuf files
 set_target_properties(gpu_proto PROPERTIES CXX_CLANG_TIDY "") # Disable clang-tidy

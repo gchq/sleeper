@@ -1,12 +1,13 @@
 #include <CLI/CLI.hpp>// NOLINT
+#include <ProtoCompaction.pb.h>
 #include <cstdlib>
 #include <exception>
 #include <fmt/core.h>
+#include <grpcpp/grpcpp.h>
+#include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
-
-#include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
 
 #include <gpu_compact/sample_library.hpp>
 
@@ -15,6 +16,18 @@
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
+using sleeper::compaction::job::execution::CompactionService;
+using sleeper::compaction::job::execution::CompactionParams;
+using sleeper::compaction::job::execution::CompactionResult;
+using grpc::Status;
+struct CompactionServer : public CompactionService
+{
+    [[nodiscard]] grpc::Status
+      compact(grpc::ServerContext *const context, CompactionParams const *params, CompactionResult result)
+    {
+        return Status::OK;
+    }
+};
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, const char **argv)
@@ -26,11 +39,8 @@ int main(int argc, const char **argv)
 
         std::optional<std::string> message;
         app.add_option("-m,--message", message, "A message to print back out");
-        bool show_version = false;
+        bool show_version = false;// NOLINT(misc-const-correctness)
         app.add_flag("--version", show_version, "Show version information");
-
-        bool is_turn_based = false;
-        app.add_flag("--turn_based", is_turn_based);
 
         CLI11_PARSE(app, argc, argv);// NOLINT
 
@@ -40,6 +50,8 @@ int main(int argc, const char **argv)
         }
 
         fmt::print("Factorial of {} is {}\n", 2, factorial(2));
+
+
     } catch (const std::exception &e) {
         spdlog::error("Unhandled exception in main: {}", e.what());
     }
