@@ -15,7 +15,7 @@
  */
 syntax = "proto3";
 
-option java_package = "sleeper.compaction.job.execution";
+package sleeper.compaction.job.execution;
 
 message Null {}
 
@@ -93,7 +93,7 @@ message CompactionResult {
   uint64 rows_read = 1;
   uint64 rows_written = 2;
   ReturnCode exit_status = 3;
-  optional string exit_reason = 4;
+  oneof exit_reason { string msg = 4;}
 }
 
 service CompactionService {

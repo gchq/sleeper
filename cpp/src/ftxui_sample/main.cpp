@@ -7,7 +7,6 @@
 
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
-#include <grpcpp/grpcpp.h>
 #include <spdlog/spdlog.h>
 
 #include <lefticus/tools/non_promoting_ints.hpp>
