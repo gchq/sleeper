@@ -92,13 +92,12 @@ public class BasicCompactionStrategyTest {
                 .buildTree();
         FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         List<FileReference> fileReferences = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
             fileReferences.add(fileReference);
-            filesInAscendingOrder.add(fileReference);
         }
         // We add files in descending order of size, so need to reverse the list afterwards
+        List<FileReference> filesInAscendingOrder = new ArrayList<>(fileReferences);
         Collections.reverse(filesInAscendingOrder);
         CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
@@ -107,7 +106,6 @@ public class BasicCompactionStrategyTest {
                 instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
-
         assertThat(compactionJobs).containsExactly(
                 jobFactory.createCompactionJob("job1", filesInAscendingOrder.subList(0, 10), "root"),
                 jobFactory.createCompactionJob("job2", filesInAscendingOrder.subList(10, 20), "root"),
