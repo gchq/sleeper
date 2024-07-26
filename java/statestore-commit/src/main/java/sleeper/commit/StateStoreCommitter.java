@@ -128,6 +128,9 @@ public class StateStoreCommitter {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         try {
             stateStore.assignJobIds(request.getAssignJobIdRequests());
+        } catch (FileReferenceNotFoundException e) {
+            LOGGER.info("One or more files were not found in state store, skipping request", e);
+            return;
         } catch (FileReferenceAssignedToJobException e) {
             LOGGER.info("One or more files are already assigned to a job, skipping request", e);
             return;
