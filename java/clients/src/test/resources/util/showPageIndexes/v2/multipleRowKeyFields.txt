@@ -6,7 +6,7 @@ page-0                         0  row1-001                                  row1
 
 Page index for column test-key1
                           offset   compressed size       first row index
-page-0                         4               136                     0
+page-0                         4               145                     0
 
 Column index for column test-key2
 Boundary order: ASCENDING
@@ -15,5 +15,5 @@ page-0                         0  row2-001                                  row2
 
 Page index for column test-key2
                           offset   compressed size       first row index
-page-0                       140               136                     0
+page-0                       149               145                     0
 
