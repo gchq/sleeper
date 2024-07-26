@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobFactoryTestHelper;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -32,6 +31,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -198,6 +199,12 @@ public class BasicCompactionStrategyTest {
     }
 
     private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
-        return CompactionJobFactoryTestHelper.createJobFactory(instanceProperties, tableProperties);
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
+    }
+
+    private static Supplier<String> incrementingJobIds() {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> "job" + i)
+                .iterator()::next;
     }
 }

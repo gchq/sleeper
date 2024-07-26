@@ -30,9 +30,10 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobFactoryTestHelper.createJobFactory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -72,7 +73,7 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        CompactionJobFactory jobFactory = createJobFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -96,7 +97,7 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, createJobFactory(instanceProperties, tableProperties),
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
                 fileReferences, partitionTree.getAllPartitions());
 
         // Then
@@ -120,7 +121,7 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, createJobFactory(instanceProperties, tableProperties),
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
                 List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
@@ -138,7 +139,7 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        CompactionJobFactory jobFactory = createJobFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -183,7 +184,7 @@ public class SizeRatioCompactionStrategyTest {
                 firstBatch.get(4),
                 secondBatch.get(3),
                 firstBatch.get(3));
-        CompactionJobFactory jobFactory = createJobFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
@@ -238,7 +239,7 @@ public class SizeRatioCompactionStrategyTest {
                 secondBatch.get(3),
                 thirdBatch.get(2),
                 firstBatch.get(3));
-        CompactionJobFactory jobFactory = createJobFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
@@ -249,5 +250,15 @@ public class SizeRatioCompactionStrategyTest {
                 jobFactory.createCompactionJob("job1", firstBatch, "root"),
                 jobFactory.createCompactionJob("job2", secondBatch, "root"),
                 jobFactory.createCompactionJob("job3", thirdBatch, "root"));
+    }
+
+    private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
+    }
+
+    private static Supplier<String> incrementingJobIds() {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> "job" + i)
+                .iterator()::next;
     }
 }
