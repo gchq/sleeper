@@ -134,8 +134,8 @@ public class CompactionStrategyIndexTest {
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                 .rootFirst("root");
         FileReferenceFactory factory = FileReferenceFactory.from(partitionsBuilder.buildTree());
-        FileReference file1 = factory.rootFile("file.parquet", 120L);
-        FileReference file2 = withJobId("job1", factory.rootFile("file.parquet", 120L));
+        FileReference file1 = factory.rootFile("file1.parquet", 120L);
+        FileReference file2 = withJobId("job1", factory.rootFile("file2.parquet", 120L));
 
         // When
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableStatus, List.of(file1, file2), partitionsBuilder.buildList());
