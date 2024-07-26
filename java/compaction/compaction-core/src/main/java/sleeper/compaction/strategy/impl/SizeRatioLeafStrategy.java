@@ -108,13 +108,13 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             return false;
         }
         long largestFileSize = fileSizesInAscendingOrder.get(fileSizesInAscendingOrder.size() - 1);
-        LOGGER.trace("Largest file size is {}", largestFileSize);
+        LOGGER.info("Largest file size is {}", largestFileSize);
         long sumOfOtherFileSizes = 0L;
         for (int i = 0; i < fileSizesInAscendingOrder.size() - 1; i++) {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
-        LOGGER.trace("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.trace("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.info("Sum of other file sizes is {}", sumOfOtherFileSizes);
+        LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }
