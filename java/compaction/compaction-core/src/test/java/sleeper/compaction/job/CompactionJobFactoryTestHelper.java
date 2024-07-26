@@ -26,17 +26,12 @@ public class CompactionJobFactoryTestHelper {
     }
 
     public static CompactionJobFactory createJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new CompactionJobFactory(instanceProperties, tableProperties,
-                outputFilename(), incrementingJobIds());
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
     }
 
     public static Supplier<String> incrementingJobIds() {
         return IntStream.iterate(1, i -> i + 1)
                 .mapToObj(i -> "job" + i)
                 .iterator()::next;
-    }
-
-    public static FileNameFactory outputFilename() {
-        return (jobId, partitionId) -> "output.parquet";
     }
 }
