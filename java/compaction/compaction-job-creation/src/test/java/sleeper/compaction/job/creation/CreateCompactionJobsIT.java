@@ -142,14 +142,14 @@ public class CreateCompactionJobsIT {
         assertThat(stateStore.getFileReferencesWithNoJobId())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
-        CompactionJob job = receiveJobQueueMessage().getMessages().stream()
-                .map(this::readJobMessage)
-                .findFirst().orElseThrow();
-        assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-        assertThat(job.getPartitionId()).isEqualTo("root");
-        assertThat(receiveAssignJobIdQueueMessage().getMessages().stream()
-                .map(this::readAssignJobIdRequest))
-                .containsExactly(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+        assertThat(receiveJobQueueMessage().getMessages())
+                .extracting(this::readJobMessage).singleElement().satisfies(job -> {
+                    assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
+                    assertThat(job.getPartitionId()).isEqualTo("root");
+                    assertThat(receiveAssignJobIdQueueMessage().getMessages().stream()
+                            .map(this::readAssignJobIdRequest))
+                            .containsExactly(requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+                });
     }
 
     private ReceiveMessageResult receiveJobQueueMessage() {
