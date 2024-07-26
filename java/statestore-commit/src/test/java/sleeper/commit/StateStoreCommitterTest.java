@@ -209,7 +209,7 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldIgnoreJobIdAssignmentIfFileIsAlreadyAssignedToJob() throws Exception {
+        void shouldIgnoreJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
             FileReference inputFile = withJobId("job1", fileFactory.rootFile("input.parquet", 123L));
@@ -223,6 +223,20 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
                     withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
+        }
+
+        @Test
+        void shouldIgnoreJobIdAssignmentIfFileReferenceDoesNotExist() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+
+            // When
+            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+            committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).isEmpty();
         }
     }
 
