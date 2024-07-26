@@ -1,15 +1,12 @@
-#include <array>
-#include <functional>
-#include <iostream>
-#include <optional>
-
-#include <random>
-
-#include <CLI/CLI.hpp>
+#include <CLI/CLI.hpp>// NOLINT
+#include <cstdlib>
+#include <exception>
 #include <fmt/core.h>
+#include <optional>
 #include <spdlog/spdlog.h>
+#include <string>
 
-#include <lefticus/tools/non_promoting_ints.hpp>
+#include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
 
 #include <gpu_compact/sample_library.hpp>
 
@@ -23,6 +20,7 @@
 int main(int argc, const char **argv)
 {
     try {
+        // NOLINTNEXTLINE
         CLI::App app{ fmt::format(
           "{} version {}", gpu_compact::cmake::project_name, gpu_compact::cmake::project_version) };
 
@@ -34,7 +32,7 @@ int main(int argc, const char **argv)
         bool is_turn_based = false;
         app.add_flag("--turn_based", is_turn_based);
 
-        CLI11_PARSE(app, argc, argv);
+        CLI11_PARSE(app, argc, argv);// NOLINT
 
         if (show_version) {
             fmt::print("{}\n", gpu_compact::cmake::project_version);

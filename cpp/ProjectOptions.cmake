@@ -3,7 +3,6 @@ include(cmake/LibFuzzer.cmake)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
 
-
 macro(gpu_compact_supports_sanitizers)
   if((CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*" OR CMAKE_CXX_COMPILER_ID MATCHES ".*GNU.*") AND NOT WIN32)
     set(SUPPORTS_UBSAN ON)
@@ -44,8 +43,9 @@ macro(gpu_compact_setup_options)
     option(gpu_compact_ENABLE_CPPCHECK "Enable cpp-check analysis" OFF)
     option(gpu_compact_ENABLE_PCH "Enable precompiled headers" OFF)
     option(gpu_compact_ENABLE_CACHE "Enable ccache" OFF)
+    option(gpu_compact_ENABLE_IWYU "Enable include-what-you-use" OFF)
   else()
-    option(gpu_compact_ENABLE_IPO "Enable IPO/LTO" ON)
+    option(gpu_compact_ENABLE_IPO "Enable IPO/LTO" OFF)
     option(gpu_compact_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
     option(gpu_compact_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
     option(gpu_compact_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" ${SUPPORTS_ASAN})
@@ -53,11 +53,12 @@ macro(gpu_compact_setup_options)
     option(gpu_compact_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" ${SUPPORTS_UBSAN})
     option(gpu_compact_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
     option(gpu_compact_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
-    option(gpu_compact_ENABLE_UNITY_BUILD "Enable unity builds" OFF)
+    option(gpu_compact_ENABLE_UNITY_BUILD "Enable unity builds" ON)
     option(gpu_compact_ENABLE_CLANG_TIDY "Enable clang-tidy" ON)
     option(gpu_compact_ENABLE_CPPCHECK "Enable cpp-check analysis" ON)
     option(gpu_compact_ENABLE_PCH "Enable precompiled headers" OFF)
     option(gpu_compact_ENABLE_CACHE "Enable ccache" ON)
+    option(gpu_compact_ENABLE_IWYU "Enable include-what-you-use" ON)
   endif()
 
   if(NOT PROJECT_IS_TOP_LEVEL)
@@ -75,11 +76,15 @@ macro(gpu_compact_setup_options)
       gpu_compact_ENABLE_CPPCHECK
       gpu_compact_ENABLE_COVERAGE
       gpu_compact_ENABLE_PCH
-      gpu_compact_ENABLE_CACHE)
+      gpu_compact_ENABLE_CACHE
+      gpu_compact_ENABLE_IWYU)
   endif()
 
   gpu_compact_check_libfuzzer_support(LIBFUZZER_SUPPORTED)
-  if(LIBFUZZER_SUPPORTED AND (gpu_compact_ENABLE_SANITIZER_ADDRESS OR gpu_compact_ENABLE_SANITIZER_THREAD OR gpu_compact_ENABLE_SANITIZER_UNDEFINED))
+  if(LIBFUZZER_SUPPORTED
+     AND (gpu_compact_ENABLE_SANITIZER_ADDRESS
+          OR gpu_compact_ENABLE_SANITIZER_THREAD
+          OR gpu_compact_ENABLE_SANITIZER_UNDEFINED))
     set(DEFAULT_FUZZER ON)
   else()
     set(DEFAULT_FUZZER OFF)
@@ -99,7 +104,7 @@ macro(gpu_compact_global_options)
 
   if(gpu_compact_ENABLE_HARDENING AND gpu_compact_ENABLE_GLOBAL_HARDENING)
     include(cmake/Hardening.cmake)
-    if(NOT SUPPORTS_UBSAN 
+    if(NOT SUPPORTS_UBSAN
        OR gpu_compact_ENABLE_SANITIZER_UNDEFINED
        OR gpu_compact_ENABLE_SANITIZER_ADDRESS
        OR gpu_compact_ENABLE_SANITIZER_THREAD
@@ -165,6 +170,10 @@ macro(gpu_compact_local_options)
     gpu_compact_enable_clang_tidy(gpu_compact_options ${gpu_compact_WARNINGS_AS_ERRORS})
   endif()
 
+  if(gpu_compact_ENABLE_IWYU)
+    gpu_compact_enable_include_what_you_use()
+  endif()
+
   if(gpu_compact_ENABLE_CPPCHECK)
     gpu_compact_enable_cppcheck(${gpu_compact_WARNINGS_AS_ERRORS} "" # override cppcheck options
     )
@@ -185,7 +194,7 @@ macro(gpu_compact_local_options)
 
   if(gpu_compact_ENABLE_HARDENING AND NOT gpu_compact_ENABLE_GLOBAL_HARDENING)
     include(cmake/Hardening.cmake)
-    if(NOT SUPPORTS_UBSAN 
+    if(NOT SUPPORTS_UBSAN
        OR gpu_compact_ENABLE_SANITIZER_UNDEFINED
        OR gpu_compact_ENABLE_SANITIZER_ADDRESS
        OR gpu_compact_ENABLE_SANITIZER_THREAD

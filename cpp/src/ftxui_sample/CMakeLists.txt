@@ -8,6 +8,7 @@ add_library(gpu_proto ${GPU_PROTO_SRC} ${GPU_PROTO_HDRS})
 
 target_link_libraries(gpu_proto PRIVATE gpu_compact::gpu_compact_options
 )# Don't enable compiler warnings on Protobuf files
+set_target_properties(gpu_proto PROPERTIES CXX_CLANG_TIDY "") # Disable clang-tidy
 
 add_executable(intro main.cpp)
 target_link_system_libraries(
