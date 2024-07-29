@@ -1,0 +1,117 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.ingest.impl.commit;
+
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+
+@Testcontainers
+public class AddFilesToStateStoreIT {
+    @Container
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS);
+    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final Schema schema = schemaWithKey("key");
+    private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+    private final FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+
+    @BeforeEach
+    void setUp() {
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
+    }
+
+    @Test
+    void shouldSendCommitRequestToSqsWhenRequestIsSmallEnough() throws Exception {
+        // Given
+        FileReference file1 = factory.rootFile("test.parquet", 123L);
+
+        // When
+        bySqs().addFiles(List.of(file1));
+
+        // Then
+        assertThat(receiveCommitMessages())
+                .containsExactly(
+                        IngestAddFilesCommitRequest.builder()
+                                .fileReferences(List.of(file1))
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .build());
+    }
+
+    private List<IngestAddFilesCommitRequest> receiveCommitMessages() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqs.receiveMessage(receiveMessageRequest).getMessages().stream()
+                .map(AddFilesToStateStoreIT::readCommitRequest)
+                .collect(Collectors.toList());
+    }
+
+    private static IngestAddFilesCommitRequest readCommitRequest(Message message) {
+        return new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody());
+    }
+
+    private String createFifoQueueGetUrl() {
+        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")));
+        return result.getQueueUrl();
+    }
+
+    private AddFilesToStateStore bySqs() {
+        return AddFilesToStateStore.bySqs(sqs, instanceProperties, request -> request.tableId(tableProperties.get(TABLE_ID)));
+    }
+}
