@@ -28,7 +28,6 @@
           {
             "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-12T10:01:45.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 300,
@@ -62,7 +61,6 @@
           {
             "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-12T10:01:30.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 300,
@@ -174,7 +172,6 @@
           {
             "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-10T10:01:20.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 200,

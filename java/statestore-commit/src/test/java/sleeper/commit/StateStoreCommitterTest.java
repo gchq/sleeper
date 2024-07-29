@@ -34,6 +34,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
@@ -54,7 +56,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
@@ -102,7 +104,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                                    .finishedStatus(compactionFinishedStatus(summary))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
         }
@@ -127,7 +129,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .statusUpdate(compactionFinishedStatusUncommitted(summary))
+                                    .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
                                             new ProcessRunTime(summary.getFinishTime(), failedTime),
                                             List.of("File not found: input.parquet")))
@@ -156,7 +158,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                                    .finishedStatus(compactionFinishedStatus(summary))
                                     .build()));
         }
 
@@ -183,7 +185,7 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                                    .finishedStatus(compactionFinishedStatus(summary))
                                     .build()));
         }
     }
@@ -209,7 +211,7 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldIgnoreJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
+        void shouldFailToApplyJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
@@ -219,7 +221,8 @@ public class StateStoreCommitterTest {
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
-            committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request)))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -227,14 +230,15 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldIgnoreJobIdAssignmentIfFileReferenceDoesNotExist() throws Exception {
+        void shouldFailToApplyJobIdAssignmentIfFileReferenceDoesNotExist() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
 
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
-            committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
 
             // Then
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -344,7 +348,6 @@ public class StateStoreCommitterTest {
         compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
         compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
-                .committedBySeparateUpdate(true)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }

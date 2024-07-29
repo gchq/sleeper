@@ -18,11 +18,11 @@ package sleeper.compaction.strategy.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.ShouldCreateJobsStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;
@@ -39,10 +39,11 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     }
 
     @Override
-    public long maxCompactionJobsToCreate(Partition partition, List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId) {
-        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(partition.getId(), activeFilesWithJobId);
+    public long maxCompactionJobsToCreate(FilesInPartition filesInPartition) {
+        long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(filesInPartition.getFilesWithJobId());
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
-            LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs", partition.getId(), numConcurrentCompactionJobs);
+            LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
+                    filesInPartition.getPartitionId(), numConcurrentCompactionJobs);
             return 0;
         }
         long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
@@ -50,9 +51,8 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
         return maxNumberOfJobsToCreate;
     }
 
-    private long getNumberOfCurrentCompactionJobs(String partitionId, List<FileReference> activeFilesWithJobId) {
-        return activeFilesWithJobId.stream()
-                .filter(f -> f.getPartitionId().equals(partitionId))
+    private long getNumberOfCurrentCompactionJobs(List<FileReference> filesWithJobId) {
+        return filesWithJobId.stream()
                 .map(FileReference::getJobId)
                 .collect(Collectors.toSet())
                 .size();

@@ -6,5 +6,5 @@ page-0                         0  row-001                                   row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                         4               146                     0
+page-0                         4               155                     0
 

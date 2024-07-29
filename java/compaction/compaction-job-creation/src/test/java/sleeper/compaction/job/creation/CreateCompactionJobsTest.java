@@ -372,8 +372,8 @@ public class CreateCompactionJobsTest {
 
             // Then the jobs are reported as created in the status store
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),
@@ -401,8 +401,8 @@ public class CreateCompactionJobsTest {
 
             // Then the jobs are reported as created in the status store
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(rightJob, DEFAULT_UPDATE_TIME),

@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
@@ -88,7 +88,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(summary(startTime, finishTime, 10, 5)))
+                                    .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10, 5)))
                                     .build()));
         }
 
@@ -127,14 +127,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
             assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     jobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job2Records, startTime2, finishTime2)))
                                     .build()));
         }
@@ -173,14 +173,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
             assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     jobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job2Records, startTime2, finishTime2)))
                                     .statusUpdate(compactionCommittedStatus(commitTime2))
                                     .build()));
@@ -223,7 +223,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .statusUpdate(compactionFinishedStatusUncommitted(
+                                    .statusUpdate(compactionFinishedStatus(
                                             new RecordsProcessedSummary(recordsProcessed, startTime2, finishTime2)))
                                     .finishedStatus(compactionFailedStatus(
                                             new ProcessRunTime(startTime2, commitFailTime),
@@ -231,7 +231,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .build(),
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1)))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
@@ -287,7 +287,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1)))
                                     .statusUpdate(compactionCommittedStatus(commitTime1))
                                     .build()));
@@ -295,7 +295,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
-                                    .finishedStatus(compactionFinishedStatusUncommitted(
+                                    .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(recordsProcessed, startTime2, finishTime2)))
                                     .statusUpdate(compactionCommittedStatus(commitTime2))
                                     .build()));

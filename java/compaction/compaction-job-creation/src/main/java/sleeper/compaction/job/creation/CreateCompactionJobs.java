@@ -126,26 +126,22 @@ public class CreateCompactionJobs {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        List<FileReference> fileReferences = stateStore.getFileReferences();
         // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        List<FileReference> fileReferencesWithNoJobId = fileReferences.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileReference> fileReferencesWithJobId = fileReferences.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), table);
-        LOGGER.debug("Found {} file references with a job id in table {}", fileReferencesWithJobId.size(), table);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
-        compactionStrategy.init(instanceProperties, tableProperties, jobFactory);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileReferencesWithJobId, fileReferencesWithNoJobId, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactory, fileReferences, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
-            createJobsFromLeftoverFiles(tableProperties, jobFactory, allPartitions, fileReferencesWithNoJobId, compactionJobs);
+            createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
         }
         int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
         if (compactionJobs.size() > creationLimit) {
@@ -198,9 +194,10 @@ public class CreateCompactionJobs {
     }
 
     private void createJobsFromLeftoverFiles(
-            TableProperties tableProperties, CompactionJobFactory factory,
-            List<Partition> allPartitions, List<FileReference> activeFileReferencesWithNoJobId,
-            List<CompactionJob> compactionJobs) {
+            TableProperties tableProperties, CompactionJobFactory factory, List<FileReference> fileReferences,
+            List<Partition> allPartitions, List<CompactionJob> compactionJobs) {
+        List<FileReference> fileReferencesWithNoJobId = fileReferences.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        LOGGER.debug("Found {} file references with no job id in table {}", fileReferencesWithNoJobId.size(), tableProperties.getStatus());
         LOGGER.info("Creating compaction jobs for all files");
         int jobsBefore = compactionJobs.size();
         int batchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
@@ -211,7 +208,7 @@ public class CreateCompactionJobs {
         Set<String> assignedFiles = compactionJobs.stream()
                 .flatMap(job -> job.getInputFiles().stream())
                 .collect(Collectors.toSet());
-        List<FileReference> leftoverFiles = activeFileReferencesWithNoJobId.stream()
+        List<FileReference> leftoverFiles = fileReferencesWithNoJobId.stream()
                 .filter(file -> !assignedFiles.contains(file.getFilename()))
                 .collect(Collectors.toList());
         Map<String, List<FileReference>> filesByPartitionId = new HashMap<>();

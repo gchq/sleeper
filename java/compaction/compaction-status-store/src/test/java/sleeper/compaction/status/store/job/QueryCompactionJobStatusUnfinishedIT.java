@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -58,6 +60,28 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
     }
 
     @Test
+    public void shouldIncludeUncommittedCompactionJob() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile("file1", 456L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+
+        // Then
+        assertThat(store.getUnfinishedJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        jobCreated(job, ignoredUpdateTime(),
+                                uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary())));
+    }
+
+    @Test
     public void shouldExcludeFinishedCompactionJob() {
         // Given
         Partition partition = singlePartition();
@@ -74,6 +98,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job2);
         store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(compactionJobCommitted(job2, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -117,6 +142,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
@@ -124,6 +150,6 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()),
-                        finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary())));
+                        finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary(), defaultCommitTime())));
     }
 }
