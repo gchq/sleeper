@@ -6,7 +6,7 @@ page-0                         0  row-001                                   row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                         4               146                     0
+page-0                         4               155                     0
 
 Column index for column test-sort
 Boundary order: ASCENDING
@@ -15,7 +15,7 @@ page-0                         0  1                                         100
 
 Page index for column test-sort
                           offset   compressed size       first row index
-page-0                       150                42                     0
+page-0                       159                51                     0
 
 Column index for column test-value
 Boundary order: ASCENDING
@@ -24,5 +24,5 @@ page-0                         0  10                                        1000
 
 Page index for column test-value
                           offset   compressed size       first row index
-page-0                       192                42                     0
+page-0                       210                51                     0
 
