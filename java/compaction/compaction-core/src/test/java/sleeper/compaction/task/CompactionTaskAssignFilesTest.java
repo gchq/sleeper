@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
     private final List<CompactionJob> assignmentCheckRetries = new ArrayList<>();
@@ -62,6 +63,21 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(failedJobs).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(assignmentCheckRetries).containsExactly(job);
+    }
+
+    @Test
+    void shouldNotUpdateStatusStoreWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
+        // Given
+        CompactionJob job = createJobOnQueue("job1");
+
+        // When
+        runTaskCheckingFiles(
+                waitForFilesAssignment(false),
+                jobsSucceed(1));
+
+        // Then
+        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                jobCreated(job, DEFAULT_CREATED_TIME));
     }
 
     private WaitForFileAssignment waitForFilesAssignment(Boolean... checkResults) {
