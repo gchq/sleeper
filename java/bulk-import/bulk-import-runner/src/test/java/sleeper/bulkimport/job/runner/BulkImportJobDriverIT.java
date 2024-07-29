@@ -32,6 +32,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -69,6 +70,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.IngestJob;
@@ -518,6 +520,37 @@ class BulkImportJobDriverIT {
                         .finishedStatus(ingestFinishedStatusUncommitted(ingestJob,
                                 summary(startTime, endTime, 200, 200), 1))
                         .build()));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldSendAsynchronousCommitWithLotsOfNewFiles() throws Exception {
+        // Given
+        // - Set async commit
+        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "true");
+        // - Write some data to be imported
+        List<Record> records = getRecords();
+        writeRecordsToFile(records, dataDir + "/import/a.parquet");
+        List<String> inputFiles = new ArrayList<>();
+        inputFiles.add(dataDir + "/import/a.parquet");
+        // - State store
+        StateStore stateStore = createTable(instanceProperties, tableProperties);
+        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+
+        // When
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
+        runJob(BulkImportJobDataframeDriver::createFileReferences, instanceProperties, job, startWrittenAndEndTime());
+
+        // Then
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(getCommitRequestsFromQueue()).singleElement().satisfies(commit -> {
+            assertThat(commit).isEqualTo(IngestAddFilesCommitRequest.builder()
+                    .ingestJob(ingestJob)
+                    .fileReferences(commit.getFileReferences())
+                    .taskId(taskId).jobRunId(jobRunId)
+                    .writtenTime(writtenTime)
+                    .build());
+        });
     }
 
     private static List<Record> readRecords(String filename, Schema schema) {
