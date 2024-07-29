@@ -119,7 +119,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.statestore.commit.StateStoreCommitRequestInS3.createFileS3Key;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
@@ -548,7 +547,8 @@ class BulkImportJobDriverIT {
                         .build());
 
         // Then
-        String expectedS3Key = createFileS3Key(tableProperties.get(TABLE_ID), "test-add-files-commit");
+        String expectedS3Key = StateStoreCommitRequestInS3.createFileS3Key(
+                tableProperties.get(TABLE_ID), "test-add-files-commit");
         assertThat(receiveCommitRequestStoredInS3Messages())
                 .containsExactly(new StateStoreCommitRequestInS3(expectedS3Key));
         assertThat(readAddFilesCommitRequestFromDataBucket(expectedS3Key))

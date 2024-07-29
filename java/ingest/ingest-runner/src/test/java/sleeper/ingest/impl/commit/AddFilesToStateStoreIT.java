@@ -58,7 +58,6 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.commit.StateStoreCommitRequestInS3.createFileS3Key;
 
 @Testcontainers
 public class AddFilesToStateStoreIT {
@@ -108,7 +107,8 @@ public class AddFilesToStateStoreIT {
         bySqs(s3FileNameSupplier).addFiles(fileReferences);
 
         // Then
-        String expectedS3Key = createFileS3Key(tableProperties.get(TABLE_ID), "test-add-files-commit");
+        String expectedS3Key = StateStoreCommitRequestInS3.createFileS3Key(
+                tableProperties.get(TABLE_ID), "test-add-files-commit");
         assertThat(receiveCommitRequestStoredInS3Messages())
                 .containsExactly(new StateStoreCommitRequestInS3(expectedS3Key));
         assertThat(readAddFilesCommitRequestFromDataBucket(expectedS3Key))
