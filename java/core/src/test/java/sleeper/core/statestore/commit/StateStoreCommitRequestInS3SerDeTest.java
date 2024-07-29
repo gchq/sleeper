@@ -26,7 +26,8 @@ public class StateStoreCommitRequestInS3SerDeTest {
     @Test
     void shouldSerialiseCommitRequestInS3() {
         // Given
-        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3("test-data-bucket/test-commit-request.json");
+        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);

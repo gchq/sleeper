@@ -27,6 +27,18 @@ public class StateStoreCommitRequestInS3 {
         this.keyInS3 = keyInS3;
     }
 
+    /**
+     * Creates a key for a file in S3, to hold a commit request. Used when uploading a commit request to S3. This should
+     * be held in the Sleeper instance data bucket.
+     *
+     * @param  tableId  the Sleeper table unique ID
+     * @param  filename the filename without file type, can be a random UUID
+     * @return          the S3 object key
+     */
+    public static String createFileS3Key(String tableId, String filename) {
+        return tableId + "/statestore/commitrequests/" + filename + ".json";
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(keyInS3);
