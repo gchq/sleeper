@@ -24,7 +24,6 @@ import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -98,7 +97,6 @@ public class AddFilesToStateStoreIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldUploadCommitRequestToS3WhenRequestIsTooLarge() throws Exception {
         // Given
         List<FileReference> fileReferences = IntStream.range(0, 100)
@@ -137,13 +135,13 @@ public class AddFilesToStateStoreIT {
 
     private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
         return receiveCommitMessages().stream()
-                .map(AddFilesToStateStoreIT::readCommitRequestStoredInS3)
+                .map(message -> new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
     private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(AddFilesToStateStoreIT::readAddFilesCommitRequest)
+                .map(message -> new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
@@ -152,14 +150,6 @@ public class AddFilesToStateStoreIT {
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
         return sqs.receiveMessage(receiveMessageRequest).getMessages();
-    }
-
-    private static IngestAddFilesCommitRequest readAddFilesCommitRequest(Message message) {
-        return new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody());
-    }
-
-    private static StateStoreCommitRequestInS3 readCommitRequestStoredInS3(Message message) {
-        return new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody());
     }
 
     private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
