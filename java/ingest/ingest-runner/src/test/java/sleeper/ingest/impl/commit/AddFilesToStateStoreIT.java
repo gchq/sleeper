@@ -24,6 +24,7 @@ import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -38,13 +39,17 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -54,6 +59,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.commit.StateStoreCommitRequestInS3.createFileS3Key;
 
 @Testcontainers
 public class AddFilesToStateStoreIT {
@@ -83,7 +89,7 @@ public class AddFilesToStateStoreIT {
         bySqs().addFiles(List.of(file1));
 
         // Then
-        assertThat(receiveCommitMessages())
+        assertThat(receiveAddFilesCommitMessages())
                 .containsExactly(
                         IngestAddFilesCommitRequest.builder()
                                 .fileReferences(List.of(file1))
@@ -91,16 +97,57 @@ public class AddFilesToStateStoreIT {
                                 .build());
     }
 
-    private List<IngestAddFilesCommitRequest> receiveCommitMessages() {
+    @Test
+    @Disabled("TODO")
+    void shouldUploadCommitRequestToS3WhenRequestIsTooLarge() throws Exception {
+        // Given
+        List<FileReference> fileReferences = IntStream.range(0, 100)
+                .mapToObj(i -> factory.rootFile("file" + i + ".parquet", 100L))
+                .collect(Collectors.toList());
+        Supplier<String> s3FileNameSupplier = () -> "test-add-files-commit";
+
+        // When
+        bySqs(s3FileNameSupplier).addFiles(fileReferences);
+
+        // Then
+        String expectedS3Key = createFileS3Key(tableProperties.get(TABLE_ID), "test-add-files-commit");
+        assertThat(receiveCommitRequestStoredInS3Messages())
+                .containsExactly(new StateStoreCommitRequestInS3(expectedS3Key));
+        assertThat(readAddFilesCommitRequestFromDataBucket(expectedS3Key))
+                .isEqualTo(IngestAddFilesCommitRequest.builder()
+                        .fileReferences(fileReferences)
+                        .tableId(tableProperties.get(TABLE_ID))
+                        .build());
+    }
+
+    private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
+        String requestJson = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), s3Key);
+        return new IngestAddFilesCommitRequestSerDe().fromJson(requestJson);
+    }
+
+    private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
         return sqs.receiveMessage(receiveMessageRequest).getMessages().stream()
-                .map(AddFilesToStateStoreIT::readCommitRequest)
+                .map(AddFilesToStateStoreIT::readCommitRequestStoredInS3)
                 .collect(Collectors.toList());
     }
 
-    private static IngestAddFilesCommitRequest readCommitRequest(Message message) {
+    private static StateStoreCommitRequestInS3 readCommitRequestStoredInS3(Message message) {
+        return new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody());
+    }
+
+    private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqs.receiveMessage(receiveMessageRequest).getMessages().stream()
+                .map(AddFilesToStateStoreIT::readAddFilesCommitRequest)
+                .collect(Collectors.toList());
+    }
+
+    private static IngestAddFilesCommitRequest readAddFilesCommitRequest(Message message) {
         return new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody());
     }
 
@@ -112,6 +159,10 @@ public class AddFilesToStateStoreIT {
     }
 
     private AddFilesToStateStore bySqs() {
+        return bySqs(() -> UUID.randomUUID().toString());
+    }
+
+    private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
         return AddFilesToStateStore.bySqs(sqs, instanceProperties, request -> request.tableId(tableProperties.get(TABLE_ID)));
     }
 }
