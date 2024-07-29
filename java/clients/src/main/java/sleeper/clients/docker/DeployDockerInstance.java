@@ -52,7 +52,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -136,7 +135,6 @@ public class DeployDockerInstance {
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
-        instanceProperties.set(INGEST_SOURCE_BUCKET, "sleeper-" + instanceId + "-ingest-source");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
     }

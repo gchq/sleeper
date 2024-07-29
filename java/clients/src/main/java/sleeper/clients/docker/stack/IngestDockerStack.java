@@ -24,9 +24,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
-import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -54,14 +52,12 @@ public class IngestDockerStack implements DockerStack {
     }
 
     public void deploy() {
-        s3Client.createBucket(instanceProperties.get(INGEST_SOURCE_BUCKET));
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         sqsClient.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 
     public void tearDown() {
-        tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
         DynamoDBIngestJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));

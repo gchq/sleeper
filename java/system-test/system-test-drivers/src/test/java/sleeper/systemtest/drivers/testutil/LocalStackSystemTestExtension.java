@@ -27,15 +27,13 @@ import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    public LocalStackSystemTestExtension() {
-        this(startContainer());
+    private static final LocalStackContainer CONTAINER = startContainer();
+
+    private LocalStackSystemTestExtension() {
+        super(setupContext(CONTAINER));
     }
 
-    private LocalStackSystemTestExtension(LocalStackContainer container) {
-        super(setupContext(container));
-    }
-
-    @SuppressWarnings("resource") // Will be closed by extension
+    @SuppressWarnings("resource") // Will be cleaned up by Ryuk
     private static LocalStackContainer startContainer() {
         LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
                 .withServices(Service.S3, Service.DYNAMODB, Service.SQS);
