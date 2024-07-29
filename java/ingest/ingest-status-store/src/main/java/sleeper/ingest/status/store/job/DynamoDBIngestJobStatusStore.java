@@ -146,24 +146,24 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     private void save(Map<String, AttributeValue> statusUpdate) {
+        addStatusUpdate(statusUpdate);
+        updateJobStatus(statusUpdate);
+    }
+
+    private void addStatusUpdate(Map<String, AttributeValue> statusUpdate) {
         Instant startTime = Instant.now();
-        PutItemResult putResult = dynamoDB.putItem(new PutItemRequest()
+        PutItemResult result = dynamoDB.putItem(new PutItemRequest()
                 .withTableName(updatesTableName)
                 .withItem(statusUpdate)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
-        Instant afterPutTime = Instant.now();
         LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
                 getStringAttribute(statusUpdate, UPDATE_TYPE), getStringAttribute(statusUpdate, JOB_ID),
-                putResult.getConsumedCapacity().getCapacityUnits(),
-                LoggedDuration.withFullOutput(startTime, afterPutTime));
-        UpdateItemResult updateResult = updateJobStatus(statusUpdate);
-        LOGGER.debug("Updated status for job {}, capacity consumed = {}, took {}",
-                getStringAttribute(statusUpdate, JOB_ID),
-                updateResult.getConsumedCapacity().getCapacityUnits(),
-                LoggedDuration.withFullOutput(afterPutTime, Instant.now()));
+                result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
-    private UpdateItemResult updateJobStatus(Map<String, AttributeValue> statusUpdate) {
+    private void updateJobStatus(Map<String, AttributeValue> statusUpdate) {
+        Instant startTime = Instant.now();
         String updateExpression = "SET " +
                 "#Table = :table, " +
                 "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
@@ -189,13 +189,17 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
             expressionAttributeValues = new HashMap<>(expressionAttributeValues);
             expressionAttributeValues.put(":validation_result", validationResult);
         }
-        return dynamoDB.updateItem(new UpdateItemRequest()
+        UpdateItemResult result = dynamoDB.updateItem(new UpdateItemRequest()
                 .withTableName(jobsTableName)
                 .withKey(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
                 .withUpdateExpression(updateExpression)
                 .withExpressionAttributeNames(expressionAttributeNames)
                 .withExpressionAttributeValues(expressionAttributeValues)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        LOGGER.debug("Updated status for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(statusUpdate, JOB_ID),
+                result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {
