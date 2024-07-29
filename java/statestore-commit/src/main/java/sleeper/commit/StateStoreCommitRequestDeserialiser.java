@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.core.statestore.CommitRequestType;
+import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 

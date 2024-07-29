@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore;
+package sleeper.core.statestore.commit;
 
 /**
  * Represents the different types of state store commit requests that can be performed.
  */
 public enum CommitRequestType {
     COMPACTION_FINISHED,
-    INGEST_ADD_FILES
+    INGEST_ADD_FILES,
+    STORED_IN_S3
 }

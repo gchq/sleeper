@@ -1,0 +1,6 @@
+{
+  "type": "STORED_IN_S3",
+  "request": {
+    "keyInS3": "test-data-bucket/test-commit-request.json"
+  }
+}
