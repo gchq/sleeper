@@ -120,37 +120,6 @@ public class AddFilesToStateStoreIT {
                         .build());
     }
 
-    private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
-        String requestJson = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), s3Key);
-        return new IngestAddFilesCommitRequestSerDe().fromJson(requestJson);
-    }
-
-    private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqs.receiveMessage(receiveMessageRequest).getMessages().stream()
-                .map(AddFilesToStateStoreIT::readCommitRequestStoredInS3)
-                .collect(Collectors.toList());
-    }
-
-    private static StateStoreCommitRequestInS3 readCommitRequestStoredInS3(Message message) {
-        return new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody());
-    }
-
-    private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqs.receiveMessage(receiveMessageRequest).getMessages().stream()
-                .map(AddFilesToStateStoreIT::readAddFilesCommitRequest)
-                .collect(Collectors.toList());
-    }
-
-    private static IngestAddFilesCommitRequest readAddFilesCommitRequest(Message message) {
-        return new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody());
-    }
-
     private String createFifoQueueGetUrl() {
         CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
@@ -164,5 +133,37 @@ public class AddFilesToStateStoreIT {
 
     private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
         return AddFilesToStateStore.bySqs(sqs, instanceProperties, request -> request.tableId(tableProperties.get(TABLE_ID)));
+    }
+
+    private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
+        return receiveCommitMessages().stream()
+                .map(AddFilesToStateStoreIT::readCommitRequestStoredInS3)
+                .collect(Collectors.toList());
+    }
+
+    private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
+        return receiveCommitMessages().stream()
+                .map(AddFilesToStateStoreIT::readAddFilesCommitRequest)
+                .collect(Collectors.toList());
+    }
+
+    private List<Message> receiveCommitMessages() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqs.receiveMessage(receiveMessageRequest).getMessages();
+    }
+
+    private static IngestAddFilesCommitRequest readAddFilesCommitRequest(Message message) {
+        return new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody());
+    }
+
+    private static StateStoreCommitRequestInS3 readCommitRequestStoredInS3(Message message) {
+        return new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody());
+    }
+
+    private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
+        String requestJson = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), s3Key);
+        return new IngestAddFilesCommitRequestSerDe().fromJson(requestJson);
     }
 }
