@@ -496,22 +496,20 @@ class BulkImportJobDriverIT {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(stateStore.getFileReferences()).isEmpty();
-        List<IngestAddFilesCommitRequest> commits = getCommitRequestsFromQueue();
-        assertThat(commits).hasSize(1);
-        IngestAddFilesCommitRequest commit = commits.get(0);
-        List<FileReference> fileReferences = commit.getFileReferences();
         List<Record> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
-        assertThat(commit).isEqualTo(IngestAddFilesCommitRequest.builder()
-                .ingestJob(ingestJob)
-                .fileReferences(fileReferences)
-                .taskId(taskId).jobRunId(jobRunId)
-                .writtenTime(writtenTime)
-                .build());
-        assertThat(fileReferences)
-                .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
-                        file -> readRecords(file.getFilename(), schema))
-                .containsExactly(tuple(200L, "root", expectedRecords));
+        assertThat(getCommitRequestsFromQueue()).singleElement().satisfies(commit -> {
+            assertThat(commit).isEqualTo(IngestAddFilesCommitRequest.builder()
+                    .ingestJob(ingestJob)
+                    .fileReferences(commit.getFileReferences())
+                    .taskId(taskId).jobRunId(jobRunId)
+                    .writtenTime(writtenTime)
+                    .build());
+            assertThat(commit.getFileReferences())
+                    .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
+                            file -> readRecords(file.getFilename(), schema))
+                    .containsExactly(tuple(200L, "root", expectedRecords));
+        });
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
