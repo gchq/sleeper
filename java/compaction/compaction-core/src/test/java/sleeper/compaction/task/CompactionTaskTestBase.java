@@ -105,15 +105,15 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdSupplier);
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
     protected void runTaskCheckingFiles(WaitForFileAssignment fileAssignmentCheck, CompactionRunner compactor) throws Exception {
@@ -124,7 +124,7 @@ public class CompactionTaskTestBase {
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(messageReceiver, waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
@@ -143,9 +143,8 @@ public class CompactionTaskTestBase {
                 .run();
     }
 
-    private WaitForFileAssignment filesImmediatelyAssigned() {
-        return job -> {
-        };
+    private WaitForFileAssignment waitForFileAssignment() {
+        return new StateStoreWaitForFiles(stateStoreByTableId::get);
     }
 
     private Supplier<String> jobRunIdsInSequence() {
