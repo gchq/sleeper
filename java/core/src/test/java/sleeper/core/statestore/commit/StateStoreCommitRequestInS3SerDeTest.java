@@ -19,6 +19,7 @@ import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class StateStoreCommitRequestInS3SerDeTest {
     private final StateStoreCommitRequestInS3SerDe serDe = new StateStoreCommitRequestInS3SerDe();
@@ -35,5 +36,11 @@ public class StateStoreCommitRequestInS3SerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commitRequest);
         Approvals.verify(json);
+    }
+
+    @Test
+    void shouldFailToDeserialiseNonStoredInS3CommitRequest() {
+        assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
