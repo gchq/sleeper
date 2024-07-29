@@ -20,5 +20,6 @@ package sleeper.core.statestore;
  */
 public enum CommitRequestType {
     COMPACTION_FINISHED,
-    INGEST_ADD_FILES
+    INGEST_ADD_FILES,
+    COMPACTION_JOB_ID_ASSIGNMENT
 }

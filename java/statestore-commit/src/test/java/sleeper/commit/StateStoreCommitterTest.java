@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -33,6 +34,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
@@ -61,6 +64,7 @@ import static sleeper.compaction.job.status.CompactionJobStartedEvent.compaction
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
@@ -183,6 +187,61 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary))
                                     .build()));
+        }
+    }
+
+    @Nested
+    @DisplayName("Assign job ID to files")
+    class AssignJobIdToFiles {
+        @Test
+        void shouldApplyCompactionJobIdAssignmentCommitRequest() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+
+            // When
+            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))), "test-table");
+            committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
+        }
+
+        @Test
+        void shouldFailToApplyJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
+
+            // When
+            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request)))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
+        }
+
+        @Test
+        void shouldFailToApplyJobIdAssignmentIfFileReferenceDoesNotExist() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+
+            // When
+            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
+                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request)))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).isEmpty();
         }
     }
 

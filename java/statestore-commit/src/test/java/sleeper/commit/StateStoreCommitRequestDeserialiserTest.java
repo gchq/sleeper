@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
@@ -57,6 +59,32 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseCompactionJobIdAssignmentCommitRequest() {
+        // Given
+        CompactionJob job1 = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job-1")
+                .inputFiles(List.of("file1.parquet", "file2.parquet"))
+                .outputFile("test-output-1.parquet")
+                .partitionId("test-partition-id")
+                .build();
+        CompactionJob job2 = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job-2")
+                .inputFiles(List.of("file3.parquet", "file4.parquet"))
+                .outputFile("test-output-2.parquet")
+                .partitionId("test-partition-id")
+                .build();
+        CompactionJobIdAssignmentCommitRequest jobIdAssignmentRequest = CompactionJobIdAssignmentCommitRequest.forJobsOnTable(
+                List.of(job1, job2), "test-table");
+        String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
     }
 
     @Test
