@@ -1,0 +1,24 @@
+{
+  "type": "COMPACTION_JOB_ID_ASSIGNMENT",
+  "request": {
+    "tableId": "test-table",
+    "assignJobIdRequests": [
+      {
+        "jobId": "test-job-1",
+        "partitionId": "test-partition-id",
+        "filenames": [
+          "file1.parquet",
+          "file2.parquet"
+        ]
+      },
+      {
+        "jobId": "test-job-2",
+        "partitionId": "test-partition-id",
+        "filenames": [
+          "file3.parquet",
+          "file4.parquet"
+        ]
+      }
+    ]
+  }
+}

@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -87,7 +88,8 @@ public class CreateCompactionJobsClient {
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                     instanceProperties, stateStoreProvider,
-                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode);
+                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode,
+                    AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
             for (TableProperties table : tables) {
                 jobCreator.createJobs(table);
             }
