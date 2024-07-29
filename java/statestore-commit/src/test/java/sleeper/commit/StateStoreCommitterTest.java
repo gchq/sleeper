@@ -212,8 +212,9 @@ public class StateStoreCommitterTest {
         void shouldIgnoreJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
-            FileReference inputFile = withJobId("job1", fileFactory.rootFile("input.parquet", 123L));
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             stateStore.addFile(inputFile);
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
