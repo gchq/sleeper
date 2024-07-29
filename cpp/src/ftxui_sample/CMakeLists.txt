@@ -48,3 +48,4 @@ target_link_system_libraries(
 
 target_link_libraries(intro PRIVATE gpu_compact::gpu_compact_options gpu_compact::gpu_compact_warnings)
 target_include_directories(intro PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
+target_link_libraries(intro PUBLIC grpc::grpc protobuf::libprotobuf)

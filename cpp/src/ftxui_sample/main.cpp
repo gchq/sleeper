@@ -1,11 +1,14 @@
 #include <CLI/CLI.hpp>// NOLINT
 #include <ProtoCompaction.grpc.pb.h>
 #include <ProtoCompaction.pb.h>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <fmt/core.h>
 #include <grpcpp/grpcpp.h>
+#include <iostream>
 #include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
+#include <limits>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -20,18 +23,29 @@
 using sleeper::compaction::job::execution::Compactor;
 using sleeper::compaction::job::execution::CompactionParams;
 using sleeper::compaction::job::execution::CompactionResult;
+using sleeper::compaction::job::execution::ReturnCode;
 using grpc::Status;
-class CompactionServer final : public Compactor::Service
+using grpc::ServerBuilder;
+
+class CompactionService final : public Compactor::Service
 {
-    [[nodiscard]] grpc::Status
-      compact(grpc::ServerContext *const context, CompactionParams const *params, CompactionResult result)
+    grpc::Status compact([[maybe_unused]] ::grpc::ServerContext *context,
+      const ::sleeper::compaction::job::execution::CompactionParams *params,
+      ::sleeper::compaction::job::execution::CompactionResult *result) noexcept override
     {
+        std::cout << params->output_file() << " " << params->dict_enc_values() << '\n';
+        std::uint64_t test = std::numeric_limits<std::uint64_t>::max() - 2;
+        ReturnCode rc = ReturnCode::FAIL;
+        result->set_exit_status(rc);
+        result->set_rows_read(test);
+        result->set_rows_written(342);
+        result->set_msg("exit msg test");
         return Status::OK;
     }
 };
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-int main(int argc, const char **argv)
+int main([[maybe_unused]] int argc, [[maybe_unused]] const char **argv)
 {
     try {
         // NOLINTNEXTLINE
@@ -52,7 +66,12 @@ int main(int argc, const char **argv)
 
         fmt::print("Factorial of {} is {}\n", 2, factorial(2));
 
-
+        CompactionService compactor{};
+        ServerBuilder builder{};
+        builder.AddListeningPort("[::]:5678", grpc::InsecureServerCredentials());
+        builder.RegisterService(&compactor);
+        std::unique_ptr server = builder.BuildAndStart();
+        server->Wait();
     } catch (const std::exception &e) {
         spdlog::error("Unhandled exception in main: {}", e.what());
     }
