@@ -176,7 +176,7 @@ public class MultipleTablesIT {
             assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                     .partitionCount(1).leafPartitionCount(1)
                     .fileCount(2).recordCount(100)
-                    .averageActiveFilesPerPartition(2)
+                    .averageFileReferencesPerPartition(2)
                     .build());
         });
     }

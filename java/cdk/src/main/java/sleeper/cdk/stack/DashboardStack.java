@@ -254,7 +254,7 @@ public class DashboardStack extends NestedStack {
                             .title("FilesPerPartition")
                             .left(Collections.singletonList(Metric.Builder.create()
                                     .namespace(metricsNamespace)
-                                    .metricName("AverageActiveFilesPerPartition")
+                                    .metricName("")
                                     .unit(Unit.COUNT)
                                     .period(window)
                                     .statistic("Average")

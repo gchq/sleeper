@@ -70,7 +70,7 @@ public class TableMetricsIT {
         assertThat(metrics).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(2).recordCount(123)
-                .averageActiveFilesPerPartition(1.5)
+                .averageFileReferencesPerPartition(1.5)
                 .build());
     }
 
@@ -97,17 +97,17 @@ public class TableMetricsIT {
         assertThat(sleeper.table("A").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(2).recordCount(123)
-                .averageActiveFilesPerPartition(1.5)
+                .averageFileReferencesPerPartition(1.5)
                 .build());
         assertThat(sleeper.table("B").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(1).recordCount(100)
-                .averageActiveFilesPerPartition(1)
+                .averageFileReferencesPerPartition(1)
                 .build());
         assertThat(sleeper.table("C").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(1).recordCount(100)
-                .averageActiveFilesPerPartition(1)
+                .averageFileReferencesPerPartition(1)
                 .build());
     }
 }
