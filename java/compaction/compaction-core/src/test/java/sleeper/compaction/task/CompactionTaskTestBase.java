@@ -34,6 +34,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -144,7 +146,9 @@ public class CompactionTaskTestBase {
     }
 
     private WaitForFileAssignment waitForFileAssignment() {
-        return new StateStoreWaitForFiles(stateStoreByTableId::get);
+        return new StateStoreWaitForFiles(1,
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
+                stateStoreByTableId::get);
     }
 
     private Supplier<String> jobRunIdsInSequence() {
