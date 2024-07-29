@@ -99,8 +99,8 @@ public class AddFilesToStateStoreIT {
     @Test
     void shouldUploadCommitRequestToS3WhenRequestIsTooLarge() throws Exception {
         // Given
-        List<FileReference> fileReferences = IntStream.range(0, 100)
-                .mapToObj(i -> factory.rootFile("file" + i + ".parquet", 100L))
+        List<FileReference> fileReferences = IntStream.range(0, 1350)
+                .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
                 .collect(Collectors.toList());
         Supplier<String> s3FileNameSupplier = () -> "test-add-files-commit";
 
@@ -130,7 +130,8 @@ public class AddFilesToStateStoreIT {
     }
 
     private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
-        return AddFilesToStateStore.bySqs(sqs, instanceProperties, request -> request.tableId(tableProperties.get(TABLE_ID)));
+        return AddFilesToStateStore.bySqs(sqs, s3, instanceProperties, filenameSupplier,
+                request -> request.tableId(tableProperties.get(TABLE_ID)));
     }
 
     private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
