@@ -96,6 +96,6 @@ message CompactionResult {
   oneof exit_reason { string msg = 4;}
 }
 
-service CompactionService {
+service Compactor {
   rpc compact(CompactionParams) returns (CompactionResult) {}
 }

@@ -1,4 +1,5 @@
 #include <CLI/CLI.hpp>// NOLINT
+#include <ProtoCompaction.grpc.pb.h>
 #include <ProtoCompaction.pb.h>
 #include <cstdlib>
 #include <exception>
@@ -16,11 +17,11 @@
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
-using sleeper::compaction::job::execution::CompactionService;
+using sleeper::compaction::job::execution::Compactor;
 using sleeper::compaction::job::execution::CompactionParams;
 using sleeper::compaction::job::execution::CompactionResult;
 using grpc::Status;
-struct CompactionServer : public CompactionService
+class CompactionServer final : public Compactor::Service
 {
     [[nodiscard]] grpc::Status
       compact(grpc::ServerContext *const context, CompactionParams const *params, CompactionResult result)

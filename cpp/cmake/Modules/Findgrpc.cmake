@@ -33,6 +33,11 @@ find_library(
 
 set(grpc_VERSION ${PC_grpc_VERSION})
 
+find_program(
+  grpc_CPP_PLUGIN_LOCATION
+  NAMES grpc_cpp_plugin REQUIRED
+  DOC "Location of Protobuf compiler gRPC plugin")
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   grpc

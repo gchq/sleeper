@@ -1,21 +1,39 @@
-protobuf_generate_cpp(
-  GPU_PROTO_SRC
-  GPU_PROTO_HDRS
-  ${CMAKE_SOURCE_DIR}/../java/compaction/compaction-gpu/proto/ProtoCompaction.proto
+add_library(gpu_proto ${CMAKE_SOURCE_DIR}/../java/compaction/compaction-gpu/proto/ProtoCompaction.proto)
+set_target_properties(gpu_proto PROPERTIES CXX_CLANG_TIDY "") # Disable clang-tidy
+protobuf_generate(
+  TARGET
+  gpu_proto
+  LANGUAGE
+  cpp
   APPEND_PATH)
 
-add_library(gpu_proto ${GPU_PROTO_SRC} ${GPU_PROTO_HDRS})
+protobuf_generate(
+  TARGET
+  gpu_proto
+  LANGUAGE
+  grpc
+  GENERATE_EXTENSIONS
+  .grpc.pb.cc
+  .grpc.pb.h
+  PLUGIN
+  "protoc-gen-grpc=${grpc_CPP_PLUGIN_LOCATION}"
+  OUT_VAR
+  gpu_proto_gen_srcs
+  APPEND_PATH)
 
-message(STATUS ${GPU_PROTO_HDRS})
+list(
+  GET
+  gpu_proto_gen_srcs
+  0
+  gpu_proto_gen_file)
 cmake_path(
   GET
-  GPU_PROTO_HDRS
+  gpu_proto_gen_file
   PARENT_PATH
   GPU_PROTO_INCLUDE)
 target_include_directories(gpu_proto PUBLIC ${GPU_PROTO_INCLUDE})
 target_link_libraries(gpu_proto PRIVATE gpu_compact::gpu_compact_options
 )# Don't enable compiler warnings on Protobuf files
-set_target_properties(gpu_proto PROPERTIES CXX_CLANG_TIDY "") # Disable clang-tidy
 
 add_executable(intro main.cpp)
 target_link_system_libraries(
