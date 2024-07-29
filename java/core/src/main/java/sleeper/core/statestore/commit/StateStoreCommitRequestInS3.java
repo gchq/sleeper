@@ -39,6 +39,10 @@ public class StateStoreCommitRequestInS3 {
         return tableId + "/statestore/commitrequests/" + filename + ".json";
     }
 
+    public String getKeyInS3() {
+        return keyInS3;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(keyInS3);

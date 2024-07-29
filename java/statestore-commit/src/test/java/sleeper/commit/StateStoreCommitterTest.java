@@ -33,9 +33,12 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Duration;
@@ -75,6 +78,7 @@ public class StateStoreCommitterTest {
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
+    private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
 
     @Nested
     @DisplayName("Commit a compaction job")
@@ -245,6 +249,44 @@ public class StateStoreCommitterTest {
         }
     }
 
+    @Nested
+    @DisplayName("Read request from S3")
+    class ReadFromS3 {
+
+        @Test
+        void shouldApplyIngestStreamAddFilesCommitRequestHeldInS3() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .tableId("test-table")
+                    .fileReferences(List.of(outputFile))
+                    .build();
+            String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+            dataBucketObjectByKey.put(s3Key, new IngestAddFilesCommitRequestSerDe().toJson(commitRequest));
+
+            // When
+            committer().apply(StateStoreCommitRequest.storedInS3(new StateStoreCommitRequestInS3(s3Key)));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+        }
+
+        @Test
+        void shouldRefuseReferenceToS3HeldInS3() throws Exception {
+            // Given we have a request pointing to itself
+            String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+            StateStoreCommitRequestInS3 request = new StateStoreCommitRequestInS3(s3Key);
+            dataBucketObjectByKey.put(s3Key, new StateStoreCommitRequestInS3SerDe().toJson(request));
+
+            // When / Then
+            StateStoreCommitter committer = committer();
+            assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.storedInS3(request)))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
     private StateStoreCommitter committer() {
         return committerWithTimes(Instant::now);
     }
@@ -254,7 +296,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, timeSupplier);
+        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, dataBucketObjectByKey::get, timeSupplier);
     }
 
     private StateStore createTable(String tableId) {
