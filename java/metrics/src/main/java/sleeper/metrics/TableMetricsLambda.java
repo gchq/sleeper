@@ -123,7 +123,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
                 "instanceId", metrics.getInstanceId(),
                 "tableName", metrics.getTableName()));
 
-        metricsLogger.putMetric("ActiveFileCount", metrics.getFileCount(), Unit.COUNT);
+        metricsLogger.putMetric("NumberOfFilesWithReferences", metrics.getFileCount(), Unit.COUNT);
         metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);
         metricsLogger.putMetric("PartitionCount", metrics.getPartitionCount(), Unit.COUNT);
         metricsLogger.putMetric("LeafPartitionCount", metrics.getLeafPartitionCount(), Unit.COUNT);

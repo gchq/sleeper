@@ -200,10 +200,10 @@ public class DashboardStack extends NestedStack {
                             .build(),
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
-                            .title("ActiveFileCount")
+                            .title("NumberOfFilesWithReferences")
                             .left(Collections.singletonList(Metric.Builder.create()
                                     .namespace(metricsNamespace)
-                                    .metricName("ActiveFileCount")
+                                    .metricName("NumberOfFilesWithReferences")
                                     .unit(Unit.COUNT)
                                     .period(window)
                                     .statistic("Average")

@@ -59,7 +59,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.METRICS_N
 public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
     private static final Map<String, String> METRIC_ID_TO_NAME = Map.of(
-            "activeFiles", "ActiveFileCount",
+            "activeFiles", "NumberOfFilesWithReferences",
             "records", "RecordCount",
             "partitions", "PartitionCount",
             "leafPartitions", "LeafPartitionCount",
