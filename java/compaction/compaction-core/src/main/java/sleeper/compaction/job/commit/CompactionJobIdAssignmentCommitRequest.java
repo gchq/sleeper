@@ -15,25 +15,14 @@
  */
 package sleeper.compaction.job.commit;
 
-import sleeper.compaction.job.CompactionJob;
 import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactionJobIdAssignmentCommitRequest {
     private final String tableId;
     private final List<AssignJobIdRequest> assignJobIdRequests;
-
-    public static CompactionJobIdAssignmentCommitRequest forJobsOnTable(List<CompactionJob> jobs, String tableId) {
-        return new CompactionJobIdAssignmentCommitRequest(jobs.stream()
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()),
-                tableId);
-    }
 
     public CompactionJobIdAssignmentCommitRequest(List<AssignJobIdRequest> assignJobIdRequests, String tableId) {
         this.tableId = tableId;
@@ -69,5 +58,4 @@ public class CompactionJobIdAssignmentCommitRequest {
     public String toString() {
         return "CompactionJobIdAssignmentCommitRequest{tableId=" + tableId + ", assignJobIdRequests=" + assignJobIdRequests + "}";
     }
-
 }

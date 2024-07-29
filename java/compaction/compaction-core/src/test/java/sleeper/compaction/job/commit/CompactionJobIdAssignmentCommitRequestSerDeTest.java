@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 
 public class CompactionJobIdAssignmentCommitRequestSerDeTest {
 
@@ -46,7 +47,7 @@ public class CompactionJobIdAssignmentCommitRequestSerDeTest {
                 .outputFile("test-output-2.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobIdAssignmentCommitRequest commit = CompactionJobIdAssignmentCommitRequest.forJobsOnTable(List.of(job1, job2), "test-table");
+        CompactionJobIdAssignmentCommitRequest commit = requestToAssignFilesToJobs(List.of(job1, job2), "test-table");
 
         // When
         String json = serDe.toJsonPrettyPrint(commit);

@@ -35,6 +35,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 
 public class StateStoreCommitRequestDeserialiserTest {
     StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
@@ -78,7 +79,7 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .outputFile("test-output-2.parquet")
                 .partitionId("test-partition-id")
                 .build();
-        CompactionJobIdAssignmentCommitRequest jobIdAssignmentRequest = CompactionJobIdAssignmentCommitRequest.forJobsOnTable(
+        CompactionJobIdAssignmentCommitRequest jobIdAssignmentRequest = requestToAssignFilesToJobs(
                 List.of(job1, job2), "test-table");
         String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
 

@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
+import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -48,8 +50,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
@@ -70,6 +74,7 @@ public class CreateCompactionJobs {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
+    private final AssignJobIdQueueSender assignJobIdQueueSender;
     private final Supplier<String> jobIdSupplier;
     private final Random random;
 
@@ -78,8 +83,10 @@ public class CreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
-            Mode mode) {
-        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode, () -> UUID.randomUUID().toString(), new Random());
+            Mode mode,
+            AssignJobIdQueueSender assignJobIdQueueSender) {
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
+                assignJobIdQueueSender, () -> UUID.randomUUID().toString(), new Random());
     }
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
@@ -88,6 +95,7 @@ public class CreateCompactionJobs {
             JobSender jobSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
+            AssignJobIdQueueSender assignJobIdQueueSender,
             Supplier<String> jobIdSupplier,
             Random random) {
         this.objectFactory = objectFactory;
@@ -98,6 +106,7 @@ public class CreateCompactionJobs {
         this.mode = mode;
         this.jobIdSupplier = jobIdSupplier;
         this.random = random;
+        this.assignJobIdQueueSender = assignJobIdQueueSender;
     }
 
     public enum Mode {
@@ -138,10 +147,15 @@ public class CreateCompactionJobs {
         if (compactionJobs.size() > creationLimit) {
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
         }
-
+        AssignJobIdToFiles assignJobIdsToFiles;
+        if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
+            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
+        } else {
+            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
+        }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(stateStore, batch);
+            batchCreateJobs(assignJobIdsToFiles, tableProperties.get(TABLE_ID), batch);
         }
     }
 
@@ -161,7 +175,7 @@ public class CreateCompactionJobs {
         return outList;
     }
 
-    private void batchCreateJobs(StateStore stateStore, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, String tableId, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
         for (CompactionJob compactionJob : compactionJobs) {
             // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
             // task trying to record that the job was started.
@@ -174,9 +188,9 @@ public class CreateCompactionJobs {
         }
         // Update the statuses of these files to record that a compaction job is in progress
         LOGGER.debug("Updating status of files in StateStore");
-        stateStore.assignJobIds(compactionJobs.stream()
+        assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), tableId);
     }
 
     private void createJobsFromLeftoverFiles(
