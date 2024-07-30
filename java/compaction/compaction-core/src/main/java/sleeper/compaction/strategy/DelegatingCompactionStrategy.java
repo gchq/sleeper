@@ -23,11 +23,7 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileReference;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +37,6 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private Duration loadIndexDuration;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
@@ -54,13 +49,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         this.shouldCreateJobsStrategy = shouldCreateJobsStrategy;
     }
 
-    public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, List<FileReference> fileReferences,
-            List<Partition> partitions) {
+    public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
+            CompactionJobFactory factory, CompactionStrategyIndex index) {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        Instant indexStartTime = Instant.now();
-        CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, partitions);
-        loadIndexDuration = Duration.between(indexStartTime, Instant.now());
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (FilesInPartition filesInPartition : index.getFilesInLeafPartitions()) {
@@ -84,9 +76,5 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         LOGGER.info("Created {} compaction job{} for partition {}, table {}",
                 jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         return jobs;
-    }
-
-    public Duration getLoadIndexDuration() {
-        return loadIndexDuration;
     }
 }

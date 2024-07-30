@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.strategy.CompactionStrategy;
+import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.CompactionProperty;
@@ -146,9 +147,13 @@ public class CreateCompactionJobs {
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
 
+        Instant indexCreationStartTime = Instant.now();
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, allPartitions);
+        Duration indexCreationDuration = Duration.between(indexCreationStartTime, Instant.now());
+
         Instant jobCreationStartTime = Instant.now();
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactory, fileReferences, allPartitions);
+                instanceProperties, tableProperties, jobFactory, index);
         Duration jobCreationDuration = Duration.between(jobCreationStartTime, Instant.now());
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
@@ -183,7 +188,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Loading partitions from state store took {}", LoggedDuration.withShortOutput(loadPartitionDuration));
         LOGGER.info("Loading file references from state store took {}", LoggedDuration.withShortOutput(loadFilesDuration));
         LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(objectFactoryCreationDuration));
-        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(compactionStrategy.getLoadIndexDuration()));
+        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationDuration);
         LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationDuration));
         if (leftoverJobDuration != null) {
             LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobDuration));
