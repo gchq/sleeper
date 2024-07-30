@@ -257,6 +257,13 @@ public interface DefaultProperty {
                     "is large.")
             .defaultValue("async")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.id.assignment.commit.async")
+            .description("If true, compaction job ID assignment commit requests will be sent to the state store committer lambda " +
+                    "to be performed asynchronously. If false, compaction job ID assignments will be committed " +
+                    "synchronously in the compaction job creation lambda.")
+            .defaultValue("true")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.commit.async")
             .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
@@ -266,7 +273,7 @@ public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.files.commit.async")
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, ingest tasks will commit new files synchronously.")
-            .defaultValue("false")
+            .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.bulk.import.job.files.commit.async")

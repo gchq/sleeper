@@ -30,6 +30,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -71,7 +73,7 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -95,7 +97,7 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fixJobIds(List.of("job1")),
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
                 fileReferences, partitionTree.getAllPartitions());
 
         // Then
@@ -119,7 +121,7 @@ public class SizeRatioCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fixJobIds(List.of("job1")),
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
                 List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
@@ -137,7 +139,7 @@ public class SizeRatioCompactionStrategyTest {
             FileReference fileReference = fileReferenceFactory.rootFile("file-" + i, i == 7 ? 100L : 50L);
             fileReferences.add(fileReference);
         }
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -182,7 +184,7 @@ public class SizeRatioCompactionStrategyTest {
                 firstBatch.get(4),
                 secondBatch.get(3),
                 firstBatch.get(3));
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1", "job2"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
@@ -237,7 +239,7 @@ public class SizeRatioCompactionStrategyTest {
                 secondBatch.get(3),
                 thirdBatch.get(2),
                 firstBatch.get(3));
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1", "job2", "job3"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> jobs = strategy.createCompactionJobs(
@@ -250,7 +252,13 @@ public class SizeRatioCompactionStrategyTest {
                 jobFactory.createCompactionJob("job3", thirdBatch, "root"));
     }
 
-    private CompactionJobFactory fixJobIds(List<String> jobIds) {
-        return new CompactionJobFactory(instanceProperties, tableProperties, jobIds.iterator()::next);
+    private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
+    }
+
+    private static Supplier<String> incrementingJobIds() {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> "job" + i)
+                .iterator()::next;
     }
 }

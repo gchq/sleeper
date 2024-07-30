@@ -1226,6 +1226,11 @@ sleeper.default.ingest.record.batch.type=arrow
 # of partitions is large.
 sleeper.default.ingest.partition.file.writer.type=async
 
+# If true, compaction job ID assignment commit requests will be sent to the state store committer
+# lambda to be performed asynchronously. If false, compaction job ID assignments will be committed
+# synchronously in the compaction job creation lambda.
+sleeper.default.compaction.job.id.assignment.commit.async=true
+
 # If true, compaction job commit requests will be sent to the state store committer lambda to be
 # performed asynchronously. If false, compaction jobs will be committed synchronously by compaction
 # tasks.
@@ -1233,7 +1238,7 @@ sleeper.default.compaction.job.commit.async=true
 
 # If true, ingest tasks will add files via requests sent to the state store committer lambda
 # asynchronously. If false, ingest tasks will commit new files synchronously.
-sleeper.default.ingest.job.files.commit.async=false
+sleeper.default.ingest.job.files.commit.async=true
 
 # If true, bulk import will add files via requests sent to the state store committer lambda
 # asynchronously. If false, bulk import will commit new files at the end of the job synchronously.

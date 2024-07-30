@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
  * A lambda that allows for asynchronous commits to a state store.
@@ -99,6 +100,8 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider), Instant::now);
+                stateStoreProvider.byTableId(tablePropertiesProvider),
+                key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
+                Instant::now);
     }
 }

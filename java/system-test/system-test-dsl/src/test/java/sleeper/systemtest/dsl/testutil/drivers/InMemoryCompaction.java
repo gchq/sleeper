@@ -21,6 +21,7 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.StandardCompactor;
@@ -63,10 +64,12 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
+    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
@@ -157,7 +160,7 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), jobStore, mode);
+                    instance.getStateStoreProvider(), jobSender(), jobStore, mode, jobIdAssignmentRequests::add);
         }
     }
 
@@ -168,6 +171,7 @@ public class InMemoryCompaction {
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
             jobStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
             jobStore.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
+            jobStore.jobCommitted(compactionJobCommitted(job, summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
         }
         queuedJobsById.clear();
     }

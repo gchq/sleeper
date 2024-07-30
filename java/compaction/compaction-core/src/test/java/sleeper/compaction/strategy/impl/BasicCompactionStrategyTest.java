@@ -29,6 +29,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -49,10 +50,6 @@ public class BasicCompactionStrategyTest {
     private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
-
-    private CompactionJob.Builder jobForTable() {
-        return CompactionJob.builder().tableId("table-id");
-    }
 
     @BeforeEach
     void setUp() {
@@ -75,7 +72,7 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -96,23 +93,20 @@ public class BasicCompactionStrategyTest {
                 .buildTree();
         FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
         List<FileReference> fileReferences = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
             fileReferences.add(fileReference);
-            filesInAscendingOrder.add(0, fileReference);
         }
-        CompactionJobFactory jobFactory = fixJobIds(
-                IntStream.iterate(1, i -> i + 1)
-                        .mapToObj(i -> "job" + i)
-                        .iterator()::next);
+        // We add files in descending order of size, so need to reverse the list afterwards
+        List<FileReference> filesInAscendingOrder = new ArrayList<>(fileReferences);
+        Collections.reverse(filesInAscendingOrder);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
                 instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
-
         assertThat(compactionJobs).containsExactly(
                 jobFactory.createCompactionJob("job1", filesInAscendingOrder.subList(0, 10), "root"),
                 jobFactory.createCompactionJob("job2", filesInAscendingOrder.subList(10, 20), "root"),
@@ -141,7 +135,8 @@ public class BasicCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fixJobIds(List.of("job1")), fileReferences, partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
+                fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -164,7 +159,8 @@ public class BasicCompactionStrategyTest {
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, fixJobIds(List.of("job1")), List.of(fileReference), partitionTree.getAllPartitions());
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
+                List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -189,7 +185,7 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference6 = factory.partitionFile("right", "file6", 600L);
         List<FileReference> fileReferences = List.of(
                 fileReference1, fileReference2, fileReference3, fileReference4, fileReference5, fileReference6);
-        CompactionJobFactory jobFactory = fixJobIds(List.of("job1", "job2", "job3", "job4"));
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
         List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
@@ -202,11 +198,13 @@ public class BasicCompactionStrategyTest {
                 jobFactory.createCompactionJob("job3", List.of(fileReference5, fileReference6), "right"));
     }
 
-    private CompactionJobFactory fixJobIds(List<String> jobIds) {
-        return fixJobIds(jobIds.iterator()::next);
+    private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
     }
 
-    private CompactionJobFactory fixJobIds(Supplier<String> jobIdSupplier) {
-        return new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
+    private static Supplier<String> incrementingJobIds() {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> "job" + i)
+                .iterator()::next;
     }
 }

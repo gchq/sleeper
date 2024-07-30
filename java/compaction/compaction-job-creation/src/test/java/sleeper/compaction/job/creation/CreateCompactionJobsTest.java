@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy;
@@ -62,6 +63,7 @@ public class CreateCompactionJobsTest {
     private final InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
     private final TableProperties tableProperties = createTable();
     private final StateStore stateStore = createStateStore(tableProperties);
+    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
     private final List<CompactionJob> jobs = new ArrayList<>();
 
     @Nested
@@ -408,19 +410,19 @@ public class CreateCompactionJobsTest {
         }
     }
 
-    private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
+    private void createJobs(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
         jobCreator(mode, jobIdSupplier, random).createJobs(tableProperties);
     }
 
-    private void createJobs(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier) throws Exception {
+    private void createJobs(Mode mode, Supplier<String> jobIdSupplier) throws Exception {
         jobCreator(mode, jobIdSupplier, new Random()).createJobs(tableProperties);
     }
 
-    private CreateCompactionJobs jobCreator(CreateCompactionJobs.Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
+    private CreateCompactionJobs jobCreator(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode, jobIdSupplier, random);
+                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add, jobIdSupplier, random);
     }
 
     private Supplier<String> fixJobIds(String... jobIds) {
