@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +47,11 @@ public class CompactionPerformanceST {
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
+    @AfterEach
+    void tearDown(SleeperSystemTest sleeper) {
+        sleeper.compaction().scaleToZero();
+    }
+
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         sleeper.systemTestCluster().updateProperties(properties -> {
@@ -63,7 +69,7 @@ public class CompactionPerformanceST {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(240_000, 270_000),
+                        && stats.isAverageRunRecordsPerSecondInRange(270_000, 300_000),
                         "meets expected performance");
     }
 }
