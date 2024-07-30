@@ -29,21 +29,21 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class EmrServerlessBulkImportIT {
+public class EmrBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
         sleeper.connectToInstance(MAIN);
-        purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
+        purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrServerlessByQueue(SleeperSystemTest sleeper) {
+    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
@@ -53,25 +53,7 @@ public class EmrServerlessBulkImportIT {
 
         // When
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
-
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
-    }
-
-    @Test
-    void shouldBulkImportOneRecordWithEmrServerlessDirectly(SleeperSystemTest sleeper) {
-        // Given
-        Record record = new Record(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
-
-        // When
-        sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().directEmrServerless().sendSourceFiles("file.parquet")
+        sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_JOB_QUEUE_URL, "file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then

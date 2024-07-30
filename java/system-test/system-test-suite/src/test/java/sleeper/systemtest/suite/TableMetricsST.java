@@ -39,7 +39,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 
 @SystemTest
-public class TableMetricsIT {
+public class TableMetricsST {
 
     @TempDir
     private Path tempDir;

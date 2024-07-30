@@ -1180,7 +1180,6 @@
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
                         </systemProperties>
-                        <excludedGroups>SystemTest</excludedGroups>
                     </configuration>
                     <executions>
                         <execution>
@@ -1299,7 +1298,6 @@
                             <includes>
                                 <include>QuickSystemTestSuite</include>
                             </includes>
-                            <excludedGroups>none</excludedGroups>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>

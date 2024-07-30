@@ -16,14 +16,8 @@
 
 package sleeper.systemtest.suite.suites;
 
-import org.junit.platform.suite.api.IncludeClassNamePatterns;
-import org.junit.platform.suite.api.IncludeTags;
-import org.junit.platform.suite.api.SelectPackages;
-import org.junit.platform.suite.api.Suite;
+import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
-@SelectPackages("sleeper.systemtest.suite")
-@IncludeClassNamePatterns(".*IT")
-@IncludeTags("SystemTest")
-@Suite
+@SystemTestSuite
 public class NightlyPerformanceSystemTestSuite {
 }

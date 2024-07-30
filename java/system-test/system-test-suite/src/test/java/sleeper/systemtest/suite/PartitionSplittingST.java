@@ -47,7 +47,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class PartitionSplittingIT {
+public class PartitionSplittingST {
     @TempDir
     private Path tempDir;
 
