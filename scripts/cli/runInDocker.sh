@@ -105,7 +105,7 @@ upgrade_cli() {
 
 pull_and_tag() {
   IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:develop"
   LOCAL_IMAGE="$IMAGE_NAME:current"
 
   docker pull "$REMOTE_IMAGE"
