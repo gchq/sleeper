@@ -25,6 +25,8 @@ import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -147,6 +149,18 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseCommitRequestInS3() {
+        // Given
+        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
+        String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.storedInS3(commitRequest));
     }
 
     @Test

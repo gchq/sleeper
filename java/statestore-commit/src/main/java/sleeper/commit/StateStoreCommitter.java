@@ -28,6 +28,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
@@ -52,19 +53,23 @@ import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJ
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
+    private final StateStoreCommitRequestDeserialiser deserialiser = new StateStoreCommitRequestDeserialiser();
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
+    private final LoadS3ObjectFromDataBucket loadFromDataBucket;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
             GetStateStoreByTableId stateStoreProvider,
+            LoadS3ObjectFromDataBucket loadFromDataBucket,
             Supplier<Instant> timeSupplier) {
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
+        this.loadFromDataBucket = loadFromDataBucket;
         this.timeSupplier = timeSupplier;
     }
 
@@ -79,6 +84,8 @@ public class StateStoreCommitter {
             apply((CompactionJobCommitRequest) requestObj);
         } else if (requestObj instanceof IngestAddFilesCommitRequest) {
             apply((IngestAddFilesCommitRequest) requestObj);
+        } else if (requestObj instanceof StateStoreCommitRequestInS3) {
+            apply((StateStoreCommitRequestInS3) requestObj);
         } else if (requestObj instanceof CompactionJobIdAssignmentCommitRequest) {
             apply((CompactionJobIdAssignmentCommitRequest) requestObj);
         }
@@ -121,6 +128,28 @@ public class StateStoreCommitter {
         } else {
             LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
         }
+    }
+
+    private void apply(StateStoreCommitRequestInS3 request) throws StateStoreException {
+        String json = loadFromDataBucket.loadFromDataBucket(request.getKeyInS3());
+        StateStoreCommitRequest requestFromS3 = deserialiser.fromJson(json);
+        if (requestFromS3.getRequest() instanceof StateStoreCommitRequestInS3) {
+            throw new IllegalArgumentException("Found a request stored in S3 pointing to another S3 object: " + request.getKeyInS3());
+        }
+        apply(requestFromS3);
+    }
+
+    /**
+     * Loads S3 objects from the data bucket.
+     */
+    public interface LoadS3ObjectFromDataBucket {
+        /**
+         * Loads the content of an S3 object.
+         *
+         * @param  key the key in the data bucket
+         * @return     the content
+         */
+        String loadFromDataBucket(String key);
     }
 
     private void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {

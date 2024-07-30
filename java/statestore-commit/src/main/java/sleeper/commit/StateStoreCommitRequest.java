@@ -17,6 +17,7 @@ package sleeper.commit;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
@@ -55,6 +56,16 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
+        return new StateStoreCommitRequest(request);
+    }
+
+    /**
+     * Creates a request which is stored in S3.
+     *
+     * @param  request the commit request
+     * @return         a state store commit request
+     */
+    public static StateStoreCommitRequest storedInS3(StateStoreCommitRequestInS3 request) {
         return new StateStoreCommitRequest(request);
     }
 
