@@ -124,7 +124,7 @@ public class CreateCompactionJobs {
         SplitFileReferences.from(stateStore).split();
         LOGGER.info("Pre-split files in partitions, took {}", LoggedDuration.withShortOutput(preSplitStartTime, Instant.now()));
         Instant finishTime = createJobsForTable(table, stateStore);
-        LOGGER.info("Overall, creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
+        LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
     private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
