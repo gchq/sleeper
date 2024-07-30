@@ -81,10 +81,10 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
 
     public AwsSystemTestDrivers() {
-        this(new SystemTestClients());
+        this(SystemTestClients.fromDefaults());
     }
 
-    private AwsSystemTestDrivers(SystemTestClients clients) {
+    protected AwsSystemTestDrivers(SystemTestClients clients) {
         this.clients = clients;
     }
 
@@ -99,8 +99,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     public AssumeAdminRoleDriver assumeAdminRole() {
-        return properties -> new AwsSystemTestDrivers(new SystemTestClients(clients,
-                AssumeSleeperRole.instanceAdmin(properties)));
+        return properties -> new AwsSystemTestDrivers(
+                clients.assumeRole(AssumeSleeperRole.instanceAdmin(properties)));
     }
 
     @Override
@@ -125,7 +125,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
-        return new AwsDirectIngestDriver(context.instance());
+        return new AwsDirectIngestDriver(context.instance(), clients);
     }
 
     @Override

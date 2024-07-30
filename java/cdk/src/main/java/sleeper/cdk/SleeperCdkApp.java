@@ -164,7 +164,7 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, jars,
                 configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestStatusStore, compactionStatusStore,
-                topicStack.getTopic(), errorMetrics);
+                policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);

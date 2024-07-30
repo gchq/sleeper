@@ -17,26 +17,21 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
-import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final AmazonDynamoDB dynamoDB;
 
     private IngestDockerStack(Builder builder) {
         instanceProperties = builder.instanceProperties;
-        s3Client = builder.s3Client;
         sqsClient = builder.sqsClient;
         dynamoDB = builder.dynamoDB;
     }
@@ -47,21 +42,19 @@ public class IngestDockerStack implements DockerStack {
 
     public static IngestDockerStack from(
             InstanceProperties instanceProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+            AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         return builder().instanceProperties(instanceProperties)
-                .s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                .dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();
     }
 
     public void deploy() {
-        s3Client.createBucket(instanceProperties.get(INGEST_SOURCE_BUCKET));
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         sqsClient.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 
     public void tearDown() {
-        tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
         DynamoDBIngestJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
@@ -69,7 +62,6 @@ public class IngestDockerStack implements DockerStack {
 
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private AmazonS3 s3Client;
         private AmazonSQS sqsClient;
         private AmazonDynamoDB dynamoDB;
 
@@ -78,11 +70,6 @@ public class IngestDockerStack implements DockerStack {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder s3Client(AmazonS3 s3Client) {
-            this.s3Client = s3Client;
             return this;
         }
 

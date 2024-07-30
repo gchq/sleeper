@@ -91,7 +91,7 @@ public class DeployedSystemTestResources {
         boolean newDeployment = driver.deployIfNotPresent(generateProperties());
         properties = driver.loadProperties();
         if (!newDeployment && isRedeployNeeded()) {
-            driver.deploy(properties);
+            driver.redeploy(properties);
             properties = driver.loadProperties();
         }
     }
