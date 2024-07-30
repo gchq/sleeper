@@ -251,10 +251,10 @@ public class DashboardStack extends NestedStack {
                             .build(),
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
-                            .title("FilesPerPartition")
+                            .title("FilesReferencesPerPartition")
                             .left(Collections.singletonList(Metric.Builder.create()
                                     .namespace(metricsNamespace)
-                                    .metricName("")
+                                    .metricName("AverageFileReferencesPerPartition")
                                     .unit(Unit.COUNT)
                                     .period(window)
                                     .statistic("Average")
