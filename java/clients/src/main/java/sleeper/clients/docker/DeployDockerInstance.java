@@ -122,7 +122,7 @@ public class DeployDockerInstance {
             }
         }
 
-        IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
+        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
         CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
     }
 
