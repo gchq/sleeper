@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.datageneration;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.configuration.jars.ObjectFactory;
@@ -56,7 +57,8 @@ public class WriteRandomDataDirect {
                         .hadoopConfiguration(session.hadoopConfiguration())
                         .s3AsyncClient(session.s3Async())
                         .build(),
-                addFilesToStateStore(session.sqs(), session.instanceProperties(), session.tableProperties(), stateStoreProvider),
+                addFilesToStateStore(session.sqs(), session.s3(),
+                        session.instanceProperties(), session.tableProperties(), stateStoreProvider),
                 systemTestProperties, session.tableProperties());
     }
 
@@ -75,10 +77,10 @@ public class WriteRandomDataDirect {
     }
 
     private static AddFilesToStateStore addFilesToStateStore(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TableProperties tableProperties,
             StateStoreProvider stateStoreProvider) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
                     requestBuilder -> requestBuilder.tableId(tableProperties.get(TABLE_ID)));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));

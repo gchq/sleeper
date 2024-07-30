@@ -70,6 +70,10 @@ public class InstanceIngestSession implements AutoCloseable {
         return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 
+    public AmazonS3 s3() {
+        return s3;
+    }
+
     public S3AsyncClient s3Async() {
         return s3Async;
     }
