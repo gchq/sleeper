@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -70,14 +70,14 @@ public class SendFilesToIngest {
     }
 
     public static void uploadFiles(InstanceProperties properties, List<Path> filePaths, AmazonS3 s3Client) {
-        filePaths.forEach(filePath -> s3Client.putObject(properties.get(INGEST_SOURCE_BUCKET),
+        filePaths.forEach(filePath -> s3Client.putObject(properties.get(DATA_BUCKET),
                 "ingest/" + filePath.getFileName().toString(), filePath.toFile()));
     }
 
     public static void sendJobForFiles(InstanceProperties properties, String tableName, List<Path> filePaths, AmazonSQS sqsClient) {
         IngestJob job = IngestJob.builder()
                 .files(filePaths.stream()
-                        .map(filePath -> properties.get(INGEST_SOURCE_BUCKET) + "/ingest/" + filePath.getFileName().toString())
+                        .map(filePath -> properties.get(DATA_BUCKET) + "/ingest/" + filePath.getFileName().toString())
                         .collect(Collectors.toList()))
                 .tableName(tableName)
                 .build();
