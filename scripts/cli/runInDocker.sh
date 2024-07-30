@@ -89,7 +89,7 @@ upgrade_cli() {
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   "$TEMP_PATH" cli pull-images latest
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
