@@ -1,5 +1,5 @@
 {
-  "name": "Nvidia RAPIDS dev container",
+  "name": "Nvidia RAPIDS no GPU",
   "build": {
     "dockerfile": "../../java/compaction/compaction-gpu/docker/Dockerfile",
     "target": "devcontainer",
@@ -51,8 +51,5 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "workspaceFolder": "/workspace",
-  "runArgs": [
-    "--gpus",
-    "all"
-  ]
+  "runArgs": []
 }

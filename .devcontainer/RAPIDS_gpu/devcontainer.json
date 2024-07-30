@@ -1,7 +1,7 @@
 {
-  "name": "CPP development",
+  "name": "Nvidia RAPIDS with GPU",
   "build": {
-    "dockerfile": "./Dockerfile",
+    "dockerfile": "../../java/compaction/compaction-gpu/docker/Dockerfile",
     "target": "devcontainer",
     "options": [
       "--progress=plain"
@@ -50,5 +50,9 @@
     "SUBNET": "${localEnv:SUBNET}"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-  "workspaceFolder": "/workspace"
+  "workspaceFolder": "/workspace",
+  "runArgs": [
+    "--gpus",
+    "all"
+  ]
 }
