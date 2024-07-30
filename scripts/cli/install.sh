@@ -21,7 +21,7 @@ VERSION="develop"
 echo "Downloading Sleeper CLI"
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/main/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
 
