@@ -188,7 +188,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Loading partitions from state store took {}", LoggedDuration.withShortOutput(loadPartitionDuration));
         LOGGER.info("Loading file references from state store took {}", LoggedDuration.withShortOutput(loadFilesDuration));
         LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(objectFactoryCreationDuration));
-        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationDuration);
+        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationDuration));
         LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationDuration));
         if (leftoverJobDuration != null) {
             LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobDuration));
