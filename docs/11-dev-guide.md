@@ -229,6 +229,7 @@ Unit tests should be in a class ending with Test, like MyFeatureTest. Integratio
 IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
 for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST, and must be
 tagged with the annotation `SystemTest`. This means they will only be run as part of a system test suite, or directly.
+See the [system tests guide](13-system-tests.md#acceptance-tests).
 
 We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
 wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
