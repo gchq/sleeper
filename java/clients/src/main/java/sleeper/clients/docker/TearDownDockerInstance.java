@@ -63,7 +63,7 @@ public class TearDownDockerInstance {
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).tearDown();
-        IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).tearDown();
+        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).tearDown();
         CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).tearDown();
     }
 }

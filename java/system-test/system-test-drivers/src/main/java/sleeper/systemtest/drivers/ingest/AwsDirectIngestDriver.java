@@ -16,11 +16,14 @@
 
 package sleeper.systemtest.drivers.ingest;
 
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -31,9 +34,11 @@ import java.util.Iterator;
 
 public class AwsDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
+    private final S3AsyncClient s3Async;
 
-    public AwsDirectIngestDriver(SystemTestInstanceContext instance) {
+    public AwsDirectIngestDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
+        s3Async = clients.getS3Async();
     }
 
     public void ingest(Path tempDir, Iterator<Record> records) {
@@ -52,6 +57,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
                 .localDir(tempDir.toString())
                 .stateStoreProvider(instance.getStateStoreProvider())
                 .instanceProperties(instance.getInstanceProperties())
+                .s3AsyncClient(s3Async)
                 .build();
     }
 }

@@ -18,8 +18,8 @@ package sleeper.ingest.job.commit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.core.statestore.CommitRequestType;
 import sleeper.core.statestore.FileReferenceSerDe;
+import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
 /**

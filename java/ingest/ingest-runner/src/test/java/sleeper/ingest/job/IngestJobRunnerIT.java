@@ -374,7 +374,7 @@ class IngestJobRunnerIT {
                 stateStoreProvider, statusStore,
                 "test-task",
                 localDir.toString(),
-                s3Async, sqs,
+                s3, s3Async, sqs,
                 hadoopConfiguration,
                 timeSupplier);
     }

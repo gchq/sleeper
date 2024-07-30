@@ -111,7 +111,8 @@ public class ECSIngestTaskRunner {
         PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(objectFactory, instanceProperties, tablePropertiesProvider,
-                propertiesReloader, stateStoreProvider, jobStore, taskId, localDir, s3AsyncClient, sqsClient, hadoopConfiguration, Instant::now);
+                propertiesReloader, stateStoreProvider, jobStore, taskId, localDir,
+                s3Client, s3AsyncClient, sqsClient, hadoopConfiguration, Instant::now);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);

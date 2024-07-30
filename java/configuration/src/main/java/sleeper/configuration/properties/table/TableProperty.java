@@ -41,6 +41,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
@@ -228,6 +229,13 @@ public interface TableProperty extends SleeperProperty {
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)
+            .description("If true, compaction job ID assignment commit requests will be sent to the state store committer lambda " +
+                    "to be performed asynchronously. If false, compaction job ID assignments will be committed " +
+                    "synchronously by the compaction job creation lambda.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")

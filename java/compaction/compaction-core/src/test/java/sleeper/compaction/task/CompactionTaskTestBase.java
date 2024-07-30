@@ -34,6 +34,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -105,15 +107,15 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), filesImmediatelyAssigned(), compactor, timeSupplier, taskId, jobRunIdSupplier);
+        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
     protected void runTaskCheckingFiles(WaitForFileAssignment fileAssignmentCheck, CompactionRunner compactor) throws Exception {
@@ -124,7 +126,7 @@ public class CompactionTaskTestBase {
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, filesImmediatelyAssigned(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(messageReceiver, waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
@@ -143,9 +145,10 @@ public class CompactionTaskTestBase {
                 .run();
     }
 
-    private WaitForFileAssignment filesImmediatelyAssigned() {
-        return job -> {
-        };
+    private WaitForFileAssignment waitForFileAssignment() {
+        return new StateStoreWaitForFiles(1,
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
+                stateStoreByTableId::get);
     }
 
     private Supplier<String> jobRunIdsInSequence() {
