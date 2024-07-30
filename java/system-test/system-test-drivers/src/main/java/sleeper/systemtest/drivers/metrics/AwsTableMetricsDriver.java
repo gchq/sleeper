@@ -63,7 +63,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             "records", "RecordCount",
             "partitions", "PartitionCount",
             "leafPartitions", "LeafPartitionCount",
-            "filesPerPartition", "averageFileReferencesPerPartition");
+            "filesPerPartition", "AverageFileReferencesPerPartition");
     private static final String QUERY_METRIC_STATISTIC = "Average";
     private static final int QUERY_METRIC_PERIOD_SECONDS = 5 * 60;
 
@@ -97,7 +97,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
                 .recordCount((long) getMetric(map, "records"))
                 .partitionCount((int) getMetric(map, "partitions"))
                 .leafPartitionCount((int) getMetric(map, "leafPartitions"))
-                .averageFileReferencesPerPartition(getMetric(map, "filesPerPartition"))
+                .averageFileReferencesPerPartition(getMetric(map, "filesReferencesPerPartition"))
                 .build();
     }
 
