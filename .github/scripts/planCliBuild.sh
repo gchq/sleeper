@@ -18,14 +18,9 @@
 # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
 
 REPO_OWNER=$1
-GIT_REF=$2
 
-# Strip git ref prefix from version
-VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
-# Strip "v" prefix from tag name
-[[ "$GIT_REF" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
 # Use Docker `latest` tag convention
-[ "$VERSION" == "main" ] && VERSION=latest
+VERSION=latest
 
 echo_github_output_for_image() {
   IMAGE_NAME=$1
