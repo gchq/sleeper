@@ -69,6 +69,10 @@ XNIO (org.jboss.xnio:xnio-api:3.8.16.Final):
 
 - Apache License, Version 2.0
 
+dnsjava (dnsjava:dnsjava:3.6.0):
+
+- The 3-Clause BSD License
+
 OkHttp (com.squareup.okhttp3:okhttp:4.12.0):
 
 - Apache License, Version 2.0

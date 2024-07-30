@@ -374,7 +374,7 @@ class IngestJobRunnerIT {
                 stateStoreProvider, statusStore,
                 "test-task",
                 localDir.toString(),
-                s3Async, sqs,
+                s3, s3Async, sqs,
                 hadoopConfiguration,
                 timeSupplier);
     }
@@ -394,6 +394,7 @@ class IngestJobRunnerIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "false");
         tableProperties.setSchema(schema);
         return tableProperties;
     }

@@ -29,7 +29,6 @@ public class CompactionJobFinishedEvent {
     private final String taskId;
     private final String jobRunId;
     private final RecordsProcessedSummary summary;
-    private final boolean committedBySeparateUpdate;
 
     private CompactionJobFinishedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
@@ -37,7 +36,6 @@ public class CompactionJobFinishedEvent {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        committedBySeparateUpdate = builder.committedBySeparateUpdate;
     }
 
     /**
@@ -75,13 +73,9 @@ public class CompactionJobFinishedEvent {
         return summary;
     }
 
-    public boolean isCommittedBySeparateUpdate() {
-        return committedBySeparateUpdate;
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, taskId, jobRunId, summary, committedBySeparateUpdate);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, summary);
     }
 
     @Override
@@ -94,13 +88,12 @@ public class CompactionJobFinishedEvent {
         }
         CompactionJobFinishedEvent other = (CompactionJobFinishedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
-                && Objects.equals(summary, other.summary) && committedBySeparateUpdate == other.committedBySeparateUpdate;
+                && Objects.equals(summary, other.summary);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", summary=" + summary + ", committedBySeparateUpdate="
-                + committedBySeparateUpdate + "}";
+        return "CompactionJobFinishedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", summary=" + summary + "}";
     }
 
     /**
@@ -110,7 +103,6 @@ public class CompactionJobFinishedEvent {
         private String jobId;
         private String tableId;
         private RecordsProcessedSummary summary;
-        private boolean committedBySeparateUpdate;
         private String jobRunId;
         private String taskId;
 
@@ -158,17 +150,6 @@ public class CompactionJobFinishedEvent {
          */
         public Builder summary(RecordsProcessedSummary summary) {
             this.summary = summary;
-            return this;
-        }
-
-        /**
-         * Sets whether or not a separate status update is used for when the job is committed in the state store.
-         *
-         * @param  committedBySeparateUpdate true if the job is committed to the state store as a separate update
-         * @return                           the builder
-         */
-        public Builder committedBySeparateUpdate(boolean committedBySeparateUpdate) {
-            this.committedBySeparateUpdate = committedBySeparateUpdate;
             return this;
         }
 

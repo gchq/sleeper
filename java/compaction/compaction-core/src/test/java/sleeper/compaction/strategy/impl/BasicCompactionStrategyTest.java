@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -28,8 +29,9 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,10 +51,6 @@ public class BasicCompactionStrategyTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
 
-    private CompactionJob.Builder jobForTable() {
-        return CompactionJob.builder().tableId("table-id");
-    }
-
     @BeforeEach
     void setUp() {
         instanceProperties.set(FILE_SYSTEM, "file://");
@@ -67,7 +65,6 @@ public class BasicCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -75,20 +72,15 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference1 = factory.rootFile("file1", 100L);
         FileReference fileReference2 = factory.rootFile("file2", 100L);
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = jobForTable()
-                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("root")
-                .inputFiles(List.of("file1", "file2"))
-                .outputFile("file://databucket/table-id/data/partition_root/" + compactionJobs.get(0).getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
-        assertThat(compactionJobs).containsExactly(expectedCompactionJob);
+        assertThat(compactionJobs).containsExactly(
+                jobFactory.createCompactionJob("job1", fileReferences, "root"));
     }
 
     @Test
@@ -96,7 +88,6 @@ public class BasicCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -106,24 +97,27 @@ public class BasicCompactionStrategyTest {
             FileReference fileReference = factory.rootFile("file-" + i, 1_000_000L - i * 100L);
             fileReferences.add(fileReference);
         }
+        // We add files in descending order of size, so need to reverse the list afterwards
+        List<FileReference> filesInAscendingOrder = new ArrayList<>(fileReferences);
+        Collections.reverse(filesInAscendingOrder);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
-            List<String> inputFiles = new ArrayList<>();
-            for (int j = 99 - i * 10; j > 99 - (i + 1) * 10; j--) {
-                inputFiles.add("file-" + j);
-            }
-            return jobForTable()
-                    .jobId(compactionJobs.get(i).getId()) // Job id is a UUID so we don't know what it will be
-                    .partitionId("root")
-                    .inputFiles(inputFiles)
-                    .outputFile("file://databucket/table-id/data/partition_root/" + compactionJobs.get(i).getId() + ".parquet")
-                    .iteratorClassName(null)
-                    .iteratorConfig(null).build();
-        }).collect(Collectors.toList()));
+        assertThat(compactionJobs).containsExactly(
+                jobFactory.createCompactionJob("job1", filesInAscendingOrder.subList(0, 10), "root"),
+                jobFactory.createCompactionJob("job2", filesInAscendingOrder.subList(10, 20), "root"),
+                jobFactory.createCompactionJob("job3", filesInAscendingOrder.subList(20, 30), "root"),
+                jobFactory.createCompactionJob("job4", filesInAscendingOrder.subList(30, 40), "root"),
+                jobFactory.createCompactionJob("job5", filesInAscendingOrder.subList(40, 50), "root"),
+                jobFactory.createCompactionJob("job6", filesInAscendingOrder.subList(50, 60), "root"),
+                jobFactory.createCompactionJob("job7", filesInAscendingOrder.subList(60, 70), "root"),
+                jobFactory.createCompactionJob("job8", filesInAscendingOrder.subList(70, 80), "root"),
+                jobFactory.createCompactionJob("job9", filesInAscendingOrder.subList(80, 90), "root"),
+                jobFactory.createCompactionJob("job10", filesInAscendingOrder.subList(90, 100), "root"));
     }
 
     @Test
@@ -131,7 +125,6 @@ public class BasicCompactionStrategyTest {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -141,7 +134,33 @@ public class BasicCompactionStrategyTest {
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
+                fileReferences, partitionTree.getAllPartitions());
+
+        // Then
+        assertThat(compactionJobs).isEmpty();
+    }
+
+    @Test
+    public void shouldCreateNoJobsWhenFileInLeafPartitionIsAssignedToAJob() {
+        // Given
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
+        PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .singlePartition("root")
+                .buildTree();
+        FileReference fileReference = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("root")
+                .jobId("test-job")
+                .numberOfRecords(123L)
+                .build();
+
+        // When
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
+                List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -153,7 +172,6 @@ public class BasicCompactionStrategyTest {
         // jobs, the "right" child partition only has files for 1 compaction job
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy strategy = new BasicCompactionStrategy();
-        strategy.init(instanceProperties, tableProperties);
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 123L)
@@ -167,34 +185,26 @@ public class BasicCompactionStrategyTest {
         FileReference fileReference6 = factory.partitionFile("right", "file6", 600L);
         List<FileReference> fileReferences = List.of(
                 fileReference1, fileReference2, fileReference3, fileReference4, fileReference5, fileReference6);
+        CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(List.of(), fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
+                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
-        assertThat(compactionJobs).hasSize(3);
-        CompactionJob expectedCompactionJob1 = jobForTable()
-                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("left")
-                .inputFiles(List.of("file1", "file2"))
-                .outputFile("file://databucket/table-id/data/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
-        CompactionJob expectedCompactionJob2 = jobForTable()
-                .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("left")
-                .inputFiles(List.of("file3", "file4"))
-                .outputFile("file://databucket/table-id/data/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
-        CompactionJob expectedCompactionJob3 = jobForTable()
-                .jobId(compactionJobs.get(2).getId()) // Job id is a UUID so we don't know what it will be
-                .partitionId("right")
-                .inputFiles(List.of("file5", "file6"))
-                .outputFile("file://databucket/table-id/data/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
-                .iteratorClassName(null)
-                .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(
-                expectedCompactionJob1, expectedCompactionJob2, expectedCompactionJob3);
+                jobFactory.createCompactionJob("job1", List.of(fileReference1, fileReference2), "left"),
+                jobFactory.createCompactionJob("job2", List.of(fileReference3, fileReference4), "left"),
+                jobFactory.createCompactionJob("job3", List.of(fileReference5, fileReference6), "right"));
+    }
+
+    private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
+        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
+    }
+
+    private static Supplier<String> incrementingJobIds() {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> "job" + i)
+                .iterator()::next;
     }
 }

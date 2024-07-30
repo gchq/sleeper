@@ -43,7 +43,6 @@
           {
             "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-21T13:35:12.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,
@@ -87,7 +86,6 @@
           {
             "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-20T13:35:12.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,

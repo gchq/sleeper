@@ -28,12 +28,10 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
-    private final boolean committedBySeparateUpdate;
 
     private CompactionJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-        committedBySeparateUpdate = builder.committedBySeparateUpdate;
     }
 
     /**
@@ -61,13 +59,9 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
         return summary;
     }
 
-    public boolean isCommittedBySeparateUpdate() {
-        return committedBySeparateUpdate;
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, committedBySeparateUpdate);
+        return Objects.hash(updateTime, summary);
     }
 
     @Override
@@ -79,18 +73,17 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
             return false;
         }
         CompactionJobFinishedStatus other = (CompactionJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && committedBySeparateUpdate == other.committedBySeparateUpdate;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", committedBySeparateUpdate=" + committedBySeparateUpdate + "}";
+        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + "}";
     }
 
     public static class Builder {
         private Instant updateTime;
         private RecordsProcessedSummary summary;
-        private boolean committedBySeparateUpdate;
 
         private Builder() {
         }
@@ -102,11 +95,6 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
 
         public Builder summary(RecordsProcessedSummary summary) {
             this.summary = summary;
-            return this;
-        }
-
-        public Builder committedBySeparateUpdate(boolean committedBySeparateUpdate) {
-            this.committedBySeparateUpdate = committedBySeparateUpdate;
             return this;
         }
 

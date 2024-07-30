@@ -87,12 +87,13 @@ class CompactionJobStatusTest {
         CompactionJob job = dataHelper.singleFileCompaction();
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
+        Instant commitTime = Instant.parse("2022-09-22T13:34:20.001Z");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
         CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
-                finishedCompactionRun(DEFAULT_TASK_ID, summary));
+                finishedCompactionRun(DEFAULT_TASK_ID, summary, commitTime));
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
@@ -124,11 +125,12 @@ class CompactionJobStatusTest {
         RecordsProcessedSummary run1Summary = new RecordsProcessedSummary(
                 new RecordsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T13:33:10.001Z"), Duration.ofMinutes(1));
+        Instant commitTime1 = Instant.parse("2022-09-22T13:34:15.001Z");
         Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
 
         // When
         CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
-                finishedCompactionRun("task-1", run1Summary),
+                finishedCompactionRun("task-1", run1Summary, commitTime1),
                 startedCompactionRun("task-2", startTime2));
 
         // Then

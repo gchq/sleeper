@@ -28,9 +28,8 @@ public enum CompactionJobUpdateType {
     CREATED(1, CompactionJobStatusType.PENDING),
     STARTED(2, CompactionJobStatusType.IN_PROGRESS),
     FINISHED_WHEN_COMMITTED(3, CompactionJobStatusType.UNCOMMITTED),
-    FINISHED(4, CompactionJobStatusType.FINISHED),
-    COMMITTED(5, CompactionJobStatusType.FINISHED),
-    FAILED(6, CompactionJobStatusType.FAILED);
+    COMMITTED(4, CompactionJobStatusType.FINISHED),
+    FAILED(5, CompactionJobStatusType.FAILED);
 
     private final int order;
     private final CompactionJobStatusType jobStatusTypeAfterUpdate;
@@ -60,8 +59,7 @@ public enum CompactionJobUpdateType {
         } else if (update instanceof CompactionJobStartedStatus) {
             return STARTED;
         } else if (update instanceof CompactionJobFinishedStatus) {
-            CompactionJobFinishedStatus finishedUpdate = (CompactionJobFinishedStatus) update;
-            return finishedUpdate.isCommittedBySeparateUpdate() ? FINISHED_WHEN_COMMITTED : FINISHED;
+            return FINISHED_WHEN_COMMITTED;
         } else if (update instanceof CompactionJobCommittedStatus) {
             return COMMITTED;
         } else if (update instanceof ProcessFailedStatus) {

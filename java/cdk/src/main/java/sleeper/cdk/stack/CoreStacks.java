@@ -121,6 +121,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         compactionStatusStore.grantWriteJobEvent(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
     public void grantRunCompactionJobs(IGrantable grantee) {

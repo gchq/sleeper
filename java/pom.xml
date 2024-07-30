@@ -14,8 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
@@ -64,7 +64,7 @@
         -->
         <spark.version>3.4.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
-        <parquet-hadoop.version>1.13.1</parquet-hadoop.version>
+        <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.8</joom.spark.platform.version>
         <!--
         Hadoop AWS uses an old version of wildfly-openssl.
@@ -97,6 +97,8 @@
         <kerby.version>2.0.3</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
+        <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
+        <dnsjava.version>3.6.1</dnsjava.version>
         <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
         <okhttp3.version>4.12.0</okhttp3.version>
         <!--
@@ -113,9 +115,9 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.6</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.26.22</aws-java-sdk-v2.version>
-        <aws-crt.version>0.30.0</aws-crt.version>
-        <aws-lambda-java-events.version>3.12.0</aws-lambda-java-events.version>
+        <aws-java-sdk-v2.version>2.26.26</aws-java-sdk-v2.version>
+        <aws-crt.version>0.30.3</aws-crt.version>
+        <aws-lambda-java-events.version>3.13.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.15.0</commons-lang3.version>
@@ -513,6 +515,11 @@
                 <groupId>org.jboss.xnio</groupId>
                 <artifactId>xnio-api</artifactId>
                 <version>${xnio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${dnsjava.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
