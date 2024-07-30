@@ -70,7 +70,7 @@ public class ParallelCompactionsST {
                     properties.setEnum(INGEST_MODE, DIRECT);
                     properties.setNumber(NUMBER_OF_WRITERS, 10);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
-                }).generateData(
+                }).runDataGenerationTasks(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)));
 

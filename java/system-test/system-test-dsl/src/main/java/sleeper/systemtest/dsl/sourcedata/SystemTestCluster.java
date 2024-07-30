@@ -60,11 +60,11 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster generateData() {
-        return generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+    public SystemTestCluster runDataGenerationTasks() {
+        return runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCluster generateData(PollWithRetries poll) {
+    public SystemTestCluster runDataGenerationTasks(PollWithRetries poll) {
         driver.runDataGenerationTasks(poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
