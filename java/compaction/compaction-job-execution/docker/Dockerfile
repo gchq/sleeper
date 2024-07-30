@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM amazonlinux:2023.5.20240701.0
-RUN yum install -y java-11-amazon-corretto-devel
+FROM amazonlinux:2023
+RUN yum install -y java-11-amazon-corretto-headless
 
 COPY compaction-job-execution.jar /compaction-job-execution.jar
 COPY run.sh /run.sh

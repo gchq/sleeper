@@ -14,8 +14,8 @@
 ARG BUILDER_IMAGE_NAME=maven
 ARG BUILDER_IMAGE_TAG=3.8-openjdk-8-slim
 
-ARG BASE_IMAGE_NAME=amazoncorretto
-ARG BASE_IMAGE_TAG=11
+ARG BASE_IMAGE_NAME=amazonlinux
+ARG BASE_IMAGE_TAG=2023
 
 ARG SPARK_VERSION=3.4.1
 ARG HADOOP_VERSION=3.3.3
@@ -65,11 +65,11 @@ ARG SPARK_DIRNAME
 ARG USER=spark
 ARG GROUP=spark
 
+RUN yum install -y java-11-amazon-corretto-headless libzstd shadow-utils.x86_64
+
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
 RUN chmod +x /usr/bin/tini
-
-RUN yum install -y libzstd shadow-utils.x86_64
 
 RUN groupadd ${GROUP} && useradd --home-dir /opt/spark --gid ${GROUP} --no-create-home --shell /bin/bash ${USER}
 

@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM amazoncorretto:11
+FROM amazonlinux:2023
+RUN yum install -y java-11-amazon-corretto-headless
 
 COPY system-test.jar /system-test.jar
 COPY run.sh /run.sh
