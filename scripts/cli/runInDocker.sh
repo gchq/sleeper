@@ -22,7 +22,6 @@ if [ "$#" -lt 1 ]; then
 fi
 
 HOME_IN_IMAGE=/root
-REMOTE_TAG="latest"
 
 run_in_docker() {
   local RUN_PARAMS
