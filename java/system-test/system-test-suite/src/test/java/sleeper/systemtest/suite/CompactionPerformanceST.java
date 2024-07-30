@@ -52,7 +52,8 @@ public class CompactionPerformanceST {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
             properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
-        }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
+        }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .waitForTotalFileReferences(110);
 
         sleeper.compaction().createJobs(10).invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));

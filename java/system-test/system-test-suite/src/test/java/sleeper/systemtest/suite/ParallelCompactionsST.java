@@ -72,7 +72,8 @@ public class ParallelCompactionsST {
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
                 }).runDataGenerationTasks(
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .waitForTotalFileReferences(81920);
 
         // When we run compaction
         sleeper.compaction()
