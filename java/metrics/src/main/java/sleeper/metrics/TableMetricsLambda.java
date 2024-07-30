@@ -123,14 +123,14 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
                 "instanceId", metrics.getInstanceId(),
                 "tableName", metrics.getTableName()));
 
-        metricsLogger.putMetric("ActiveFileCount", metrics.getFileCount(), Unit.COUNT);
+        metricsLogger.putMetric("NumberOfFilesWithReferences", metrics.getFileCount(), Unit.COUNT);
         metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);
         metricsLogger.putMetric("PartitionCount", metrics.getPartitionCount(), Unit.COUNT);
         metricsLogger.putMetric("LeafPartitionCount", metrics.getLeafPartitionCount(), Unit.COUNT);
         // TODO: Work out how to publish min and max active files per partition too
         // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
         // Is it possible when publishing via the embedded metric format though?
-        metricsLogger.putMetric("AverageActiveFilesPerPartition", metrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
+        metricsLogger.putMetric("AverageFileReferencesPerPartition", metrics.getAverageFileReferencesPerPartition(), Unit.COUNT);
         metricsLogger.setTimestamp(Instant.now());
         metricsLogger.flush();
     }
