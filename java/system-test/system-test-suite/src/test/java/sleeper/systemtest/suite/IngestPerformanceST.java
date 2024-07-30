@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128St
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to ingest this many records on fairly large ECS instances.
-public class IngestPerformanceIT {
+public class IngestPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

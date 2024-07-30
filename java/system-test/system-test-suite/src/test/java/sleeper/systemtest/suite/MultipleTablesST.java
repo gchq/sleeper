@@ -49,7 +49,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
 @Slow // Slow because compactions run for 200 tables in one task
-public class MultipleTablesIT {
+public class MultipleTablesST {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     private static final int NUMBER_OF_TABLES = 200;
 

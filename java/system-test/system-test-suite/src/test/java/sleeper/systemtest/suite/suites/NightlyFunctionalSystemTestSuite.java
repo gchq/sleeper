@@ -17,15 +17,10 @@
 package sleeper.systemtest.suite.suites;
 
 import org.junit.platform.suite.api.ExcludeTags;
-import org.junit.platform.suite.api.IncludeClassNamePatterns;
-import org.junit.platform.suite.api.IncludeTags;
-import org.junit.platform.suite.api.SelectPackages;
-import org.junit.platform.suite.api.Suite;
 
-@SelectPackages("sleeper.systemtest.suite")
-@IncludeClassNamePatterns(".*IT")
-@IncludeTags("SystemTest")
+import sleeper.systemtest.suite.testutil.SystemTestSuite;
+
+@SystemTestSuite
 @ExcludeTags("expensive")
-@Suite
 public class NightlyFunctionalSystemTestSuite {
 }
