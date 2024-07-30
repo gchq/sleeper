@@ -53,7 +53,7 @@ public class InMemorySystemTestDeploymentDriver implements SystemTestDeploymentD
     }
 
     @Override
-    public void deploy(SystemTestStandaloneProperties properties) {
+    public void redeploy(SystemTestStandaloneProperties properties) {
         this.properties = properties;
     }
 }
