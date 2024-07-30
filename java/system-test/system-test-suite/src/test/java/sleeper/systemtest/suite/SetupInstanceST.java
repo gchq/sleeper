@@ -39,7 +39,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRIT
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class SetupInstanceIT {
+public class SetupInstanceST {
     @TempDir
     private Path tempDir;
 

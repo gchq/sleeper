@@ -40,7 +40,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512St
 
 @SystemTest
 @Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.
-public class EmrBulkImportPerformanceIT {
+public class EmrBulkImportPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

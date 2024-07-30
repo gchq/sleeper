@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @SelectPackages("sleeper.systemtest.suite")
-@IncludeClassNamePatterns(".*IT")
+@IncludeClassNamePatterns(".*ST")
 @IncludeTags("SystemTest")
 @Suite
 @Target(ElementType.TYPE)

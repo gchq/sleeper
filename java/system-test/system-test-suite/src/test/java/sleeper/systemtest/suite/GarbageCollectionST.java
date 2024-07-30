@@ -42,7 +42,7 @@ import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class GarbageCollectionIT {
+public class GarbageCollectionST {
     @TempDir
     private Path tempDir;
 
