@@ -46,7 +46,7 @@ RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.1/cmake-3.
 
 # Remove conda paths (Protobuf compiler version clashes)
 RUN CMD="export PATH=\$(echo \"\$PATH\" | sed 's@:/opt/conda/bin@@g; s@:/opt/condabin@@g;')" \
-    && echo "$CMD" >> "/home/$USERNAME/.bashrc"
+      && echo "$CMD" >> "/home/$USERNAME/.bashrc"
 
 FROM build AS devcontainer
 USER root
