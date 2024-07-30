@@ -59,11 +59,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.METRICS_N
 public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
     private static final Map<String, String> METRIC_ID_TO_NAME = Map.of(
-            "activeFiles", "NumberOfFilesWithReferences",
+            "filesWithReferences", "NumberOfFilesWithReferences",
             "records", "RecordCount",
             "partitions", "PartitionCount",
             "leafPartitions", "LeafPartitionCount",
-            "filesPerPartition", "AverageFileReferencesPerPartition");
+            "filesReferencesPerPartition", "AverageFileReferencesPerPartition");
     private static final String QUERY_METRIC_STATISTIC = "Average";
     private static final int QUERY_METRIC_PERIOD_SECONDS = 5 * 60;
 
@@ -93,7 +93,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         return TableMetrics.builder()
                 .instanceId(dimensions.instanceId)
                 .tableName(dimensions.table.getTableName())
-                .fileCount((int) getMetric(map, "activeFiles"))
+                .fileCount((int) getMetric(map, "filesWithReferences"))
                 .recordCount((long) getMetric(map, "records"))
                 .partitionCount((int) getMetric(map, "partitions"))
                 .leafPartitionCount((int) getMetric(map, "leafPartitions"))
