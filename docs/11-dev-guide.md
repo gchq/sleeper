@@ -227,8 +227,8 @@ external dependencies with TestContainers, tests network calls with WireMock, or
 
 Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
 IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
-for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST. This means they
-will only be run as part of a system test suite, or directly.
+for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST, and must be
+tagged with the annotation `SystemTest`. This means they will only be run as part of a system test suite, or directly.
 
 We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
 wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a

@@ -16,7 +16,6 @@
 package sleeper.systemtest.suite.testutil;
 
 import org.junit.platform.suite.api.IncludeClassNamePatterns;
-import org.junit.platform.suite.api.IncludeTags;
 import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
 
@@ -27,7 +26,6 @@ import java.lang.annotation.Target;
 
 @SelectPackages("sleeper.systemtest.suite")
 @IncludeClassNamePatterns(".*ST")
-@IncludeTags("SystemTest")
 @Suite
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
