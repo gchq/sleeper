@@ -117,7 +117,6 @@ public class CreateCompactionJobs {
     }
 
     public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.info("Creating compaction jobs for table {}", table.getStatus());
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
@@ -130,7 +129,7 @@ public class CreateCompactionJobs {
     private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
-        LOGGER.debug("Creating jobs for table {}", table);
+        LOGGER.info("Creating jobs for table {}", table);
 
         Instant loadPartitionStartTime = Instant.now();
         List<Partition> allPartitions = stateStore.getAllPartitions();
