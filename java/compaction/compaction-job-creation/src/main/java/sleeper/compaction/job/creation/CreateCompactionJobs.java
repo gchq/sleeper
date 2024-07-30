@@ -117,13 +117,17 @@ public class CreateCompactionJobs {
     }
 
     public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
+        LOGGER.info("Creating compaction jobs for table {}", table.getStatus());
         StateStore stateStore = stateStoreProvider.getStateStore(table);
+        LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
+        Instant preSplitStartTime = Instant.now();
         SplitFileReferences.from(stateStore).split();
-        createJobsForTable(table, stateStore);
+        LOGGER.info("Pre-split files in partitions, took {}", LoggedDuration.withShortOutput(preSplitStartTime, Instant.now()));
+        Instant finishTime = createJobsForTable(table, stateStore);
+        LOGGER.info("Overall, creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private void createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.debug("Creating jobs for table {}", table);
@@ -186,6 +190,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobCreationStartTime, leftoverJobCreationFinishTime));
         LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, limitJobsFinishTime));
         LOGGER.info("Batch creating jobs took {}", LoggedDuration.withShortOutput(limitJobsFinishTime, finishTime));
+        return finishTime;
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
