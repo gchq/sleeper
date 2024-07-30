@@ -26,11 +26,6 @@ import java.util.List;
 
 public interface CompactionStrategy {
 
-    default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        init(instanceProperties, tableProperties, new CompactionJobFactory(instanceProperties, tableProperties));
-    }
-
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
-
-    List<CompactionJob> createCompactionJobs(List<FileReference> activeFilesWithJobId, List<FileReference> activeFilesWithNoJobId, List<Partition> allPartitions);
+    List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
+            CompactionJobFactory factory, List<FileReference> fileReferences, List<Partition> partitions);
 }

@@ -41,6 +41,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -58,6 +60,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
@@ -195,7 +198,7 @@ public class BulkImportJobDriver {
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration);
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
-            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, instanceProperties);
+            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
             BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                     tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, Instant::now);
@@ -249,12 +252,25 @@ public class BulkImportJobDriver {
         void submit(IngestAddFilesCommitRequest request);
     }
 
-    public static AddFilesAsynchronously submitFilesToCommitQueue(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+    public static AddFilesAsynchronously submitFilesToCommitQueue(
+            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties) {
+        return submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, () -> UUID.randomUUID().toString());
+    }
+
+    public static AddFilesAsynchronously submitFilesToCommitQueue(
+            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, Supplier<String> s3FilenameSupplier) {
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
         return request -> {
+            String json = serDe.toJson(request);
+            // Store in S3 if the request will not fit in an SQS message
+            if (json.length() > 262144) {
+                String s3Key = StateStoreCommitRequestInS3.createFileS3Key(request.getTableId(), s3FilenameSupplier.get());
+                s3Client.putObject(instanceProperties.get(DATA_BUCKET), s3Key, json);
+                json = new StateStoreCommitRequestInS3SerDe().toJson(new StateStoreCommitRequestInS3(s3Key));
+            }
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(serDe.toJson(request))
+                    .withMessageBody(json)
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
         };

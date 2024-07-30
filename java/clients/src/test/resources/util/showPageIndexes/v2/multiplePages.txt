@@ -15,14 +15,14 @@ page-9                         0  row-0901                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                         4               136                     0
-page-1                       140               135                   100
-page-2                       275               136                   200
-page-3                       411               136                   300
-page-4                       547               136                   400
-page-5                       683               136                   500
-page-6                       819               136                   600
-page-7                       955               136                   700
-page-8                      1091               134                   800
-page-9                      1225               148                   900
+page-0                         4               145                     0
+page-1                       149               144                   100
+page-2                       293               145                   200
+page-3                       438               145                   300
+page-4                       583               145                   400
+page-5                       728               145                   500
+page-6                       873               145                   600
+page-7                      1018               145                   700
+page-8                      1163               143                   800
+page-9                      1306               157                   900
 

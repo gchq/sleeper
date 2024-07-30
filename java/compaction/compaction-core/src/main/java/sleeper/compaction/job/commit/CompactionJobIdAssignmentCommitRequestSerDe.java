@@ -23,12 +23,11 @@ import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
-public class CompactionJobCommitRequestSerDe {
-
+public class CompactionJobIdAssignmentCommitRequestSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public CompactionJobCommitRequestSerDe() {
+    public CompactionJobIdAssignmentCommitRequestSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
                 .serializeNulls();
@@ -36,17 +35,17 @@ public class CompactionJobCommitRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(CompactionJobCommitRequest compactionJobCommitRequest) {
+    public String toJson(CompactionJobIdAssignmentCommitRequest compactionJobCommitRequest) {
         return gson.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
-    public String toJsonPrettyPrint(CompactionJobCommitRequest compactionJobCommitRequest) {
+    public String toJsonPrettyPrint(CompactionJobIdAssignmentCommitRequest compactionJobCommitRequest) {
         return gsonPrettyPrint.toJson(new WrappedCommitRequest(compactionJobCommitRequest), WrappedCommitRequest.class);
     }
 
-    public CompactionJobCommitRequest fromJson(String json) {
+    public CompactionJobIdAssignmentCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.COMPACTION_FINISHED == wrappedRequest.type) {
+        if (CommitRequestType.COMPACTION_JOB_ID_ASSIGNMENT == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         throw new IllegalArgumentException("Unexpected request type");
@@ -54,10 +53,10 @@ public class CompactionJobCommitRequestSerDe {
 
     private static class WrappedCommitRequest {
         private final CommitRequestType type;
-        private final CompactionJobCommitRequest request;
+        private final CompactionJobIdAssignmentCommitRequest request;
 
-        WrappedCommitRequest(CompactionJobCommitRequest request) {
-            this.type = CommitRequestType.COMPACTION_FINISHED;
+        WrappedCommitRequest(CompactionJobIdAssignmentCommitRequest request) {
+            this.type = CommitRequestType.COMPACTION_JOB_ID_ASSIGNMENT;
             this.request = request;
         }
     }

@@ -145,10 +145,6 @@ public class CompactionTask {
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
                 } catch (Exception e) {
-                    Instant jobFinishTime = timeSupplier.get();
-                    jobStatusStore.jobFailed(compactionJobFailed(job,
-                            new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .failure(e).taskId(taskId).jobRunId(jobRunId).build());
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
                     message.failed();
@@ -163,14 +159,22 @@ public class CompactionTask {
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
-        propertiesReloader.reloadIfNeeded();
-        CompactionRunner compactor = this.selector.chooseCompactor(job);
-        RecordsProcessed recordsProcessed = compactor.compact(job);
-        Instant jobFinishTime = timeSupplier.get();
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
-        logMetrics(job, summary);
-        return summary;
+        try {
+            propertiesReloader.reloadIfNeeded();
+            CompactionRunner compactor = this.selector.chooseCompactor(job);
+            RecordsProcessed recordsProcessed = compactor.compact(job);
+            Instant jobFinishTime = timeSupplier.get();
+            RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            logMetrics(job, summary);
+            return summary;
+        } catch (Exception e) {
+            Instant jobFinishTime = timeSupplier.get();
+            jobStatusStore.jobFailed(compactionJobFailed(job,
+                    new ProcessRunTime(jobStartTime, jobFinishTime))
+                    .failure(e).taskId(taskId).jobRunId(jobRunId).build());
+            throw e;
+        }
     }
 
     private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {

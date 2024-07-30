@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.job;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -67,11 +68,13 @@ public class IngestJobRunner implements IngestJobHandler {
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
+    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public IngestJobRunner(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
@@ -80,6 +83,7 @@ public class IngestJobRunner implements IngestJobHandler {
             IngestJobStatusStore statusStore,
             String taskId,
             String localDir,
+            AmazonS3 s3Client,
             S3AsyncClient s3AsyncClient,
             AmazonSQS sqsClient,
             Configuration hadoopConfiguration,
@@ -92,6 +96,7 @@ public class IngestJobRunner implements IngestJobHandler {
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
+        this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
@@ -150,7 +155,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
                     requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
