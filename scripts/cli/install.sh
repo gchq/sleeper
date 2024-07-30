@@ -25,7 +25,7 @@ curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInD
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
 
-"$TEMP_PATH" cli pull-images "$VERSION"
+"$TEMP_PATH" cli pull-images
 echo "Downloaded Docker images"
 
 EXECUTABLE_DIR="$HOME/.local/bin"

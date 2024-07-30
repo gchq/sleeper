@@ -91,7 +91,7 @@ upgrade_cli() {
   TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images latest
+  "$TEMP_PATH" cli pull-images
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
@@ -133,9 +133,9 @@ elif [ "$COMMAND" == "cli" ]; then
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
-    upgrade_cli "$@"
+    upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
-    pull_docker_images "$@"
+    pull_docker_images
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1
