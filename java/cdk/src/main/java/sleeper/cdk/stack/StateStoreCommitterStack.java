@@ -62,6 +62,7 @@ public class StateStoreCommitterStack extends NestedStack {
             StateStoreStacks stateStoreStacks,
             IngestStatusStoreResources ingestStatusStore,
             CompactionStatusStoreResources compactionStatusStore,
+            ManagedPoliciesStack policiesStack,
             Topic topic,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -69,13 +70,13 @@ public class StateStoreCommitterStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
-        commitQueue = sqsQueueForStateStoreCommitter(topic, errorMetrics);
+        commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(committerJar,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionStatusStore, ingestStatusStore);
     }
 
-    private Queue sqsQueueForStateStoreCommitter(Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "StateStoreCommitterDLQ")
@@ -98,6 +99,7 @@ public class StateStoreCommitterStack extends NestedStack {
         instanceProperties.set(STATESTORE_COMMITTER_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(STATESTORE_COMMITTER_DLQ_ARN, deadLetterQueue.getQueueArn());
 
+        queue.grantSendMessages(policiesStack.getDirectIngestPolicyForGrants());
         createAlarmForDlq(this, "StateStoreCommitterAlarm",
                 "Alarms if there are any messages on the dead letter queue for the state store committer lambda",
                 deadLetterQueue, topic);
