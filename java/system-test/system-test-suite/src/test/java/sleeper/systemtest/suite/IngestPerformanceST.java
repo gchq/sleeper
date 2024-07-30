@@ -59,7 +59,7 @@ public class IngestPerformanceST {
                     properties.setNumber(NUMBER_OF_WRITERS, 11);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
                 })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .invokeStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));

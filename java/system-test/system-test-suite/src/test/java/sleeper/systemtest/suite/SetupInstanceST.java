@@ -82,7 +82,7 @@ public class SetupInstanceST {
             properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
             properties.setNumber(NUMBER_OF_WRITERS, 2);
             properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 123);
-        }).generateData().invokeStandardIngestTask().waitForIngestJobs();
+        }).runDataGenerationTasks().invokeStandardIngestTask().waitForIngestJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -103,7 +103,7 @@ public class SetupInstanceST {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 2);
             properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 123);
-        }).generateData();
+        }).runDataGenerationTasks().waitForTotalFileReferences(2);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
