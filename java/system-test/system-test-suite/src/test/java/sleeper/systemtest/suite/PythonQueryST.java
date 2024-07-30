@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class PythonQueryIT {
+public class PythonQueryST {
     @TempDir
     private Path tempDir;
 

@@ -39,7 +39,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
 @SystemTest
-public class IngestIT {
+public class IngestST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {

@@ -38,7 +38,7 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
-public class CompactionPerformanceIT {
+public class CompactionPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

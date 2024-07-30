@@ -61,7 +61,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(0).recordCount(0)
                     .partitionCount(1).leafPartitionCount(1)
-                    .averageActiveFilesPerPartition(0)
+                    .averageFileReferencesPerPartition(0)
                     .build());
         }
 
@@ -82,7 +82,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(1).recordCount(100)
                     .partitionCount(1).leafPartitionCount(1)
-                    .averageActiveFilesPerPartition(1)
+                    .averageFileReferencesPerPartition(1)
                     .build());
         }
 
@@ -106,7 +106,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(2).recordCount(300)
                     .partitionCount(1).leafPartitionCount(1)
-                    .averageActiveFilesPerPartition(2)
+                    .averageFileReferencesPerPartition(2)
                     .build());
         }
     }
@@ -134,7 +134,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(0).recordCount(0)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(0)
+                    .averageFileReferencesPerPartition(0)
                     .build());
         }
 
@@ -160,7 +160,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(3).recordCount(123)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1.5)
+                    .averageFileReferencesPerPartition(1.5)
                     .build());
         }
 
@@ -186,7 +186,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(3).recordCount(30)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1.5)
+                    .averageFileReferencesPerPartition(1.5)
                     .build());
         }
 
@@ -210,7 +210,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(1).recordCount(10)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1)
+                    .averageFileReferencesPerPartition(1)
                     .build());
         }
     }
@@ -240,7 +240,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(1).recordCount(100)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1)
+                    .averageFileReferencesPerPartition(1)
                     .build());
         }
 
@@ -266,7 +266,7 @@ public class TableMetricsTest {
                     .tableName("test-table")
                     .fileCount(2).recordCount(123)
                     .partitionCount(3).leafPartitionCount(2)
-                    .averageActiveFilesPerPartition(1.5)
+                    .averageFileReferencesPerPartition(1.5)
                     .build());
         }
     }

@@ -47,7 +47,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create8192S
 
 @SystemTest
 @Expensive
-public class ParallelCompactionsIT {
+public class ParallelCompactionsST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) throws Exception {

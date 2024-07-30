@@ -43,7 +43,7 @@ public class TableMetrics {
     private final long recordCount;
     private final int partitionCount;
     private final int leafPartitionCount;
-    private final double averageActiveFilesPerPartition;
+    private final double averageFileReferencesPerPartition;
 
     private TableMetrics(Builder builder) {
         instanceId = builder.instanceId;
@@ -52,7 +52,7 @@ public class TableMetrics {
         recordCount = builder.recordCount;
         partitionCount = builder.partitionCount;
         leafPartitionCount = builder.leafPartitionCount;
-        averageActiveFilesPerPartition = builder.averageActiveFilesPerPartition;
+        averageFileReferencesPerPartition = builder.averageFileReferencesPerPartition;
     }
 
     public static Builder builder() {
@@ -89,7 +89,7 @@ public class TableMetrics {
                 .leafPartitionCount(leafPartitionCount)
                 .fileCount(referencedFiles.size())
                 .recordCount(recordCount)
-                .averageActiveFilesPerPartition(filesPerPartitionStats.getAverage())
+                .averageFileReferencesPerPartition(filesPerPartitionStats.getAverage())
                 .build();
     }
 
@@ -117,8 +117,8 @@ public class TableMetrics {
         return leafPartitionCount;
     }
 
-    public double getAverageActiveFilesPerPartition() {
-        return averageActiveFilesPerPartition;
+    public double getAverageFileReferencesPerPartition() {
+        return averageFileReferencesPerPartition;
     }
 
     @Override
@@ -131,12 +131,13 @@ public class TableMetrics {
         }
         TableMetrics that = (TableMetrics) object;
         return fileCount == that.fileCount && recordCount == that.recordCount && partitionCount == that.partitionCount && leafPartitionCount == that.leafPartitionCount
-                && Double.compare(averageActiveFilesPerPartition, that.averageActiveFilesPerPartition) == 0 && Objects.equals(instanceId, that.instanceId) && Objects.equals(tableName, that.tableName);
+                && Double.compare(averageFileReferencesPerPartition, that.averageFileReferencesPerPartition) == 0 && Objects.equals(instanceId, that.instanceId)
+                && Objects.equals(tableName, that.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(instanceId, tableName, fileCount, recordCount, partitionCount, leafPartitionCount, averageActiveFilesPerPartition);
+        return Objects.hash(instanceId, tableName, fileCount, recordCount, partitionCount, leafPartitionCount, averageFileReferencesPerPartition);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class TableMetrics {
                 ", recordCount=" + recordCount +
                 ", partitionCount=" + partitionCount +
                 ", leafPartitionCount=" + leafPartitionCount +
-                ", averageActiveFilesPerPartition=" + averageActiveFilesPerPartition +
+                ", averageFileReferencesPerPartition=" + averageFileReferencesPerPartition +
                 '}';
     }
 
@@ -159,7 +160,7 @@ public class TableMetrics {
         private long recordCount;
         private int partitionCount;
         private int leafPartitionCount;
-        private double averageActiveFilesPerPartition;
+        private double averageFileReferencesPerPartition;
 
         private Builder() {
         }
@@ -194,8 +195,8 @@ public class TableMetrics {
             return this;
         }
 
-        public Builder averageActiveFilesPerPartition(double averageActiveFilesPerPartition) {
-            this.averageActiveFilesPerPartition = averageActiveFilesPerPartition;
+        public Builder averageFileReferencesPerPartition(double averageFileReferencesPerPartition) {
+            this.averageFileReferencesPerPartition = averageFileReferencesPerPartition;
             return this;
         }
 

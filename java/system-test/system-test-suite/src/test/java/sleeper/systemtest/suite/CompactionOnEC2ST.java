@@ -54,7 +54,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_N
 
 @SystemTest
 @Slow
-public class CompactionOnEC2IT {
+public class CompactionOnEC2ST {
     @TempDir
     private Path tempDir;
 

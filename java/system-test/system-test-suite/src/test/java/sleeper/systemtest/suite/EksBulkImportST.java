@@ -45,7 +45,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 // Each CDK deployment takes around 20 minutes.
 // If we left the EKS cluster around, there would be extra costs as the control pane is persistent.
 @Slow
-public class EksBulkImportIT {
+public class EksBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
