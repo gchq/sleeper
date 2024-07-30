@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,11 @@ public class CompactionPerformanceST {
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(COMPACTION_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+    }
+
+    @AfterEach
+    void tearDown(SleeperSystemTest sleeper) {
+        sleeper.compaction().scaleToZero();
     }
 
     @Test
