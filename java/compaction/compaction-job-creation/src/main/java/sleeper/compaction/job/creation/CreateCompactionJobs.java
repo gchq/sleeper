@@ -40,7 +40,6 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -131,44 +130,40 @@ public class CreateCompactionJobs {
 
         Instant loadPartitionStartTime = Instant.now();
         List<Partition> allPartitions = stateStore.getAllPartitions();
-        Duration loadPartitionDuration = Duration.between(loadPartitionStartTime, Instant.now());
 
         // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
         Instant loadFilesStartTime = Instant.now();
         List<FileReference> fileReferences = stateStore.getFileReferences();
-        Duration loadFilesDuration = Duration.between(loadFilesStartTime, Instant.now());
 
         Instant compactionStrategyCreationStartTime = Instant.now();
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
-        Duration objectFactoryCreationDuration = Duration.between(compactionStrategyCreationStartTime, Instant.now());
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
 
         Instant indexCreationStartTime = Instant.now();
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, allPartitions);
-        Duration indexCreationDuration = Duration.between(indexCreationStartTime, Instant.now());
 
         Instant jobCreationStartTime = Instant.now();
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(
                 instanceProperties, tableProperties, jobFactory, index);
-        Duration jobCreationDuration = Duration.between(jobCreationStartTime, Instant.now());
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
-        Duration leftoverJobDuration = null;
+        Instant leftoverJobCreationStartTime = Instant.now();
+        Instant leftoverJobCreationFinishTime = leftoverJobCreationStartTime;
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
-            Instant leftoverJobCreationStartTime = Instant.now();
             createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
-            leftoverJobDuration = Duration.between(leftoverJobCreationStartTime, Instant.now());
+            leftoverJobCreationFinishTime = Instant.now();
         }
+
         int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
-        Duration limitJobsDuration = null;
+        Instant limitJobsStartTime = leftoverJobCreationFinishTime;
+        Instant limitJobsFinishTime = limitJobsStartTime;
         if (compactionJobs.size() > creationLimit) {
-            Instant limitJobStartTime = Instant.now();
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
-            limitJobsDuration = Duration.between(limitJobStartTime, Instant.now());
+            limitJobsFinishTime = Instant.now();
         }
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
@@ -177,26 +172,20 @@ public class CreateCompactionJobs {
             assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
-        Instant batchCreateJobsStartTime = Instant.now();
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
             batchCreateJobs(assignJobIdsToFiles, tableProperties.get(TABLE_ID), batch);
         }
         Instant finishTime = Instant.now();
-        Duration batchCreateJobsDuration = Duration.between(batchCreateJobsStartTime, finishTime);
 
         LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
-        LOGGER.info("Loading partitions from state store took {}", LoggedDuration.withShortOutput(loadPartitionDuration));
-        LOGGER.info("Loading file references from state store took {}", LoggedDuration.withShortOutput(loadFilesDuration));
-        LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(objectFactoryCreationDuration));
-        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationDuration));
-        LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationDuration));
-        if (leftoverJobDuration != null) {
-            LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobDuration));
-        }
-        if (limitJobsDuration != null) {
-            LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsDuration));
-        }
-        LOGGER.info("Batch creating jobs took {}", LoggedDuration.withShortOutput(batchCreateJobsDuration));
+        LOGGER.info("Loading partitions from state store took {}", LoggedDuration.withShortOutput(loadPartitionStartTime, loadFilesStartTime));
+        LOGGER.info("Loading file references from state store took {}", LoggedDuration.withShortOutput(loadFilesStartTime, compactionStrategyCreationStartTime));
+        LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(compactionStrategyCreationStartTime, indexCreationStartTime));
+        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationStartTime, jobCreationStartTime));
+        LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationStartTime, leftoverJobCreationStartTime));
+        LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobCreationStartTime, leftoverJobCreationFinishTime));
+        LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, limitJobsFinishTime));
+        LOGGER.info("Batch creating jobs took {}", LoggedDuration.withShortOutput(limitJobsFinishTime, finishTime));
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
