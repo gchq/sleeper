@@ -103,7 +103,7 @@ jobs:
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
           echo "organization=${{ github.repository_owner }}" >> delete.properties
           echo "packageNames=${{ inputs.packageName }}" >> delete.properties
-          echo "ignoreTagsPattern=^(latest|develop|[0-9.]+)$" >> delete.properties
+          echo "ignoreTagsPattern=^latest$" >> delete.properties
           echo "keepMostRecent=4" >> delete.properties
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
             -Dmaven.repo.local=../.m2/repository \
