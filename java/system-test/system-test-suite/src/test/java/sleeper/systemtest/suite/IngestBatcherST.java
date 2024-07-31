@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_I
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class IngestBatcherIT {
+public class IngestBatcherST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

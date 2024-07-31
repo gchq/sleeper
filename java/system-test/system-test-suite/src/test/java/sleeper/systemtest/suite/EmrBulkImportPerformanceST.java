@@ -40,7 +40,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512St
 
 @SystemTest
 @Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.
-public class EmrBulkImportPerformanceIT {
+public class EmrBulkImportPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
@@ -57,7 +57,7 @@ public class EmrBulkImportPerformanceIT {
                     properties.setNumber(NUMBER_OF_WRITERS, 100);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 10_000_000);
                 })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
+                .runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)

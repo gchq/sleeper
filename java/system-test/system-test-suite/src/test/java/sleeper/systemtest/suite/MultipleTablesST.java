@@ -49,7 +49,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
 @Slow // Slow because compactions run for 200 tables in one task
-public class MultipleTablesIT {
+public class MultipleTablesST {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     private static final int NUMBER_OF_TABLES = 200;
 
@@ -176,7 +176,7 @@ public class MultipleTablesIT {
             assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                     .partitionCount(1).leafPartitionCount(1)
                     .fileCount(2).recordCount(100)
-                    .averageActiveFilesPerPartition(2)
+                    .averageFileReferencesPerPartition(2)
                     .build());
         });
     }

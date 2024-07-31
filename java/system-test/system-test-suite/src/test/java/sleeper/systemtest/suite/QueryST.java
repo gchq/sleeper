@@ -38,7 +38,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-public class QueryIT {
+public class QueryST {
     @TempDir
     private Path tempDir;
 

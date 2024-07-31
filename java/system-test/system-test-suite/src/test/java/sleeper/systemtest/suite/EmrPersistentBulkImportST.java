@@ -46,7 +46,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 // If we leave the EMR cluster deployed, the costs for the EMR instances add up to hundreds of pounds quite quickly.
 // With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 records.
 @Slow
-public class EmrPersistentBulkImportIT {
+public class EmrPersistentBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.drivers.testutil;
 
-package sleeper.systemtest.suite.suites;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import org.junit.platform.suite.api.ExcludeTags;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import sleeper.systemtest.suite.testutil.SystemTestSuite;
+@ExtendWith(LocalStackSystemTestExtension.class)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LocalStackDslTest {
 
-@SystemTestSuite
-@ExcludeTags({"slow", "expensive"})
-public class QuickSystemTestSuite {
 }

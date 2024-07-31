@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128St
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to ingest this many records on fairly large ECS instances.
-public class IngestPerformanceIT {
+public class IngestPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
@@ -59,7 +59,7 @@ public class IngestPerformanceIT {
                     properties.setNumber(NUMBER_OF_WRITERS, 11);
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
                 })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .invokeStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));

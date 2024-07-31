@@ -83,12 +83,12 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             LOGGER.info("Deployment already exists: {}", deploymentId);
             return false;
         } catch (CloudFormationException e) {
-            deploy(properties);
+            redeploy(properties);
             return true;
         }
     }
 
-    public void deploy(SystemTestStandaloneProperties deployProperties) {
+    public void redeploy(SystemTestStandaloneProperties deployProperties) {
         try {
             uploadJarsAndDockerImages();
             Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());

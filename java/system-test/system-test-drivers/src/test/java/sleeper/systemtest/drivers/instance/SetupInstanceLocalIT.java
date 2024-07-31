@@ -13,48 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.systemtest.suite;
+package sleeper.systemtest.drivers.instance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
-import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
-import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.time.Duration;
+import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 
-@SystemTest
-public class EmrBulkImportIT {
+@LocalStackDslTest
+public class SetupInstanceLocalIT {
+    @TempDir
+    private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
-        purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_JOB_QUEUE_URL);
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) {
+    void shouldConnectToInstance(SleeperSystemTest sleeper) {
+        assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
+                .isFalse();
+    }
+
+    @Test
+    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
-        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
 
         // When
-        sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_JOB_QUEUE_URL, "file.parquet")
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
+        sleeper.ingest().direct(tempDir).records(record);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

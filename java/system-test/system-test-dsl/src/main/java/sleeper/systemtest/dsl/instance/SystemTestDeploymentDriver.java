@@ -25,5 +25,5 @@ public interface SystemTestDeploymentDriver {
 
     boolean deployIfNotPresent(SystemTestStandaloneProperties properties);
 
-    void deploy(SystemTestStandaloneProperties properties);
+    void redeploy(SystemTestStandaloneProperties properties);
 }

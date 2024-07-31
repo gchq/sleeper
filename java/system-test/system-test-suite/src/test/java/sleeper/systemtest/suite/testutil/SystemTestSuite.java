@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.suite.testutil;
 
-package sleeper.systemtest.suite.suites;
+import org.junit.platform.suite.api.IncludeClassNamePatterns;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
 
-import org.junit.platform.suite.api.ExcludeTags;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import sleeper.systemtest.suite.testutil.SystemTestSuite;
+@SelectPackages("sleeper.systemtest.suite")
+@IncludeClassNamePatterns(".*ST")
+@Suite
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SystemTestSuite {
 
-@SystemTestSuite
-@ExcludeTags({"slow", "expensive"})
-public class QuickSystemTestSuite {
 }
