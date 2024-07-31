@@ -53,9 +53,9 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-us
 usermod -aG docker "$LOGIN_USER"
 
 # Install Sleeper CLI
-curl "https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
+curl "https://raw.githubusercontent.com/$FORK/$REPOSITORY/develop/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
 chmod +x "$LOGIN_HOME/sleeper-install.sh"
-runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh $BRANCH"
+runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh"
 
 # Check out code
 REPOSITORY_DIR="$LOGIN_HOME/.sleeper/builder/$REPOSITORY"
