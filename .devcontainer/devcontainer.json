@@ -18,17 +18,17 @@
   "mounts": [
     {
       "source": "${localEnv:HOME}/.aws",
-      "target": "/root/.aws",
+      "target": "/home/sleeper/.aws",
       "type": "bind"
     },
     {
       "source": "${localEnv:HOME}/.m2",
-      "target": "/root/.m2",
+      "target": "/home/sleeper/.m2",
       "type": "bind"
     },
     {
       "source": "${localEnv:HOME}/.ssh",
-      "target": "/root/.ssh",
+      "target": "/home/sleeper/.ssh",
       "type": "bind"
     },
     {
