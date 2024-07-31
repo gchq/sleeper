@@ -42,18 +42,17 @@ For the latest development version, you can run the following commands to instal
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
-./sleeper-install.sh develop
+./sleeper-install.sh
 ```
-
-This will not have been as fully tested as released versions and may not work as expected. If you build a specific
-release version after installing the development version, the version you build will replace the version you installed.
+If you build a specific release version after installing the development version, the version you build will replace
+the version you installed.
 
 The CLI consists of a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
 `sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
 AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
 you use `sleeper`.
 
-If you installed the development version, you can upgrade to the latest development version with `sleeper cli upgrade`.
+You can upgrade to the latest development version of the CLI using `sleeper cli upgrade`.
 
 ### Authentication
 
