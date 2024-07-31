@@ -69,6 +69,7 @@ run_in_docker() {
 build_temp_runner_image() {
   local RUN_IMAGE=$1
   local TEMP_TAG=$(date +%Y-%m-%d"_"%H_%M_%S)_$RANDOM
+  # Propagate current user IDs to image, to avoid mixed file ownership
   local SET_UID=$(id -u)
   local SET_GID=$(id -g)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"

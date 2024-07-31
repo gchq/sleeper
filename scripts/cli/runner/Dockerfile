@@ -18,6 +18,7 @@ FROM ${RUN_IMAGE}
 ARG SET_UID
 ARG SET_GID
 
+# Propagate user IDs to image, to avoid mixed file ownership
 USER root
 RUN groupmod -g ${SET_GID} sleeper
 RUN usermod -u ${SET_UID} -g ${SET_GID} sleeper
