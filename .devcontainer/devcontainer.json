@@ -49,5 +49,7 @@
     "VPC": "${localEnv:VPC}",
     "SUBNET": "${localEnv:SUBNET}"
   },
-  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 > /tmp/container.id"
+  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 > /tmp/container.id",
+  "remoteUser": "sleeper",
+  "updateRemoteUserUID": true
 }
