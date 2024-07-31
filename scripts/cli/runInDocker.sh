@@ -21,7 +21,15 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-HOME_IN_IMAGE=/root
+HOME_IN_IMAGE=/home/sleeper
+
+# Allow use of runner Dockerfile in source directory or in home install
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+RUNNER_PATH="$THIS_DIR/runner"
+HOME_RUNNER_PATH="$HOME/.sleeper/runner"
+if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
+    RUNNER_PATH="$HOME_RUNNER_PATH"
+fi
 
 run_in_docker() {
   local RUN_PARAMS
@@ -58,27 +66,42 @@ run_in_docker() {
   rmdir "$TEMP_DIR"
 }
 
+build_temp_runner_image() {
+  local RUN_IMAGE=$1
+  local TEMP_TAG=$(date +%Y-%m-%d"_"%H_%M_%S)_$RANDOM
+  # Propagate current user IDs to image, to avoid mixed file ownership
+  local SET_UID=$(id -u)
+  local SET_GID=$(id -g)
+  TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
+  docker build "$RUNNER_PATH" -t "$TEMP_RUNNER_IMAGE" --build-arg RUN_IMAGE="$RUN_IMAGE" --build-arg SET_UID=$SET_UID --build-arg SET_GID=$SET_GID &> /dev/null
+}
+
 run_in_environment_docker() {
+  build_temp_runner_image sleeper-local:current
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
-    sleeper-local:current "$@"
+    "$TEMP_RUNNER_IMAGE" "$@"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 run_in_builder_docker() {
+  build_temp_runner_image sleeper-builder:current
   # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
   # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    sleeper-builder:current "$@"
+    "$TEMP_RUNNER_IMAGE" "$@"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 get_version() {
-  run_in_environment_docker cat /sleeper/version.txt
+  run_in_docker sleeper-local:current cat /sleeper/version.txt
 }
 
 pull_docker_images(){
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
 }

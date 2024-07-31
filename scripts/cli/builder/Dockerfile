@@ -25,12 +25,20 @@ RUN apt-get update && apt-get install -y \
     python3.10-venv \
     zip \
     jq \
+    sudo \
     gcc g++ cmake make \
     pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user
+RUN adduser --disabled-password --gecos "" sleeper \
+    && usermod -aG sudo,docker sleeper \
+    && passwd -d sleeper
+USER sleeper
+
 # Install Rust
 # Change install location because the default is in the home directory, which is overwritten by Dev Containers
+RUN sudo mkdir /rust && sudo chown sleeper:sleeper /rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
