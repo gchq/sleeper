@@ -24,7 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DynamoDBThrottlingExceptionHandlerTest {
-    private final List<Exception> autoScalingExceptions = new ArrayList<>();
+    private final List<Exception> throttlingExceptions = new ArrayList<>();
     private final List<Exception> otherExceptions = new ArrayList<>();
 
     @Test
@@ -37,7 +37,7 @@ public class DynamoDBThrottlingExceptionHandlerTest {
         exceptionHandler().handle(e);
 
         // Then
-        assertThat(autoScalingExceptions).containsExactly(e);
+        assertThat(throttlingExceptions).containsExactly(e);
         assertThat(otherExceptions).isEmpty();
     }
 
@@ -50,11 +50,11 @@ public class DynamoDBThrottlingExceptionHandlerTest {
         exceptionHandler().handle(e);
 
         // Then
-        assertThat(autoScalingExceptions).isEmpty();
+        assertThat(throttlingExceptions).isEmpty();
         assertThat(otherExceptions).containsExactly(e);
     }
 
     private DynamoDBThrottlingExceptionHandler exceptionHandler() {
-        return new DynamoDBThrottlingExceptionHandler(autoScalingExceptions::add, otherExceptions::add);
+        return new DynamoDBThrottlingExceptionHandler(throttlingExceptions::add, otherExceptions::add);
     }
 }
