@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DynamoDBUtilsTest {
 
     @Test
-    void shouldIdentifyThrottlingException() {
+    void shouldFindThrottlingExceptionWithNoCauses() {
         // Given
         AmazonDynamoDBException exception = new AmazonDynamoDBException("Throttling exception");
         exception.setErrorCode("ThrottlingException");
