@@ -291,6 +291,12 @@ public interface CommonProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_QUEUE_MESSAGE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.committer.queue.message.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds on the queues used by the statestore committer")
+            .defaultValue("300")
+            .validationPredicate(Utils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
             .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
             .validationPredicate(value -> Utils.isListWithMaxSize(value, 5))
