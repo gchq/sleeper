@@ -18,9 +18,7 @@
 # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
 
 REPO_OWNER=$1
-
-# Use Docker `latest` tag convention
-VERSION=latest
+GIT_REF=$2
 
 echo_github_output_for_image() {
   IMAGE_NAME=$1
@@ -31,10 +29,14 @@ echo_github_output_for_image() {
   IMAGE_ID=$(echo "$IMAGE_ID" | tr '[A-Z]' '[a-z]')
 
   {
-    echo "${ENV_PREFIX}Tag=$IMAGE_ID:$VERSION"
+    echo "${ENV_PREFIX}Tag=$IMAGE_ID:latest"
     echo "${ENV_PREFIX}Package=$IMAGE_NAME"
   } >> "$GITHUB_OUTPUT"
 }
 
-echo_github_output_for_image sleeper-builder builder
-echo_github_output_for_image sleeper-local env
+# Strip git ref prefix from version
+BRANCH=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
+if [ "$BRANCH" == "develop" ] then
+    echo_github_output_for_image sleeper-builder builder
+    echo_github_output_for_image sleeper-local env
+fi
