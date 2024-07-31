@@ -20,13 +20,6 @@
 REPO_OWNER=$1
 GIT_REF=$2
 
-# Strip git ref prefix from version
-VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
-# Strip "v" prefix from tag name
-[[ "$GIT_REF" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
-# Use Docker `latest` tag convention
-[ "$VERSION" == "main" ] && VERSION=latest
-
 echo_github_output_for_image() {
   IMAGE_NAME=$1
   ENV_PREFIX=$2
@@ -36,10 +29,14 @@ echo_github_output_for_image() {
   IMAGE_ID=$(echo "$IMAGE_ID" | tr '[A-Z]' '[a-z]')
 
   {
-    echo "${ENV_PREFIX}Tag=$IMAGE_ID:$VERSION"
+    echo "${ENV_PREFIX}Tag=$IMAGE_ID:latest"
     echo "${ENV_PREFIX}Package=$IMAGE_NAME"
   } >> "$GITHUB_OUTPUT"
 }
 
-echo_github_output_for_image sleeper-builder builder
-echo_github_output_for_image sleeper-local env
+# Strip git ref prefix from version
+BRANCH=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
+if [ "$BRANCH" == "develop" ]; then
+    echo_github_output_for_image sleeper-builder builder
+    echo_github_output_for_image sleeper-local env
+fi

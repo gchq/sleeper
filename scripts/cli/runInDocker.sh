@@ -78,51 +78,19 @@ get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
 
-parse_version(){
-  if [ "$#" -lt 1 ]; then
-    CURRENT_VERSION=$(get_version | tr -d '\r\n')
-    case $CURRENT_VERSION in
-    *-SNAPSHOT)
-      VERSION="develop"
-      ;;
-    *)
-      # We could get the latest version from GitHub by querying this URL:
-      # https://github.com/gchq/sleeper/releases/latest
-      # At time of writing, this shows no releases. Once we have full releases on GitHub, we could use that.
-      echo "Please specify version to upgrade to"
-      return 1
-      ;;
-    esac
-  else
-    VERSION=$1
-  fi
-
-  GIT_REF="$VERSION"
-  REMOTE_TAG="$VERSION"
-  if [ "$VERSION" == "main" ]; then
-    REMOTE_TAG="latest"
-  elif [ "$VERSION" == "latest" ]; then
-    GIT_REF="main"
-  elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
-    REMOTE_TAG=${VERSION:1}
-  fi
-}
-
 pull_docker_images(){
-  parse_version "$@"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
 }
 
 upgrade_cli() {
-  parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images "$VERSION"
+  "$TEMP_PATH" cli pull-images
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
@@ -136,7 +104,7 @@ upgrade_cli() {
 
 pull_and_tag() {
   IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
   LOCAL_IMAGE="$IMAGE_NAME:current"
 
   docker pull "$REMOTE_IMAGE"
@@ -164,9 +132,9 @@ elif [ "$COMMAND" == "cli" ]; then
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
-    upgrade_cli "$@"
+    upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
-    pull_docker_images "$@"
+    pull_docker_images
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1

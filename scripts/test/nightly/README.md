@@ -11,7 +11,7 @@ It's easiest to run this through the Sleeper CLI. You can bring the CLI up to da
 this:
 
 ```bash
-sleeper cli upgrade main
+sleeper cli upgrade
 sleeper builder
 git clone https://github.com/gchq/sleeper.git
 cd sleeper
