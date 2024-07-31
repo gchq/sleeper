@@ -40,14 +40,7 @@
   "containerEnv": {
     "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
-    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}",
-    "AWS_PROFILE": "${localEnv:AWS_PROFILE}",
-    "AWS_REGION": "${localEnv:AWS_REGION}",
-    "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
-    "ID": "${localEnv:ID}",
-    "INSTANCE_ID": "${localEnv:INSTANCE_ID}",
-    "VPC": "${localEnv:VPC}",
-    "SUBNET": "${localEnv:SUBNET}"
+    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}"
   },
   "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 > /tmp/container.id",
   "remoteUser": "sleeper",
