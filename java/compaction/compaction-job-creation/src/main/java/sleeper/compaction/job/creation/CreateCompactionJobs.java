@@ -155,19 +155,17 @@ public class CreateCompactionJobs {
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         Instant leftoverJobCreationStartTime = Instant.now();
-        Instant leftoverJobCreationFinishTime = leftoverJobCreationStartTime;
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
-            leftoverJobCreationFinishTime = Instant.now();
         }
 
+        Instant limitJobsStartTime = Instant.now();
         int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
-        Instant limitJobsStartTime = leftoverJobCreationFinishTime;
-        Instant limitJobsFinishTime = limitJobsStartTime;
         if (compactionJobs.size() > creationLimit) {
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
-            limitJobsFinishTime = Instant.now();
         }
+
+        Instant sendJobsStartTime = Instant.now();
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
@@ -186,9 +184,9 @@ public class CreateCompactionJobs {
         LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(compactionStrategyCreationStartTime, indexCreationStartTime));
         LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationStartTime, jobCreationStartTime));
         LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationStartTime, leftoverJobCreationStartTime));
-        LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobCreationStartTime, leftoverJobCreationFinishTime));
-        LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, limitJobsFinishTime));
-        LOGGER.info("Batch creating jobs took {}", LoggedDuration.withShortOutput(limitJobsFinishTime, finishTime));
+        LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobCreationStartTime, limitJobsStartTime));
+        LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, sendJobsStartTime));
+        LOGGER.info("Sending compaction jobs took {}", LoggedDuration.withShortOutput(sendJobsStartTime, finishTime));
         return finishTime;
     }
 
