@@ -31,4 +31,37 @@ public class DynamoDBUtilsTest {
         // When / Then
         assertThat(DynamoDBUtils.isThrottlingException(exception)).isTrue();
     }
+
+    @Test
+    void shouldFindThrottlingExceptionWhenItIsRootCause() {
+        // Given
+        AmazonDynamoDBException rootCause = new AmazonDynamoDBException("Throttling exception");
+        rootCause.setErrorCode("ThrottlingException");
+        Exception cause = new Exception("First cause exception", rootCause);
+        Exception exception = new Exception("Test exception", cause);
+
+        // When / Then
+        assertThat(DynamoDBUtils.isThrottlingException(exception)).isTrue();
+    }
+
+    @Test
+    void shouldNotFindThrottlingExceptionWithMultipleCauses() {
+        // Given
+        Exception rootCause = new Exception("Root cause exception");
+        Exception cause = new Exception("First cause exception", rootCause);
+        Exception exception = new Exception("Test exception", cause);
+
+        // When / Then
+        assertThat(DynamoDBUtils.isThrottlingException(exception)).isFalse();
+    }
+
+    @Test
+    void shouldNotFindThrottlingExceptionWhenExceptionHasDifferentErrorCode() {
+        // Given
+        AmazonDynamoDBException exception = new AmazonDynamoDBException("Conditional check exception");
+        exception.setErrorCode("ConditionalCheckFailedException");
+
+        // When / Then
+        assertThat(DynamoDBUtils.isThrottlingException(exception)).isFalse();
+    }
 }

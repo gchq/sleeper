@@ -219,7 +219,21 @@ public class DynamoDBUtils {
     }
 
     public static boolean isThrottlingException(Exception e) {
-        return e instanceof AmazonDynamoDBException
-                && "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
+        if (e instanceof AmazonDynamoDBException) {
+            return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
+        } else {
+            return hasThrottlingException(e);
+        }
+    }
+
+    private static boolean hasThrottlingException(Exception e) {
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause instanceof AmazonDynamoDBException) {
+                return "ThrottlingException".equals(((AmazonDynamoDBException) cause).getErrorCode());
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }
