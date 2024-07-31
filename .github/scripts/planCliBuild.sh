@@ -36,7 +36,7 @@ echo_github_output_for_image() {
 
 # Strip git ref prefix from version
 BRANCH=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
-if [ "$BRANCH" == "develop" ] then
+if [ "$BRANCH" == "develop" ]; then
     echo_github_output_for_image sleeper-builder builder
     echo_github_output_for_image sleeper-local env
 fi
