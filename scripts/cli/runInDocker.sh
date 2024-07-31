@@ -92,7 +92,7 @@ run_in_builder_docker() {
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    $TEMP_RUNNER_IMAGE "$@"
+    "$TEMP_RUNNER_IMAGE" "$@"
   docker image remove "$TEMP_RUNNER_IMAGE"
 }
 
