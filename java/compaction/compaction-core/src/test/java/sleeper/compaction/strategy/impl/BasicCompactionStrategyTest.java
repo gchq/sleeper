@@ -20,39 +20,28 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class BasicCompactionStrategyTest {
-
-    private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+public class BasicCompactionStrategyTest extends CompactionStrategyTestBase {
 
     @BeforeEach
     void setUp() {
+        strategy = new BasicCompactionStrategy();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(CONFIG_BUCKET, "bucket");
         instanceProperties.set(DATA_BUCKET, "databucket");
@@ -64,7 +53,6 @@ public class BasicCompactionStrategyTest {
     public void shouldCreateOneJobWhenOneLeafPartitionAndOnlyTwoFiles() {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -75,8 +63,7 @@ public class BasicCompactionStrategyTest {
         CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = createCompactionJobs(jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -87,7 +74,6 @@ public class BasicCompactionStrategyTest {
     public void shouldCreateCorrectJobsWhenOneLeafPartitionAndLotsOfFiles() {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -103,8 +89,7 @@ public class BasicCompactionStrategyTest {
         CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = createCompactionJobs(jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
@@ -124,7 +109,6 @@ public class BasicCompactionStrategyTest {
     public void shouldCreateNoJobsWhenNotEnoughFiles() {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -134,9 +118,7 @@ public class BasicCompactionStrategyTest {
         List<FileReference> fileReferences = List.of(fileReference1, fileReference2);
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
-                fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = createCompactionJobs(fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -146,7 +128,6 @@ public class BasicCompactionStrategyTest {
     public void shouldCreateNoJobsWhenFileInLeafPartitionIsAssignedToAJob() {
         // Given
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .singlePartition("root")
                 .buildTree();
@@ -158,9 +139,7 @@ public class BasicCompactionStrategyTest {
                 .build();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactoryWithIncrementingJobIds(),
-                List.of(fileReference), partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = createCompactionJobs(List.of(fileReference), partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -171,7 +150,6 @@ public class BasicCompactionStrategyTest {
         // Given - 3 partitions (root and 2 children) - the child partition called "left" has files for 2 compaction
         // jobs, the "right" child partition only has files for 1 compaction job
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        BasicCompactionStrategy strategy = new BasicCompactionStrategy();
         PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 123L)
@@ -188,23 +166,12 @@ public class BasicCompactionStrategyTest {
         CompactionJobFactory jobFactory = jobFactoryWithIncrementingJobIds();
 
         // When
-        List<CompactionJob> compactionJobs = strategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactory, fileReferences, partitionTree.getAllPartitions());
+        List<CompactionJob> compactionJobs = createCompactionJobs(jobFactory, fileReferences, partitionTree.getAllPartitions());
 
         // Then
         assertThat(compactionJobs).containsExactly(
                 jobFactory.createCompactionJob("job1", List.of(fileReference1, fileReference2), "left"),
                 jobFactory.createCompactionJob("job2", List.of(fileReference3, fileReference4), "left"),
                 jobFactory.createCompactionJob("job3", List.of(fileReference5, fileReference6), "right"));
-    }
-
-    private CompactionJobFactory jobFactoryWithIncrementingJobIds() {
-        return new CompactionJobFactory(instanceProperties, tableProperties, incrementingJobIds());
-    }
-
-    private static Supplier<String> incrementingJobIds() {
-        return IntStream.iterate(1, i -> i + 1)
-                .mapToObj(i -> "job" + i)
-                .iterator()::next;
     }
 }
