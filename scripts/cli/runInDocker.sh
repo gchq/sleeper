@@ -97,7 +97,7 @@ run_in_builder_docker() {
 }
 
 get_version() {
-  run_in_environment_docker cat /sleeper/version.txt
+  run_in_docker sleeper-local:current cat /sleeper/version.txt
 }
 
 pull_docker_images(){
