@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y \
     python3.10-venv \
     zip \
     jq \
+    sudo \
     gcc g++ cmake make \
     pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -35,6 +36,12 @@ ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
 RUN $CARGO_HOME/bin/cargo install cross
+
+# Create non-root user
+RUN adduser --disabled-password --gecos "" sleeper \
+    && usermod -aG sudo,docker sleeper \
+    && passwd -d sleeper
+USER sleeper
 
 # Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
 ENV PATH=$CARGO_HOME/bin:$PATH

@@ -21,7 +21,7 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-HOME_IN_IMAGE=/root
+HOME_IN_IMAGE=/home/sleeper
 
 run_in_docker() {
   local RUN_PARAMS
