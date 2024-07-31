@@ -73,7 +73,7 @@ build_temp_runner_image() {
   local SET_UID=$(id -u)
   local SET_GID=$(id -g)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
-  docker build "$RUNNER_PATH" -t "$TEMP_RUNNER_IMAGE" --build-arg RUN_IMAGE="$RUN_IMAGE" --build-arg SET_UID=$SET_UID --build-arg SET_GID=$SET_GID
+  docker build "$RUNNER_PATH" -t "$TEMP_RUNNER_IMAGE" --build-arg RUN_IMAGE="$RUN_IMAGE" --build-arg SET_UID=$SET_UID --build-arg SET_GID=$SET_GID &> /dev/null
 }
 
 run_in_environment_docker() {
@@ -81,7 +81,7 @@ run_in_environment_docker() {
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 run_in_builder_docker() {
@@ -93,7 +93,7 @@ run_in_builder_docker() {
     -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 get_version() {
