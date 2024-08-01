@@ -68,5 +68,8 @@
   "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
   "java.codeGeneration.hashCodeEquals.useInstanceof": true,
   "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
-  "cmake.sourceDirectory": "/workspace/cpp"
+  "cmake.sourceDirectory": "/workspace/cpp",
+  "files.associations": {
+    "*.inc": "cpp"
+  }
 }

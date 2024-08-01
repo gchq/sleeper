@@ -5,7 +5,6 @@ include(cmake/CPM.cmake)
 # targets
 function(gpu_compact_setup_dependencies)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
-  list(APPEND CMAKE_PREFIX_PATH "/opt/conda/lib/cmake/")
 
   # For each dependency, see if it's
   # already been provided to us by a parent project

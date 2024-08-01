@@ -3,7 +3,7 @@ FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11 AS base
 
 USER root
 # Install tools
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip libgrpc++1
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip
 
 # Use shell form for redirection and enable sudo
 ARG USERNAME=rapids
@@ -32,21 +32,17 @@ RUN wget -O "llvm.sh" "https://apt.llvm.org/llvm.sh" && chmod u+x llvm.sh && ./l
 # The above line will run an apt update so now we install Java
 RUN apt-get install -y java-17-amazon-corretto-jdk make cmake-format gcc-13 g++-13 clang-format-18 \
     clang-tidy-18 clang-tools-18 maven ccache cppcheck doxygen iwyu \
-    build-essential pkg-config protobuf-compiler libgrpc++-dev protobuf-compiler-grpc
+    build-essential pkg-config
 
 # Drop to normal user
 USER $USERNAME 
 WORKDIR /home/rapids
 
 # Install CMake
-RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.1/cmake-3.30.1-linux-x86_64.tar.gz" \
+RUN wget "https://github.com/Kitware/CMake/releases/download/v3.30.1/cmake-3.30.1-linux-x86_64.tar.gz" \
     && mkdir -p cmake \
     && tar --strip-components 1 -C cmake -zxf cmake-3.30.1-linux-x86_64.tar.gz \
     && echo "export PATH=\$PATH:/home/$USERNAME/cmake/bin" >>"/home/$USERNAME/.bashrc"
-
-# Remove conda paths (Protobuf compiler version clashes)
-RUN CMD="export PATH=\$(echo \"\$PATH\" | sed 's@:/opt/conda/bin@@g; s@:/opt/condabin@@g;')" \
-      && echo "$CMD" >> "/home/$USERNAME/.bashrc"
 
 FROM build AS devcontainer
 USER root
