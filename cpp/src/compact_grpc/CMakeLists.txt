@@ -34,23 +34,9 @@ cmake_path(
 target_include_directories(gpu_proto INTERFACE ${GPU_PROTO_INCLUDE})
 target_link_libraries(gpu_proto PRIVATE gpu_compact::gpu_compact_options
 )# Don't enable compiler warnings on Protobuf files
-target_link_libraries(gpu_proto PUBLIC grpc::grpc protobuf::libprotobuf)
+target_link_libraries(gpu_proto INTERFACE grpc::grpc protobuf::libprotobuf)
 target_link_options(
   gpu_proto
   BEFORE
   INTERFACE
   "LINKER:--copy-dt-needed-entries")
-
-add_executable(intro main.cpp)
-target_link_system_libraries(
-  intro
-  PRIVATE
-  CLI11::CLI11
-  fmt::fmt
-  spdlog::spdlog
-  lefticus::tools
-  gpu_compact::sample_library
-  gpu_proto
-  cudf::cudf)
-target_link_libraries(intro PRIVATE gpu_compact::gpu_compact_options gpu_compact::gpu_compact_warnings)
-target_include_directories(intro PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
