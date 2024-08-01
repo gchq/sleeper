@@ -35,8 +35,8 @@ RUN apt-get update && apt-get install -y \
 # We also need to make it accessible to the non-root user
 RUN adduser --disabled-password --gecos "" rust \
     && passwd -d rust
+RUN mkdir /rust && chown rust:rust /rust
 USER rust
-RUN sudo mkdir /rust && sudo chown sleeper:sleeper /rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
