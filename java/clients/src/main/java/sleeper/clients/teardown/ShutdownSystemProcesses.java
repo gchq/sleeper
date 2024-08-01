@@ -26,8 +26,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -82,14 +83,14 @@ public class ShutdownSystemProcesses {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
+    public static <T extends SleeperProperty> void stopTasks(AmazonECS ecs, SleeperProperties<T> properties, T property) {
         if (!properties.isSet(property)) {
             return;
         }
         stopTasks(ecs, properties.get(property));
     }
 
-    public static void stopTasks(AmazonECS ecs, String clusterName) {
+    private static void stopTasks(AmazonECS ecs, String clusterName) {
         LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
         forEachTaskArn(ecs, clusterName, taskArn -> {
             // Rate limit for ECS StopTask is 100 burst, 40 sustained:

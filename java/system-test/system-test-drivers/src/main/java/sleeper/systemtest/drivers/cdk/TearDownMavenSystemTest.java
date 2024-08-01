@@ -18,14 +18,9 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
-import sleeper.clients.teardown.RemoveECRRepositories;
-import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
-import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -36,8 +31,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildJarsBucketName;
-import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 public class TearDownMavenSystemTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownMavenSystemTest.class);
@@ -58,6 +51,9 @@ public class TearDownMavenSystemTest {
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
+        List<TearDownSystemTestDeployment> tearDownSystemTestDeployments = shortIds.stream()
+                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(clients, deploymentId))
+                .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownMavenInstances = instanceIds.stream()
                 .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
@@ -66,37 +62,26 @@ public class TearDownMavenSystemTest {
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
 
-        CloudFormationClient cloudFormation = clients.getCloudFormation();
         for (TearDownInstance instance : tearDownAllInstances) {
             instance.shutdownSystemProcesses();
             instance.deleteStack();
         }
         for (TearDownInstance instance : tearDownMavenInstances) {
             instance.waitForStackToDelete();
-            instance.cleanupAfterStackDeletion();
         }
-        for (String shortId : shortIds) {
-            LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
-            // TODO shut down system test cluster
-            cloudFormation.deleteStack(builder -> builder.stackName(shortId));
+        for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
+            deployment.shutdownSystemProcesses();
+            deployment.deleteStack();
         }
         for (TearDownInstance instance : tearDownStandaloneInstances) {
             instance.waitForStackToDelete();
-            instance.cleanupAfterStackDeletion();
+            instance.cleanupAfterStackDeleted();
         }
-        for (String shortId : shortIds) {
-            LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
-            WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
+        for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
+            deployment.waitForStackToDelete();
+            deployment.cleanupAfterAllInstancesAndStackDeleted();
         }
 
-        for (String shortId : shortIds) {
-            RemoveJarsBucket.remove(clients.getS3v2(), buildJarsBucketName(shortId));
-        }
-        for (String shortId : shortIds) {
-            RemoveECRRepositories.remove(clients.getEcr(),
-                    PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
-                    List.of(buildSystemTestECRRepoName(shortId)));
-        }
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 

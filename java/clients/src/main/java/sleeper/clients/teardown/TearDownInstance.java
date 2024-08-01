@@ -21,10 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -73,7 +75,8 @@ public class TearDownInstance {
         shutdownSystemProcesses();
         deleteStack();
         waitForStackToDelete();
-        cleanupAfterStackDeletion();
+        cleanupAfterStackDeleted();
+        removeGeneratedDir(scriptsDir);
 
         LOGGER.info("Finished tear down");
     }
@@ -97,8 +100,20 @@ public class TearDownInstance {
                 .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
     }
 
-    public void cleanupAfterStackDeletion() throws InterruptedException, IOException {
-        new CleanupAfterStackDeletion(clients, scriptsDir).cleanup(instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
+    public void cleanupAfterStackDeleted() throws InterruptedException {
+        LOGGER.info("Removing the jars bucket and docker containers");
+        RemoveJarsBucket.remove(clients.getS3v2(), instanceProperties.get(ID));
+        RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
+    }
+
+    public static void removeGeneratedDir(Path scriptsDir) throws IOException {
+        Path generatedDir = scriptsDir.resolve("generated");
+        if (Files.isDirectory(generatedDir)) {
+            LOGGER.info("Removing generated files");
+            ClientUtils.clearDirectory(generatedDir);
+        } else {
+            LOGGER.info("Generated directory not found");
+        }
     }
 
     public static Builder builder() {
