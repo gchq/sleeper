@@ -232,7 +232,10 @@ public class DynamoDBUtils {
     }
 
     public static void retryOnThrottlingException(Runnable runnable) throws InterruptedException {
-        PollWithRetries pollWithRetries = PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10));
+        retryOnThrottlingException(PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10)), runnable);
+    }
+
+    public static void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException {
         pollWithRetries.pollUntil("no throttling exception", () -> {
             try {
                 runnable.run();

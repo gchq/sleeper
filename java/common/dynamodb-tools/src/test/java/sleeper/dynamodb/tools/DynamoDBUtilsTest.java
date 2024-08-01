@@ -20,8 +20,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.PollWithRetries.TimedOutException;
+
+import java.util.Iterator;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DynamoDBUtilsTest {
 
@@ -92,8 +99,57 @@ public class DynamoDBUtilsTest {
             };
 
             // When / Then
-            assertThatCode(() -> DynamoDBUtils.retryOnThrottlingException(runnable))
+            assertThatCode(() -> retryOnceOnThrottlingException(runnable))
                     .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldTimeoutWhenThrottlingExceptionThrownTooManyTimes() {
+            // Given
+            Runnable runnable = () -> {
+                AmazonDynamoDBException exception = new AmazonDynamoDBException("Throttling exception");
+                exception.setErrorCode("ThrottlingException");
+                throw exception;
+            };
+
+            // When / Then
+            assertThatThrownBy(() -> retryOnceOnThrottlingException(runnable))
+                    .isInstanceOf(TimedOutException.class);
+        }
+
+        @Test
+        void shouldThrowWrappedExceptionWhenOtherExceptionThrown() {
+            // Given
+            RuntimeException exception = new RuntimeException("Custom runtime exception");
+            Runnable runnable = () -> {
+                throw exception;
+            };
+
+            // When / Then
+            assertThatThrownBy(() -> retryOnceOnThrottlingException(runnable))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasCause(exception);
+        }
+
+        @Test
+        void shouldNotTimeoutWhenThrottlingExceptionThrownThenNoExceptionThrown() {
+            // Given
+            AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
+            throttlingException.setErrorCode("ThrottlingException");
+            Iterator<RuntimeException> throwables = List.of((RuntimeException) throttlingException).iterator();
+            Runnable runnable = () -> {
+                if (throwables.hasNext()) {
+                    throw throwables.next();
+                }
+            };
+
+            // When / Then
+            assertThatCode(() -> retryOnceOnThrottlingException(runnable))
+                    .doesNotThrowAnyException();
+        }
+
+        private void retryOnceOnThrottlingException(Runnable runnable) throws InterruptedException {
+            DynamoDBUtils.retryOnThrottlingException(PollWithRetries.immediateRetries(1), runnable);
         }
     }
 }
