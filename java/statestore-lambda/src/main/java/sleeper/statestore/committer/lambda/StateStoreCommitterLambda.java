@@ -25,8 +25,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +48,6 @@ import java.util.List;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_QUEUE_MESSAGE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 /**
  * A lambda that allows for asynchronous commits to a state store.
@@ -59,9 +55,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.STATESTOR
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
-    private final String queueUrl;
-    private final int queueVisibilityTimeout;
-    private final AmazonSQS sqsClient;
     private final StateStoreCommitter committer;
     private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
 
@@ -69,12 +62,9 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        sqsClient = AmazonSQSClientBuilder.defaultClient();
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
-        queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-        queueVisibilityTimeout = instanceProperties.getInt(STATESTORE_COMMITTER_QUEUE_MESSAGE_VISIBILITY_TIMEOUT_IN_SECONDS);
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
