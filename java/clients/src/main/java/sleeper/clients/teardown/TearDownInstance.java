@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -51,7 +52,8 @@ public class TearDownInstance {
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
-        instanceProperties = builder.loadInstanceProperties();
+        instanceProperties = Optional.ofNullable(builder.instanceProperties)
+                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -120,6 +122,14 @@ public class TearDownInstance {
         return new Builder();
     }
 
+    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId, Path scriptsDir) {
+        if (instanceId == null) {
+            InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(scriptsDir.resolve("generated"));
+            instanceId = instanceProperties.get(ID);
+        }
+        return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
+    }
+
     public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId) {
         LOGGER.info("Loading configuration for instance {}", instanceId);
         try {
@@ -179,16 +189,6 @@ public class TearDownInstance {
 
         public void tearDownWithDefaultClients() throws IOException, InterruptedException {
             TearDownClients.withDefaults(clients -> clients(clients).build().tearDown());
-        }
-
-        private InstanceProperties loadInstanceProperties() {
-            if (instanceProperties != null) {
-                return instanceProperties;
-            } else if (instanceId == null) {
-                InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(scriptsDir.resolve("generated"));
-                instanceId = instanceProperties.get(ID);
-            }
-            return loadInstancePropertiesOrGenerateDefaults(clients.getS3(), instanceId);
         }
     }
 }
