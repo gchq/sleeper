@@ -101,6 +101,8 @@ get_version() {
 }
 
 pull_docker_images(){
+  echo "Updating CLI runner Dockerfile"
+  mkdir -p "$HOME_RUNNER_PATH"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
