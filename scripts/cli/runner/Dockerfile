@@ -20,6 +20,7 @@ ARG SET_GID
 
 # Propagate user IDs to image, to avoid mixed file ownership
 USER root
+RUN chown ${SET_UID}:${SET_GID} -R /home/sleeper
 RUN groupmod -g ${SET_GID} sleeper
 RUN usermod -u ${SET_UID} -g ${SET_GID} sleeper
 USER sleeper

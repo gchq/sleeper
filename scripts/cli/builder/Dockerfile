@@ -30,19 +30,26 @@ RUN apt-get update && apt-get install -y \
     pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN adduser --disabled-password --gecos "" sleeper \
-    && usermod -aG sudo,docker sleeper \
-    && passwd -d sleeper
-USER sleeper
-
 # Install Rust
 # Change install location because the default is in the home directory, which is overwritten by Dev Containers
+# We also need to make it accessible to the non-root user
+RUN adduser --disabled-password --gecos "" rust \
+    && passwd -d rust
+USER rust
 RUN sudo mkdir /rust && sudo chown sleeper:sleeper /rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
 RUN $CARGO_HOME/bin/cargo install cross
+
+USER root
+COPY entrypoint.sh /entrypoint.sh
+
+# Create non-root user
+RUN adduser --disabled-password --gecos "" sleeper \
+    && usermod -aG sudo,docker,rust sleeper \
+    && passwd -d sleeper
+USER sleeper
 
 # Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
 ENV PATH=$CARGO_HOME/bin:$PATH
@@ -52,8 +59,6 @@ ENV CROSS_CONTAINER_IN_CONTAINER=true
 
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
-
-COPY entrypoint.sh /entrypoint.sh
 
 WORKDIR /sleeper-builder
 
