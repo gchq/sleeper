@@ -41,10 +41,11 @@ ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
 RUN $CARGO_HOME/bin/cargo install cross
-
 USER root
-COPY entrypoint.sh /entrypoint.sh
+RUN chmod -R g+rw $RUSTUP_HOME
 RUN chmod -R g+rw $CARGO_HOME
+
+COPY entrypoint.sh /entrypoint.sh
 
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
