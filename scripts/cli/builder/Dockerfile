@@ -40,6 +40,7 @@ USER rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
+RUN $CARGO_HOME/bin/rustup component add rust-std-x86_64-unknown-linux-gnu rust-std-aarch64-unknown-linux-gnu rust-src
 RUN $CARGO_HOME/bin/cargo install cross
 USER root
 RUN chmod -R g+rw $RUSTUP_HOME
