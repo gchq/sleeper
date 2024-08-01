@@ -116,7 +116,8 @@ You can run a specific test suite like this:
 This can also be used with NightlyFunctionalSystemTestSuite.
 
 Note that some system tests are designed to run on at least 3 subnets in different availability zones. There is no
-guarantee that these tests will pass if you use less subnets than this.
+guarantee that these tests will pass if you use less subnets than this, as there might not be enough capacity in
+the availaiblity zones you have provided.
 
 ### Reusing resources
 
