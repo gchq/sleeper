@@ -75,11 +75,12 @@ build_temp_runner_image() {
   local SET_GID=$(id -g)
   local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
-  docker build "$RUNNER_PATH" -t "$TEMP_RUNNER_IMAGE" \
+  echo "Propagating current user to Docker image"
+  docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
     --build-arg RUN_IMAGE="$RUN_IMAGE" \
     --build-arg SET_UID=$SET_UID \
     --build-arg SET_GID=$SET_GID \
-    --build-arg SET_DOCKER_GID=$SET_DOCKER_GID &> /dev/null
+    --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
 }
 
 run_in_environment_docker() {
