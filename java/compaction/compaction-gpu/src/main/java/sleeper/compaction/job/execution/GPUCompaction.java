@@ -121,7 +121,7 @@ public class GPUCompaction implements CompactionRunner {
      * @throws IOException     if compaction failed, either due to a gRPC failure or a compaction failure
      */
     public RecordsProcessed gRpcCompact(Channel channel, CompactionJob job, TableProperties tableProperties, Schema schema, Region region) throws IOException {
-        CompactionServiceGrpc.CompactionServiceBlockingStub stub = CompactionServiceGrpc.newBlockingStub(channel)
+        CompactorGrpc.CompactorBlockingStub stub = CompactorGrpc.newBlockingStub(channel)
                 .withWaitForReady();
         CompactionParams params = createParams(job, tableProperties, schema, region);
 
@@ -131,7 +131,7 @@ public class GPUCompaction implements CompactionRunner {
 
             // check exit status of compaction
             if (grpcResult.getExitStatus() != ReturnCode.OK) {
-                String exitReason = grpcResult.hasExitReason() ? grpcResult.getExitReason() : "not specified";
+                String exitReason = grpcResult.hasMsg() ? grpcResult.getMsg() : "not specified";
                 throw new IOException("GPU compaction failed with exit status " + grpcResult.getExitStatus().name() + " due to " + exitReason);
             }
 
