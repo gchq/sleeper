@@ -217,4 +217,14 @@ public class DynamoDBUtils {
     public static boolean isConditionCheckFailure(CancellationReason reason) {
         return "ConditionalCheckFailed".equals(reason.getCode());
     }
+
+    public static boolean isThrottlingException(Throwable e) {
+        do {
+            if (e instanceof AmazonDynamoDBException) {
+                return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
+            }
+            e = e.getCause();
+        } while (e != null);
+        return false;
+    }
 }
