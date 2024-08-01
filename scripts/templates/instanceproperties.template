@@ -768,11 +768,25 @@ sleeper.partition.splitting.finder.memory=2048
 # The timeout in seconds for the lambda function used to identify partitions that need to be split.
 sleeper.partition.splitting.finder.timeout.seconds=900
 
+# The number of lambda instances to reserve from your AWS account's quota for finding partitions to
+# split. Note that this will not provision instances until they are needed. Each time partition
+# splitting runs, a separate lambda invocation will be made for each Sleeper table, to check for
+# partitions that need splitting. If the reserved concurrency is less than the number of Sleeper
+# tables in the instance, these invocations will queue up.
+sleeper.partition.splitting.finder.reserved.concurrency=2
+
 # The amount of memory in MB for the lambda function used to split partitions.
 sleeper.partition.splitting.memory=2048
 
 # The timeout in seconds for the lambda function used to split partitions.
 sleeper.partition.splitting.timeout.seconds=900
+
+# The number of lambda instances to reserve from your AWS account's quota for splitting partitions.
+# Note that this will not provision instances until they are needed. Each time partition splitting
+# runs, a separate lambda invocation will be made for each partition that needs to be split. If the
+# reserved concurrency is less than the number of partitions that need to be split across all Sleeper
+# tables in the instance, these invocations may queue up.
+sleeper.partition.splitting.reserved.concurrency=10
 
 # This is the default value of the partition splitting threshold. Partitions with more than the
 # following number of records in will be split. This value can be overridden on a per-table basis.
