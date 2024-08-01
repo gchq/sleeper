@@ -115,6 +115,10 @@ You can run a specific test suite like this:
 
 This can also be used with NightlyFunctionalSystemTestSuite.
 
+Note that some system tests are designed to run on at least 3 subnets in different availability zones. There is no
+guarantee that these tests will pass if you use fewer subnets than this, as there might not be enough capacity in
+the availaiblity zones you have provided.
+
 ### Reusing resources
 
 After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
