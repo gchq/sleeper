@@ -27,7 +27,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,22 +92,26 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
-        for (SQSMessage message : event.getRecords()) {
+        List<SQSMessage> messages = event.getRecords();
+        for (int i = 0; i < messages.size(); i++) {
+            SQSMessage message = messages.get(i);
             LOGGER.info("Found message: {}", message.getBody());
             StateStoreCommitRequest request = serDe.fromJson(message.getBody());
             try {
-                committer.apply(request);
-            } catch (RuntimeException | StateStoreException e) {
-                if (DynamoDBUtils.isThrottlingException(e)) {
-                    LOGGER.info("DynamoDB is scaling up, retrying request after {} seconds.", queueVisibilityTimeout);
-                    sqsClient.changeMessageVisibility(new ChangeMessageVisibilityRequest()
-                            .withQueueUrl(queueUrl)
-                            .withReceiptHandle(message.getReceiptHandle())
-                            .withVisibilityTimeout(queueVisibilityTimeout));
-                } else {
-                    LOGGER.error("Failed commit request", e);
-                    batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
-                }
+                DynamoDBUtils.retryOnThrottlingException(() -> {
+                    try {
+                        committer.apply(request);
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (InterruptedException e) {
+                messages.subList(i, messages.size())
+                        .forEach(failedMessage -> batchItemFailures.add(new BatchItemFailure(failedMessage.getMessageId())));
+                break;
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed commit request", e);
+                batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
         }
         Instant finishTime = Instant.now();
