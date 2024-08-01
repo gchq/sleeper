@@ -32,8 +32,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -56,42 +54,39 @@ public class TearDownMavenSystemTest {
                 .collect(toUnmodifiableList());
         List<String> instanceIdsAndStandalone = Stream.concat(instanceIds.stream(), standaloneInstanceIds.stream())
                 .collect(toUnmodifiableList());
-        Map<String, TearDownInstance> tearDownInstanceById = Stream.concat(shortIds.stream(), instanceIdsAndStandalone.stream())
-                .collect(Collectors.toMap(instanceId -> instanceId, instanceId -> TearDownInstance.builder()
-                        .scriptsDir(scriptsDir)
-                        .instanceId(instanceId)
-                        .clients(clients)
-                        .build()));
         Instant startTime = Instant.now();
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
+        List<TearDownInstance> tearDownMavenInstances = instanceIds.stream()
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .collect(toUnmodifiableList());
+        List<TearDownInstance> tearDownStandaloneInstances = instanceIds.stream()
+                .map(instanceId -> TearDownTestInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .collect(toUnmodifiableList());
+        List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
+
         CloudFormationClient cloudFormation = clients.getCloudFormation();
-        for (String instanceId : instanceIdsAndStandalone) {
-            LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
-            tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
-            cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
+        for (TearDownInstance instance : tearDownAllInstances) {
+            instance.shutdownSystemProcesses();
+            instance.deleteStack();
         }
-        for (String instanceId : instanceIds) {
-            LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
-            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        for (TearDownInstance instance : tearDownMavenInstances) {
+            instance.waitForStackToDelete();
+            instance.cleanupAfterStackDeletion();
         }
         for (String shortId : shortIds) {
             LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
-            tearDownInstanceById.get(shortId).shutdownSystemProcesses();
+            // TODO shut down system test cluster
             cloudFormation.deleteStack(builder -> builder.stackName(shortId));
         }
-        for (String instanceId : standaloneInstanceIds) {
-            LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
-            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        for (TearDownInstance instance : tearDownStandaloneInstances) {
+            instance.waitForStackToDelete();
+            instance.cleanupAfterStackDeletion();
         }
         for (String shortId : shortIds) {
             LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
             WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
-        }
-
-        for (String instanceId : instanceIdsAndStandalone) {
-            tearDownInstanceById.get(instanceId).removeBucketsAndContainers();
         }
 
         for (String shortId : shortIds) {
