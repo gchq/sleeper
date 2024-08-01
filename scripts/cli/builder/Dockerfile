@@ -44,6 +44,7 @@ RUN $CARGO_HOME/bin/cargo install cross
 
 USER root
 COPY entrypoint.sh /entrypoint.sh
+RUN chmod -R g+rw $CARGO_HOME
 
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
@@ -53,8 +54,6 @@ USER sleeper
 
 # Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
 ENV PATH=$CARGO_HOME/bin:$PATH
-# Reset CARGO_HOME to use user registry
-ENV CARGO_HOME=/home/sleeper/.cargo
 
 # Set variable telling cross-rs Rust cross compiler that it is already inside a container
 ENV CROSS_CONTAINER_IN_CONTAINER=true
