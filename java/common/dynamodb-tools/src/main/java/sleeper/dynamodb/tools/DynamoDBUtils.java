@@ -218,22 +218,13 @@ public class DynamoDBUtils {
         return "ConditionalCheckFailed".equals(reason.getCode());
     }
 
-    public static boolean isThrottlingException(Exception e) {
-        if (e instanceof AmazonDynamoDBException) {
-            return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
-        } else {
-            return hasThrottlingException(e);
-        }
-    }
-
-    private static boolean hasThrottlingException(Exception e) {
-        Throwable cause = e.getCause();
-        while (cause != null) {
-            if (cause instanceof AmazonDynamoDBException) {
-                return "ThrottlingException".equals(((AmazonDynamoDBException) cause).getErrorCode());
+    public static boolean isThrottlingException(Throwable e) {
+        do {
+            if (e instanceof AmazonDynamoDBException) {
+                return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
             }
-            cause = cause.getCause();
-        }
+            e = e.getCause();
+        } while (e != null);
         return false;
     }
 }

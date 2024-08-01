@@ -56,6 +56,15 @@ public class DynamoDBUtilsTest {
     }
 
     @Test
+    void shouldNotFindThrottlingExceptionWithNoCause() {
+        // Given
+        Exception exception = new Exception("Test exception");
+
+        // When / Then
+        assertThat(DynamoDBUtils.isThrottlingException(exception)).isFalse();
+    }
+
+    @Test
     void shouldNotFindThrottlingExceptionWhenExceptionHasDifferentErrorCode() {
         // Given
         AmazonDynamoDBException exception = new AmazonDynamoDBException("Conditional check exception");
