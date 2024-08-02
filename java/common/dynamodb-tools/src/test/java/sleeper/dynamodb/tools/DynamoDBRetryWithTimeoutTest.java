@@ -189,6 +189,27 @@ public class DynamoDBRetryWithTimeoutTest {
         }
     }
 
+    @Nested
+    @DisplayName("Retry check")
+    class RetryCheck {
+        @Test
+        void shouldNotRetryMessagesIfRetryCheckConditionMet() throws Exception {
+            // Given
+            ParameterSupplier<Message> messages = messages(
+                    success("m1"),
+                    success("m2"),
+                    noMessage());
+            Supplier<Boolean> retryCheck = List.of(true, false).iterator()::next;
+
+            // When
+            retryWithCheck(retryCheck, messages);
+
+            // Then
+            assertThat(successfulMessages).containsExactly("m1");
+            assertThat(failedMessages).isEmpty();
+        }
+    }
+
     @Test
     void shouldExitEarlyWhenOtherExceptionThrown() throws Exception {
         // Given
@@ -210,6 +231,12 @@ public class DynamoDBRetryWithTimeoutTest {
 
         // Then
         assertThat(failedMessages).containsExactly("m1");
+    }
+
+    private void retryWithCheck(Supplier<Boolean> retryCheck, ParameterSupplier<Message> messages) throws Exception {
+        new DynamoDBRetryWithTimeout(60000, 60000, retryCheck, () -> {
+        }, Instant::now, PollWithRetries.immediateRetries(1))
+                .run(messages, runner());
     }
 
     private void retryWithIdleTimeout(long minWaitTimeSeconds, Supplier<Instant> timeSupplier, ParameterSupplier<Message> messages) throws InterruptedException {
