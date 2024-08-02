@@ -1,4 +1,4 @@
 add_subdirectory(sample_library)
-add_subdirectory(ftxui_sample)
+add_subdirectory(compactor)
 add_subdirectory(cudf_compact)
 add_subdirectory(compact_grpc)

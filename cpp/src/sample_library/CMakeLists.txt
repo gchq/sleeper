@@ -1,7 +1,5 @@
 include(GenerateExportHeader)
 
-include(FetchContent)
-
 add_library(sample_library sample_library.cpp)
 
 add_library(gpu_compact::sample_library ALIAS sample_library)

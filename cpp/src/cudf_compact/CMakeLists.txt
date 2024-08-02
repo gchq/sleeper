@@ -1,7 +1,5 @@
 include(GenerateExportHeader)
 
-include(FetchContent)
-
 add_library(cudf_compact cudf_compact.cpp)
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
