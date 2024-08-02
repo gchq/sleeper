@@ -32,23 +32,24 @@ public class DynamoDBRetryWithTimeout {
     private final long maxWaitForThrottlingSeconds;
     private final Supplier<Boolean> retryCheck;
     private final Supplier<Instant> timeSupplier;
+    private final Runnable delayBeforeRetry;
     private final PollWithRetries throttingRetryPoll;
 
-    public DynamoDBRetryWithTimeout(long maxWaitSeconds, long maxWaitForThrottlingSeconds, Supplier<Instant> timeSupplier, PollWithRetries throttingRetryPoll) {
-        this(maxWaitSeconds, maxWaitForThrottlingSeconds, () -> true, timeSupplier, throttingRetryPoll);
-    }
-
     public DynamoDBRetryWithTimeout(long maxWaitSeconds, long maxWaitForThrottlingSeconds,
-            Supplier<Boolean> retryCheck, Supplier<Instant> timeSupplier, PollWithRetries throttingRetryPoll) {
+            Supplier<Boolean> retryCheck, Runnable delayBeforeRetry, Supplier<Instant> timeSupplier, PollWithRetries throttingRetryPoll) {
         this.maxWaitSeconds = maxWaitSeconds;
         this.maxWaitForThrottlingSeconds = maxWaitForThrottlingSeconds;
         this.retryCheck = retryCheck;
+        this.delayBeforeRetry = delayBeforeRetry;
         this.timeSupplier = timeSupplier;
         this.throttingRetryPoll = throttingRetryPoll;
     }
 
     public <T> Instant run(ParameterSupplier<T> parameterSupplier, DynamoRunner<T> runner) throws RuntimeException, InterruptedException {
-        Instant startTime = timeSupplier.get();
+        return run(timeSupplier.get(), parameterSupplier, runner);
+    }
+
+    public <T> Instant run(Instant startTime, ParameterSupplier<T> parameterSupplier, DynamoRunner<T> runner) throws RuntimeException, InterruptedException {
         Instant lastActiveTime = startTime;
         Duration totalWaitForThrottling = Duration.ZERO;
         boolean hasThrottled = false;
@@ -69,6 +70,7 @@ public class DynamoDBRetryWithTimeout {
                 if (runTime.compareTo(Duration.ofSeconds(maxWaitSeconds)) >= 0) {
                     return currentTime;
                 }
+                delayBeforeRetry.run();
             } else {
                 T parameter = paramOpt.get();
                 try {

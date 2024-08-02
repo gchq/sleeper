@@ -47,7 +47,8 @@ public class DynamoDBRetryWithTimeoutTest {
             ParameterSupplier<Message> messages = messages(
                     success("m1"),
                     success("m2"),
-                    success("m3"));
+                    success("m3"),
+                    noMessage());
             Supplier<Instant> timeSupplier = List.of(
                     Instant.parse("2024-08-02T09:57:00Z"), // Start time
                     Instant.parse("2024-08-02T09:57:10Z"), // First success
@@ -74,7 +75,8 @@ public class DynamoDBRetryWithTimeoutTest {
             // Given
             ParameterSupplier<Message> messages = messages(
                     throttlingFailureOnce("m1"),
-                    success("m2"));
+                    success("m2"),
+                    noMessage());
             Supplier<Instant> timeSupplier = List.of(
                     Instant.parse("2024-08-02T09:57:00Z"), // Start time
                     Instant.parse("2024-08-02T09:57:10Z"), // First message
@@ -96,7 +98,8 @@ public class DynamoDBRetryWithTimeoutTest {
             ParameterSupplier<Message> messages = messages(
                     throttlingFailure("m1"),
                     throttlingFailure("m2"),
-                    success("m3"));
+                    success("m3"),
+                    noMessage());
             Supplier<Instant> timeSupplier = List.of(
                     Instant.parse("2024-08-02T09:57:00Z"), // Start time
                     Instant.parse("2024-08-02T09:59:00Z"), // First message run 1
@@ -122,7 +125,8 @@ public class DynamoDBRetryWithTimeoutTest {
         RuntimeException customException = new RuntimeException("Other exception");
         ParameterSupplier<Message> messages = messages(
                 otherFailure("m1", customException),
-                success("m2"));
+                success("m2"),
+                noMessage());
         Supplier<Instant> timeSupplier = List.of(
                 Instant.parse("2024-08-02T09:57:00Z"), // Start time
                 Instant.parse("2024-08-02T09:57:10Z"), // First message
@@ -139,18 +143,19 @@ public class DynamoDBRetryWithTimeoutTest {
     }
 
     private void retryWithIdleTimeout(long minWaitTimeSeconds, Supplier<Instant> timeSupplier, ParameterSupplier<Message> messages) throws InterruptedException {
-        new DynamoDBRetryWithTimeout(minWaitTimeSeconds, 60000, timeSupplier, PollWithRetries.immediateRetries(1))
+        new DynamoDBRetryWithTimeout(minWaitTimeSeconds, 60000, () -> true, () -> {
+        }, timeSupplier, PollWithRetries.immediateRetries(1))
                 .run(messages, runner());
     }
 
     private void retryWithThrottlingTimeout(long minWaitThrottlingSeconds, Supplier<Instant> timeSupplier, ParameterSupplier<Message> messages) throws InterruptedException {
-        new DynamoDBRetryWithTimeout(60000, minWaitThrottlingSeconds, timeSupplier, PollWithRetries.immediateRetries(1))
+        new DynamoDBRetryWithTimeout(60000, minWaitThrottlingSeconds, () -> true, () -> {
+        }, timeSupplier, PollWithRetries.immediateRetries(1))
                 .run(messages, runner());
     }
 
     private ParameterSupplier<Message> messages(Message... messages) {
-        Optional<Message> endMessage = Optional.empty();
-        return Stream.concat(Stream.of(messages).map(Optional::of), Stream.of(endMessage)).iterator()::next;
+        return Stream.of(messages).map(Optional::ofNullable).iterator()::next;
     }
 
     private DynamoRunner<Message> runner() {
@@ -163,6 +168,10 @@ public class DynamoDBRetryWithTimeoutTest {
                 successfulMessages.add(message.messageId);
             }
         };
+    }
+
+    private Message noMessage() {
+        return null;
     }
 
     private Message success(String messageId) {
