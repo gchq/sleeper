@@ -16,6 +16,8 @@
 package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
@@ -36,73 +38,82 @@ public class DynamoDBRetryWithTimeoutTest {
     private final List<String> successfulMessages = new ArrayList<>();
     private final List<String> failedMessages = new ArrayList<>();
 
-    @Test
-    void shouldNotTimeoutWhenRunnableSucceedsMultipleTimes() throws Exception {
-        // Given
-        ParameterSupplier<Message> messages = messages(
-                success("m1"),
-                success("m2"),
-                success("m3"));
-        Supplier<Instant> timeSupplier = List.of(
-                Instant.parse("2024-08-02T09:57:00Z"), // Start time
-                Instant.parse("2024-08-02T09:57:10Z"), // First success
-                Instant.parse("2024-08-02T09:57:20Z"), // Second success
-                Instant.parse("2024-08-02T09:57:30Z"), // Third success
-                Instant.parse("2024-08-02T09:58:40Z")) // Finish time
-                .iterator()::next;
+    @Nested
+    @DisplayName("Idle timeout")
+    class IdleTimeout {
+        @Test
+        void shouldNotTimeoutWhenRunnableSucceedsMultipleTimes() throws Exception {
+            // Given
+            ParameterSupplier<Message> messages = messages(
+                    success("m1"),
+                    success("m2"),
+                    success("m3"));
+            Supplier<Instant> timeSupplier = List.of(
+                    Instant.parse("2024-08-02T09:57:00Z"), // Start time
+                    Instant.parse("2024-08-02T09:57:10Z"), // First success
+                    Instant.parse("2024-08-02T09:57:20Z"), // Second success
+                    Instant.parse("2024-08-02T09:57:30Z"), // Third success
+                    Instant.parse("2024-08-02T09:58:40Z")) // Finish time
+                    .iterator()::next;
 
-        // When
-        retryWithIdleTimeout(60, timeSupplier, messages);
+            // When
+            retryWithIdleTimeout(60, timeSupplier, messages);
 
-        // Then
-        assertThat(successfulMessages).containsExactly("m1", "m2", "m3");
-        assertThat(failedMessages).isEmpty();
+            // Then
+            assertThat(successfulMessages).containsExactly("m1", "m2", "m3");
+            assertThat(failedMessages).isEmpty();
+        }
     }
 
-    @Test
-    void shouldRetryOnceWhenThrottlingExceptionThrownThenSucceeds() throws Exception {
-        // Given
-        ParameterSupplier<Message> messages = messages(
-                throttlingFailureOnce("m1"),
-                success("m2"));
-        Supplier<Instant> timeSupplier = List.of(
-                Instant.parse("2024-08-02T09:57:00Z"), // Start time
-                Instant.parse("2024-08-02T09:57:10Z"), // First message
-                Instant.parse("2024-08-02T09:57:20Z"), // Second message
-                Instant.parse("2024-08-02T09:58:30Z")) // Finish time
-                .iterator()::next;
+    @Nested
+    @DisplayName("Throttling timeout")
+    class ThrottlingTimeout {
 
-        // When
-        retryWithIdleTimeout(60, timeSupplier, messages);
+        @Test
+        void shouldRetryOnceWhenThrottlingExceptionThrownThenSucceeds() throws Exception {
+            // Given
+            ParameterSupplier<Message> messages = messages(
+                    throttlingFailureOnce("m1"),
+                    success("m2"));
+            Supplier<Instant> timeSupplier = List.of(
+                    Instant.parse("2024-08-02T09:57:00Z"), // Start time
+                    Instant.parse("2024-08-02T09:57:10Z"), // First message
+                    Instant.parse("2024-08-02T09:57:20Z"), // Second message
+                    Instant.parse("2024-08-02T09:58:30Z")) // Finish time
+                    .iterator()::next;
 
-        // Then
-        assertThat(successfulMessages).containsExactly("m1", "m2");
-        assertThat(failedMessages).containsExactly("m1");
-    }
+            // When
+            retryWithIdleTimeout(60, timeSupplier, messages);
 
-    @Test
-    void shouldExitEarlyWhenThrottlingExceptionThrownTwiceExceedingMaxWaitTime() throws Exception {
-        // Given
-        ParameterSupplier<Message> messages = messages(
-                throttlingFailure("m1"),
-                throttlingFailure("m2"),
-                success("m3"));
-        Supplier<Instant> timeSupplier = List.of(
-                Instant.parse("2024-08-02T09:57:00Z"), // Start time
-                Instant.parse("2024-08-02T09:59:00Z"), // First message run 1
-                Instant.parse("2024-08-02T09:59:30Z"), // First message run 2
-                Instant.parse("2024-08-02T10:02:00Z"), // Second message run 1
-                Instant.parse("2024-08-02T10:02:30Z"), // Second message run 2
-                Instant.parse("2024-08-02T10:03:00Z"), // Third message
-                Instant.parse("2024-08-02T10:10:00Z")) // Finish time
-                .iterator()::next;
+            // Then
+            assertThat(successfulMessages).containsExactly("m1", "m2");
+            assertThat(failedMessages).containsExactly("m1");
+        }
 
-        // When
-        retryWithThrottlingTimeout(60, timeSupplier, messages);
+        @Test
+        void shouldExitEarlyWhenThrottlingExceptionThrownTwiceExceedingMaxWaitTime() throws Exception {
+            // Given
+            ParameterSupplier<Message> messages = messages(
+                    throttlingFailure("m1"),
+                    throttlingFailure("m2"),
+                    success("m3"));
+            Supplier<Instant> timeSupplier = List.of(
+                    Instant.parse("2024-08-02T09:57:00Z"), // Start time
+                    Instant.parse("2024-08-02T09:59:00Z"), // First message run 1
+                    Instant.parse("2024-08-02T09:59:30Z"), // First message run 2
+                    Instant.parse("2024-08-02T10:02:00Z"), // Second message run 1
+                    Instant.parse("2024-08-02T10:02:30Z"), // Second message run 2
+                    Instant.parse("2024-08-02T10:03:00Z"), // Third message
+                    Instant.parse("2024-08-02T10:10:00Z")) // Finish time
+                    .iterator()::next;
 
-        // Then
-        assertThat(successfulMessages).isEmpty();
-        assertThat(failedMessages).containsExactly("m1", "m1", "m2", "m2");
+            // When
+            retryWithThrottlingTimeout(60, timeSupplier, messages);
+
+            // Then
+            assertThat(successfulMessages).isEmpty();
+            assertThat(failedMessages).containsExactly("m1", "m1", "m2", "m2");
+        }
     }
 
     @Test

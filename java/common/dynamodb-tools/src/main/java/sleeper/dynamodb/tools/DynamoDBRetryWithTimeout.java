@@ -30,36 +30,45 @@ public class DynamoDBRetryWithTimeout {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBRetryWithTimeout.class);
     private final long maxWaitSeconds;
     private final long maxWaitForThrottlingSeconds;
+    private final Supplier<Boolean> retryCheck;
     private final Supplier<Instant> timeSupplier;
     private final PollWithRetries throttingRetryPoll;
 
     public DynamoDBRetryWithTimeout(long maxWaitSeconds, long maxWaitForThrottlingSeconds, Supplier<Instant> timeSupplier, PollWithRetries throttingRetryPoll) {
+        this(maxWaitSeconds, maxWaitForThrottlingSeconds, () -> true, timeSupplier, throttingRetryPoll);
+    }
+
+    public DynamoDBRetryWithTimeout(long maxWaitSeconds, long maxWaitForThrottlingSeconds,
+            Supplier<Boolean> retryCheck, Supplier<Instant> timeSupplier, PollWithRetries throttingRetryPoll) {
         this.maxWaitSeconds = maxWaitSeconds;
         this.maxWaitForThrottlingSeconds = maxWaitForThrottlingSeconds;
+        this.retryCheck = retryCheck;
         this.timeSupplier = timeSupplier;
         this.throttingRetryPoll = throttingRetryPoll;
     }
 
-    public <T> void run(ParameterSupplier<T> parameterSupplier, DynamoRunner<T> runner) throws RuntimeException, InterruptedException {
+    public <T> Instant run(ParameterSupplier<T> parameterSupplier, DynamoRunner<T> runner) throws RuntimeException, InterruptedException {
         Instant startTime = timeSupplier.get();
         Instant lastActiveTime = startTime;
         Duration totalWaitForThrottling = Duration.ZERO;
         boolean hasThrottled = false;
-        boolean shouldExit = false;
-        while (!shouldExit) {
-            Instant currentTime = timeSupplier.get();
+        Instant currentTime = startTime;
+        while (retryCheck.get()) {
+            currentTime = timeSupplier.get();
             if (hasThrottled) {
                 totalWaitForThrottling = totalWaitForThrottling.plus(Duration.between(lastActiveTime, currentTime));
                 if (totalWaitForThrottling.compareTo(Duration.ofSeconds(maxWaitForThrottlingSeconds)) >= 0) {
                     LOGGER.info("Max wait time for throttling exceeded, exiting early");
-                    return;
+                    return currentTime;
                 }
                 hasThrottled = false;
             }
             Optional<T> paramOpt = parameterSupplier.get();
             if (!paramOpt.isPresent()) {
                 Duration runTime = Duration.between(lastActiveTime, currentTime);
-                shouldExit = runTime.compareTo(Duration.ofSeconds(maxWaitSeconds)) >= 0;
+                if (runTime.compareTo(Duration.ofSeconds(maxWaitSeconds)) >= 0) {
+                    return currentTime;
+                }
             } else {
                 T parameter = paramOpt.get();
                 try {
@@ -71,6 +80,7 @@ public class DynamoDBRetryWithTimeout {
                 lastActiveTime = currentTime;
             }
         }
+        return currentTime;
     }
 
     public interface ParameterSupplier<T> extends Supplier<Optional<T>> {
