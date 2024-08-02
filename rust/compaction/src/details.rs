@@ -53,27 +53,6 @@ pub struct CompactionInput<'a> {
     pub region: HashMap<String, ColRange<'a>>,
 }
 
-impl Default for CompactionInput<'_> {
-    fn default() -> Self {
-        Self {
-            input_files: Vec::default(),
-            output_file: Url::parse("file:///").unwrap(),
-            row_key_cols: Vec::default(),
-            sort_key_cols: Vec::default(),
-            max_row_group_size: 1_000_000,
-            max_page_size: 65535,
-            compression: "zstd".into(),
-            writer_version: "2.0".into(),
-            column_truncate_length: usize::MAX,
-            stats_truncate_length: usize::MAX,
-            dict_enc_row_keys: true,
-            dict_enc_sort_keys: true,
-            dict_enc_values: true,
-            region: HashMap::default(),
-        }
-    }
-}
-
 /// Defines a partition range of a single column.
 #[derive(Debug, Copy, Clone)]
 pub struct ColRange<'a> {
