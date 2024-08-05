@@ -219,10 +219,6 @@ public class PollWithRetries {
             return this;
         }
 
-        public Builder immediateAttempts(int attempts) {
-            return pollIntervalMillis(0).maxPolls(attempts);
-        }
-
         public Builder immediateRetries(int retries) {
             return pollIntervalMillis(0).maxPolls(retries + 1);
         }
