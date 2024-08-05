@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -142,31 +141,6 @@ public class PartitionsBuilder {
     }
 
     /**
-     * Creates a partition tree with one root and two leaf partitions. Will split on the first row key. IDs will be
-     * created for partitions based on their position in the tree.
-     *
-     * @param  splitPoint value for the row key to split on
-     * @return            the builder
-     */
-    public PartitionsBuilder treeWithSingleSplitPoint(Object splitPoint) {
-        return fromRoot(root -> root.split(splitPoint));
-    }
-
-    /**
-     * Creates a partition tree with splits specified one at a time. Lets you call methods on a {@link Splitter} to
-     * split partitions and set split points. This will start at the root partition, and generate IDs for partitions
-     * based on their position in the tree.
-     *
-     * @param  splits a function to define split points against a {@link Splitter}
-     * @return        the builder
-     */
-    public PartitionsBuilder fromRoot(Consumer<Splitter> splits) {
-        rootFirst("root");
-        splits.accept(new Splitter("root", ""));
-        return this;
-    }
-
-    /**
      * Creates new partitions by splitting a previously defined partition.
      *
      * @param  parentId   the ID of the partition to split
@@ -246,60 +220,5 @@ public class PartitionsBuilder {
 
     public Schema getSchema() {
         return schema;
-    }
-
-    /**
-     * Defines a split point for a pre-specified parent partition. When created with {@link PartitionsBuilder#fromRoot},
-     * this will set the split point on the root partition. Can be chained to specify further split points for non-leaf
-     * child partitions. Unique IDs for child partitions will be automatically generated based on their position in the
-     * partition tree.
-     */
-    public class Splitter {
-
-        private final String parentId;
-        private final String partitionPrefix;
-
-        private Splitter(String parentId, String partitionPrefix) {
-            this.parentId = parentId;
-            this.partitionPrefix = partitionPrefix;
-        }
-
-        private Splitter(String nonRootParentId) {
-            this(nonRootParentId, nonRootParentId);
-        }
-
-        /**
-         * Defines the split point for the current partition when both child partitions are leaves. This means no
-         * further splits are required below this partition.
-         *
-         * @param splitPoint the value of the first row key at the split point
-         */
-        public void split(Object splitPoint) {
-            splitToNewChildren(parentId, leftId(), rightId(), splitPoint);
-        }
-
-        /**
-         * Defines the split point for the current partition when both child partitions are also parents. Split points
-         * must be defined for both child partitions.
-         *
-         * @param splitPoint the value of the first row key at the split point
-         * @param left       a function to split the left child partition covering values lower than the split point
-         * @param right      a function to split the right child partition covering values higher than the split point
-         */
-        public void splitToLeftAndRight(Object splitPoint,
-                Consumer<Splitter> left,
-                Consumer<Splitter> right) {
-            split(splitPoint);
-            left.accept(new Splitter(leftId()));
-            right.accept(new Splitter(rightId()));
-        }
-
-        private String leftId() {
-            return partitionPrefix + "L";
-        }
-
-        private String rightId() {
-            return partitionPrefix + "R";
-        }
     }
 }
