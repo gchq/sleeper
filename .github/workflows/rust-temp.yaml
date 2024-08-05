@@ -1,0 +1,20 @@
+name: Rust Incremental Build
+on:
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule: # Planned execution once per day
+    - cron: "0 2 * * *"
+  pull_request:
+    paths:
+      - ".github/workflows/rust-temp.yaml"
+      - "java/**"
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: mozilla-actions/sccache-action@v0.0.5
