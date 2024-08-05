@@ -83,6 +83,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                     }
                 });
             } catch (InterruptedException e) {
+                LOGGER.error("Interrupted applying commit request", e);
                 messages.subList(i, messages.size())
                         .forEach(failedMessage -> batchItemFailures.add(new BatchItemFailure(failedMessage.getMessageId())));
                 Thread.currentThread().interrupt();
