@@ -194,22 +194,44 @@ public class PollWithRetries {
         return "PollWithRetries{pollIntervalMillis=" + pollIntervalMillis + ", maxPolls=" + maxPolls + ", pollsTracker=" + pollsTracker + "}";
     }
 
+    /**
+     * Builder for polling with retries.
+     */
     public static class Builder {
         private long pollIntervalMillis;
         private int maxPolls;
-        private PollsTracker pollsTracker = new TrackAttemptsPerInvocation();
+        private PollsTracker pollsTracker = TrackAttemptsPerInvocation.INSTANCE;
         private SleepInInterval sleepInInterval = Thread::sleep;
 
+        /**
+         * Sets the interval between polls.
+         *
+         * @param  pollIntervalMillis the interval in milliseconds
+         * @return                    the builder
+         */
         public Builder pollIntervalMillis(long pollIntervalMillis) {
             this.pollIntervalMillis = pollIntervalMillis;
             return this;
         }
 
+        /**
+         * Sets the maximum number of polls.
+         *
+         * @param  maxPolls the maximum number of polls
+         * @return          the builder
+         */
         public Builder maxPolls(int maxPolls) {
             this.maxPolls = maxPolls;
             return this;
         }
 
+        /**
+         * Sets the interval between polls and maximum number, based on a timeout period.
+         *
+         * @param  pollInterval the interval
+         * @param  timeout      the timeout period, used to compute the maximum number of polls
+         * @return              the builder
+         */
         public Builder pollIntervalAndTimeout(Duration pollInterval, Duration timeout) {
             long pollIntervalMillis = pollInterval.toMillis();
             long timeoutMillis = timeout.toMillis();
@@ -217,19 +239,42 @@ public class PollWithRetries {
             return pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls);
         }
 
+        /**
+         * Sets to apply the maximum number of polls across all calls to poll a method. By default the maximum number
+         * of polls is only applied within a single call to poll a method.
+         *
+         * @return the builder
+         */
         public Builder applyMaxPollsOverall() {
             pollsTracker = new TrackAttemptsAcrossInvocations();
             return this;
         }
 
+        /**
+         * Sets no interval between polls, and a given number of retries.
+         *
+         * @param  retries the number of retries
+         * @return         the builder
+         */
         public Builder immediateRetries(int retries) {
             return pollIntervalMillis(0).maxPolls(retries + 1);
         }
 
+        /**
+         * Sets to refuse any retries, so only a single poll will be made.
+         *
+         * @return the builder
+         */
         public Builder noRetries() {
             return maxPolls(1);
         }
 
+        /**
+         * Sets the function used to sleep for the given interval in between polls. Defaults to Thread.sleep.
+         *
+         * @param  sleepInInterval the function
+         * @return                 the builder
+         */
         public Builder sleepInInterval(SleepInInterval sleepInInterval) {
             this.sleepInInterval = sleepInInterval;
             return this;
@@ -279,6 +324,9 @@ public class PollWithRetries {
      * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
      */
     private static class TrackAttemptsPerInvocation implements PollsTracker {
+
+        private static final TrackAttemptsPerInvocation INSTANCE = new TrackAttemptsPerInvocation();
+
         @Override
         public int getPollsBeforeInvocation() {
             return 0;
@@ -286,11 +334,6 @@ public class PollWithRetries {
 
         @Override
         public void beforePoll() {
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return obj instanceof TrackAttemptsPerInvocation;
         }
 
         @Override
