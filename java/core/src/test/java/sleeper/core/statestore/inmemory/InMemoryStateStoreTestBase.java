@@ -17,7 +17,6 @@
 package sleeper.core.statestore.inmemory;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -29,7 +28,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 public abstract class InMemoryStateStoreTestBase {
 
-    private PartitionsBuilderRootFirst partitions;
+    private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store = inMemoryStateStoreWithNoPartitions();
 
@@ -38,12 +37,12 @@ public abstract class InMemoryStateStoreTestBase {
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilderRootFirst partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
         createStore(partitions);
         store.initialise(partitions.buildList());
     }
 
-    private void createStore(PartitionsBuilderRootFirst partitions) {
+    private void createStore(PartitionsBuilder partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = inMemoryStateStoreUninitialised(partitions.getSchema());

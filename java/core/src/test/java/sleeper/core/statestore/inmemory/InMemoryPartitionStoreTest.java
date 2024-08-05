@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -97,7 +96,7 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         public void shouldStorePartitionsSplitOnLongKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema)
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
 
@@ -112,7 +111,7 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         public void shouldStorePartitionsSplitOnStringKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
-            PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema)
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "A");
 
@@ -127,7 +126,7 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         public void shouldStorePartitionsSplitOnByteArrayKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new ByteArrayType());
-            PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema)
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", new byte[]{1, 2, 3, 4});
 
@@ -146,7 +145,7 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
                             new Field("key1", new ByteArrayType()),
                             new Field("key2", new ByteArrayType()))
                     .build();
-            PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema)
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildrenOnDimension("root", "L", "R", 0, new byte[]{1, 2, 3, 4})
                     .splitToNewChildrenOnDimension("L", "LL", "LR", 1, new byte[]{99, 5})
@@ -163,7 +162,7 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         public void shouldStoreSeveralLayersOfPartitions() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema)
+            PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L)
                     .splitToNewChildren("L", "LL", "LR", 1L)
@@ -185,10 +184,10 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            PartitionsBuilderRootFirst partitionsBefore = new PartitionsBuilder(schema)
+            PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "before1", "before2", 0L);
-            PartitionsBuilderRootFirst partitionsAfter = new PartitionsBuilder(schema)
+            PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "after1", "after2", 10L);
             initialiseWithPartitions(partitionsBefore);
@@ -205,10 +204,10 @@ public class InMemoryPartitionStoreTest extends InMemoryStateStoreTestBase {
         void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
-            PartitionsBuilderRootFirst partitionsBefore = new PartitionsBuilder(schema)
+            PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "before1", "before2", 0L);
-            PartitionsBuilderRootFirst partitionsAfter = new PartitionsBuilder(schema)
+            PartitionsBuilder partitionsAfter = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "after1", "after2", 10L);
             initialiseWithPartitions(partitionsBefore);

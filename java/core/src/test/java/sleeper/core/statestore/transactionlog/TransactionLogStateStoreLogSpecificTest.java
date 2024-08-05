@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -41,7 +40,7 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
-    private final PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema).singlePartition("root");
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private StateStore store = stateStore();
 
     @BeforeEach
