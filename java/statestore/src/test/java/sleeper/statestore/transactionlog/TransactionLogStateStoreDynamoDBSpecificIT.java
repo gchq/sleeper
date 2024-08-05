@@ -24,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -97,8 +98,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             List<Object> splitPoints = LongStream.range(1, 1000)
                     .mapToObj(i -> i)
                     .collect(toUnmodifiableList());
-            PartitionTree tree = new PartitionsBuilder(schema)
-                    .leavesWithSplits(leafIds, splitPoints)
+            PartitionTree tree = PartitionsBuilderSplitsFirst
+                    .leavesWithSplits(schema, leafIds, splitPoints)
                     .anyTreeJoiningAllLeaves().buildTree();
 
             // When

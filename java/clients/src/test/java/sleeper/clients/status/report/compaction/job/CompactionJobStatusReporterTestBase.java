@@ -34,7 +34,6 @@ import java.io.PrintStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -150,8 +149,8 @@ public abstract class CompactionJobStatusReporterTestBase {
 
     protected static List<CompactionJobStatus> jobsWithLargeAndDecimalStatistics() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        dataHelper.partitionTree(builder -> builder
-                .leavesWithSplits(Arrays.asList(partition("A"), partition("B")), Collections.singletonList("ggg"))
+        dataHelper.partitionTreeFromSchema(schema -> PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of(partition("A"), partition("B")), List.of("ggg"))
                 .parentJoining(partition("C"), partition("A"), partition("B")));
 
         CompactionJob job1 = dataHelper.singleFileCompaction(partition("C"));

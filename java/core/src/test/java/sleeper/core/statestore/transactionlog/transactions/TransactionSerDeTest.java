@@ -158,10 +158,9 @@ public class TransactionSerDeTest {
                 .mapToObj(i -> StringUtils.repeat("abc", 100) // Use a long split point
                         + StringUtils.leftPad(i + "", 4, "0"))
                 .collect(toUnmodifiableList());
-        PartitionTree partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves()
-                .buildTree();
+        PartitionTree partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildTree();
         PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
 
         // When

@@ -20,14 +20,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.PartitionStore;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,9 +54,9 @@ public class FixedPartitionStoreTest {
     public void shouldInitialiseStoreWithPartitionTree() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        List<Partition> partitions = PartitionsBuilderSplitsFirst
-                .leavesWithSplits(schema, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
-                .parentJoining("C", "A", "B")
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "aaa")
                 .buildList();
         PartitionTree tree = new PartitionTree(partitions);
 
@@ -70,7 +67,7 @@ public class FixedPartitionStoreTest {
         assertThat(store.getAllPartitions()).containsExactlyInAnyOrder(
                 tree.getPartition("A"), tree.getPartition("B"), tree.getPartition("C"));
         assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
-                tree.getPartition("A"), tree.getPartition("B"));
+                tree.getPartition("B"), tree.getPartition("C"));
         assertThatCode(() -> store.initialise(partitions)).doesNotThrowAnyException();
     }
 
@@ -79,14 +76,14 @@ public class FixedPartitionStoreTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Partition> partitionsInit = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .singlePartition("root")
                 .buildList();
         PartitionStore store = new FixedPartitionStore(partitionsInit);
 
         // When / Then
         PartitionTree updateTree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("aaa"))
-                .parentJoining("root", "left", "right")
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "aaa")
                 .buildTree();
         Partition root = updateTree.getPartition("root");
         Partition left = updateTree.getPartition("left");
@@ -100,14 +97,14 @@ public class FixedPartitionStoreTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Partition> partitionsInit = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .singlePartition("root")
                 .buildList();
         PartitionStore store = new FixedPartitionStore(partitionsInit);
 
         // When / Then
         List<Partition> partitionsUpdate = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("aaa"))
-                .parentJoining("root", "left", "right")
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "aaa")
                 .buildList();
         assertThatThrownBy(() -> store.initialise(partitionsUpdate))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -118,8 +115,8 @@ public class FixedPartitionStoreTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Partition> partitionsInit = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("aaa"))
-                .parentJoining("root", "left", "right")
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "aaa")
                 .buildList();
         PartitionStore store = new FixedPartitionStore(partitionsInit);
 
