@@ -139,8 +139,8 @@ class PartitionsBuilderTest {
         Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
 
         // When
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+        PartitionTree tree = PartitionsBuilderSplitsFirst
+                .leavesWithSplitsOnDimension(schema, 1, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
                 .anyTreeJoiningAllLeaves()
                 .buildTree();
 

@@ -15,6 +15,9 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.range.Region;
+import sleeper.core.schema.Schema;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +29,48 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
 
     protected PartitionsBuilderSplitsFirst(PartitionsBuilder builder) {
         super(builder);
+    }
+
+    private PartitionsBuilderSplitsFirst(Schema schema) {
+        super(schema);
+    }
+
+    /**
+     * Creates partially constructed leaf partitions. Parent partitions must be defined separately that join the
+     * partitions together into a tree.
+     *
+     * @param  ids    unique IDs for the leaves
+     * @param  splits values of the first row key, for split points in between the new leaf partitions
+     * @return        the builder
+     * @see           PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
+     * @see           PartitionsBuilderSplitsFirst#parentJoining
+     */
+    public static PartitionsBuilderSplitsFirst leavesWithSplits(Schema schema, List<String> ids, List<Object> splits) {
+        return leavesWithSplitsOnDimension(schema, 0, ids, splits);
+    }
+
+    /**
+     * Creates partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
+     * separately that join the partitions together into a tree.
+     *
+     * @param  dimension index in the schema of the row key the partitions are split on
+     * @param  ids       unique IDs for the leaves
+     * @param  splits    values of the row key at the specified dimension, for split points in between the new leaf
+     *                   partitions
+     * @return           the builder
+     * @see              PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
+     * @see              PartitionsBuilderSplitsFirst#parentJoining
+     */
+    public static PartitionsBuilderSplitsFirst leavesWithSplitsOnDimension(Schema schema, int dimension, List<String> ids, List<Object> splits) {
+        List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
+        if (ids.size() != regions.size()) {
+            throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
+        }
+        PartitionsBuilderSplitsFirst builder = new PartitionsBuilderSplitsFirst(schema);
+        for (int i = 0; i < ids.size(); i++) {
+            builder.put(builder.factory.partition(ids.get(i), regions.get(i)));
+        }
+        return builder;
     }
 
     /**

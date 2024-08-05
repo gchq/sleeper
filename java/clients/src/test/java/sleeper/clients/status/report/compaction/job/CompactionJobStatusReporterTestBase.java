@@ -26,6 +26,7 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.status.ProcessRun;
 
@@ -57,10 +58,10 @@ public abstract class CompactionJobStatusReporterTestBase {
 
     protected static List<CompactionJobStatus> mixedJobStatuses() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        dataHelper.partitionTree(builder -> builder
-                .leavesWithSplits(
-                        Arrays.asList(partition("A"), partition("B"), partition("C"), partition("D")),
-                        Arrays.asList("ddd", "ggg", "kkk"))
+        dataHelper.partitionTreeFromSchema(schema -> PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema,
+                        List.of(partition("A"), partition("B"), partition("C"), partition("D")),
+                        List.of("ddd", "ggg", "kkk"))
                 .parentJoining(partition("E"), partition("A"), partition("B"))
                 .parentJoining(partition("F"), partition("E"), partition("C"))
                 .parentJoining(partition("G"), partition("F"), partition("D")));

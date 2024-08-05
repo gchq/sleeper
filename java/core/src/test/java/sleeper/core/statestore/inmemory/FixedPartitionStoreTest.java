@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -56,8 +57,8 @@ public class FixedPartitionStoreTest {
     public void shouldInitialiseStoreWithPartitionTree() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+        List<Partition> partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
                 .parentJoining("C", "A", "B")
                 .buildList();
         PartitionTree tree = new PartitionTree(partitions);
