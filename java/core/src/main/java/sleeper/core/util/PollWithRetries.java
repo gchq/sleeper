@@ -101,24 +101,33 @@ public class PollWithRetries {
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
         int polls = pollsTracker.getPollsBeforeInvocation();
-        do {
-            if (polls >= maxPolls) {
-                if (polls > 1) {
-                    String message = "Timed out after " + polls + " tries waiting for " +
-                            LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                            " until " + description;
-                    LOGGER.error(message);
-                    throw new TimedOutException(message);
-                } else {
-                    String message = "Failed, expected to find " + description;
-                    LOGGER.error(message);
-                    throw new CheckFailedException(message);
-                }
-            }
-            sleep.sleep(pollIntervalMillis);
+        failIfOverMaxPolls(description, polls);
+        while (!checkFinishedAndTrack(checkFinished)) {
             polls++;
-            pollsTracker.beforePoll();
-        } while (!checkFinished.getAsBoolean());
+            failIfOverMaxPolls(description, polls);
+            sleep.sleep(pollIntervalMillis);
+        }
+    }
+
+    private boolean checkFinishedAndTrack(BooleanSupplier checkFinished) {
+        pollsTracker.beforePoll();
+        return checkFinished.getAsBoolean();
+    }
+
+    private void failIfOverMaxPolls(String description, int polls) {
+        if (polls >= maxPolls) {
+            if (polls > 1) {
+                String message = "Timed out after " + polls + " tries waiting for " +
+                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                        " until " + description;
+                LOGGER.error(message);
+                throw new TimedOutException(message);
+            } else {
+                String message = "Failed, expected to find " + description;
+                LOGGER.error(message);
+                throw new CheckFailedException(message);
+            }
+        }
     }
 
     /**
@@ -205,7 +214,7 @@ public class PollWithRetries {
             return pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls);
         }
 
-        public Builder applyMaxAttemptsOverall() {
+        public Builder applyMaxPollsOverall() {
             pollsTracker = new TrackAttemptsAcrossInvocations();
             return this;
         }

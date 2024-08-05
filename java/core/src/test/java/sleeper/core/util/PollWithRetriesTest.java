@@ -45,7 +45,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRepeatPoll() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxPolls(2));
             Iterator<Boolean> iterator = List.of(false, true).iterator();
 
             // When
@@ -53,25 +53,41 @@ class PollWithRetriesTest {
 
             // Then
             assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).containsExactly(100L);
+        }
+
+        @Test
+        void shouldFinishIfMetOnFirstPoll() throws Exception {
+            // Given
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxPolls(2));
+            Iterator<Boolean> iterator = List.of(true).iterator();
+
+            // When
+            poll.pollUntil("iterator returns true", iterator::next);
+
+            // Then
+            assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).isEmpty();
         }
 
         @Test
         void shouldFailIfMaxPollsReached() {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxPolls(2));
             Iterator<Boolean> iterator = List.of(false, false).iterator();
 
             // When / Then
             assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
                     .isInstanceOf(PollWithRetries.TimedOutException.class)
-                    .hasMessage("Timed out after 2 tries waiting for 0s until iterator returns true");
+                    .hasMessage("Timed out after 2 tries waiting for 0.2s until iterator returns true");
             assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).containsExactly(100L);
         }
 
         @Test
         void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxPolls(2));
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false, true).iterator();
 
@@ -82,6 +98,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
+            assertThat(foundSleeps).containsExactly(100L, 100L);
         }
     }
 
@@ -109,7 +126,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRepeatQuery() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxPolls(2));
             Iterator<String> iterator = List.of("a", "b").iterator();
 
             // When
@@ -118,6 +135,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator).isExhausted();
             assertThat(result).isEqualTo("b");
+            assertThat(foundSleeps).containsExactly(100L);
         }
 
         @Test
@@ -131,6 +149,7 @@ class PollWithRetriesTest {
                     .isInstanceOf(PollWithRetries.CheckFailedException.class)
                     .hasMessage("Failed, expected to find iterator returns true");
             assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).isEmpty();
         }
     }
 
@@ -141,18 +160,21 @@ class PollWithRetriesTest {
         @Test
         void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateAttempts(1).applyMaxAttemptsOverall());
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(1).applyMaxPollsOverall());
             poll.pollUntil("true is returned", () -> true);
 
             // When / Then
             assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
                     .isInstanceOf(PollWithRetries.CheckFailedException.class);
+            assertThat(foundSleeps).isEmpty();
         }
 
         @Test
         void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateAttempts(3).applyMaxAttemptsOverall());
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(3).applyMaxPollsOverall());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -162,12 +184,14 @@ class PollWithRetriesTest {
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
+            assertThat(foundSleeps).containsExactly(100L);
         }
 
         @Test
         void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = poll(builder -> builder.immediateAttempts(3).applyMaxAttemptsOverall());
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(3).applyMaxPollsOverall());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(true).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -178,6 +202,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
+            assertThat(foundSleeps).containsExactly(100L);
         }
     }
 }
