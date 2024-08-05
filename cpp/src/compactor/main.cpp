@@ -1,78 +1,82 @@
 #include <CLI/CLI.hpp>// NOLINT
-#include <ProtoCompaction.grpc.pb.h>
-#include <ProtoCompaction.pb.h>
-#include <cstdint>
-#include <cstdlib>
 #include <exception>
-#include <fmt/core.h>
-#include <grpcpp/grpcpp.h>
-#include <iostream>
-#include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
-#include <limits>
-#include <optional>
+// #include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
+#include <regex>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <string>
-
-#include <gpu_compact/sample_library.hpp>
+#include <vector>
 
 // This file will be generated automatically when cur_you run the CMake
 // configuration step. It creates a namespace called `gpu_compact`. You can modify
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
-using sleeper::compaction::job::execution::Compactor;
-using sleeper::compaction::job::execution::CompactionParams;
-using sleeper::compaction::job::execution::CompactionResult;
-using sleeper::compaction::job::execution::ReturnCode;
-using grpc::Status;
-using grpc::ServerBuilder;
+static const std::regex URL_CHECK(R"((file|s3)://(/?(-.)?([^\s/?.#-]+.?)+(/[^\s]*)?))");
 
-class CompactionService final : public Compactor::Service
+void configure_logging() noexcept
 {
-    grpc::Status compact([[maybe_unused]] ::grpc::ServerContext *context,
-      const ::sleeper::compaction::job::execution::CompactionParams *params,
-      ::sleeper::compaction::job::execution::CompactionResult *result) noexcept override
-    {
-        std::cout << params->output_file() << " " << params->dict_enc_values() << '\n';
-        std::uint64_t test = std::numeric_limits<std::uint64_t>::max() - 2;
-        ReturnCode rc = ReturnCode::FAIL;
-        result->set_exit_status(rc);
-        result->set_rows_read(test);
-        result->set_rows_written(342);
-        result->set_msg("exit msg test");
-        return Status::OK;
-    }
-};
+    auto colour_logger = spdlog::stdout_color_st("console");
+    spdlog::set_default_logger(colour_logger);
+    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_pattern("%Y-%m-%dT%H:%M:%S %^[%l]%$ %s:%# - %v");
+}
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-int main([[maybe_unused]] int argc, [[maybe_unused]] const char **argv)
+int main(int argc, const char **argv)
 {
+    configure_logging();
+
     try {
         // NOLINTNEXTLINE
-        CLI::App app{ fmt::format(
-          "{} version {}", gpu_compact::cmake::project_name, gpu_compact::cmake::project_version) };
+        CLI::App app{ fmt::format("{} version {} git SHA {}",
+                        gpu_compact::cmake::project_name,
+                        gpu_compact::cmake::project_version,
+                        gpu_compact::cmake::git_sha),
+            std::string{ gpu_compact::cmake::project_name } };
+        app.set_version_flag("--version", std::string{ gpu_compact::cmake::project_version });
 
-        std::optional<std::string> message;
-        app.add_option("-m,--message", message, "A message to print back out");
-        bool show_version = false;// NOLINT(misc-const-correctness)
-        app.add_flag("--version", show_version, "Show version information");
-
+        std::string outputFile;
+        app.add_option("output", outputFile, "Output file URL for the compacted Parquet data")->required();
+        std::size_t rowGroupSize{ 1000000 };
+        app.add_option("-r,--row-group-size", rowGroupSize, "Set the maximum number of rows in a row group");
+        std::size_t maxPageSize{ 65535 };
+        app.add_option("-p,--max-page-size", maxPageSize, "Set the maximum number of bytes per data page (hint)");
+        std::vector<std::string> inputFiles;
+        app.add_option("input", inputFiles, "List of input Parquet files (must be sorted) as URLs")
+          ->required()
+          ->expected(1, -1);
+        std::vector<std::string> rowKeys;
+        app.add_option("-k,--row-keys", rowKeys, "Column names for a row key column")->required()->expected(1, -1);
+        std::vector<std::string> sortKeys;
+        app.add_option("-s,--sort-keys", sortKeys, "Column names for sort key columns");
+        std::vector<std::string> regionMins;
+        app
+          .add_option("--region-mins,-m",
+            regionMins,
+            "Partition region minimum keys (inclusive). Must be one per row key specified.")
+          ->required()
+          ->expected(1, -1);
+        std::vector<std::string> regionMaxs;
+        app
+          .add_option("--region-maxs,-n",
+            regionMaxs,
+            "Partition region maximum keys (exclusive). Must be one per row key specified.")
+          ->required()
+          ->expected(1, -1);
         CLI11_PARSE(app, argc, argv);// NOLINT
 
-        if (show_version) {
-            fmt::print("{}\n", gpu_compact::cmake::project_version);
-            return EXIT_SUCCESS;
+        for (auto &url : inputFiles) {
+            if (!std::regex_match(url, URL_CHECK)) {
+                url = "file://" + url;
+                if (!std::regex_match(url, URL_CHECK)) {
+                    SPDLOG_ERROR("{} is not valid", url);
+                    continue;
+                }
+            }
+            SPDLOG_INFO("{} is valid", url);
         }
-
-        fmt::print("Factorial of {} is {}\n", 2, factorial(2));
-
-        CompactionService compactor{};
-        ServerBuilder builder{};
-        builder.AddListeningPort("[::]:5678", grpc::InsecureServerCredentials());
-        builder.RegisterService(&compactor);
-        std::unique_ptr server = builder.BuildAndStart();
-        server->Wait();
-    } catch (const std::exception &e) {
+    } catch (std::exception const &e) {
         spdlog::error("Unhandled exception in main: {}", e.what());
     }
 }
