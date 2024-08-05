@@ -115,18 +115,19 @@ public class PollWithRetries {
     }
 
     private void failIfOverMaxPolls(String description, int polls) {
-        if (polls >= maxPolls) {
-            if (polls > 1) {
-                String message = "Timed out after " + polls + " tries waiting for " +
-                        LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                        " until " + description;
-                LOGGER.error(message);
-                throw new TimedOutException(message);
-            } else {
-                String message = "Failed, expected to find " + description;
-                LOGGER.error(message);
-                throw new CheckFailedException(message);
-            }
+        if (polls < maxPolls) {
+            return;
+        }
+        if (polls > 1) {
+            String message = "Timed out after " + polls + " tries waiting for " +
+                    LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                    " until " + description;
+            LOGGER.error(message);
+            throw new TimedOutException(message);
+        } else {
+            String message = "Failed, expected to find " + description;
+            LOGGER.error(message);
+            throw new CheckFailedException(message);
         }
     }
 
