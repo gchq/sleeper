@@ -18,6 +18,7 @@ package sleeper.core.statestore.inmemory;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderBase;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -47,10 +48,6 @@ public class StateStoreTestBuilder {
         this.fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, DEFAULT_UPDATE_TIME);
     }
 
-    private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
-        this(partitionsBuilder.buildTree());
-    }
-
     /**
      * Creates a state builder with the partition tree declared in the given builder. Will build the partition tree
      * immediately, based on the current state in the partitions builder.
@@ -58,8 +55,8 @@ public class StateStoreTestBuilder {
      * @param  partitionsBuilder the partitions builder
      * @return                   the state builder
      */
-    public static StateStoreTestBuilder from(PartitionsBuilder partitionsBuilder) {
-        return new StateStoreTestBuilder(partitionsBuilder);
+    public static StateStoreTestBuilder from(PartitionsBuilderBase partitionsBuilder) {
+        return new StateStoreTestBuilder(partitionsBuilder.buildTree());
     }
 
     /**

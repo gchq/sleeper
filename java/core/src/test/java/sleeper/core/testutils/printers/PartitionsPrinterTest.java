@@ -20,6 +20,7 @@ import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
@@ -73,9 +74,9 @@ public class PartitionsPrinterTest {
     @Test
     void shouldPrintDifferentPartitionsForOneTable() {
         // Given
-        PartitionsBuilder partitions1 = new PartitionsBuilder(schema).rootFirst("A")
+        PartitionsBuilderRootFirst partitions1 = new PartitionsBuilder(schema).rootFirst("A")
                 .splitToNewChildren("A", "B", "C", 10L);
-        PartitionsBuilder partitions2 = new PartitionsBuilder(schema).rootFirst("1")
+        PartitionsBuilderRootFirst partitions2 = new PartitionsBuilder(schema).rootFirst("1")
                 .splitToNewChildren("1", "2", "3", 20L);
 
         // When

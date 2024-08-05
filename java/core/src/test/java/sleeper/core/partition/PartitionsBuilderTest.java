@@ -40,7 +40,7 @@ class PartitionsBuilderTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
+        PartitionsBuilderSplitsFirst builder = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))

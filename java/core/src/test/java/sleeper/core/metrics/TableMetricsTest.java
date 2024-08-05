@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
@@ -90,7 +91,7 @@ public class TableMetricsTest {
         void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .singlePartition("root");
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
                     .partitionFileWithRecords("root", "file1.parquet", 100L)
@@ -142,7 +143,7 @@ public class TableMetricsTest {
         void shouldReportMetricsWithTwoFilesInOnePartitionAndOneFileInOther() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
@@ -168,7 +169,7 @@ public class TableMetricsTest {
         void shouldReportMetricsForMultiplePartitionsWithDifferentFileCounts() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
@@ -194,7 +195,7 @@ public class TableMetricsTest {
         void shouldReportMetricsForMultiplePartitionsWhenOneLeafPartitionHasNoFiles() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
@@ -223,7 +224,7 @@ public class TableMetricsTest {
         void shouldReportMetricsWithOneFileInMultiplePartitions() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
@@ -248,7 +249,7 @@ public class TableMetricsTest {
         void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
             // Given
             createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            PartitionsBuilderRootFirst partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)

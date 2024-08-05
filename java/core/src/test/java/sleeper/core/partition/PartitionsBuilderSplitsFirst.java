@@ -22,7 +22,7 @@ import java.util.UUID;
 /**
  * A convenience class for specifying a partition tree by defining split points and then joining up the tree.
  */
-public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
+public class PartitionsBuilderSplitsFirst extends PartitionsBuilderBase {
 
     protected PartitionsBuilderSplitsFirst(PartitionsBuilder builder) {
         super(builder);
