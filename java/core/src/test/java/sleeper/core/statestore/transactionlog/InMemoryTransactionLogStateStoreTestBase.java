@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -35,7 +36,7 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWai
 public class InMemoryTransactionLogStateStoreTestBase {
 
     protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
-    private PartitionsBuilder partitions;
+    private PartitionsBuilderRootFirst partitions;
     protected FileReferenceFactory factory;
     protected InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
     protected InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
@@ -49,12 +50,12 @@ public class InMemoryTransactionLogStateStoreTestBase {
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilderRootFirst partitions) throws Exception {
         createStore(partitions);
         store.initialise(partitions.buildList());
     }
 
-    private void createStore(PartitionsBuilder partitions) {
+    private void createStore(PartitionsBuilderRootFirst partitions) {
         this.partitions = partitions;
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
         store = stateStore(stateStoreBuilder(partitions.getSchema()));

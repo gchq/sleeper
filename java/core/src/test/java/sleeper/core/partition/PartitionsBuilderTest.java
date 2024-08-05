@@ -119,7 +119,7 @@ class PartitionsBuilderTest {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
+        PartitionsBuilderSplitsFirst builder = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))

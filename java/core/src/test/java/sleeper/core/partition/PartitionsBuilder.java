@@ -20,13 +20,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -36,12 +33,33 @@ import java.util.stream.Collectors;
 public class PartitionsBuilder {
 
     private final Schema schema;
-    private final PartitionFactory factory;
-    private final Map<String, Partition.Builder> partitionById = new LinkedHashMap<>();
+    protected final PartitionFactory factory;
+    protected final Map<String, Partition.Builder> partitionById;
 
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
         factory = new PartitionFactory(schema);
+        partitionById = new LinkedHashMap<>();
+    }
+
+    protected PartitionsBuilder(PartitionsBuilder builder) {
+        this.schema = builder.schema;
+        this.factory = builder.factory;
+        this.partitionById = builder.partitionById;
+    }
+
+    /**
+     * Creates a root partition that can be further split into child partitions. This can be used to build a partition
+     * tree from the root down.
+     *
+     * @param  rootId unique ID for the new root partition
+     * @return        the builder
+     * @see           PartitionsBuilderRootFirst#splitToNewChildren
+     * @see           PartitionsBuilderRootFirst#splitToNewChildrenOnDimension
+     */
+    public PartitionsBuilderRootFirst rootFirst(String rootId) {
+        put(factory.rootFirst(rootId));
+        return new PartitionsBuilderRootFirst(this);
     }
 
     /**
@@ -50,8 +68,8 @@ public class PartitionsBuilder {
      * @param  id unique ID for the partition
      * @return    the builder
      */
-    public PartitionsBuilder singlePartition(String id) {
-        return leavesWithSplits(Collections.singletonList(id), Collections.emptyList());
+    public PartitionsBuilderRootFirst singlePartition(String id) {
+        return rootFirst(id);
     }
 
     /**
@@ -61,10 +79,10 @@ public class PartitionsBuilder {
      * @param  ids    unique IDs for the leaves
      * @param  splits values of the first row key, for split points in between the new leaf partitions
      * @return        the builder
-     * @see           #anyTreeJoiningAllLeaves()
-     * @see           #parentJoining
+     * @see           PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
+     * @see           PartitionsBuilderSplitsFirst#parentJoining
      */
-    public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {
+    public PartitionsBuilderSplitsFirst leavesWithSplits(List<String> ids, List<Object> splits) {
         return leavesWithSplitsOnDimension(0, ids, splits);
     }
 
@@ -77,8 +95,10 @@ public class PartitionsBuilder {
      * @param  splits    values of the row key at the specified dimension, for split points in between the new leaf
      *                   partitions
      * @return           the builder
+     * @see              PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
+     * @see              PartitionsBuilderSplitsFirst#parentJoining
      */
-    public PartitionsBuilder leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
+    public PartitionsBuilderSplitsFirst leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
         List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
         if (ids.size() != regions.size()) {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
@@ -86,99 +106,15 @@ public class PartitionsBuilder {
         for (int i = 0; i < ids.size(); i++) {
             put(factory.partition(ids.get(i), regions.get(i)));
         }
-        return this;
+        return new PartitionsBuilderSplitsFirst(this);
     }
 
-    /**
-     * Creates parent partitions that join the previously specified leaf partitions. This will create as many layers as
-     * are required to join into a single root partition. The leaf partitions must cover the full range of the table,
-     * and must be specified in order of lowest to highest values.
-     *
-     * @return the builder
-     */
-    public PartitionsBuilder anyTreeJoiningAllLeaves() {
-        List<Partition.Builder> mapValues = new ArrayList<>(partitionById.values());
-        if (mapValues.stream().anyMatch(p -> !p.build().isLeafPartition())) {
-            throw new IllegalArgumentException("Must only specify leaf partitions with no parents");
-        }
-        Partition.Builder left = mapValues.get(0);
-        int numLeaves = partitionById.size();
-        for (int i = 1; i < numLeaves; i++) {
-            Partition.Builder right = mapValues.get(i);
-            left = put(factory.parentJoining(UUID.randomUUID().toString(), left, right));
-        }
-        return this;
-    }
-
-    /**
-     * Creates a parent partition that joins two previously specified partitions. The left and right partition must
-     * share a common split point.
-     *
-     * @param  parentId unique ID for the new partition
-     * @param  leftId   the ID of the partition covering the lower range of values
-     * @param  rightId  the ID of the partition covering the higher range of values
-     * @return          the builder
-     */
-    public PartitionsBuilder parentJoining(String parentId, String leftId, String rightId) {
-        Partition.Builder left = partitionById(leftId);
-        Partition.Builder right = partitionById(rightId);
-        put(factory.parentJoining(parentId, left, right));
-        return this;
-    }
-
-    /**
-     * Creates a root partition that can be further split into child partitions. This can be used to build a partition
-     * tree from the root down.
-     *
-     * @param  rootId unique ID for the new root partition
-     * @return        the builder
-     * @see           #splitToNewChildren
-     * @see           #splitToNewChildrenOnDimension
-     */
-    public PartitionsBuilder rootFirst(String rootId) {
-        put(factory.rootFirst(rootId));
-        return this;
-    }
-
-    /**
-     * Creates new partitions by splitting a previously defined partition.
-     *
-     * @param  parentId   the ID of the partition to split
-     * @param  leftId     unique ID for the new partition covering values lower than the split point
-     * @param  rightId    unique ID for the new partition covering values equal to or higher than the split point
-     * @param  splitPoint value for the first row key to split on
-     * @return            the builder
-     */
-    public PartitionsBuilder splitToNewChildren(
-            String parentId, String leftId, String rightId, Object splitPoint) {
-        return splitToNewChildrenOnDimension(parentId, leftId, rightId, 0, splitPoint);
-    }
-
-    /**
-     * Creates new partitions by splitting a previously defined partition on a particular row key.
-     *
-     * @param  parentId   the ID of the partition to split
-     * @param  leftId     unique ID for the new partition covering values lower than the split point
-     * @param  rightId    unique ID for the new partition covering values equal to or higher than the split point
-     * @param  dimension  index of the row key to split on
-     * @param  splitPoint value for the row key to split on
-     * @return            the builder
-     */
-    public PartitionsBuilder splitToNewChildrenOnDimension(
-            String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
-        Partition.Builder parent = partitionById(parentId);
-        PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
-        splitResult.getChildren().forEach(this::put);
-        put(splitResult.getParent());
-        return this;
-    }
-
-    private Partition.Builder put(Partition.Builder partition) {
+    protected Partition.Builder put(Partition.Builder partition) {
         partitionById.put(partition.getId(), partition);
         return partition;
     }
 
-    private Partition.Builder partitionById(String id) {
+    protected Partition.Builder partitionById(String id) {
         return Optional.ofNullable(partitionById.get(id))
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }

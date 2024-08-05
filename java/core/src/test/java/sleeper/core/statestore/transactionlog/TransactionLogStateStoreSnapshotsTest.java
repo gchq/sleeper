@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -41,7 +42,7 @@ import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnaps
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+    private final PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema).singlePartition("root");
 
     @Nested
     @DisplayName("Get snapshot on first load")
