@@ -39,6 +39,7 @@ run_in_docker() {
   fi
   local TEMP_DIR=$(mktemp -d)
   local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
+  mkdir -p "$HOME/.aws"
   # We ensure the container ID is available as a file inside the container
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
@@ -72,12 +73,19 @@ build_temp_runner_image() {
   # Propagate current user IDs to image, to avoid mixed file ownership
   local SET_UID=$(id -u)
   local SET_GID=$(id -g)
+  local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
-  docker build "$RUNNER_PATH" -t "$TEMP_RUNNER_IMAGE" --build-arg RUN_IMAGE="$RUN_IMAGE" --build-arg SET_UID=$SET_UID --build-arg SET_GID=$SET_GID &> /dev/null
+  echo "Propagating current user to Docker image"
+  docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
+    --build-arg RUN_IMAGE="$RUN_IMAGE" \
+    --build-arg SET_UID=$SET_UID \
+    --build-arg SET_GID=$SET_GID \
+    --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
 }
 
 run_in_environment_docker() {
   build_temp_runner_image sleeper-local:current
+  mkdir -p "$HOME/.sleeper/environments"
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     "$TEMP_RUNNER_IMAGE" "$@"
@@ -88,6 +96,8 @@ run_in_builder_docker() {
   build_temp_runner_image sleeper-builder:current
   # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
   # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
+  mkdir -p "$HOME/.sleeper/builder"
+  mkdir -p "$HOME/.m2"
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
@@ -101,6 +111,8 @@ get_version() {
 }
 
 pull_docker_images(){
+  echo "Updating CLI runner Dockerfile"
+  mkdir -p "$HOME_RUNNER_PATH"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder

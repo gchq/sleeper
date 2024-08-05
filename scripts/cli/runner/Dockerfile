@@ -17,9 +17,12 @@ FROM ${RUN_IMAGE}
 
 ARG SET_UID
 ARG SET_GID
+ARG SET_DOCKER_GID
 
 # Propagate user IDs to image, to avoid mixed file ownership
 USER root
+RUN chown ${SET_UID}:${SET_GID} -R /home/sleeper
 RUN groupmod -g ${SET_GID} sleeper
+RUN groupmod -g ${SET_DOCKER_GID} docker
 RUN usermod -u ${SET_UID} -g ${SET_GID} sleeper
 USER sleeper
