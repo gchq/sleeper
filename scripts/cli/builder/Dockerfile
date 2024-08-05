@@ -31,9 +31,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
-# Change install location because the default is in the home directory, which is overwritten by Dev Containers
-# We also need to make it accessible to the non-root user
-RUN adduser --disabled-password --gecos "" rust \
+# Change install location because the default is in the home directory, which is overwritten by Dev Containers.
+# We also need to make it accessible to the non-root user. We use a real user to own the install directory so that the
+# Rust install script will work. We give permissions to that user's group and assign that group to the sleeper user.
+RUN adduser --disabled-password --gecos "" --firstuid 2500 rust \
     && passwd -d rust
 RUN mkdir /rust && chown rust:rust /rust
 USER rust
