@@ -20,13 +20,23 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PollWithRetriesTest {
+
+    private List<Long> foundSleeps = new ArrayList<>();
+
+    private PollWithRetries poll(Consumer<PollWithRetries.Builder> config) {
+        PollWithRetries.Builder builder = PollWithRetries.builder().sleep(foundSleeps::add);
+        config.accept(builder);
+        return builder.build();
+    }
 
     @Nested
     @DisplayName("Poll until a condition is met")
@@ -35,7 +45,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRepeatPoll() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
             Iterator<Boolean> iterator = List.of(false, true).iterator();
 
             // When
@@ -48,7 +58,7 @@ class PollWithRetriesTest {
         @Test
         void shouldFailIfMaxPollsReached() {
             // Given
-            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
             Iterator<Boolean> iterator = List.of(false, false).iterator();
 
             // When / Then
@@ -61,7 +71,7 @@ class PollWithRetriesTest {
         @Test
         void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false, true).iterator();
 
@@ -99,7 +109,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRepeatQuery() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            PollWithRetries poll = poll(builder -> builder.immediateRetries(1));
             Iterator<String> iterator = List.of("a", "b").iterator();
 
             // When
@@ -113,7 +123,7 @@ class PollWithRetriesTest {
         @Test
         void shouldFailSingleCheck() {
             // Given
-            PollWithRetries poll = PollWithRetries.noRetries();
+            PollWithRetries poll = poll(builder -> builder.noRetries());
             Iterator<Boolean> iterator = List.of(false).iterator();
 
             // When / Then
@@ -131,7 +141,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(1).applyMaxAttemptsOverall().build();
+            PollWithRetries poll = poll(builder -> builder.immediateAttempts(1).applyMaxAttemptsOverall());
             poll.pollUntil("true is returned", () -> true);
 
             // When / Then
@@ -142,7 +152,7 @@ class PollWithRetriesTest {
         @Test
         void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
+            PollWithRetries poll = poll(builder -> builder.immediateAttempts(3).applyMaxAttemptsOverall());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -157,7 +167,7 @@ class PollWithRetriesTest {
         @Test
         void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
-            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
+            PollWithRetries poll = poll(builder -> builder.immediateAttempts(3).applyMaxAttemptsOverall());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(true).iterator();
             poll.pollUntil("true is returned", iterator1::next);

@@ -36,11 +36,13 @@ public class PollWithRetries {
     private final long pollIntervalMillis;
     private final int maxPolls;
     private final PollsTracker pollsTracker;
+    private final SleepInInterval sleep;
 
     private PollWithRetries(Builder builder) {
         pollIntervalMillis = builder.pollIntervalMillis;
         maxPolls = builder.maxPolls;
         pollsTracker = builder.pollsTracker;
+        sleep = builder.sleep;
     }
 
     public static Builder builder() {
@@ -88,26 +90,6 @@ public class PollWithRetries {
     }
 
     /**
-     * Creates an instance of this class which will make a fixed number of attempts without waiting between polls.
-     *
-     * @return an instance of {@link PollWithRetries}
-     */
-    public static PollWithRetries immediateAttempts(int attempts) {
-        return builder().immediateAttempts(attempts).build();
-    }
-
-    /**
-     * Creates an instance of this class with an overall number of attempts that will be consumed on each invocation.
-     * Note that this is not thread-safe, and should only be used when all polling is done on the same thread.
-     *
-     * @param  poll poll settings to replicate, but with an overall number of attempts
-     * @return      an instance of {@link PollWithRetries} matching the given settings
-     */
-    public static PollWithRetries applyMaxAttemptsOverall(PollWithRetries poll) {
-        return builder().pollIntervalMillis(poll.pollIntervalMillis).maxPolls(poll.maxPolls).applyMaxAttemptsOverall().build();
-    }
-
-    /**
      * Starts polling until an exit condition is met or the maximum polls has been reached.
      *
      * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
@@ -133,7 +115,7 @@ public class PollWithRetries {
                     throw new CheckFailedException(message);
                 }
             }
-            Thread.sleep(pollIntervalMillis);
+            sleep.sleep(pollIntervalMillis);
             polls++;
             pollsTracker.beforePoll();
         } while (!checkFinished.getAsBoolean());
@@ -180,94 +162,31 @@ public class PollWithRetries {
         }
     }
 
-    /**
-     * Tracks the number of polls made so far. This implemented based on whether attempts should be remembered between
-     * invocations.
-     */
-    private interface PollsTracker {
-        int getPollsBeforeInvocation();
-
-        void beforePoll();
-    }
-
-    /**
-     * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
-     */
-    private static class TrackAttemptsPerInvocation implements PollsTracker {
-        @Override
-        public int getPollsBeforeInvocation() {
-            return 0;
-        }
-
-        @Override
-        public void beforePoll() {
-        }
-    }
-
-    /**
-     * Tracks attempts between polling invocations, so count of attempts is across all invocations.
-     */
-    private static class TrackAttemptsAcrossInvocations implements PollsTracker {
-        private int attempts = 0;
-
-        @Override
-        public int getPollsBeforeInvocation() {
-            return attempts;
-        }
-
-        @Override
-        public void beforePoll() {
-            attempts++;
-        }
-    }
-
-    /**
-     * Thrown when the exit condition was not met and no retries were made.
-     */
-    public static class CheckFailedException extends RuntimeException {
-        private CheckFailedException(String message) {
-            super(message);
-        }
-    }
-
-    /**
-     * Thrown when the exit condition was not met and the maximum number of retries were made.
-     */
-    public static class TimedOutException extends CheckFailedException {
-        private TimedOutException(String message) {
-            super(message);
-        }
-    }
-
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof PollWithRetries))
             return false;
-        }
-        PollWithRetries that = (PollWithRetries) o;
-        return pollIntervalMillis == that.pollIntervalMillis && maxPolls == that.maxPolls;
+        PollWithRetries other = (PollWithRetries) obj;
+        return pollIntervalMillis == other.pollIntervalMillis && maxPolls == other.maxPolls && Objects.equals(pollsTracker, other.pollsTracker);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pollIntervalMillis, maxPolls);
+        return Objects.hash(pollIntervalMillis, maxPolls, pollsTracker);
     }
 
     @Override
     public String toString() {
-        return "PollWithRetries{" +
-                "pollIntervalMillis=" + pollIntervalMillis +
-                ", maxPolls=" + maxPolls +
-                '}';
+        return "PollWithRetries{pollIntervalMillis=" + pollIntervalMillis + ", maxPolls=" + maxPolls + ", pollsTracker=" + pollsTracker + "}";
     }
 
     public static class Builder {
         private long pollIntervalMillis;
         private int maxPolls;
         private PollsTracker pollsTracker = new TrackAttemptsPerInvocation();
+        private SleepInInterval sleep = Thread::sleep;
 
         public Builder pollIntervalMillis(long pollIntervalMillis) {
             this.pollIntervalMillis = pollIntervalMillis;
@@ -303,8 +222,112 @@ public class PollWithRetries {
             return maxPolls(1);
         }
 
+        public Builder sleep(SleepInInterval sleep) {
+            this.sleep = sleep;
+            return this;
+        }
+
         public PollWithRetries build() {
             return new PollWithRetries(this);
         }
     }
+
+    /**
+     * Thrown when the exit condition was not met and no retries were made.
+     */
+    public static class CheckFailedException extends RuntimeException {
+        private CheckFailedException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Thrown when the exit condition was not met and the maximum number of retries were made.
+     */
+    public static class TimedOutException extends CheckFailedException {
+        private TimedOutException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Sleeps for a given period of time in between polls. Usually implemented by Thread.sleep.
+     */
+    public interface SleepInInterval {
+        void sleep(long millis) throws InterruptedException;
+    }
+
+    /**
+     * Tracks the number of polls made so far. This implemented based on whether attempts should be remembered between
+     * invocations.
+     */
+    private interface PollsTracker {
+        int getPollsBeforeInvocation();
+
+        void beforePoll();
+    }
+
+    /**
+     * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
+     */
+    private static class TrackAttemptsPerInvocation implements PollsTracker {
+        @Override
+        public int getPollsBeforeInvocation() {
+            return 0;
+        }
+
+        @Override
+        public void beforePoll() {
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            return obj instanceof TrackAttemptsPerInvocation;
+        }
+
+        @Override
+        public String toString() {
+            return "TrackAttemptsPerInvocation{}";
+        }
+    }
+
+    /**
+     * Tracks attempts between polling invocations, so count of attempts is across all invocations.
+     */
+    private static class TrackAttemptsAcrossInvocations implements PollsTracker {
+        private int attempts = 0;
+
+        @Override
+        public int getPollsBeforeInvocation() {
+            return attempts;
+        }
+
+        @Override
+        public void beforePoll() {
+            attempts++;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(attempts);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof TrackAttemptsAcrossInvocations))
+                return false;
+            TrackAttemptsAcrossInvocations other = (TrackAttemptsAcrossInvocations) obj;
+            return attempts == other.attempts;
+        }
+
+        @Override
+        public String toString() {
+            return "TrackAttemptsAcrossInvocations{attempts=" + attempts + "}";
+        }
+    }
+
 }
