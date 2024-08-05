@@ -104,6 +104,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
             } catch (InterruptedException e) {
                 messages.subList(i, messages.size())
                         .forEach(failedMessage -> batchItemFailures.add(new BatchItemFailure(failedMessage.getMessageId())));
+                Thread.currentThread().interrupt();
                 break;
             } catch (RuntimeException e) {
                 LOGGER.error("Failed commit request", e);
