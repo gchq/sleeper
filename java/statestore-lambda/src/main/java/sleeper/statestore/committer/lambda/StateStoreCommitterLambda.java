@@ -57,27 +57,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
-    private final StateStoreCommitter committer;
+    private final StateStoreCommitter committer = connectToAws();
     private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
-
-    public StateStoreCommitterLambda() {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
-        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        this.committer = new StateStoreCommitter(
-                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider),
-                key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
-                Instant::now);
-    }
 
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
@@ -115,5 +96,24 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
+    }
+
+    private static StateStoreCommitter connectToAws() {
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        return new StateStoreCommitter(
+                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                stateStoreProvider.byTableId(tablePropertiesProvider),
+                key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
+                Instant::now);
     }
 }
