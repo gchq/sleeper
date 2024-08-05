@@ -23,7 +23,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.util.PollWithRetries.immediateAttempts;
 
 class PollWithRetriesTest {
 
@@ -111,7 +110,7 @@ class PollWithRetriesTest {
     @Test
     void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
         // Given
-        PollWithRetries poll = PollWithRetries.applyMaxAttemptsOverall(immediateAttempts(1));
+        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(1).applyMaxAttemptsOverall().build();
         poll.pollUntil("true is returned", () -> true);
 
         // When / Then
@@ -122,7 +121,7 @@ class PollWithRetriesTest {
     @Test
     void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
         // Given
-        PollWithRetries poll = PollWithRetries.applyMaxAttemptsOverall(immediateAttempts(3));
+        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
         Iterator<Boolean> iterator1 = List.of(false, true).iterator();
         Iterator<Boolean> iterator2 = List.of(false).iterator();
         poll.pollUntil("true is returned", iterator1::next);
@@ -137,7 +136,7 @@ class PollWithRetriesTest {
     @Test
     void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
         // Given
-        PollWithRetries poll = PollWithRetries.applyMaxAttemptsOverall(immediateAttempts(3));
+        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
         Iterator<Boolean> iterator1 = List.of(false, true).iterator();
         Iterator<Boolean> iterator2 = List.of(true).iterator();
         poll.pollUntil("true is returned", iterator1::next);

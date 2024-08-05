@@ -37,14 +37,14 @@ public class PollWithRetries {
     private final int maxPolls;
     private final PollsTracker pollsTracker;
 
-    private PollWithRetries(long pollIntervalMillis, int maxPolls) {
-        this(pollIntervalMillis, maxPolls, new TrackAttemptsPerInvocation());
+    private PollWithRetries(Builder builder) {
+        pollIntervalMillis = builder.pollIntervalMillis;
+        maxPolls = builder.maxPolls;
+        pollsTracker = builder.pollsTracker;
     }
 
-    private PollWithRetries(long pollIntervalMillis, int maxPolls, PollsTracker pollsTracker) {
-        this.pollIntervalMillis = pollIntervalMillis;
-        this.maxPolls = maxPolls;
-        this.pollsTracker = pollsTracker;
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -55,7 +55,7 @@ public class PollWithRetries {
      * @return                    an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
-        return new PollWithRetries(pollIntervalMillis, maxPolls);
+        return builder().pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls).build();
     }
 
     /**
@@ -66,10 +66,7 @@ public class PollWithRetries {
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
-        long pollIntervalMillis = pollInterval.toMillis();
-        long timeoutMillis = timeout.toMillis();
-        return intervalAndMaxPolls(pollIntervalMillis,
-                (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
+        return builder().pollIntervalAndTimeout(pollInterval, timeout).build();
     }
 
     /**
@@ -78,7 +75,7 @@ public class PollWithRetries {
      * @return an instance of {@link PollWithRetries}
      */
     public static PollWithRetries noRetries() {
-        return new PollWithRetries(0, 1);
+        return builder().noRetries().build();
     }
 
     /**
@@ -87,7 +84,7 @@ public class PollWithRetries {
      * @return an instance of {@link PollWithRetries}
      */
     public static PollWithRetries immediateRetries(int retries) {
-        return new PollWithRetries(0, retries + 1);
+        return builder().immediateRetries(retries).build();
     }
 
     /**
@@ -96,7 +93,7 @@ public class PollWithRetries {
      * @return an instance of {@link PollWithRetries}
      */
     public static PollWithRetries immediateAttempts(int attempts) {
-        return new PollWithRetries(0, attempts);
+        return builder().immediateAttempts(attempts).build();
     }
 
     /**
@@ -107,7 +104,7 @@ public class PollWithRetries {
      * @return      an instance of {@link PollWithRetries} matching the given settings
      */
     public static PollWithRetries applyMaxAttemptsOverall(PollWithRetries poll) {
-        return new PollWithRetries(poll.pollIntervalMillis, poll.maxPolls, new TrackAttemptsAcrossInvocations());
+        return builder().pollIntervalMillis(poll.pollIntervalMillis).maxPolls(poll.maxPolls).applyMaxAttemptsOverall().build();
     }
 
     /**
@@ -265,5 +262,49 @@ public class PollWithRetries {
                 "pollIntervalMillis=" + pollIntervalMillis +
                 ", maxPolls=" + maxPolls +
                 '}';
+    }
+
+    public static class Builder {
+        private long pollIntervalMillis;
+        private int maxPolls;
+        private PollsTracker pollsTracker = new TrackAttemptsPerInvocation();
+
+        public Builder pollIntervalMillis(long pollIntervalMillis) {
+            this.pollIntervalMillis = pollIntervalMillis;
+            return this;
+        }
+
+        public Builder maxPolls(int maxPolls) {
+            this.maxPolls = maxPolls;
+            return this;
+        }
+
+        public Builder pollIntervalAndTimeout(Duration pollInterval, Duration timeout) {
+            long pollIntervalMillis = pollInterval.toMillis();
+            long timeoutMillis = timeout.toMillis();
+            int maxPolls = (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING);
+            return pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls);
+        }
+
+        public Builder applyMaxAttemptsOverall() {
+            pollsTracker = new TrackAttemptsAcrossInvocations();
+            return this;
+        }
+
+        public Builder immediateAttempts(int attempts) {
+            return pollIntervalMillis(0).maxPolls(attempts);
+        }
+
+        public Builder immediateRetries(int retries) {
+            return pollIntervalMillis(0).maxPolls(retries + 1);
+        }
+
+        public Builder noRetries() {
+            return maxPolls(1);
+        }
+
+        public PollWithRetries build() {
+            return new PollWithRetries(this);
+        }
     }
 }
