@@ -29,6 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PartitionsBuilderTest {
 
@@ -198,5 +199,23 @@ class PartitionsBuilderTest {
                 .containsExactly(tree.getRootPartition());
         assertThat(tree.getPartition("A"))
                 .isEqualTo(tree.getRootPartition());
+    }
+
+    @Test
+    void shouldFailWhenStartingFromRootThenFromSplits() {
+        PartitionsBuilder builder = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root");
+
+        assertThatThrownBy(() -> builder.leavesWithSplits(List.of("A", "B"), List.of("aaa")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFailWhenStartingFromSplitsThenFromRoot() {
+        PartitionsBuilder builder = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .leavesWithSplits(List.of("A", "B"), List.of("aaa"));
+
+        assertThatThrownBy(() -> builder.rootFirst("root"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

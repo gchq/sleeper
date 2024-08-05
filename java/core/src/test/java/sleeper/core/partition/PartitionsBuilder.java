@@ -58,6 +58,9 @@ public class PartitionsBuilder {
      * @see           #splitToNewChildrenOnDimension
      */
     public PartitionsBuilder rootFirst(String rootId) {
+        if (!partitionById.isEmpty()) {
+            throw new IllegalArgumentException("Partition tree must be empty to add a root");
+        }
         put(factory.rootFirst(rootId));
         return this;
     }
@@ -132,6 +135,9 @@ public class PartitionsBuilder {
      * @see              PartitionsBuilderSplitsFirst#parentJoining
      */
     public PartitionsBuilderSplitsFirst leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
+        if (!partitionById.isEmpty()) {
+            throw new IllegalArgumentException("Partition tree must be empty to start from split points");
+        }
         List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
         if (ids.size() != regions.size()) {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
