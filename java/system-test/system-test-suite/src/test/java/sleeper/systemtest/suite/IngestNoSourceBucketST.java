@@ -32,7 +32,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_NO_SOU
 
 @SystemTest
 @Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
-public class IngestNoSourceBucketIT {
+public class IngestNoSourceBucketST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {

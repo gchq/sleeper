@@ -58,6 +58,7 @@ public class AddTable {
     }
 
     public void run() throws IOException {
+        tableProperties.validate();
         tablePropertiesStore.createTable(tableProperties);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
@@ -77,7 +78,6 @@ public class AddTable {
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
             TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesFile));
             tableProperties.setSchema(Schema.load(schemaFile));
-            tableProperties.validate();
 
             new AddTable(s3Client, dynamoDBClient, instanceProperties, tableProperties).run();
         } finally {

@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,12 +39,17 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
-public class CompactionPerformanceIT {
+public class CompactionPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(COMPACTION_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+    }
+
+    @AfterEach
+    void tearDown(SleeperSystemTest sleeper) {
+        sleeper.compaction().scaleToZero();
     }
 
     @Test
@@ -52,7 +58,8 @@ public class CompactionPerformanceIT {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
             properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
-        }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
+        }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .waitForTotalFileReferences(110);
 
         sleeper.compaction().createJobs(10).invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
@@ -63,7 +70,7 @@ public class CompactionPerformanceIT {
                         "contain 4.4 billion records");
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(240_000, 270_000),
+                        && stats.isAverageRunRecordsPerSecondInRange(270_000, 300_000),
                         "meets expected performance");
     }
 }

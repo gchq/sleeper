@@ -84,6 +84,8 @@ public class PopulateInstanceProperties {
 
     public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
         InstanceProperties instanceProperties = populateDefaultsFromInstanceId(new InstanceProperties(), instanceId);
+        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
                 .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));
         return instanceProperties;
@@ -92,7 +94,6 @@ public class PopulateInstanceProperties {
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
         String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ID, instanceId);
-        properties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         properties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         properties.set(ECR_COMPACTION_GPU_REPO, ecrPrefix + "/compaction-gpu");

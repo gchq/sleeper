@@ -37,6 +37,9 @@ import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.PollWithRetries;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -216,5 +219,34 @@ public class DynamoDBUtils {
 
     public static boolean isConditionCheckFailure(CancellationReason reason) {
         return "ConditionalCheckFailed".equals(reason.getCode());
+    }
+
+    public static boolean isThrottlingException(Throwable e) {
+        do {
+            if (e instanceof AmazonDynamoDBException) {
+                return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
+            }
+            e = e.getCause();
+        } while (e != null);
+        return false;
+    }
+
+    public static void retryOnThrottlingException(Runnable runnable) throws InterruptedException {
+        retryOnThrottlingException(PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10)), runnable);
+    }
+
+    public static void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException {
+        pollWithRetries.pollUntil("no throttling exception", () -> {
+            try {
+                runnable.run();
+                return true;
+            } catch (RuntimeException e) {
+                if (DynamoDBUtils.isThrottlingException(e)) {
+                    LOGGER.warn("Found DynamoDB throttling exception");
+                    return false;
+                }
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

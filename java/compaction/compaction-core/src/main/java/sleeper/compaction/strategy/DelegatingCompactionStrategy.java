@@ -23,8 +23,6 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,11 +49,10 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         this.shouldCreateJobsStrategy = shouldCreateJobsStrategy;
     }
 
-    public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory, List<FileReference> fileReferences,
-            List<Partition> partitions) {
+    public List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
+            CompactionJobFactory factory, CompactionStrategyIndex index) {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
-        CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, partitions);
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         for (FilesInPartition filesInPartition : index.getFilesInLeafPartitions()) {

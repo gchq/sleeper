@@ -63,9 +63,7 @@ class PopulatePropertiesTest {
         InstanceProperties expected = new InstanceProperties();
         expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
-        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
-        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_GPU_REPO, "test-instance/compaction-gpu");
