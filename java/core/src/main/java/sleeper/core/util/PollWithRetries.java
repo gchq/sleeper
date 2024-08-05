@@ -307,6 +307,12 @@ public class PollWithRetries {
      * Sleeps for a given period of time in between polls. Usually implemented by Thread.sleep.
      */
     public interface SleepInInterval {
+        /**
+         * Sleeps for the given period.
+         *
+         * @param  millis               the number of milliseconds to wait for
+         * @throws InterruptedException thrown if the thread was interrupted while waiting
+         */
         void sleep(long millis) throws InterruptedException;
     }
 
