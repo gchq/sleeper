@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -26,126 +28,146 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PollWithRetriesTest {
 
-    @Test
-    void shouldRepeatPoll() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.immediateRetries(1);
-        Iterator<Boolean> iterator = List.of(false, true).iterator();
+    @Nested
+    @DisplayName("Poll until a condition is met")
+    class PollUntilCondition {
 
-        // When
-        poll.pollUntil("iterator returns true", iterator::next);
+        @Test
+        void shouldRepeatPoll() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            Iterator<Boolean> iterator = List.of(false, true).iterator();
 
-        // Then
-        assertThat(iterator).isExhausted();
+            // When
+            poll.pollUntil("iterator returns true", iterator::next);
+
+            // Then
+            assertThat(iterator).isExhausted();
+        }
+
+        @Test
+        void shouldFailIfMaxPollsReached() {
+            // Given
+            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            Iterator<Boolean> iterator = List.of(false, false).iterator();
+
+            // When / Then
+            assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class)
+                    .hasMessage("Timed out after 2 tries waiting for 0s until iterator returns true");
+            assertThat(iterator).isExhausted();
+        }
+
+        @Test
+        void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+            Iterator<Boolean> iterator2 = List.of(false, true).iterator();
+
+            // When
+            poll.pollUntil("iterator returns true", iterator1::next);
+            poll.pollUntil("iterator returns true", iterator2::next);
+
+            // Then
+            assertThat(iterator1).isExhausted();
+            assertThat(iterator2).isExhausted();
+        }
     }
 
-    @Test
-    void shouldFailIfMaxPollsReached() {
-        // Given
-        PollWithRetries poll = PollWithRetries.immediateRetries(1);
-        Iterator<Boolean> iterator = List.of(false, false).iterator();
+    @Nested
+    @DisplayName("Compute number of polls")
+    class ComputePolls {
 
-        // When / Then
-        assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
-                .isInstanceOf(PollWithRetries.TimedOutException.class)
-                .hasMessage("Timed out after 2 tries waiting for 0s until iterator returns true");
-        assertThat(iterator).isExhausted();
+        @Test
+        void shouldComputeMaxPollsFromTimeout() {
+            assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)))
+                    .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 60));
+        }
+
+        @Test
+        void shouldComputeMaxPollsFromTimeoutWhichIsNotAnExactMultipleOfPollInterval() {
+            assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMillis(1500)))
+                    .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
+        }
     }
 
-    @Test
-    void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.immediateRetries(1);
-        Iterator<Boolean> iterator1 = List.of(false, true).iterator();
-        Iterator<Boolean> iterator2 = List.of(false, true).iterator();
+    @Nested
+    @DisplayName("Query until the result meets a condition")
+    class QueryUntilCondition {
 
-        // When
-        poll.pollUntil("iterator returns true", iterator1::next);
-        poll.pollUntil("iterator returns true", iterator2::next);
+        @Test
+        void shouldRepeatQuery() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.immediateRetries(1);
+            Iterator<String> iterator = List.of("a", "b").iterator();
 
-        // Then
-        assertThat(iterator1).isExhausted();
-        assertThat(iterator2).isExhausted();
+            // When
+            String result = poll.queryUntil("result is b", iterator::next, "b"::equals);
+
+            // Then
+            assertThat(iterator).isExhausted();
+            assertThat(result).isEqualTo("b");
+        }
+
+        @Test
+        void shouldFailSingleCheck() {
+            // Given
+            PollWithRetries poll = PollWithRetries.noRetries();
+            Iterator<Boolean> iterator = List.of(false).iterator();
+
+            // When / Then
+            assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
+                    .isInstanceOf(PollWithRetries.CheckFailedException.class)
+                    .hasMessage("Failed, expected to find iterator returns true");
+            assertThat(iterator).isExhausted();
+        }
     }
 
-    @Test
-    void shouldComputeMaxPollsFromTimeout() {
-        assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)))
-                .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 60));
-    }
+    @Nested
+    @DisplayName("Consume max attempts over multiple invocations")
+    class TrackOverallAttempts {
 
-    @Test
-    void shouldComputeMaxPollsFromTimeoutWhichIsNotAnExactMultipleOfPollInterval() {
-        assertThat(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMillis(1500)))
-                .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
-    }
+        @Test
+        void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(1).applyMaxAttemptsOverall().build();
+            poll.pollUntil("true is returned", () -> true);
 
-    @Test
-    void shouldRepeatQuery() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.immediateRetries(1);
-        Iterator<String> iterator = List.of("a", "b").iterator();
+            // When / Then
+            assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
+                    .isInstanceOf(PollWithRetries.CheckFailedException.class);
+        }
 
-        // When
-        String result = poll.queryUntil("result is b", iterator::next, "b"::equals);
+        @Test
+        void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
+            Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+            Iterator<Boolean> iterator2 = List.of(false).iterator();
+            poll.pollUntil("true is returned", iterator1::next);
 
-        // Then
-        assertThat(iterator).isExhausted();
-        assertThat(result).isEqualTo("b");
-    }
+            // When / Then
+            assertThatThrownBy(() -> poll.pollUntil("true is returned", iterator2::next))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+            assertThat(iterator1).isExhausted();
+            assertThat(iterator2).isExhausted();
+        }
 
-    @Test
-    void shouldFailSingleCheck() {
-        // Given
-        PollWithRetries poll = PollWithRetries.noRetries();
-        Iterator<Boolean> iterator = List.of(false).iterator();
+        @Test
+        void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
+            // Given
+            PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
+            Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+            Iterator<Boolean> iterator2 = List.of(true).iterator();
+            poll.pollUntil("true is returned", iterator1::next);
 
-        // When / Then
-        assertThatThrownBy(() -> poll.pollUntil("iterator returns true", iterator::next))
-                .isInstanceOf(PollWithRetries.CheckFailedException.class)
-                .hasMessage("Failed, expected to find iterator returns true");
-        assertThat(iterator).isExhausted();
-    }
+            // When / Then
+            poll.pollUntil("true is returned", iterator2::next);
 
-    @Test
-    void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(1).applyMaxAttemptsOverall().build();
-        poll.pollUntil("true is returned", () -> true);
-
-        // When / Then
-        assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
-                .isInstanceOf(PollWithRetries.CheckFailedException.class);
-    }
-
-    @Test
-    void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
-        Iterator<Boolean> iterator1 = List.of(false, true).iterator();
-        Iterator<Boolean> iterator2 = List.of(false).iterator();
-        poll.pollUntil("true is returned", iterator1::next);
-
-        // When / Then
-        assertThatThrownBy(() -> poll.pollUntil("true is returned", iterator2::next))
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
-        assertThat(iterator1).isExhausted();
-        assertThat(iterator2).isExhausted();
-    }
-
-    @Test
-    void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
-        // Given
-        PollWithRetries poll = PollWithRetries.builder().immediateAttempts(3).applyMaxAttemptsOverall().build();
-        Iterator<Boolean> iterator1 = List.of(false, true).iterator();
-        Iterator<Boolean> iterator2 = List.of(true).iterator();
-        poll.pollUntil("true is returned", iterator1::next);
-
-        // When / Then
-        poll.pollUntil("true is returned", iterator2::next);
-
-        // Then
-        assertThat(iterator1).isExhausted();
-        assertThat(iterator2).isExhausted();
+            // Then
+            assertThat(iterator1).isExhausted();
+            assertThat(iterator2).isExhausted();
+        }
     }
 }
