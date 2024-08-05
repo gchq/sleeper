@@ -32,8 +32,10 @@ RUN apt-get update && apt-get install -y \
 
 # Install Rust
 # Change install location because the default is in the home directory, which is overwritten by Dev Containers.
-# We also need to make it accessible to the non-root user. We use a real user to own the install directory so that the
-# Rust install script will work. We give permissions to that user's group and assign that group to the sleeper user.
+# We need to make it accessible to the non-root user. If we installed Rust directly as that user, we would need to
+# update the file ownership of the whole Rust installation when we change the user's UID/GID.
+# We install Rust as a separate, real user to own the install directory. We don't use a system user for this because the
+# Rust install script expects to run in a real user account.
 RUN groupadd -g 2500 rust \
     && adduser --disabled-password --gecos "" --uid 2500 --gid 2500 rust \
     && passwd -d rust
