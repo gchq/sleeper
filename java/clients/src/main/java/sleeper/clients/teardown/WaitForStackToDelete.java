@@ -51,6 +51,7 @@ public class WaitForStackToDelete {
     }
 
     public void pollUntilFinished() throws InterruptedException {
+        LOGGER.info("Waiting for CloudFormation stack to delete: {}", stackName);
         poll.pollUntil("stack has deleted", this::hasStackDeleted);
     }
 

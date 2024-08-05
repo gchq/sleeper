@@ -33,7 +33,6 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.SleeperVersion;
-import sleeper.systemtest.cdk.SystemTestBucketStack;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -72,8 +71,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     public SystemTestStandaloneProperties loadProperties() {
-        return SystemTestStandaloneProperties.fromS3(s3,
-                SystemTestBucketStack.buildSystemTestBucketName(parameters.getSystemTestShortId()));
+        return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, parameters.getSystemTestShortId());
     }
 
     public boolean deployIfNotPresent(SystemTestStandaloneProperties properties) {
