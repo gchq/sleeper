@@ -18,7 +18,7 @@ package sleeper.core.partition;
 /**
  * A convenience class for specifying a partition tree by starting from the root and splitting down the tree.
  */
-public class PartitionsBuilderRootFirst extends PartitionsBuilderBase {
+public class PartitionsBuilderRootFirst extends PartitionsBuilder {
 
     protected PartitionsBuilderRootFirst(PartitionsBuilder builder) {
         super(builder);

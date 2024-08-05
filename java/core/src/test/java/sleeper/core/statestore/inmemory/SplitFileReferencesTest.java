@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderRootFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -40,7 +39,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 public class SplitFileReferencesTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final PartitionsBuilderRootFirst partitions = new PartitionsBuilder(schema).rootFirst("root")
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root")
             .splitToNewChildren("root", "L", "R", 5L);
     private final FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     private final StateStore store = inMemoryStateStoreWithFixedPartitions(partitions.buildList());
