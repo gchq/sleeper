@@ -106,7 +106,7 @@ public class PollWithRetries {
      * @param  poll poll settings to replicate, but with an overall number of attempts
      * @return      an instance of {@link PollWithRetries} matching the given settings
      */
-    public static PollWithRetries shareMaxAttemptsBetweenPolls(PollWithRetries poll) {
+    public static PollWithRetries applyMaxAttemptsOverall(PollWithRetries poll) {
         return new PollWithRetries(poll.pollIntervalMillis, poll.maxPolls, new TrackAttemptsAcrossInvocations());
     }
 
