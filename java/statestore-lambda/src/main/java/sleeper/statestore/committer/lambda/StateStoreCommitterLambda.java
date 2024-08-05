@@ -37,11 +37,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,12 +85,16 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<SQSMessage> messages = event.getRecords();
+        PollWithRetries throttlingRetries = PollWithRetries.builder()
+                .pollIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10))
+                .applyMaxAttemptsOverall()
+                .build();
         for (int i = 0; i < messages.size(); i++) {
             SQSMessage message = messages.get(i);
             LOGGER.info("Found message: {}", message.getBody());
             StateStoreCommitRequest request = serDe.fromJson(message.getBody());
             try {
-                DynamoDBUtils.retryOnThrottlingException(() -> {
+                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                     try {
                         committer.apply(request);
                     } catch (StateStoreException e) {
