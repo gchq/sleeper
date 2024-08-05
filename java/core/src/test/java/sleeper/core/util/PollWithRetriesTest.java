@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.util.PollWithRetries.immediateAttempts;
 
 class PollWithRetriesTest {
 
@@ -105,5 +106,47 @@ class PollWithRetriesTest {
                 .isInstanceOf(PollWithRetries.CheckFailedException.class)
                 .hasMessage("Failed, expected to find iterator returns true");
         assertThat(iterator).isExhausted();
+    }
+
+    @Test
+    void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
+        // Given
+        PollWithRetries poll = PollWithRetries.shareMaxAttemptsBetweenPolls(immediateAttempts(1));
+        poll.pollUntil("true is returned", () -> true);
+
+        // When / Then
+        assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
+    }
+
+    @Test
+    void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
+        // Given
+        PollWithRetries poll = PollWithRetries.shareMaxAttemptsBetweenPolls(immediateAttempts(3));
+        Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+        Iterator<Boolean> iterator2 = List.of(false).iterator();
+        poll.pollUntil("true is returned", iterator1::next);
+
+        // When / Then
+        assertThatThrownBy(() -> poll.pollUntil("true is returned", iterator2::next))
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
+        assertThat(iterator1).isExhausted();
+        assertThat(iterator2).isExhausted();
+    }
+
+    @Test
+    void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
+        // Given
+        PollWithRetries poll = PollWithRetries.shareMaxAttemptsBetweenPolls(immediateAttempts(3));
+        Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+        Iterator<Boolean> iterator2 = List.of(true).iterator();
+        poll.pollUntil("true is returned", iterator1::next);
+
+        // When / Then
+        poll.pollUntil("true is returned", iterator2::next);
+
+        // Then
+        assertThat(iterator1).isExhausted();
+        assertThat(iterator2).isExhausted();
     }
 }

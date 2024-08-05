@@ -35,10 +35,16 @@ public class PollWithRetries {
 
     private final long pollIntervalMillis;
     private final int maxPolls;
+    private final PollsTracker pollsTracker;
 
     private PollWithRetries(long pollIntervalMillis, int maxPolls) {
+        this(pollIntervalMillis, maxPolls, new TrackAttemptsPerInvocation());
+    }
+
+    private PollWithRetries(long pollIntervalMillis, int maxPolls, PollsTracker pollsTracker) {
         this.pollIntervalMillis = pollIntervalMillis;
         this.maxPolls = maxPolls;
+        this.pollsTracker = pollsTracker;
     }
 
     /**
@@ -85,6 +91,26 @@ public class PollWithRetries {
     }
 
     /**
+     * Creates an instance of this class which will make a fixed number of attempts without waiting between polls.
+     *
+     * @return an instance of {@link PollWithRetries}
+     */
+    public static PollWithRetries immediateAttempts(int attempts) {
+        return new PollWithRetries(0, attempts);
+    }
+
+    /**
+     * Creates an instance of this class with an overall number of attempts that will be consumed on each invocation.
+     * Note that this is not thread-safe, and should only be used when all polling is done on the same thread.
+     *
+     * @param  poll poll settings to replicate, but with an overall number of attempts
+     * @return      an instance of {@link PollWithRetries} matching the given settings
+     */
+    public static PollWithRetries shareMaxAttemptsBetweenPolls(PollWithRetries poll) {
+        return new PollWithRetries(poll.pollIntervalMillis, poll.maxPolls, new TrackAttemptsAcrossInvocations());
+    }
+
+    /**
      * Starts polling until an exit condition is met or the maximum polls has been reached.
      *
      * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
@@ -95,9 +121,8 @@ public class PollWithRetries {
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
-        int polls = 0;
-        while (!checkFinished.getAsBoolean()) {
-            polls++;
+        int polls = pollsTracker.getPollsBeforeInvocation();
+        do {
             if (polls >= maxPolls) {
                 if (polls > 1) {
                     String message = "Timed out after " + polls + " tries waiting for " +
@@ -112,7 +137,9 @@ public class PollWithRetries {
                 }
             }
             Thread.sleep(pollIntervalMillis);
-        }
+            polls++;
+            pollsTracker.beforePoll();
+        } while (!checkFinished.getAsBoolean());
     }
 
     /**
@@ -153,6 +180,47 @@ public class PollWithRetries {
         public boolean checkFinished() {
             lastResult = query.get();
             return condition.test(lastResult);
+        }
+    }
+
+    /**
+     * Tracks the number of polls made so far. This implemented based on whether attempts should be remembered between
+     * invocations.
+     */
+    private interface PollsTracker {
+        int getPollsBeforeInvocation();
+
+        void beforePoll();
+    }
+
+    /**
+     * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
+     */
+    private static class TrackAttemptsPerInvocation implements PollsTracker {
+        @Override
+        public int getPollsBeforeInvocation() {
+            return 0;
+        }
+
+        @Override
+        public void beforePoll() {
+        }
+    }
+
+    /**
+     * Tracks attempts between polling invocations, so count of attempts is across all invocations.
+     */
+    private static class TrackAttemptsAcrossInvocations implements PollsTracker {
+        private int attempts = 0;
+
+        @Override
+        public int getPollsBeforeInvocation() {
+            return attempts;
+        }
+
+        @Override
+        public void beforePoll() {
+            attempts++;
         }
     }
 
