@@ -174,10 +174,12 @@ public class PollWithRetries {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof PollWithRetries))
+        }
+        if (!(obj instanceof PollWithRetries)) {
             return false;
+        }
         PollWithRetries other = (PollWithRetries) obj;
         return pollIntervalMillis == other.pollIntervalMillis && maxPolls == other.maxPolls && Objects.equals(pollsTracker, other.pollsTracker);
     }
@@ -288,8 +290,6 @@ public class PollWithRetries {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
             return obj instanceof TrackAttemptsPerInvocation;
         }
 
@@ -322,10 +322,12 @@ public class PollWithRetries {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (!(obj instanceof TrackAttemptsAcrossInvocations))
+            }
+            if (!(obj instanceof TrackAttemptsAcrossInvocations)) {
                 return false;
+            }
             TrackAttemptsAcrossInvocations other = (TrackAttemptsAcrossInvocations) obj;
             return attempts == other.attempts;
         }
