@@ -33,7 +33,7 @@ class PollWithRetriesTest {
     private List<Long> foundSleeps = new ArrayList<>();
 
     private PollWithRetries poll(Consumer<PollWithRetries.Builder> config) {
-        PollWithRetries.Builder builder = PollWithRetries.builder().sleep(foundSleeps::add);
+        PollWithRetries.Builder builder = PollWithRetries.builder().sleepInInterval(foundSleeps::add);
         config.accept(builder);
         return builder.build();
     }

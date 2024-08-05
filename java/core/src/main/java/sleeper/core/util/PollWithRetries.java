@@ -36,13 +36,13 @@ public class PollWithRetries {
     private final long pollIntervalMillis;
     private final int maxPolls;
     private final PollsTracker pollsTracker;
-    private final SleepInInterval sleep;
+    private final SleepInInterval sleepInInterval;
 
     private PollWithRetries(Builder builder) {
         pollIntervalMillis = builder.pollIntervalMillis;
         maxPolls = builder.maxPolls;
         pollsTracker = builder.pollsTracker;
-        sleep = builder.sleep;
+        sleepInInterval = builder.sleepInInterval;
     }
 
     public static Builder builder() {
@@ -105,7 +105,7 @@ public class PollWithRetries {
         while (!checkFinishedAndTrack(checkFinished)) {
             polls++;
             failIfOverMaxPolls(description, polls);
-            sleep.sleep(pollIntervalMillis);
+            sleepInInterval.sleep(pollIntervalMillis);
         }
     }
 
@@ -195,7 +195,7 @@ public class PollWithRetries {
         private long pollIntervalMillis;
         private int maxPolls;
         private PollsTracker pollsTracker = new TrackAttemptsPerInvocation();
-        private SleepInInterval sleep = Thread::sleep;
+        private SleepInInterval sleepInInterval = Thread::sleep;
 
         public Builder pollIntervalMillis(long pollIntervalMillis) {
             this.pollIntervalMillis = pollIntervalMillis;
@@ -227,8 +227,8 @@ public class PollWithRetries {
             return maxPolls(1);
         }
 
-        public Builder sleep(SleepInInterval sleep) {
-            this.sleep = sleep;
+        public Builder sleepInInterval(SleepInInterval sleepInInterval) {
+            this.sleepInInterval = sleepInInterval;
             return this;
         }
 
