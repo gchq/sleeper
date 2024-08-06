@@ -51,7 +51,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
 @SystemTest
-public class CompactionOnFargateST {
+public class CompactionST {
     @TempDir
     private Path tempDir;
 
