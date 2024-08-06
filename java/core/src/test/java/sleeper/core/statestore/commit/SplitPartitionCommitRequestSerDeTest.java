@@ -35,7 +35,7 @@ public class SplitPartitionCommitRequestSerDeTest {
     @Test
     void shouldSerialiseSplitPartitionRequest() {
         // Given
-        PartitionTree partitionTree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "aaa")
                 .buildTree();
