@@ -17,8 +17,43 @@ package sleeper.core.statestore.commit;
 
 import sleeper.core.partition.Partition;
 
+import java.util.Objects;
+
+/**
+ * A request to commit to the state store when we split a partition into new child partitions.
+ */
 public class SplitPartitionCommitRequest {
 
+    private final Partition parentPartition;
+    private final Partition leftChild;
+    private final Partition rightChild;
+
     public SplitPartitionCommitRequest(Partition parentPartition, Partition leftChild, Partition rightChild) {
+        this.parentPartition = parentPartition;
+        this.leftChild = leftChild;
+        this.rightChild = rightChild;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(parentPartition, leftChild, rightChild);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof SplitPartitionCommitRequest)) {
+            return false;
+        }
+        SplitPartitionCommitRequest other = (SplitPartitionCommitRequest) obj;
+        return Objects.equals(parentPartition, other.parentPartition) && Objects.equals(leftChild, other.leftChild) && Objects.equals(rightChild, other.rightChild);
+    }
+
+    @Override
+    public String toString() {
+        return "SplitPartitionCommitRequest{parentPartition=" + parentPartition + ", leftChild=" + leftChild + ", rightChild=" + rightChild + "}";
+    }
+
 }

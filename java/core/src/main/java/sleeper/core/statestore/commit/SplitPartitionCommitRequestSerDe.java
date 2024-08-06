@@ -18,17 +18,23 @@ package sleeper.core.statestore.commit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.core.statestore.FileReferenceSerDe;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
+import sleeper.core.schema.Schema;
 import sleeper.core.util.GsonConfig;
 
+/**
+ * Serialises and deserialises a commit request to split a partition.
+ */
 public class SplitPartitionCommitRequestSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public SplitPartitionCommitRequestSerDe() {
+    public SplitPartitionCommitRequestSerDe(Schema schema) {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
+                .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
+                .serializeNulls();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
@@ -68,7 +74,7 @@ public class SplitPartitionCommitRequestSerDe {
     }
 
     /**
-     * Stores a commit request stored in S3 with the type of commit request. Used by the state store committer to
+     * Stores a split partition commit request with the type of commit request. Used by the state store committer to
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {

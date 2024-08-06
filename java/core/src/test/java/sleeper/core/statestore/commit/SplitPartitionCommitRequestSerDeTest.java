@@ -16,11 +16,11 @@
 package sleeper.core.statestore.commit;
 
 import org.approvaltests.Approvals;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,36 +28,24 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SplitPartitionCommitRequestSerDeTest {
 
-    //private final SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(null, null, null);
+    private final Schema schema = schemaWithKey("key", new StringType());
+    private final SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe(schema);
 
-    @Disabled
     @Test
     void shouldSerialiseSplitPartitionRequest() {
-
+        // Given
         PartitionTree partitionTree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "aaa")
                 .buildTree();
-
-        //Given
         SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(partitionTree.getRootPartition(),
                 partitionTree.getPartition("left"), partitionTree.getPartition("right"));
 
-        SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe();
-        //When
-        String json = serDe.toJson(splitPartitionCommitRequest);
+        // When
+        String json = serDe.toJsonPrettyPrint(splitPartitionCommitRequest);
 
-        //Then
+        // Then
         assertThat(serDe.fromJson(json)).isEqualTo(splitPartitionCommitRequest);
         Approvals.verify(json);
     }
-    /*
-     * 
-     * @Test
-     * void shouldFailToDeserialiseNonStoredInS3CommitRequest() {
-     * assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
-     * .isInstanceOf(IllegalArgumentException.class);
-     * }
-     */
-
 }
