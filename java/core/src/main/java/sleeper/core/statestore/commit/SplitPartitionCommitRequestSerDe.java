@@ -67,7 +67,7 @@ public class SplitPartitionCommitRequestSerDe {
      */
     public SplitPartitionCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.STORED_IN_S3 == wrappedRequest.type) {
+        if (CommitRequestType.SPLIT_PARTITION == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         throw new IllegalArgumentException("Unexpected request type");
@@ -82,7 +82,7 @@ public class SplitPartitionCommitRequestSerDe {
         private final SplitPartitionCommitRequest request;
 
         WrappedCommitRequest(SplitPartitionCommitRequest request) {
-            this.type = CommitRequestType.STORED_IN_S3;
+            this.type = CommitRequestType.SPLIT_PARTITION;
             this.request = request;
         }
     }

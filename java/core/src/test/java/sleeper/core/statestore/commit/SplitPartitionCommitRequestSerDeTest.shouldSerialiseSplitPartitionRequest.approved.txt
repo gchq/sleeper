@@ -1,5 +1,5 @@
 {
-  "type": "STORED_IN_S3",
+  "type": "SPLIT_PARTITION",
   "request": {
     "parentPartition": {
       "partitionId": "root",
