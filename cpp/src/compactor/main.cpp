@@ -97,12 +97,10 @@ int main(int argc, const char **argv)
             return EXIT_FAILURE;
         }
         std::unordered_map<std::string, ColRange> region;
-        for (std::size_t idx = 0; idx < rowKeys.size(); ++idx) {
-            region.emplace(rowKeys[idx],
-              ColRange{ .lower = { regionMins[idx] },
-                .lower_inclusive = true,
-                .upper = { regionMaxs[idx] },
-                .upper_inclusive = false });
+        for (auto minIter = regionMins.cbegin(), maxIter = regionMaxs.cbegin(); auto const &rowKey : rowKeys) {
+            region.emplace(rowKey,
+              ColRange{
+                .lower = { *minIter++ }, .lower_inclusive = true, .upper = { *maxIter++ }, .upper_inclusive = false });
         }
 
         CompactionInput details{ .inputFiles = std::move(inputFiles),
