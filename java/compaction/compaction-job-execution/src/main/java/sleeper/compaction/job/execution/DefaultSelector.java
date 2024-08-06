@@ -56,29 +56,29 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
-        CompactionRunner runner = getRunnerForMethod(method);
+        CompactionRunner runner = createRunnerForMethod(method);
 
         // Is an iterator specifed? If so can we support this?
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
             LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
-            runner = getJavaRunner();
+            runner = createJavaRunner();
         }
 
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
         return runner;
     }
 
-    private CompactionRunner getRunnerForMethod(CompactionMethod method) {
+    private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
             case RUST:
                 return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
             default:
-                return getJavaRunner();
+                return createJavaRunner();
         }
     }
 
-    private CompactionRunner getJavaRunner() {
+    private CompactionRunner createJavaRunner() {
         return new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
     }
 }
