@@ -29,8 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.commit.StateStoreCommitRequest;
-import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -58,7 +56,6 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
     private final StateStoreCommitter committer = connectToAws();
-    private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
 
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
@@ -73,11 +70,10 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         for (int i = 0; i < messages.size(); i++) {
             SQSMessage message = messages.get(i);
             LOGGER.info("Found message: {}", message.getBody());
-            StateStoreCommitRequest request = serDe.fromJson(message.getBody());
             try {
                 DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                     try {
-                        committer.apply(request);
+                        committer.applyFromJson(message.getBody());
                     } catch (StateStoreException e) {
                         throw new RuntimeException(e);
                     }
@@ -111,6 +107,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         return new StateStoreCommitter(
+                tablePropertiesProvider,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 stateStoreProvider.byTableId(tablePropertiesProvider),

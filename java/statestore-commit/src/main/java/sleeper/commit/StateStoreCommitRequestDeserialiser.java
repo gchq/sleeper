@@ -28,6 +28,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
@@ -41,11 +42,15 @@ import java.lang.reflect.Type;
 public class StateStoreCommitRequestDeserialiser {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitRequestDeserialiser.class);
 
-    private final Gson gson = GsonConfig.standardBuilder()
-            .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
-            .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
-            .serializeNulls()
-            .create();
+    private final Gson gson;
+
+    public StateStoreCommitRequestDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
+        gson = GsonConfig.standardBuilder()
+                .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
+                .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
+                .serializeNulls()
+                .create();
+    }
 
     /**
      * Deserialises a state store commit request.

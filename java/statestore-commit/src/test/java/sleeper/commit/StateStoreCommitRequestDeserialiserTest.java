@@ -23,6 +23,9 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.RecordsProcessed;
@@ -40,15 +43,20 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class StateStoreCommitRequestDeserialiserTest {
-    StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final List<TableProperties> tables = new ArrayList<>();
 
     @Test
     void shouldDeserialiseCompactionJobCommitRequest() {
@@ -68,7 +76,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new CompactionJobCommitRequestSerDe().toJson(compactionJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
     }
 
@@ -94,7 +102,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
     }
 
@@ -129,7 +137,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
     }
 
@@ -155,7 +163,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
     }
 
@@ -168,13 +176,15 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "aaa")
                 .buildTree();
-        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(partitionTree.getRootPartition(),
+        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(
+                "test-table", partitionTree.getRootPartition(),
                 partitionTree.getPartition("left"), partitionTree.getPartition("right"));
+        createTable("test-table", schema);
 
         String jsonString = new SplitPartitionCommitRequestSerDe(schema).toJson(splitPartitionCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest));
     }
 
@@ -186,7 +196,7 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
+        assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.storedInS3(commitRequest));
     }
 
@@ -196,7 +206,17 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = "{\"type\":\"invalid-type\", \"request\":{}}";
 
         // When / Then
-        assertThatThrownBy(() -> commitRequestSerDe.fromJson(jsonString))
+        assertThatThrownBy(() -> deserialiser().fromJson(jsonString))
                 .isInstanceOf(CommitRequestValidationException.class);
+    }
+
+    private void createTable(String tableId, Schema schema) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_ID, tableId);
+        tables.add(tableProperties);
+    }
+
+    private StateStoreCommitRequestDeserialiser deserialiser() {
+        return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables));
     }
 }
