@@ -15,6 +15,7 @@
  */
 package sleeper.commit;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,10 +32,12 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
@@ -344,6 +347,39 @@ public class StateStoreCommitterTest {
             StateStoreCommitter committer = committer();
             assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.storedInS3(request)))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Split partition commit request")
+    class SplitPartition {
+        Schema schema = schemaWithKey("key", new StringType());
+
+        @Test
+        @Disabled
+        void shouldApplySplitPartitionIntoTheStateStore() throws Exception {
+            PartitionsBuilder builder = new PartitionsBuilder(schema).rootFirst("root");
+
+            PartitionTree beforeTree = builder.buildTree();
+
+            PartitionTree afterTree = builder.splitToNewChildren("root", "left", "right", "aaa")
+                    .buildTree();
+
+            // Given 
+            StateStore stateStore = createTable("test-table");
+            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
+            SplitPartitionCommitRequest commitRequest = new SplitPartitionCommitRequest("test-table",
+                    afterTree.getPartition("root"),
+                    afterTree.getPartition("left"),
+                    afterTree.getPartition("right"));
+
+            // When
+            committer().apply(StateStoreCommitRequest.forSplitPartition(commitRequest));
+
+            // Then
+            //assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
+            //assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+
         }
     }
 
