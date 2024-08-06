@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.configuration.properties.validation;
+
+import org.apache.commons.lang3.EnumUtils;
 
 /**
  * Different compaction methods for Sleeper which support different capabilities and must be
@@ -29,4 +31,8 @@ public enum CompactionMethod {
     RUST;
 
     public static final CompactionMethod DEFAULT = CompactionMethod.JAVA;
+
+    public static boolean isValid(String value) {
+        return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
+    }
 }

@@ -25,10 +25,10 @@ import sleeper.compaction.task.CompactionAlgorithmSelector;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.statestore.StateStoreProvider;
 
-import java.util.Locale;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_METHOD;
 
 /**
  * Determines which compaction algorithm should be run based on the table and instance configuration properties and
@@ -55,33 +55,30 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
     public CompactionRunner chooseCompactor(CompactionJob job) {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
-        String method = tableProperties.get(TableProperty.COMPACTION_METHOD).toUpperCase(Locale.UK);
-
-        // Convert to enum value and default to Java
-        CompactionMethod desired;
-        try {
-            desired = CompactionMethod.valueOf(method);
-        } catch (IllegalArgumentException e) {
-            desired = CompactionMethod.DEFAULT;
-        }
-
-        CompactionRunner defaultRunner = new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
-        CompactionRunner runner = defaultRunner;
-        switch (desired) {
-            case RUST:
-                runner = new RustCompaction(tablePropertiesProvider, stateStoreProvider);
-                break;
-            default:
-                break;
-        }
+        CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
+        CompactionRunner runner = getRunnerForMethod(method);
 
         // Is an iterator specifed? If so can we support this?
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
             LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
-            runner = defaultRunner;
+            runner = getJavaRunner();
         }
 
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
         return runner;
+    }
+
+    private CompactionRunner getRunnerForMethod(CompactionMethod method) {
+        switch (method) {
+            case RUST:
+                return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
+            case JAVA:
+            default:
+                return getJavaRunner();
+        }
+    }
+
+    private CompactionRunner getJavaRunner() {
+        return new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
     }
 }
