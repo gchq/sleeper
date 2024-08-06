@@ -48,7 +48,6 @@ public class StateStoreCommitRequestDeserialiser {
     private final Gson gson;
 
     public StateStoreCommitRequestDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
-
         gson = GsonConfig.standardBuilder()
                 .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
@@ -122,10 +121,7 @@ public class StateStoreCommitRequestDeserialiser {
 
         @Override
         public SplitPartitionCommitRequest deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
-            if (!jsonElement.isJsonObject()) {
-                throw new JsonParseException("Expected JsonObject, got " + jsonElement);
-            }
-            JsonObject json = (JsonObject) jsonElement;
+            JsonObject json = jsonElement.getAsJsonObject();
             String tableId = json.get(TABLE_ID).getAsString();
 
             PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());
