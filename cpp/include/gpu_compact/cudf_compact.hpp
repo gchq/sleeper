@@ -31,20 +31,21 @@ struct CompactionResult
 struct CompactionInput
 {
   public:
-    vector<string> input_files;
-    string output_file;
-    vector<string> row_key_cols;
-    vector<string> sort_key_cols;
-    std::size_t max_row_group_size;
-    std::size_t max_page_size;
+    vector<string> inputFiles;
+    string outputFile;
+    vector<string> rowKeyCols;
+    vector<string> sortKeyCols;
+    std::size_t maxRowGroupSize;
+    std::size_t maxPageSize;
     string compression;
-    string writer_version;
-    std::size_t column_truncate_length;
-    std::size_t stats_truncate_length;
-    bool dict_enc_row_keys;
-    bool dict_enc_sort_keys;
-    bool dict_enc_values;
+    string writerVersion;
+    std::size_t columnTruncateLength;
+    std::size_t statsTruncateLength;
+    bool dictEncRowKeys;
+    bool dictEncSortKeys;
+    bool dictEncValues;
     std::unordered_map<string, ColRange> region;
 };// struct CompactionInput
 
+CompactionResult merge_sorted_files(CompactionInput const &inputData);
 }// namespace gpu_compact::cudf_compact
