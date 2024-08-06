@@ -129,7 +129,7 @@ public class StateStoreCommitRequestDeserialiser {
             String tableId = json.get(TABLE_ID).getAsString();
 
             PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());
-            // Grab Parent      
+            // Grab Parent
             JsonElement jsonParentPartition = json.get(PARENT_PARTITION);
             Partition parentPartition = partitionJsonSerDe.deserialize(jsonParentPartition, type, context);
 
