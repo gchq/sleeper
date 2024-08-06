@@ -134,7 +134,7 @@
         We don't expose that page, so it won't be a problem.
         This is a provided dependency for the module bulk-import/bulk-import-runner.
         ]]></notes>
-        <filePath regex="true">^.*/avro-ipc-1\.11\.3\.jar/.*/jquery-.*\.js$</filePath>
+        <filePath regex="true">^.*/avro-ipc-1\.12\.0\.jar/.*/jquery-.*\.js$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
