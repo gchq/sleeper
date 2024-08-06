@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SplitPartitionCommitRequestSerDeTest {
@@ -47,5 +48,11 @@ public class SplitPartitionCommitRequestSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(splitPartitionCommitRequest);
         Approvals.verify(json);
+    }
+
+    @Test
+    void shouldFailToDeserialiseNonSplitPartitionCommitRequest() {
+        assertThatThrownBy(() -> serDe.fromJson("{\"type\": \"OTHER\", \"request\":{}}"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
