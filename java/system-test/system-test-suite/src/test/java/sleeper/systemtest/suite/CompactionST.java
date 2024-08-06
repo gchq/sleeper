@@ -224,6 +224,8 @@ public class CompactionST {
         @Test
         void shouldCompactFilesFromMultiplePartitions(SleeperSystemTest sleeper) throws Exception {
             // Given
+            sleeper.setGeneratorOverrides(overrideField(
+                    ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
             sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50")
