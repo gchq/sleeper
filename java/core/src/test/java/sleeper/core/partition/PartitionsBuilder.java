@@ -105,16 +105,6 @@ public class PartitionsBuilder {
         return this;
     }
 
-    protected Partition.Builder put(Partition.Builder partition) {
-        partitionById.put(partition.getId(), partition);
-        return partition;
-    }
-
-    protected Partition.Builder partitionById(String id) {
-        return Optional.ofNullable(partitionById.get(id))
-                .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
-    }
-
     /**
      * Applies a partition split to a state store, after specifying the split in this builder. You can set initial
      * partitions in this builder, initialise the state store from {@link #buildList}, define further partitions with a
@@ -153,4 +143,15 @@ public class PartitionsBuilder {
     public Schema getSchema() {
         return schema;
     }
+
+    protected Partition.Builder put(Partition.Builder partition) {
+        partitionById.put(partition.getId(), partition);
+        return partition;
+    }
+
+    protected Partition.Builder partitionById(String id) {
+        return Optional.ofNullable(partitionById.get(id))
+                .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
+    }
+
 }
