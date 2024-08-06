@@ -15,7 +15,6 @@
  */
 package sleeper.commit;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -168,7 +167,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldDeserialiseSplitPartitionCommitRequest() {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
