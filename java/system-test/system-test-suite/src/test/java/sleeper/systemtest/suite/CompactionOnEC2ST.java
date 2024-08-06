@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.suite;
 
-import org.approvaltests.Approvals;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +38,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_ON_EC2;
+import static sleeper.systemtest.suite.testutil.TestResources.exampleString;
 
 @SystemTest
 @Slow
@@ -78,6 +78,7 @@ public class CompactionOnEC2ST {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
-        Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                .isEqualTo(exampleString("compaction/compacted5ToSingleFile.txt"));
     }
 }

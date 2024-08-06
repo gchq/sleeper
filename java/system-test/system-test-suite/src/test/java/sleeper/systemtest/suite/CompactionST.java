@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.suite;
 
-import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,6 +50,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.suite.testutil.TestResources.exampleString;
 
 @SystemTest
 public class CompactionST {
@@ -88,7 +88,8 @@ public class CompactionST {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compacted5ToSingleFile.txt"));
         }
 
         @Test
@@ -110,7 +111,8 @@ public class CompactionST {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compacted4To2Files.txt"));
         }
     }
 
@@ -155,7 +157,8 @@ public class CompactionST {
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
         }
 
         @Test
@@ -181,7 +184,8 @@ public class CompactionST {
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
         }
     }
 
@@ -213,7 +217,8 @@ public class CompactionST {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compacted4To2Files.txt"));
         }
 
         @Test
@@ -241,7 +246,8 @@ public class CompactionST {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
         }
     }
 }
