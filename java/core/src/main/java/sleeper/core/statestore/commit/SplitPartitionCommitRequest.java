@@ -36,6 +36,22 @@ public class SplitPartitionCommitRequest {
         this.rightChild = rightChild;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
+    public Partition getParentPartition() {
+        return parentPartition;
+    }
+
+    public Partition getLeftChild() {
+        return leftChild;
+    }
+
+    public Partition getRightChild() {
+        return rightChild;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(tableId, parentPartition, leftChild, rightChild);

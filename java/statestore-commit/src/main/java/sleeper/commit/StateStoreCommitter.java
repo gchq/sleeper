@@ -29,6 +29,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -100,6 +101,10 @@ public class StateStoreCommitter {
             apply((StateStoreCommitRequestInS3) requestObj);
         } else if (requestObj instanceof CompactionJobIdAssignmentCommitRequest) {
             apply((CompactionJobIdAssignmentCommitRequest) requestObj);
+        } else if (requestObj instanceof SplitPartitionCommitRequest) {
+            apply((SplitPartitionCommitRequest) requestObj);
+        } else {
+            throw new IllegalArgumentException("Unsupported commit request type: " + requestObj.getClass().getName());
         }
     }
 
@@ -140,6 +145,11 @@ public class StateStoreCommitter {
         } else {
             LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
         }
+    }
+
+    private void apply(SplitPartitionCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
     }
 
     private void apply(StateStoreCommitRequestInS3 request) throws StateStoreException {
