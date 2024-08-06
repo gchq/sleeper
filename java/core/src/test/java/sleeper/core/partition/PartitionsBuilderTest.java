@@ -23,12 +23,11 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PartitionsBuilderTest {
 
@@ -40,21 +39,20 @@ class PartitionsBuilderTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
+        PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C"),
+                List.of("aaa", "bbb"))
                 .parentJoining("D", "A", "B")
                 .parentJoining("E", "D", "C");
 
         // Then
-        List<Partition> expectedPartitions = Arrays.asList(
+        List<Partition> expectedPartitions = List.of(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "", "aaa")))
                         .id("A")
                         .leafPartition(true)
                         .parentPartitionId("D")
-                        .childPartitionIds(Collections.emptyList())
+                        .childPartitionIds(List.of())
                         .dimension(-1)
                         .build(),
                 Partition.builder()
@@ -62,7 +60,7 @@ class PartitionsBuilderTest {
                         .id("B")
                         .leafPartition(true)
                         .parentPartitionId("D")
-                        .childPartitionIds(Collections.emptyList())
+                        .childPartitionIds(List.of())
                         .dimension(-1)
                         .build(),
                 Partition.builder()
@@ -70,7 +68,7 @@ class PartitionsBuilderTest {
                         .id("C")
                         .leafPartition(true)
                         .parentPartitionId("E")
-                        .childPartitionIds(Collections.emptyList())
+                        .childPartitionIds(List.of())
                         .dimension(-1)
                         .build(),
                 Partition.builder()
@@ -78,7 +76,7 @@ class PartitionsBuilderTest {
                         .id("D")
                         .leafPartition(false)
                         .parentPartitionId("E")
-                        .childPartitionIds(Arrays.asList("A", "B"))
+                        .childPartitionIds(List.of("A", "B"))
                         .dimension(0)
                         .build(),
                 Partition.builder()
@@ -86,7 +84,7 @@ class PartitionsBuilderTest {
                         .id("E")
                         .leafPartition(false)
                         .parentPartitionId(null)
-                        .childPartitionIds(Arrays.asList("D", "C"))
+                        .childPartitionIds(List.of("D", "C"))
                         .dimension(0)
                         .build());
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
@@ -101,10 +99,9 @@ class PartitionsBuilderTest {
 
         // When I only care about leaf partitions, so I want any tree without caring about
         // the structure or the non-leaf IDs
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
+        PartitionTree tree = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C"),
+                List.of("aaa", "bbb"))
                 .anyTreeJoiningAllLeaves()
                 .buildTree();
 
@@ -119,10 +116,9 @@ class PartitionsBuilderTest {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
+        PartitionsBuilderSplitsFirst builder = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C"),
+                List.of("aaa", "bbb"))
                 .parentJoining("D", "A", "B");
 
         // When / Then
@@ -138,17 +134,17 @@ class PartitionsBuilderTest {
         Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
 
         // When
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+        PartitionTree tree = PartitionsBuilderSplitsFirst
+                .leavesWithSplitsOnDimension(schema, 1, List.of("A", "B"), List.of("aaa"))
                 .anyTreeJoiningAllLeaves()
                 .buildTree();
 
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
-        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(Arrays.asList(
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(List.of(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "", "aaa"))));
-        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "aaa", null))));
     }
@@ -201,48 +197,12 @@ class PartitionsBuilderTest {
     }
 
     @Test
-    void shouldGeneratePartitionIdsRootFirst() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .fromRoot(root -> root.split("split-point"))
-                .buildTree();
+    void shouldFailWhenStartingFromSplitsThenFromRoot() {
+        PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(
+                schemaWithKey("key", new StringType()),
+                List.of("A", "B"), List.of("aaa"));
 
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .buildTree());
-    }
-
-    @Test
-    void shouldGenerateNestedPartitionIdsRootFirst() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .fromRoot(root -> root.splitToLeftAndRight("split-point",
-                        left -> left.split("left-split-point"),
-                        right -> right.split("right-split-point")))
-                .buildTree();
-
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .splitToNewChildren("L", "LL", "LR", "left-split-point")
-                        .splitToNewChildren("R", "RL", "RR", "right-split-point")
-                        .buildTree());
-    }
-
-    @Test
-    void shouldBuildTreeWithSingleSplitPoint() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .treeWithSingleSplitPoint("split-point")
-                .buildTree();
-
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .buildTree());
+        assertThatThrownBy(() -> builder.rootFirst("root"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

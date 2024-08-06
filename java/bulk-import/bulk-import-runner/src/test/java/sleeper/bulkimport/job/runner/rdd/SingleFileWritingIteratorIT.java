@@ -30,6 +30,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -125,8 +126,8 @@ class SingleFileWritingIteratorIT {
                     RowFactory.create("b", 1, 2),
                     RowFactory.create("d", 1, 2),
                     RowFactory.create("e", 1, 2)).iterator();
-            PartitionTree partitionTree = createPartitionsBuilder()
-                    .leavesWithSplits(List.of("left", "right"), List.of("c"))
+            PartitionTree partitionTree = PartitionsBuilderSplitsFirst
+                    .leavesWithSplits(schema, List.of("left", "right"), List.of("c"))
                     .parentJoining("root", "left", "right")
                     .buildTree();
 

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -157,10 +158,9 @@ public class TransactionSerDeTest {
                 .mapToObj(i -> StringUtils.repeat("abc", 100) // Use a long split point
                         + StringUtils.leftPad(i + "", 4, "0"))
                 .collect(toUnmodifiableList());
-        PartitionTree partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves()
-                .buildTree();
+        PartitionTree partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildTree();
         PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
 
         // When
@@ -183,10 +183,9 @@ public class TransactionSerDeTest {
                 .mapToObj(i -> StringUtils.repeat("abc", 100) // Use a long split point
                         + StringUtils.leftPad(i + "", 4, "0"))
                 .collect(toUnmodifiableList());
-        PartitionTree partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves()
-                .buildTree();
+        PartitionTree partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildTree();
         PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
 
         // When
