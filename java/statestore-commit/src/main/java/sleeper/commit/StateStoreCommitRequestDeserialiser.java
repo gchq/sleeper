@@ -104,7 +104,9 @@ public class StateStoreCommitRequestDeserialiser {
         }
     }
 
-    /** TODO JavaDoc */
+    /**
+     * Deserialise the split partition request.
+     */
     private static class SplitPartitionDeserialiser implements JsonDeserializer<SplitPartitionCommitRequest> {
 
         public static final String TABLE_ID = "tableId";
