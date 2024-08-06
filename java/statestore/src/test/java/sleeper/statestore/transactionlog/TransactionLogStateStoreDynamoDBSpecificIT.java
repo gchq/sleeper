@@ -78,8 +78,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             List<Object> splitPoints = LongStream.range(1, 1000)
                     .mapToObj(i -> i)
                     .collect(toUnmodifiableList());
-            PartitionTree tree = new PartitionsBuilder(schema)
-                    .leavesWithSplits(leafIds, splitPoints)
+            PartitionTree tree = PartitionsBuilderSplitsFirst
+                    .leavesWithSplits(schema, leafIds, splitPoints)
                     .anyTreeJoiningAllLeaves().buildTree();
 
             // When

@@ -197,18 +197,10 @@ class PartitionsBuilderTest {
     }
 
     @Test
-    void shouldFailWhenStartingFromRootThenFromSplits() {
-        PartitionsBuilder builder = new PartitionsBuilder(schemaWithKey("key", new StringType()))
-                .rootFirst("root");
-
-        assertThatThrownBy(() -> builder.leavesWithSplits(List.of("A", "B"), List.of("aaa")))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     void shouldFailWhenStartingFromSplitsThenFromRoot() {
-        PartitionsBuilder builder = new PartitionsBuilder(schemaWithKey("key", new StringType()))
-                .leavesWithSplits(List.of("A", "B"), List.of("aaa"));
+        PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(
+                schemaWithKey("key", new StringType()),
+                List.of("A", "B"), List.of("aaa"));
 
         assertThatThrownBy(() -> builder.rootFirst("root"))
                 .isInstanceOf(IllegalArgumentException.class);

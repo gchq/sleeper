@@ -15,7 +15,6 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -106,46 +105,6 @@ public class PartitionsBuilder {
         splitResult.getChildren().forEach(this::put);
         put(splitResult.getParent());
         return this;
-    }
-
-    /**
-     * Creates partially constructed leaf partitions. Parent partitions must be defined separately that join the
-     * partitions together into a tree.
-     *
-     * @param  ids    unique IDs for the leaves
-     * @param  splits values of the first row key, for split points in between the new leaf partitions
-     * @return        the builder
-     * @see           PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
-     * @see           PartitionsBuilderSplitsFirst#parentJoining
-     */
-    public PartitionsBuilderSplitsFirst leavesWithSplits(List<String> ids, List<Object> splits) {
-        return leavesWithSplitsOnDimension(0, ids, splits);
-    }
-
-    /**
-     * Creates partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
-     * separately that join the partitions together into a tree.
-     *
-     * @param  dimension index in the schema of the row key the partitions are split on
-     * @param  ids       unique IDs for the leaves
-     * @param  splits    values of the row key at the specified dimension, for split points in between the new leaf
-     *                   partitions
-     * @return           the builder
-     * @see              PartitionsBuilderSplitsFirst#anyTreeJoiningAllLeaves()
-     * @see              PartitionsBuilderSplitsFirst#parentJoining
-     */
-    public PartitionsBuilderSplitsFirst leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
-        if (!partitionById.isEmpty()) {
-            throw new IllegalArgumentException("Partition tree must be empty to start from split points");
-        }
-        List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
-        if (ids.size() != regions.size()) {
-            throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
-        }
-        for (int i = 0; i < ids.size(); i++) {
-            put(factory.partition(ids.get(i), regions.get(i)));
-        }
-        return new PartitionsBuilderSplitsFirst(this);
     }
 
     protected Partition.Builder put(Partition.Builder partition) {

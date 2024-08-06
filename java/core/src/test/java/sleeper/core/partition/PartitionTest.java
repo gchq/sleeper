@@ -39,8 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class PartitionTest {
 
     private Partition createMidPartition(Schema schema, Object splitPoint1, Object splitPoint2) {
-        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema);
-        return partitionsBuilder.leavesWithSplits(
+        return PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
                 Arrays.asList("C1", "C2", "C3"),
                 Arrays.asList(splitPoint1, splitPoint2))
                 .parentJoining("M", "C1", "C2")
