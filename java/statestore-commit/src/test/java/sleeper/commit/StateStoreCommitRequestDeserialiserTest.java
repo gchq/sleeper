@@ -15,6 +15,7 @@
  */
 package sleeper.commit;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -22,9 +23,15 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.IngestJob;
@@ -38,6 +45,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class StateStoreCommitRequestDeserialiserTest {
     StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
@@ -149,6 +157,25 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(commitRequestSerDe.fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldDeserialiseSplitPartitionCommitRequest() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "aaa")
+                .buildTree();
+        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(partitionTree.getRootPartition(),
+                partitionTree.getPartition("left"), partitionTree.getPartition("right"));
+
+        String jsonString = new SplitPartitionCommitRequestSerDe(schema).toJson(splitPartitionCommitRequest);
+
+        // When / Then
+        assertThat(commitRequestSerDe.fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest));
     }
 
     @Test

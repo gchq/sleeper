@@ -17,6 +17,7 @@ package sleeper.commit;
 
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
@@ -56,6 +57,16 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
+        return new StateStoreCommitRequest(request);
+    }
+
+    /**
+     * Creates a request to commit a partition split to add new child partitions.
+     *
+     * @param  request the commit request
+     * @return         a state store commit request
+     */
+    public static StateStoreCommitRequest forSplitPartition(SplitPartitionCommitRequest request) {
         return new StateStoreCommitRequest(request);
     }
 
