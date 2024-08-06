@@ -19,6 +19,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,12 +28,8 @@ import java.util.UUID;
  */
 public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
 
-    protected PartitionsBuilderSplitsFirst(PartitionsBuilder builder) {
-        super(builder);
-    }
-
-    private PartitionsBuilderSplitsFirst(Schema schema) {
-        super(schema);
+    private PartitionsBuilderSplitsFirst(Schema schema, PartitionFactory factory, LinkedHashMap<String, Partition.Builder> partitionById) {
+        super(schema, factory, partitionById);
     }
 
     /**
@@ -66,11 +63,14 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
         if (ids.size() != regions.size()) {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }
-        PartitionsBuilderSplitsFirst builder = new PartitionsBuilderSplitsFirst(schema);
+        PartitionFactory factory = new PartitionFactory(schema);
+        LinkedHashMap<String, Partition.Builder> partitionById = new LinkedHashMap<>();
         for (int i = 0; i < ids.size(); i++) {
-            builder.put(builder.factory.partition(ids.get(i), regions.get(i)));
+            String id = ids.get(i);
+            Region region = regions.get(i);
+            partitionById.put(id, factory.partition(id, region));
         }
-        return builder;
+        return new PartitionsBuilderSplitsFirst(schema, factory, partitionById);
     }
 
     /**

@@ -36,15 +36,13 @@ public class PartitionsBuilder {
     protected final Map<String, Partition.Builder> partitionById;
 
     public PartitionsBuilder(Schema schema) {
-        this.schema = schema;
-        factory = new PartitionFactory(schema);
-        partitionById = new LinkedHashMap<>();
+        this(schema, new PartitionFactory(schema), new LinkedHashMap<>());
     }
 
-    protected PartitionsBuilder(PartitionsBuilder builder) {
-        this.schema = builder.schema;
-        this.factory = builder.factory;
-        this.partitionById = builder.partitionById;
+    protected PartitionsBuilder(Schema schema, PartitionFactory factory, LinkedHashMap<String, Partition.Builder> partitionById) {
+        this.schema = schema;
+        this.factory = factory;
+        this.partitionById = partitionById;
     }
 
     /**
