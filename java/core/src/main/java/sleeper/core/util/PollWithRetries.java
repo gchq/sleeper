@@ -35,10 +35,18 @@ public class PollWithRetries {
 
     private final long pollIntervalMillis;
     private final int maxPolls;
+    private final PollsTracker pollsTracker;
+    private final SleepInInterval sleepInInterval;
 
-    private PollWithRetries(long pollIntervalMillis, int maxPolls) {
-        this.pollIntervalMillis = pollIntervalMillis;
-        this.maxPolls = maxPolls;
+    private PollWithRetries(Builder builder) {
+        pollIntervalMillis = builder.pollIntervalMillis;
+        maxPolls = builder.maxPolls;
+        pollsTracker = builder.pollsTracker;
+        sleepInInterval = builder.sleepInInterval;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -49,7 +57,7 @@ public class PollWithRetries {
      * @return                    an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
-        return new PollWithRetries(pollIntervalMillis, maxPolls);
+        return builder().pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls).build();
     }
 
     /**
@@ -60,10 +68,7 @@ public class PollWithRetries {
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
-        long pollIntervalMillis = pollInterval.toMillis();
-        long timeoutMillis = timeout.toMillis();
-        return intervalAndMaxPolls(pollIntervalMillis,
-                (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
+        return builder().pollIntervalAndTimeout(pollInterval, timeout).build();
     }
 
     /**
@@ -72,7 +77,7 @@ public class PollWithRetries {
      * @return an instance of {@link PollWithRetries}
      */
     public static PollWithRetries noRetries() {
-        return new PollWithRetries(0, 1);
+        return builder().noRetries().build();
     }
 
     /**
@@ -81,7 +86,7 @@ public class PollWithRetries {
      * @return an instance of {@link PollWithRetries}
      */
     public static PollWithRetries immediateRetries(int retries) {
-        return new PollWithRetries(0, retries + 1);
+        return builder().immediateRetries(retries).build();
     }
 
     /**
@@ -95,23 +100,34 @@ public class PollWithRetries {
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
-        int polls = 0;
-        while (!checkFinished.getAsBoolean()) {
+        int polls = pollsTracker.getPollsBeforeInvocation();
+        failIfOverMaxPolls(description, polls);
+        while (!checkFinishedAndTrack(checkFinished)) {
             polls++;
-            if (polls >= maxPolls) {
-                if (polls > 1) {
-                    String message = "Timed out after " + polls + " tries waiting for " +
-                            LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
-                            " until " + description;
-                    LOGGER.error(message);
-                    throw new TimedOutException(message);
-                } else {
-                    String message = "Failed, expected to find " + description;
-                    LOGGER.error(message);
-                    throw new CheckFailedException(message);
-                }
-            }
-            Thread.sleep(pollIntervalMillis);
+            failIfOverMaxPolls(description, polls);
+            sleepInInterval.sleep(pollIntervalMillis);
+        }
+    }
+
+    private boolean checkFinishedAndTrack(BooleanSupplier checkFinished) {
+        pollsTracker.beforePoll();
+        return checkFinished.getAsBoolean();
+    }
+
+    private void failIfOverMaxPolls(String description, int polls) {
+        if (polls < maxPolls) {
+            return;
+        }
+        if (polls > 1) {
+            String message = "Timed out after " + polls + " tries waiting for " +
+                    LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+                    " until " + description;
+            LOGGER.error(message);
+            throw new TimedOutException(message);
+        } else {
+            String message = "Failed, expected to find " + description;
+            LOGGER.error(message);
+            throw new CheckFailedException(message);
         }
     }
 
@@ -156,6 +172,119 @@ public class PollWithRetries {
         }
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof PollWithRetries)) {
+            return false;
+        }
+        PollWithRetries other = (PollWithRetries) obj;
+        return pollIntervalMillis == other.pollIntervalMillis && maxPolls == other.maxPolls && Objects.equals(pollsTracker, other.pollsTracker);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pollIntervalMillis, maxPolls, pollsTracker);
+    }
+
+    @Override
+    public String toString() {
+        return "PollWithRetries{pollIntervalMillis=" + pollIntervalMillis + ", maxPolls=" + maxPolls + ", pollsTracker=" + pollsTracker + "}";
+    }
+
+    /**
+     * Builder for polling with retries.
+     */
+    public static class Builder {
+        private long pollIntervalMillis;
+        private int maxPolls;
+        private PollsTracker pollsTracker = TrackAttemptsPerInvocation.INSTANCE;
+        private SleepInInterval sleepInInterval = Thread::sleep;
+
+        /**
+         * Sets the interval between polls.
+         *
+         * @param  pollIntervalMillis the interval in milliseconds
+         * @return                    the builder
+         */
+        public Builder pollIntervalMillis(long pollIntervalMillis) {
+            this.pollIntervalMillis = pollIntervalMillis;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of polls.
+         *
+         * @param  maxPolls the maximum number of polls
+         * @return          the builder
+         */
+        public Builder maxPolls(int maxPolls) {
+            this.maxPolls = maxPolls;
+            return this;
+        }
+
+        /**
+         * Sets the interval between polls and maximum number, based on a timeout period.
+         *
+         * @param  pollInterval the interval
+         * @param  timeout      the timeout period, used to compute the maximum number of polls
+         * @return              the builder
+         */
+        public Builder pollIntervalAndTimeout(Duration pollInterval, Duration timeout) {
+            long pollIntervalMillis = pollInterval.toMillis();
+            long timeoutMillis = timeout.toMillis();
+            int maxPolls = (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING);
+            return pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls);
+        }
+
+        /**
+         * Sets to apply the maximum number of polls across all calls to poll a method. By default the maximum number
+         * of polls is only applied within a single call to poll a method.
+         *
+         * @return the builder
+         */
+        public Builder applyMaxPollsOverall() {
+            pollsTracker = new TrackAttemptsAcrossInvocations();
+            return this;
+        }
+
+        /**
+         * Sets no interval between polls, and a given number of retries.
+         *
+         * @param  retries the number of retries
+         * @return         the builder
+         */
+        public Builder immediateRetries(int retries) {
+            return pollIntervalMillis(0).maxPolls(retries + 1);
+        }
+
+        /**
+         * Sets to refuse any retries, so only a single poll will be made.
+         *
+         * @return the builder
+         */
+        public Builder noRetries() {
+            return maxPolls(1);
+        }
+
+        /**
+         * Sets the function used to sleep for the given interval in between polls. Defaults to Thread.sleep.
+         *
+         * @param  sleepInInterval the function
+         * @return                 the builder
+         */
+        public Builder sleepInInterval(SleepInInterval sleepInInterval) {
+            this.sleepInInterval = sleepInInterval;
+            return this;
+        }
+
+        public PollWithRetries build() {
+            return new PollWithRetries(this);
+        }
+    }
+
     /**
      * Thrown when the exit condition was not met and no retries were made.
      */
@@ -174,28 +303,88 @@ public class PollWithRetries {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PollWithRetries that = (PollWithRetries) o;
-        return pollIntervalMillis == that.pollIntervalMillis && maxPolls == that.maxPolls;
+    /**
+     * Sleeps for a given period of time in between polls. Usually implemented by Thread.sleep.
+     */
+    public interface SleepInInterval {
+        /**
+         * Sleeps for the given period.
+         *
+         * @param  millis               the number of milliseconds to wait for
+         * @throws InterruptedException thrown if the thread was interrupted while waiting
+         */
+        void sleep(long millis) throws InterruptedException;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(pollIntervalMillis, maxPolls);
+    /**
+     * Tracks the number of polls made so far. This implemented based on whether attempts should be remembered between
+     * invocations.
+     */
+    private interface PollsTracker {
+        int getPollsBeforeInvocation();
+
+        void beforePoll();
     }
 
-    @Override
-    public String toString() {
-        return "PollWithRetries{" +
-                "pollIntervalMillis=" + pollIntervalMillis +
-                ", maxPolls=" + maxPolls +
-                '}';
+    /**
+     * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
+     */
+    private static class TrackAttemptsPerInvocation implements PollsTracker {
+
+        private static final TrackAttemptsPerInvocation INSTANCE = new TrackAttemptsPerInvocation();
+
+        @Override
+        public int getPollsBeforeInvocation() {
+            return 0;
+        }
+
+        @Override
+        public void beforePoll() {
+        }
+
+        @Override
+        public String toString() {
+            return "TrackAttemptsPerInvocation{}";
+        }
     }
+
+    /**
+     * Tracks attempts between polling invocations, so count of attempts is across all invocations.
+     */
+    private static class TrackAttemptsAcrossInvocations implements PollsTracker {
+        private int attempts = 0;
+
+        @Override
+        public int getPollsBeforeInvocation() {
+            return attempts;
+        }
+
+        @Override
+        public void beforePoll() {
+            attempts++;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(attempts);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof TrackAttemptsAcrossInvocations)) {
+                return false;
+            }
+            TrackAttemptsAcrossInvocations other = (TrackAttemptsAcrossInvocations) obj;
+            return attempts == other.attempts;
+        }
+
+        @Override
+        public String toString() {
+            return "TrackAttemptsAcrossInvocations{attempts=" + attempts + "}";
+        }
+    }
+
 }

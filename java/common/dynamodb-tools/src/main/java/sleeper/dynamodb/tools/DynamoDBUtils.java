@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -229,10 +228,6 @@ public class DynamoDBUtils {
             e = e.getCause();
         } while (e != null);
         return false;
-    }
-
-    public static void retryOnThrottlingException(Runnable runnable) throws InterruptedException {
-        retryOnThrottlingException(PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10)), runnable);
     }
 
     public static void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException {

@@ -37,10 +37,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.PollWithRetries;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,28 +57,38 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
-    private final StateStoreCommitter committer;
+    private final StateStoreCommitter committer = connectToAws();
     private final StateStoreCommitRequestDeserialiser serDe = new StateStoreCommitRequestDeserialiser();
-
-    public StateStoreCommitterLambda() {
-        this(connectToAws());
-    }
-
-    public StateStoreCommitterLambda(StateStoreCommitter committer) {
-        this.committer = committer;
-    }
 
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
-        for (SQSMessage message : event.getRecords()) {
+        List<SQSMessage> messages = event.getRecords();
+        PollWithRetries throttlingRetries = PollWithRetries.builder()
+                .pollIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10))
+                .applyMaxPollsOverall()
+                .build();
+        for (int i = 0; i < messages.size(); i++) {
+            SQSMessage message = messages.get(i);
             LOGGER.info("Found message: {}", message.getBody());
             StateStoreCommitRequest request = serDe.fromJson(message.getBody());
             try {
-                committer.apply(request);
-            } catch (RuntimeException | StateStoreException e) {
+                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
+                    try {
+                        committer.apply(request);
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (InterruptedException e) {
+                LOGGER.error("Interrupted applying commit request", e);
+                messages.subList(i, messages.size())
+                        .forEach(failedMessage -> batchItemFailures.add(new BatchItemFailure(failedMessage.getMessageId())));
+                Thread.currentThread().interrupt();
+                break;
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed commit request", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
