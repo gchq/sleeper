@@ -24,11 +24,13 @@ import java.util.Objects;
  */
 public class SplitPartitionCommitRequest {
 
+    private final String tableId;
     private final Partition parentPartition;
     private final Partition leftChild;
     private final Partition rightChild;
 
-    public SplitPartitionCommitRequest(Partition parentPartition, Partition leftChild, Partition rightChild) {
+    public SplitPartitionCommitRequest(String tableId, Partition parentPartition, Partition leftChild, Partition rightChild) {
+        this.tableId = tableId;
         this.parentPartition = parentPartition;
         this.leftChild = leftChild;
         this.rightChild = rightChild;
@@ -36,7 +38,7 @@ public class SplitPartitionCommitRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(parentPartition, leftChild, rightChild);
+        return Objects.hash(tableId, parentPartition, leftChild, rightChild);
     }
 
     @Override
@@ -48,12 +50,13 @@ public class SplitPartitionCommitRequest {
             return false;
         }
         SplitPartitionCommitRequest other = (SplitPartitionCommitRequest) obj;
-        return Objects.equals(parentPartition, other.parentPartition) && Objects.equals(leftChild, other.leftChild) && Objects.equals(rightChild, other.rightChild);
+        return Objects.equals(tableId, other.tableId) && Objects.equals(parentPartition, other.parentPartition) && Objects.equals(leftChild, other.leftChild)
+                && Objects.equals(rightChild, other.rightChild);
     }
 
     @Override
     public String toString() {
-        return "SplitPartitionCommitRequest{parentPartition=" + parentPartition + ", leftChild=" + leftChild + ", rightChild=" + rightChild + "}";
+        return "SplitPartitionCommitRequest{tableId=" + tableId + ", parentPartition=" + parentPartition + ", leftChild=" + leftChild + ", rightChild=" + rightChild + "}";
     }
 
 }

@@ -39,7 +39,9 @@ public class SplitPartitionCommitRequestSerDeTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "aaa")
                 .buildTree();
-        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(partitionTree.getRootPartition(),
+        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(
+                "test-table",
+                partitionTree.getRootPartition(),
                 partitionTree.getPartition("left"), partitionTree.getPartition("right"));
 
         // When

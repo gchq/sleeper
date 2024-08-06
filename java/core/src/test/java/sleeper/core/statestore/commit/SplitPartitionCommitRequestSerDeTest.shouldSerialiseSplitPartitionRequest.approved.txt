@@ -1,6 +1,7 @@
 {
   "type": "SPLIT_PARTITION",
   "request": {
+    "tableId": "test-table",
     "parentPartition": {
       "partitionId": "root",
       "isLeafPartition": false,
