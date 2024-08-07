@@ -36,7 +36,6 @@ public class PartitionsBuilderSplitsFirstTest {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
         PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
@@ -46,6 +45,7 @@ public class PartitionsBuilderSplitsFirstTest {
                 .parentJoining("E", "D", "C");
 
         // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Partition> expectedPartitions = List.of(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "", "aaa")))

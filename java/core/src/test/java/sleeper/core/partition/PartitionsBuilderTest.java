@@ -30,6 +30,65 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PartitionsBuilderTest {
 
     @Test
+    void shouldBuildPartitionsSpecifyingSplitPointsRootFirst() {
+        // Given
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+
+        // When
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "bbb")
+                .splitToNewChildren("L", "LL", "LR", "aaa");
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<Partition> expectedPartitions = List.of(
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "", null)))
+                        .id("root")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds(List.of("L", "R"))
+                        .dimension(0)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "", "bbb")))
+                        .id("L")
+                        .leafPartition(false)
+                        .parentPartitionId("root")
+                        .childPartitionIds(List.of("LL", "LR"))
+                        .dimension(0)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "bbb", null)))
+                        .id("R")
+                        .leafPartition(true)
+                        .parentPartitionId("root")
+                        .childPartitionIds(List.of())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "", "aaa")))
+                        .id("LL")
+                        .leafPartition(true)
+                        .parentPartitionId("L")
+                        .childPartitionIds(List.of())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
+                        .id("LR")
+                        .leafPartition(true)
+                        .parentPartitionId("L")
+                        .childPartitionIds(List.of())
+                        .dimension(-1)
+                        .build());
+        assertThat(builder.buildList()).isEqualTo(expectedPartitions);
+        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(expectedPartitions));
+    }
+
+    @Test
     void shouldBuildPartitionsSpecifyingSplitOnTwoDifferentDimensions() {
         // Given
         Field field1 = new Field("key1", new StringType());
