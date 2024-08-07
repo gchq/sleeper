@@ -35,6 +35,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -96,6 +97,28 @@ public class StateStoreWaitForFilesTest {
         assertThatThrownBy(() -> waitForFilesWithAttempts(2, job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldWaitWithExponentialBackoffAndJitter() throws Exception {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        stateStore.addFile(file);
+        CompactionJob job = jobForFileAtRoot(file);
+
+        // When / Then
+        assertThatThrownBy(() -> waitForFilesWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS, job))
+                .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
+        assertThat(foundWaits).containsExactly(
+                Duration.parse("PT1.461S"),
+                Duration.parse("PT0.962S"),
+                Duration.parse("PT5.099S"),
+                Duration.parse("PT8.806S"),
+                Duration.parse("PT19.121S"),
+                Duration.parse("PT19.993S"),
+                Duration.parse("PT23.111S"),
+                Duration.parse("PT59.09S"),
+                Duration.parse("PT52.75S"));
     }
 
     private CompactionJob jobForFileAtRoot(FileReference... files) {
