@@ -38,8 +38,8 @@ class PartitionsBuilderTest {
         // When
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "bbb")
-                .splitToNewChildren("L", "LL", "LR", "aaa");
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .splitToNewChildren("R", "RL", "RR", "bbb");
 
         // Then
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -53,34 +53,34 @@ class PartitionsBuilderTest {
                         .dimension(0)
                         .build(),
                 Partition.builder()
-                        .region(new Region(rangeFactory.createRange(field, "", "bbb")))
+                        .region(new Region(rangeFactory.createRange(field, "", "aaa")))
                         .id("L")
+                        .leafPartition(true)
+                        .parentPartitionId("root")
+                        .childPartitionIds(List.of())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "aaa", null)))
+                        .id("R")
                         .leafPartition(false)
                         .parentPartitionId("root")
-                        .childPartitionIds(List.of("LL", "LR"))
+                        .childPartitionIds(List.of("RL", "RR"))
                         .dimension(0)
                         .build(),
                 Partition.builder()
-                        .region(new Region(rangeFactory.createRange(field, "bbb", null)))
-                        .id("R")
-                        .leafPartition(true)
-                        .parentPartitionId("root")
-                        .childPartitionIds(List.of())
-                        .dimension(-1)
-                        .build(),
-                Partition.builder()
-                        .region(new Region(rangeFactory.createRange(field, "", "aaa")))
-                        .id("LL")
-                        .leafPartition(true)
-                        .parentPartitionId("L")
-                        .childPartitionIds(List.of())
-                        .dimension(-1)
-                        .build(),
-                Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
-                        .id("LR")
+                        .id("RL")
                         .leafPartition(true)
-                        .parentPartitionId("L")
+                        .parentPartitionId("R")
+                        .childPartitionIds(List.of())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "bbb", null)))
+                        .id("RR")
+                        .leafPartition(true)
+                        .parentPartitionId("R")
                         .childPartitionIds(List.of())
                         .dimension(-1)
                         .build());
