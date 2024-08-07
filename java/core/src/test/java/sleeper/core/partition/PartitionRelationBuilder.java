@@ -20,14 +20,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * The result of splitting a partition in a factory. Holds builders for the resulting partitions in case they need to
- * be further modified.
+ * The result of splitting or joining partitions in a factory. Holds builders for the resulting partitions in case they
+ * need to be further modified.
  */
-public class PartitionSplitResult {
+public class PartitionRelationBuilder {
     private final Partition.Builder parent;
     private final List<Partition.Builder> children;
 
-    private PartitionSplitResult(Builder builder) {
+    private PartitionRelationBuilder(Builder builder) {
         parent = builder.parent;
         children = builder.children;
     }
@@ -94,8 +94,8 @@ public class PartitionSplitResult {
             return this;
         }
 
-        public PartitionSplitResult build() {
-            return new PartitionSplitResult(this);
+        public PartitionRelationBuilder build() {
+            return new PartitionRelationBuilder(this);
         }
     }
 }

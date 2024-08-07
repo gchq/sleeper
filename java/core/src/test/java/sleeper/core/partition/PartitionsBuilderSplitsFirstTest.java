@@ -112,7 +112,7 @@ public class PartitionsBuilderSplitsFirstTest {
     }
 
     @Test
-    void failJoiningAllLeavesIfNonLeafSpecified() {
+    void shouldFailJoiningAllLeavesIfNonLeafSpecified() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -127,7 +127,7 @@ public class PartitionsBuilderSplitsFirstTest {
     }
 
     @Test
-    void shouldBuildPartitionsSpecifyingSplitOnSecondDimension() {
+    void shouldJoinAllLeavesSpecifyingSplitOnSecondDimension() {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -147,6 +147,31 @@ public class PartitionsBuilderSplitsFirstTest {
         assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "aaa", null))));
+        assertThat(tree.getRootPartition().getDimension()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldJoinLeavesSpecifyingSplitOnSecondDimension() {
+        // Given
+        Field field1 = new Field("key1", new StringType());
+        Field field2 = new Field("key2", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+
+        // When
+        PartitionTree tree = PartitionsBuilderSplitsFirst
+                .leavesWithSplitsOnDimension(schema, 1, List.of("L", "R"), List.of("aaa"))
+                .parentJoining("root", "L", "R")
+                .buildTree();
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(tree.getPartition("L").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", "aaa"))));
+        assertThat(tree.getPartition("R").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "aaa", null))));
+        assertThat(tree.getRootPartition().getDimension()).isEqualTo(1);
     }
 
     @Test

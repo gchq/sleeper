@@ -99,7 +99,7 @@ public class PartitionsBuilder {
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
-        PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
+        PartitionRelationBuilder splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
         splitResult.getChildren().forEach(this::add);
         put(splitResult.getParent());
         return this;

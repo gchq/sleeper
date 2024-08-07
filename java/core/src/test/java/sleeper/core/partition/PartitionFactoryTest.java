@@ -37,7 +37,7 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionSplitResult splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
+        PartitionRelationBuilder splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
         List<Partition> children = splitResult.buildChildren();
         parent = splitResult.buildParent();
 
@@ -77,10 +77,10 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionSplitResult splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
+        PartitionRelationBuilder splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
         List<Partition> children = splitResult.buildChildren();
         parent = splitResult.buildParent();
-        PartitionSplitResult nestedSplitResult = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
+        PartitionRelationBuilder nestedSplitResult = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
         List<Partition> nestedChildren = nestedSplitResult.buildChildren();
         children.set(1, nestedSplitResult.buildParent());
 
@@ -147,9 +147,9 @@ class PartitionFactoryTest {
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition.Builder a = partitionFactory.partition("A", "", "aaa");
         Partition.Builder b = partitionFactory.partition("B", "aaa", null);
-        Partition parent = partitionFactory.parentJoining("parent", a, b).build();
+        PartitionRelationBuilder result = partitionFactory.join("parent", a.build(), b.build(), 0);
 
-        assertThat(a.build()).isEqualTo(
+        assertThat(result.buildChildren()).containsExactly(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", "aaa")))
                         .id("A")
@@ -157,8 +157,7 @@ class PartitionFactoryTest {
                         .parentPartitionId("parent")
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
-                        .build());
-        assertThat(b.build()).isEqualTo(
+                        .build(),
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "aaa", null)))
                         .id("B")
@@ -167,7 +166,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
                         .build());
-        assertThat(parent).isEqualTo(
+        assertThat(result.buildParent()).isEqualTo(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", null)))
                         .id("parent")

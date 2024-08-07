@@ -28,8 +28,13 @@ import java.util.UUID;
  */
 public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
 
-    private PartitionsBuilderSplitsFirst(Schema schema, PartitionFactory factory, LinkedHashMap<String, Partition.Builder> partitionById) {
+    private final int dimension;
+
+    private PartitionsBuilderSplitsFirst(
+            Schema schema, PartitionFactory factory,
+            LinkedHashMap<String, Partition.Builder> partitionById, int dimension) {
         super(schema, factory, partitionById);
+        this.dimension = dimension;
     }
 
     /**
@@ -70,7 +75,7 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
             Region region = regions.get(i);
             partitionById.put(id, factory.partition(id, region));
         }
-        return new PartitionsBuilderSplitsFirst(schema, factory, partitionById);
+        return new PartitionsBuilderSplitsFirst(schema, factory, partitionById, dimension);
     }
 
     /**
@@ -89,7 +94,7 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
         int numLeaves = partitionById.size();
         for (int i = 1; i < numLeaves; i++) {
             Partition.Builder right = mapValues.get(i);
-            left = put(factory.parentJoining(UUID.randomUUID().toString(), left, right));
+            left = applyJoin(factory.join(UUID.randomUUID().toString(), left.build(), right.build(), dimension));
         }
         return this;
     }
@@ -104,13 +109,15 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * @return          the builder
      */
     public PartitionsBuilderSplitsFirst parentJoining(String parentId, String leftId, String rightId) {
-        if (partitionById.containsKey(parentId)) {
-            throw new IllegalArgumentException("Partition specified twice: " + parentId);
-        }
         Partition.Builder left = partitionById(leftId);
         Partition.Builder right = partitionById(rightId);
-        put(factory.parentJoining(parentId, left, right));
+        applyJoin(factory.join(parentId, left.build(), right.build(), dimension));
         return this;
     }
 
+    private Partition.Builder applyJoin(PartitionRelationBuilder result) {
+        add(result.getParent());
+        result.getChildren().forEach(this::put);
+        return result.getParent();
+    }
 }

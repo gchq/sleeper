@@ -82,7 +82,7 @@ public class PartitionFactory {
      * @param  splitPoint value to split on
      * @return            result of the split, including the new state of the parent and the new child partitions
      */
-    public PartitionSplitResult split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
+    public PartitionRelationBuilder split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
         Field splitField = schema.getRowKeyFields().get(dimension);
         Region parentRegion = parent.getRegion();
         Range parentRange = parentRegion.getRange(splitField.getName());
@@ -96,7 +96,7 @@ public class PartitionFactory {
                 .leafPartition(false)
                 .dimension(dimension)
                 .childPartitionIds(List.of(leftId, rightId));
-        return PartitionSplitResult.builder()
+        return PartitionRelationBuilder.builder()
                 .parent(updatedParent)
                 .children(List.of(leftPartition, rightPartition))
                 .build();
@@ -105,18 +105,22 @@ public class PartitionFactory {
     /**
      * Joins two partitions to produce a new parent partition.
      *
-     * @param  parentId unique identifier for the new partition
-     * @param  left     builder for the left partition, covering values lower than the split point
-     * @param  right    builder for the right partition, covering values higher than the split point
-     * @return          builder for the new parent partition
+     * @param  parentId  unique identifier for the new partition
+     * @param  left      the left partition, covering values lower than the split point
+     * @param  right     the right partition, covering values higher than the split point
+     * @param  dimension index in the schema of the row key we're joining on
+     * @return           result of the join, including the new state of the parent and child partitions
      */
-    public Partition.Builder parentJoining(String parentId, Partition.Builder left, Partition.Builder right) {
-        left.parentPartitionId(parentId);
-        right.parentPartitionId(parentId);
-        return partition(parentId, parentRegion(left.getRegion(), right.getRegion()))
-                .childPartitionIds(List.of(left.getId(), right.getId()))
-                .leafPartition(false)
-                .dimension(0);
+    public PartitionRelationBuilder join(String parentId, Partition left, Partition right, int dimension) {
+        return PartitionRelationBuilder.builder()
+                .parent(partition(parentId, parentRegion(left.getRegion(), right.getRegion()))
+                        .childPartitionIds(List.of(left.getId(), right.getId()))
+                        .leafPartition(false)
+                        .dimension(dimension))
+                .children(List.of(
+                        left.toBuilder().parentPartitionId(parentId),
+                        right.toBuilder().parentPartitionId(parentId)))
+                .build();
     }
 
     /**
