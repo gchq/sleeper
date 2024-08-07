@@ -63,7 +63,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     }
 
     @Override
-    public void wait(CompactionJob job) throws StateStoreException, InterruptedException {
+    public void wait(CompactionJob job) throws InterruptedException {
         Instant startTime = Instant.now();
         LOGGER.info("Waiting for {} file{} to be assigned to compaction job {}",
                 job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
@@ -84,7 +84,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
         throw new TimedOutWaitingForFileAssignmentsException();
     }
 
-    private boolean allFilesAssignedToJob(PollWithRetries throttlingRetries, StateStore stateStore, CompactionJob job) throws StateStoreException, InterruptedException {
+    private boolean allFilesAssignedToJob(PollWithRetries throttlingRetries, StateStore stateStore, CompactionJob job) throws InterruptedException {
         AtomicReference<List<FileReference>> files = new AtomicReference<>();
         DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
             try {
