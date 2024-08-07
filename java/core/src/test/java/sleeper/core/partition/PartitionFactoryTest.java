@@ -32,16 +32,18 @@ class PartitionFactoryTest {
 
     @Test
     void shouldSpecifyParentThenChildPartition() {
+        // Given
         Field key = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(key).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionRelationBuilder splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
-        List<Partition> children = splitResult.buildChildren();
-        parent = splitResult.buildParent();
+        Partition parent = partitionFactory.rootFirst("parent");
 
-        assertThat(parent).isEqualTo(
+        // When
+        PartitionRelation splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(splitResult.getParent()).isEqualTo(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", null)))
                         .id("parent")
@@ -50,7 +52,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(List.of("left", "right"))
                         .dimension(0)
                         .build());
-        assertThat(children).containsExactly(
+        assertThat(splitResult.getChildren()).containsExactly(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", "aaa")))
                         .id("left")
@@ -71,20 +73,20 @@ class PartitionFactoryTest {
 
     @Test
     void shouldSpecifyParentThenChildPartitionsWithTwoDimensions() {
+        // Given
         Field key1 = new Field("key1", new StringType());
         Field key2 = new Field("key2", new StringType());
         Schema schema = Schema.builder().rowKeyFields(key1, key2).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionRelationBuilder splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
-        List<Partition> children = splitResult.buildChildren();
-        parent = splitResult.buildParent();
-        PartitionRelationBuilder nestedSplitResult = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
-        List<Partition> nestedChildren = nestedSplitResult.buildChildren();
-        children.set(1, nestedSplitResult.buildParent());
+        Partition parent = partitionFactory.rootFirst("parent");
 
-        assertThat(parent).isEqualTo(
+        // When
+        PartitionRelation splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
+        PartitionRelation nestedSplitResult = partitionFactory.split(splitResult.getRightChild(), "nestedLeft", "nestedRight", 1, "bbb");
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(splitResult.getParent()).isEqualTo(
                 Partition.builder()
                         .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "", null),
@@ -95,7 +97,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(List.of("left", "right"))
                         .dimension(0)
                         .build());
-        assertThat(children).containsExactly(
+        assertThat(splitResult.getLeftChild()).isEqualTo(
                 Partition.builder()
                         .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "", "aaa"),
@@ -105,7 +107,8 @@ class PartitionFactoryTest {
                         .parentPartitionId("parent")
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
-                        .build(),
+                        .build());
+        assertThat(nestedSplitResult.getParent()).isEqualTo(
                 Partition.builder()
                         .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "aaa", null),
@@ -116,7 +119,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(List.of("nestedLeft", "nestedRight"))
                         .dimension(1)
                         .build());
-        assertThat(nestedChildren).containsExactly(
+        assertThat(nestedSplitResult.getChildren()).containsExactly(
                 Partition.builder()
                         .region(new Region(List.of(
                                 rangeFactory.createRange(key1, "aaa", null),
@@ -141,15 +144,18 @@ class PartitionFactoryTest {
 
     @Test
     void shouldSpecifyChildrenThenParentPartition() {
+        // Given
         Field key = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition.Builder a = partitionFactory.partition("A", "", "aaa");
-        Partition.Builder b = partitionFactory.partition("B", "aaa", null);
-        PartitionRelationBuilder result = partitionFactory.join("parent", a.build(), b.build(), 0);
+        Partition a = partitionFactory.detachedLeaf("A", "", "aaa");
+        Partition b = partitionFactory.detachedLeaf("B", "aaa", null);
 
-        assertThat(result.buildChildren()).containsExactly(
+        // When
+        PartitionRelation result = partitionFactory.join("parent", a, b, 0);
+
+        assertThat(result.getChildren()).containsExactly(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", "aaa")))
                         .id("A")
@@ -166,7 +172,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
                         .build());
-        assertThat(result.buildParent()).isEqualTo(
+        assertThat(result.getParent()).isEqualTo(
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(key, "", null)))
                         .id("parent")

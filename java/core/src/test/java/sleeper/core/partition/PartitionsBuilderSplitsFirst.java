@@ -32,7 +32,7 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
 
     private PartitionsBuilderSplitsFirst(
             Schema schema, PartitionFactory factory,
-            LinkedHashMap<String, Partition.Builder> partitionById, int dimension) {
+            LinkedHashMap<String, Partition> partitionById, int dimension) {
         super(schema, factory, partitionById);
         this.dimension = dimension;
     }
@@ -69,11 +69,11 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }
         PartitionFactory factory = new PartitionFactory(schema);
-        LinkedHashMap<String, Partition.Builder> partitionById = new LinkedHashMap<>();
+        LinkedHashMap<String, Partition> partitionById = new LinkedHashMap<>();
         for (int i = 0; i < ids.size(); i++) {
             String id = ids.get(i);
             Region region = regions.get(i);
-            partitionById.put(id, factory.partition(id, region));
+            partitionById.put(id, factory.detachedLeaf(id, region));
         }
         return new PartitionsBuilderSplitsFirst(schema, factory, partitionById, dimension);
     }
@@ -86,15 +86,15 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * @return the builder
      */
     public PartitionsBuilderSplitsFirst anyTreeJoiningAllLeaves() {
-        List<Partition.Builder> mapValues = new ArrayList<>(partitionById.values());
-        if (mapValues.stream().anyMatch(p -> !p.build().isLeafPartition())) {
+        List<Partition> mapValues = new ArrayList<>(partitionById.values());
+        if (mapValues.stream().anyMatch(p -> !p.isLeafPartition())) {
             throw new IllegalArgumentException("Must only specify leaf partitions with no parents");
         }
-        Partition.Builder left = mapValues.get(0);
+        Partition left = mapValues.get(0);
         int numLeaves = partitionById.size();
         for (int i = 1; i < numLeaves; i++) {
-            Partition.Builder right = mapValues.get(i);
-            left = applyJoin(factory.join(UUID.randomUUID().toString(), left.build(), right.build(), dimension));
+            Partition right = mapValues.get(i);
+            left = applyJoin(factory.join(UUID.randomUUID().toString(), left, right, dimension));
         }
         return this;
     }
@@ -109,15 +109,15 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * @return          the builder
      */
     public PartitionsBuilderSplitsFirst parentJoining(String parentId, String leftId, String rightId) {
-        Partition.Builder left = partitionById(leftId);
-        Partition.Builder right = partitionById(rightId);
-        applyJoin(factory.join(parentId, left.build(), right.build(), dimension));
+        Partition left = partitionById(leftId);
+        Partition right = partitionById(rightId);
+        applyJoin(factory.join(parentId, left, right, dimension));
         return this;
     }
 
-    private Partition.Builder applyJoin(PartitionRelationBuilder result) {
-        add(result.getParent());
+    private Partition applyJoin(PartitionRelation result) {
+        Partition parent = add(result.getParent());
         result.getChildren().forEach(this::put);
-        return result.getParent();
+        return parent;
     }
 }

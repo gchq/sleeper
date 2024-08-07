@@ -17,57 +17,50 @@
 package sleeper.core.partition;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 /**
  * The result of splitting or joining partitions in a factory. Holds builders for the resulting partitions in case they
  * need to be further modified.
  */
-public class PartitionRelationBuilder {
-    private final Partition.Builder parent;
-    private final List<Partition.Builder> children;
+public class PartitionRelation {
+    private final Partition parent;
+    private final List<Partition> children;
 
-    private PartitionRelationBuilder(Builder builder) {
-        parent = builder.parent;
-        children = builder.children;
+    private PartitionRelation(Builder builder) {
+        parent = Objects.requireNonNull(builder.parent, "parent must not be null");
+        children = Objects.requireNonNull(builder.children, "children must not be null");
+        if (children.size() != 2) {
+            throw new IllegalArgumentException("Must have 2 children");
+        }
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public Partition.Builder getParent() {
+    public Partition getParent() {
         return parent;
     }
 
-    /**
-     * Builds the parent partition.
-     *
-     * @return the parent partition
-     */
-    public Partition buildParent() {
-        return parent.build();
-    }
-
-    public List<Partition.Builder> getChildren() {
+    public List<Partition> getChildren() {
         return children;
     }
 
-    /**
-     * Builds a list of the child partitions.
-     *
-     * @return the child partitions
-     */
-    public List<Partition> buildChildren() {
-        return children.stream().map(Partition.Builder::build).collect(Collectors.toList());
+    public Partition getLeftChild() {
+        return children.get(0);
+    }
+
+    public Partition getRightChild() {
+        return children.get(1);
     }
 
     /**
      * A builder to create the partition splitting result.
      */
     public static final class Builder {
-        private Partition.Builder parent;
-        private List<Partition.Builder> children;
+        private Partition parent;
+        private List<Partition> children;
 
         public Builder() {
         }
@@ -78,7 +71,7 @@ public class PartitionRelationBuilder {
          * @param  parent the parent partition builder
          * @return        this builder
          */
-        public Builder parent(Partition.Builder parent) {
+        public Builder parent(Partition parent) {
             this.parent = parent;
             return this;
         }
@@ -89,13 +82,13 @@ public class PartitionRelationBuilder {
          * @param  children the child partition builders
          * @return          this builder
          */
-        public Builder children(List<Partition.Builder> children) {
+        public Builder children(List<Partition> children) {
             this.children = children;
             return this;
         }
 
-        public PartitionRelationBuilder build() {
-            return new PartitionRelationBuilder(this);
+        public PartitionRelation build() {
+            return new PartitionRelation(this);
         }
     }
 }
