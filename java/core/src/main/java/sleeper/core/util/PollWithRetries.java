@@ -93,7 +93,7 @@ public class PollWithRetries {
         return builder()
                 .pollIntervalMillis(pollIntervalMillis)
                 .maxPolls(maxPolls)
-                .pollsTracker(pollsTracker.copyAndReset())
+                .pollsTracker(pollsTracker)
                 .sleepInInterval(sleepInInterval);
     }
 
@@ -248,14 +248,14 @@ public class PollWithRetries {
         }
 
         /**
-         * Sets to apply the maximum number of polls across all calls to poll a method. By default the maximum number
-         * of polls is only applied within a single call to poll a method.
+         * Sets a tracker to restrict the maximum number of polls. This is restricted across all future calls to poll a
+         * method via this object. Without this, the default is to apply the maximum number of polls within each
+         * individual call to poll a method.
          *
          * @return the builder
          */
-        public Builder applyMaxPollsOverall() {
-            pollsTracker = new TrackAttemptsAcrossInvocations();
-            return this;
+        public Builder trackMaxPollsAcrossInvocations() {
+            return pollsTracker(new TrackAttemptsAcrossInvocations());
         }
 
         /**
@@ -337,8 +337,6 @@ public class PollWithRetries {
         int getPollsBeforeInvocation();
 
         void beforePoll();
-
-        PollsTracker copyAndReset();
     }
 
     /**
@@ -361,11 +359,6 @@ public class PollWithRetries {
         public String toString() {
             return "TrackAttemptsPerInvocation{}";
         }
-
-        @Override
-        public PollsTracker copyAndReset() {
-            return this;
-        }
     }
 
     /**
@@ -382,11 +375,6 @@ public class PollWithRetries {
         @Override
         public void beforePoll() {
             attempts++;
-        }
-
-        @Override
-        public PollsTracker copyAndReset() {
-            return new TrackAttemptsAcrossInvocations();
         }
 
         @Override

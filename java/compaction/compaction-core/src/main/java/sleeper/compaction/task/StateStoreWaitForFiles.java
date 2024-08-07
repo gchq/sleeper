@@ -45,7 +45,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
 
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
-    private final PollWithRetries throttlingRetries;
+    private final PollWithRetries throttlingRetriesConfig;
     private final GetStateStoreByTableId stateStoreProvider;
 
     public StateStoreWaitForFiles(GetStateStoreByTableId stateStoreProvider) {
@@ -55,10 +55,10 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
-            PollWithRetries throttlingRetries, GetStateStoreByTableId stateStoreProvider) {
+            PollWithRetries throttlingRetriesConfig, GetStateStoreByTableId stateStoreProvider) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
-        this.throttlingRetries = throttlingRetries;
+        this.throttlingRetriesConfig = throttlingRetriesConfig;
         this.stateStoreProvider = stateStoreProvider;
     }
 
@@ -69,8 +69,8 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
                 job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
         StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         // If transaction log DynamoDB table is scaling up, wait with retries limited over all assignment wait attempts
-        PollWithRetries throttlingRetries = this.throttlingRetries.toBuilder()
-                .applyMaxPollsOverall()
+        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
+                .trackMaxPollsAcrossInvocations()
                 .build();
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);

@@ -162,7 +162,7 @@ class PollWithRetriesTest {
         void shouldRefuseFurtherRetriesWhenConsumedByEarlierInvocation() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(1).applyMaxPollsOverall());
+                    .maxPolls(1).trackMaxPollsAcrossInvocations());
             poll.pollUntil("true is returned", () -> true);
 
             // When / Then
@@ -175,7 +175,7 @@ class PollWithRetriesTest {
         void shouldRefuseFurtherRetriesWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(3).applyMaxPollsOverall());
+                    .maxPolls(3).trackMaxPollsAcrossInvocations());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -192,7 +192,7 @@ class PollWithRetriesTest {
         void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(3).applyMaxPollsOverall());
+                    .maxPolls(3).trackMaxPollsAcrossInvocations());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(true).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -210,7 +210,7 @@ class PollWithRetriesTest {
         void shouldAllowSuccessfulPollWithRetryWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(4).applyMaxPollsOverall());
+                    .maxPolls(4).trackMaxPollsAcrossInvocations());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false, true).iterator();
             poll.pollUntil("true is returned", iterator1::next);
@@ -225,16 +225,17 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldResetPollAttemptsOnCopy() throws Exception {
+        void shouldResetPollAttemptsInCopy() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(2).applyMaxPollsOverall());
+                    .maxPolls(2).trackMaxPollsAcrossInvocations());
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
             Iterator<Boolean> iterator2 = List.of(false, true).iterator();
             poll.pollUntil("true is returned", iterator1::next);
 
             // When
-            poll.toBuilder().build().pollUntil("true is returned", iterator2::next);
+            poll.toBuilder().trackMaxPollsAcrossInvocations().build()
+                    .pollUntil("true is returned", iterator2::next);
 
             // Then
             assertThat(iterator1).isExhausted();
@@ -243,16 +244,33 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldNotResetOriginalPollAttemptsOnCopy() throws Exception {
+        void shouldNotResetOriginalPollAttemptsWhenResetInCopy() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxPolls(2).applyMaxPollsOverall());
+                    .maxPolls(2).trackMaxPollsAcrossInvocations());
             Iterator<Boolean> iterator = List.of(false, true).iterator();
             poll.pollUntil("true is returned", iterator::next);
-            poll.toBuilder().build();
+            poll.toBuilder().trackMaxPollsAcrossInvocations().build();
 
             // When / Then
             assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+            assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
+        }
+
+        @Test
+        void shouldRetainOriginalPollAttemptsTrackerInCopy() throws Exception {
+            // Given
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(3).trackMaxPollsAcrossInvocations());
+            PollWithRetries copy = poll.toBuilder()
+                    .maxPolls(2).build();
+            Iterator<Boolean> iterator = List.of(false, true).iterator();
+            poll.pollUntil("true is returned", iterator::next);
+
+            // When / Then
+            assertThatThrownBy(() -> copy.pollUntil("true is returned", () -> true))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(iterator).isExhausted();
             assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
