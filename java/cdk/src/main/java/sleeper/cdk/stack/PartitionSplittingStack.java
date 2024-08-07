@@ -237,19 +237,21 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
+        int concurrency = instanceProperties.getInt(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
         IFunction splitPartitionLambda = splitterJar.buildFunction(this, "SplitPartitionLambda", builder -> builder
                 .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
-                .reservedConcurrentExecutions(instanceProperties.getInt(SPLIT_PARTITIONS_RESERVED_CONCURRENCY))
+                .reservedConcurrentExecutions(concurrency)
                 .handler("sleeper.splitter.lambda.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
 
         coreStacks.grantSplitPartitions(splitPartitionLambda);
-        splitPartitionLambda.addEventSource(SqsEventSource.Builder.create(partitionSplittingJobQueue).batchSize(1).build());
+        splitPartitionLambda.addEventSource(SqsEventSource.Builder.create(partitionSplittingJobQueue)
+                .batchSize(1).maxConcurrency(concurrency).build());
     }
 
     public IQueue getJobQueue() {
