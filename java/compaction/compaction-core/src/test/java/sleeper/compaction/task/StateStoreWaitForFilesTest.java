@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class StateStoreWaitForFilesTest {
@@ -62,7 +62,7 @@ public class StateStoreWaitForFilesTest {
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
 
         // When
-        waitForFiles(job);
+        waitForFilesWithAttempts(2, job);
 
         // Then
         assertThat(foundWaits).isEmpty();
@@ -74,12 +74,12 @@ public class StateStoreWaitForFilesTest {
         FileReference file = factory.rootFile("test.parquet", 123L);
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        actionOnWait(() -> {
+        actionAfterWait(() -> {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         });
 
         // When
-        waitForFiles(job);
+        waitForFilesWithAttempts(2, job);
 
         // Then
         assertThat(foundWaits).hasSize(1);
@@ -93,7 +93,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        assertThatThrownBy(() -> waitForFiles(job))
+        assertThatThrownBy(() -> waitForFilesWithAttempts(2, job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).hasSize(1);
     }
@@ -102,16 +102,16 @@ public class StateStoreWaitForFilesTest {
         return new CompactionJobFactory(instanceProperties, tableProperties).createCompactionJob(List.of(files), "root");
     }
 
-    private void waitForFiles(CompactionJob job) throws Exception {
-        new StateStoreWaitForFiles(2,
+    private void waitForFilesWithAttempts(int attempts, CompactionJob job) throws Exception {
+        new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(
                         StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,
-                        noJitter(), waiter),
+                        fixJitterSeed(), waiter),
                 Map.of(tableProperties.get(TABLE_ID), stateStore)::get)
                 .wait(job);
     }
 
-    protected void actionOnWait(WaitAction action) throws Exception {
+    protected void actionAfterWait(WaitAction action) throws Exception {
         Waiter wrapWaiter = waiter;
         waiter = millis -> {
             try {
