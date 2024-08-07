@@ -52,21 +52,17 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     }
 
     @Override
-    public void wait(CompactionJob job) throws InterruptedException {
+    public void wait(CompactionJob job) throws StateStoreException, InterruptedException {
         Instant startTime = Instant.now();
         LOGGER.info("Waiting for {} file{} to be assigned to compaction job {}",
                 job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
         StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
-            try {
-                if (allFilesAssignedToJob(stateStore, job)) {
-                    LOGGER.info("All files are assigned to job. Checked {} time{} and took {}",
-                            attempt, attempt > 1 ? "s" : "", LoggedDuration.withFullOutput(startTime, Instant.now()));
-                    return;
-                }
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
+            if (allFilesAssignedToJob(stateStore, job)) {
+                LOGGER.info("All files are assigned to job. Checked {} time{} and took {}",
+                        attempt, attempt > 1 ? "s" : "", LoggedDuration.withFullOutput(startTime, Instant.now()));
+                return;
             }
         }
         LOGGER.info("Reached maximum attempts of {} for checking if files are assigned to job", jobAssignmentWaitAttempts);

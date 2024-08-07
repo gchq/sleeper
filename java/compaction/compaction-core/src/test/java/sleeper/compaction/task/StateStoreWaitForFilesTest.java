@@ -94,7 +94,7 @@ public class StateStoreWaitForFilesTest {
         return new CompactionJobFactory(instanceProperties, tableProperties).createCompactionJob(List.of(files), "root");
     }
 
-    private void waitForFiles(CompactionJob job) throws InterruptedException {
+    private void waitForFiles(CompactionJob job) throws Exception {
         new StateStoreWaitForFiles(2,
                 new ExponentialBackoffWithJitter(
                         StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,

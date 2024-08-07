@@ -28,6 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -193,7 +194,7 @@ public class CompactionTask {
 
     @FunctionalInterface
     public interface WaitForFileAssignment {
-        void wait(CompactionJob job) throws InterruptedException;
+        void wait(CompactionJob job) throws StateStoreException, InterruptedException;
     }
 
     public interface MessageHandle extends AutoCloseable {
