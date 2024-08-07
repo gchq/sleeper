@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The result of splitting or joining partitions in a factory. Holds builders for the resulting partitions in case they
- * need to be further modified.
+ * The result of splitting or joining partitions in a factory.
  */
 public class PartitionRelation {
     private final Partition parent;
