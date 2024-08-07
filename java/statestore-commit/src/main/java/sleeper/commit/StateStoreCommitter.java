@@ -23,11 +23,13 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -53,7 +55,7 @@ import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJ
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final StateStoreCommitRequestDeserialiser deserialiser = new StateStoreCommitRequestDeserialiser();
+    private final StateStoreCommitRequestDeserialiser deserialiser;
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
@@ -61,16 +63,27 @@ public class StateStoreCommitter {
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
+            TablePropertiesProvider tablePropertiesProvider,
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
             GetStateStoreByTableId stateStoreProvider,
             LoadS3ObjectFromDataBucket loadFromDataBucket,
             Supplier<Instant> timeSupplier) {
+        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider);
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
         this.loadFromDataBucket = loadFromDataBucket;
         this.timeSupplier = timeSupplier;
+    }
+
+    /**
+     * Applies a state store commit request.
+     *
+     * @param json the commit request JSON string
+     */
+    public void applyFromJson(String json) throws StateStoreException {
+        apply(deserialiser.fromJson(json));
     }
 
     /**
@@ -88,6 +101,10 @@ public class StateStoreCommitter {
             apply((StateStoreCommitRequestInS3) requestObj);
         } else if (requestObj instanceof CompactionJobIdAssignmentCommitRequest) {
             apply((CompactionJobIdAssignmentCommitRequest) requestObj);
+        } else if (requestObj instanceof SplitPartitionCommitRequest) {
+            apply((SplitPartitionCommitRequest) requestObj);
+        } else {
+            throw new IllegalArgumentException("Unsupported commit request type: " + requestObj.getClass().getName());
         }
     }
 
@@ -128,6 +145,11 @@ public class StateStoreCommitter {
         } else {
             LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
         }
+    }
+
+    private void apply(SplitPartitionCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
     }
 
     private void apply(StateStoreCommitRequestInS3 request) throws StateStoreException {

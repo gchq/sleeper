@@ -28,7 +28,11 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.statestore.commit.CommitRequestType;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
@@ -41,11 +45,16 @@ import java.lang.reflect.Type;
 public class StateStoreCommitRequestDeserialiser {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitRequestDeserialiser.class);
 
-    private final Gson gson = GsonConfig.standardBuilder()
-            .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
-            .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
-            .serializeNulls()
-            .create();
+    private final Gson gson;
+
+    public StateStoreCommitRequestDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
+        gson = GsonConfig.standardBuilder()
+                .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
+                .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
+                .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
+                .serializeNulls()
+                .create();
+    }
 
     /**
      * Deserialises a state store commit request.
@@ -64,6 +73,7 @@ public class StateStoreCommitRequestDeserialiser {
 
         @Override
         public StateStoreCommitRequest deserialize(JsonElement json, Type wrapperType, JsonDeserializationContext context) throws JsonParseException {
+
             JsonObject object = json.getAsJsonObject();
             CommitRequestType type = context.deserialize(object.get("type"), CommitRequestType.class);
             JsonObject requestObj = object.getAsJsonObject("request");
@@ -84,10 +94,48 @@ public class StateStoreCommitRequestDeserialiser {
                 case COMPACTION_JOB_ID_ASSIGNMENT:
                     return StateStoreCommitRequest.forCompactionJobIdAssignment(
                             context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
+                case SPLIT_PARTITION:
+                    return StateStoreCommitRequest.forSplitPartition(
+                            context.deserialize(requestObj, SplitPartitionCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }
         }
+    }
 
+    /**
+     * Deserialise the split partition request.
+     */
+    private static class SplitPartitionDeserialiser implements JsonDeserializer<SplitPartitionCommitRequest> {
+
+        public static final String TABLE_ID = "tableId";
+        public static final String PARENT_PARTITION = "parentPartition";
+        public static final String LEFT_PARTITION = "leftChild";
+        public static final String RIGHT_PARTITION = "rightChild";
+
+        private TablePropertiesProvider tablePropertiesProvider;
+
+        private SplitPartitionDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
+        }
+
+        @Override
+        public SplitPartitionCommitRequest deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
+            JsonObject json = jsonElement.getAsJsonObject();
+            String tableId = json.get(TABLE_ID).getAsString();
+
+            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());
+
+            JsonElement jsonParentPartition = json.get(PARENT_PARTITION);
+            Partition parentPartition = partitionJsonSerDe.deserialize(jsonParentPartition, type, context);
+
+            JsonElement jsonLeftPartition = json.get(LEFT_PARTITION);
+            Partition leftChildPartition = partitionJsonSerDe.deserialize(jsonLeftPartition, type, context);
+
+            JsonElement jsonRightPartition = json.get(RIGHT_PARTITION);
+            Partition rightChildPartition = partitionJsonSerDe.deserialize(jsonRightPartition, type, context);
+
+            return new SplitPartitionCommitRequest(tableId, parentPartition, leftChildPartition, rightChildPartition);
+        }
     }
 }
