@@ -28,10 +28,12 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -40,7 +42,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -48,7 +50,8 @@ public class StateStoreWaitForFilesTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
     private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-    private Waiter waiter = noWaits();
+    private final List<Duration> foundWaits = new ArrayList<>();
+    private Waiter waiter = recordWaits(foundWaits);
 
     @Test
     void shouldSkipWaitIfFilesAreAlreadyAssignedToJob() throws Exception {
@@ -58,9 +61,11 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
 
-        // When / Then
-        assertThatCode(() -> waitForFiles(job))
-                .doesNotThrowAnyException();
+        // When
+        waitForFiles(job);
+
+        // Then
+        assertThat(foundWaits).isEmpty();
     }
 
     @Test
@@ -73,9 +78,11 @@ public class StateStoreWaitForFilesTest {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         });
 
-        // When / Then
-        assertThatCode(() -> waitForFiles(job))
-                .doesNotThrowAnyException();
+        // When
+        waitForFiles(job);
+
+        // Then
+        assertThat(foundWaits).hasSize(1);
     }
 
     @Test
@@ -88,6 +95,7 @@ public class StateStoreWaitForFilesTest {
         // When / Then
         assertThatThrownBy(() -> waitForFiles(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
+        assertThat(foundWaits).hasSize(1);
     }
 
     private CompactionJob jobForFileAtRoot(FileReference... files) {
