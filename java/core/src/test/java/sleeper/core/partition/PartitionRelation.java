@@ -25,14 +25,13 @@ import java.util.Objects;
  */
 public class PartitionRelation {
     private final Partition parent;
-    private final List<Partition> children;
+    private final Partition leftChild;
+    private final Partition rightChild;
 
     private PartitionRelation(Builder builder) {
         parent = Objects.requireNonNull(builder.parent, "parent must not be null");
-        children = Objects.requireNonNull(builder.children, "children must not be null");
-        if (children.size() != 2) {
-            throw new IllegalArgumentException("Must have 2 children");
-        }
+        leftChild = Objects.requireNonNull(builder.leftChild, "leftChild must not be null");
+        rightChild = Objects.requireNonNull(builder.rightChild, "rightChild must not be null");
     }
 
     public static Builder builder() {
@@ -44,15 +43,15 @@ public class PartitionRelation {
     }
 
     public List<Partition> getChildren() {
-        return children;
+        return List.of(leftChild, rightChild);
     }
 
     public Partition getLeftChild() {
-        return children.get(0);
+        return leftChild;
     }
 
     public Partition getRightChild() {
-        return children.get(1);
+        return rightChild;
     }
 
     /**
@@ -60,15 +59,16 @@ public class PartitionRelation {
      */
     public static final class Builder {
         private Partition parent;
-        private List<Partition> children;
+        private Partition leftChild;
+        private Partition rightChild;
 
         public Builder() {
         }
 
         /**
-         * Sets the builder for the parent partition.
+         * Sets the parent partition.
          *
-         * @param  parent the parent partition builder
+         * @param  parent the parent partition
          * @return        this builder
          */
         public Builder parent(Partition parent) {
@@ -77,13 +77,24 @@ public class PartitionRelation {
         }
 
         /**
-         * Sets the builders for the child partitions.
+         * Sets the left child partition.
          *
-         * @param  children the child partition builders
-         * @return          this builder
+         * @param  leftChild the left child partition
+         * @return           this builder
          */
-        public Builder children(List<Partition> children) {
-            this.children = children;
+        public Builder leftChild(Partition leftChild) {
+            this.leftChild = leftChild;
+            return this;
+        }
+
+        /**
+         * Sets the right child partition.
+         *
+         * @param  rightChild the right child partition
+         * @return            this builder
+         */
+        public Builder rightChild(Partition rightChild) {
+            this.rightChild = rightChild;
             return this;
         }
 

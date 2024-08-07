@@ -106,8 +106,7 @@ public class PartitionFactory {
                 .childPartitionIds(List.of(leftId, rightId))
                 .build();
         return PartitionRelation.builder()
-                .parent(updatedParent)
-                .children(List.of(leftPartition, rightPartition))
+                .parent(updatedParent).leftChild(leftPartition).rightChild(rightPartition)
                 .build();
     }
 
@@ -127,9 +126,8 @@ public class PartitionFactory {
                         .leafPartition(false)
                         .dimension(dimension)
                         .build())
-                .children(List.of(
-                        left.toBuilder().parentPartitionId(parentId).build(),
-                        right.toBuilder().parentPartitionId(parentId).build()))
+                .leftChild(left.toBuilder().parentPartitionId(parentId).build())
+                .rightChild(right.toBuilder().parentPartitionId(parentId).build())
                 .build();
     }
 
