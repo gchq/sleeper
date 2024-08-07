@@ -139,6 +139,7 @@ public class CompactionTask {
                 String jobRunId = jobRunIdSupplier.get();
                 Instant jobStartTime = timeSupplier.get();
                 try {
+                    propertiesReloader.reloadIfNeeded();
                     waitForFiles.wait(job);
                     RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
@@ -161,7 +162,6 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {
-            propertiesReloader.reloadIfNeeded();
             CompactionRunner compactor = this.selector.chooseCompactor(job);
             RecordsProcessed recordsProcessed = compactor.compact(job);
             Instant jobFinishTime = timeSupplier.get();
