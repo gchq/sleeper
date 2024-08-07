@@ -36,10 +36,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StateStoreWaitForFiles implements WaitForFileAssignment {
+
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
+
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(4, 60);
     public static final PollWithRetries JOB_ASSIGNMENT_THROTTLING_RETRIES = PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10));
+
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
     private final PollWithRetries throttlingRetries;
