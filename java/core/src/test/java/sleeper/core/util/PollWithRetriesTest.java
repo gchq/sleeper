@@ -241,5 +241,21 @@ class PollWithRetriesTest {
             assertThat(iterator2).isExhausted();
             assertThat(foundSleeps).containsExactly(Duration.ofMillis(100), Duration.ofMillis(100));
         }
+
+        @Test
+        void shouldNotResetOriginalPollAttemptsOnCopy() throws Exception {
+            // Given
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(2).applyMaxPollsOverall());
+            Iterator<Boolean> iterator = List.of(false, true).iterator();
+            poll.pollUntil("true is returned", iterator::next);
+            poll.toBuilder().build();
+
+            // When / Then
+            assertThatThrownBy(() -> poll.pollUntil("true is returned", () -> true))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+            assertThat(iterator).isExhausted();
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
+        }
     }
 }
