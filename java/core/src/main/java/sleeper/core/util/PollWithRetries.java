@@ -89,6 +89,14 @@ public class PollWithRetries {
         return builder().immediateRetries(retries).build();
     }
 
+    public Builder toBuilder() {
+        return builder()
+                .pollIntervalMillis(pollIntervalMillis)
+                .maxPolls(maxPolls)
+                .pollsTracker(pollsTracker.copyAndReset())
+                .sleepInInterval(sleepInInterval);
+    }
+
     /**
      * Starts polling until an exit condition is met or the maximum polls has been reached.
      *
@@ -269,6 +277,11 @@ public class PollWithRetries {
             return maxPolls(1);
         }
 
+        private Builder pollsTracker(PollsTracker pollsTracker) {
+            this.pollsTracker = pollsTracker;
+            return this;
+        }
+
         /**
          * Sets the function used to sleep for the given interval in between polls. Defaults to Thread.sleep.
          *
@@ -324,6 +337,8 @@ public class PollWithRetries {
         int getPollsBeforeInvocation();
 
         void beforePoll();
+
+        PollsTracker copyAndReset();
     }
 
     /**
@@ -346,6 +361,11 @@ public class PollWithRetries {
         public String toString() {
             return "TrackAttemptsPerInvocation{}";
         }
+
+        @Override
+        public PollsTracker copyAndReset() {
+            return this;
+        }
     }
 
     /**
@@ -362,6 +382,11 @@ public class PollWithRetries {
         @Override
         public void beforePoll() {
             attempts++;
+        }
+
+        @Override
+        public PollsTracker copyAndReset() {
+            return new TrackAttemptsAcrossInvocations();
         }
 
         @Override

@@ -39,20 +39,23 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
     public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(4, 60);
+    public static final PollWithRetries JOB_ASSIGNMENT_THROTTLING_RETRIES = PollWithRetries.intervalAndPollingTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10));
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
+    private final PollWithRetries throttlingRetries;
     private final GetStateStoreByTableId stateStoreProvider;
 
     public StateStoreWaitForFiles(GetStateStoreByTableId stateStoreProvider) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                stateStoreProvider);
+                JOB_ASSIGNMENT_THROTTLING_RETRIES, stateStoreProvider);
     }
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
-            GetStateStoreByTableId stateStoreProvider) {
+            PollWithRetries throttlingRetries, GetStateStoreByTableId stateStoreProvider) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
+        this.throttlingRetries = throttlingRetries;
         this.stateStoreProvider = stateStoreProvider;
     }
 
@@ -63,8 +66,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
                 job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
         StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         // If transaction log DynamoDB table is scaling up, wait with retries limited over all assignment wait attempts
-        PollWithRetries throttlingRetries = PollWithRetries.builder()
-                .pollIntervalAndTimeout(Duration.ofMinutes(1), Duration.ofMinutes(10))
+        PollWithRetries throttlingRetries = this.throttlingRetries.toBuilder()
                 .applyMaxPollsOverall()
                 .build();
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {

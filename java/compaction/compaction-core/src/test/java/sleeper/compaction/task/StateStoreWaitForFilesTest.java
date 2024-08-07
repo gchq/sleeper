@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.task;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -25,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
@@ -37,7 +39,11 @@ import java.util.function.DoubleSupplier;
 import static java.util.stream.Collectors.reducing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES;
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -110,7 +116,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        StateStoreWaitForFiles waiter = waitForFilesWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
+        StateStoreWaitForFiles waiter = waiterWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
         assertThatThrownBy(() -> waiter.wait(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
@@ -135,7 +141,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        StateStoreWaitForFiles waiter = waitForFilesWithAttempts(
+        StateStoreWaitForFiles waiter = waiterWithAttempts(
                 JOB_ASSIGNMENT_WAIT_ATTEMPTS, constantJitterFraction(0.5));
         assertThatThrownBy(() -> waiter.wait(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
@@ -153,6 +159,30 @@ public class StateStoreWaitForFilesTest {
                 .isEqualTo(Duration.ofMinutes(3));
     }
 
+    @Test
+    void shouldRetryTwiceWhenThrottledQueryingStateStore() throws Exception {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        stateStore.addFile(file);
+        CompactionJob job = jobForFileAtRoot(file);
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+
+        AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
+        throttlingException.setErrorCode("ThrottlingException");
+        StateStoreException exception = new StateStoreException("Throttled", throttlingException);
+        StateStore mock = mock(StateStore.class);
+        when(mock.getFileReferences())
+                .thenThrow(exception).thenThrow(exception)
+                .thenReturn(stateStore.getFileReferences());
+
+        // When
+        waiterWithAttempts(1, mock).wait(job);
+
+        // Then
+        assertThat(foundWaits).containsExactly(
+                Duration.ofMinutes(1), Duration.ofMinutes(1));
+    }
+
     private Duration foundWaitsTotal() {
         return foundWaits.stream()
                 .collect(reducing((Duration a, Duration b) -> a.plus(b)))
@@ -164,18 +194,27 @@ public class StateStoreWaitForFilesTest {
     }
 
     private void waitForFilesWithAttempts(int attempts, CompactionJob job) throws Exception {
-        waitForFilesWithAttempts(attempts).wait(job);
+        waiterWithAttempts(attempts).wait(job);
     }
 
-    private StateStoreWaitForFiles waitForFilesWithAttempts(int attempts) {
-        return waitForFilesWithAttempts(attempts, fixJitterSeed());
+    private StateStoreWaitForFiles waiterWithAttempts(int attempts) {
+        return waiterWithAttempts(attempts, fixJitterSeed());
     }
 
-    private StateStoreWaitForFiles waitForFilesWithAttempts(int attempts, DoubleSupplier jitter) {
+    private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter) {
+        return waiterWithAttempts(attempts, jitter, stateStore);
+    }
+
+    private StateStoreWaitForFiles waiterWithAttempts(int attempts, StateStore stateStore) {
+        return waiterWithAttempts(attempts, fixJitterSeed(), stateStore);
+    }
+
+    private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter, StateStore stateStore) {
         return new StateStoreWaitForFiles(attempts,
-                new ExponentialBackoffWithJitter(
-                        StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,
-                        jitter, waiter),
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
+                JOB_ASSIGNMENT_THROTTLING_RETRIES.toBuilder()
+                        .sleepInInterval(millis -> foundWaits.add(Duration.ofMillis(millis)))
+                        .build(),
                 Map.of(tableProperties.get(TABLE_ID), stateStore)::get);
     }
 
