@@ -33,7 +33,7 @@ import java.time.Instant;
 public class StateStoreWaitForFiles implements WaitForFileAssignment {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
     public static final int JOB_ASSIGNMENT_WAIT_ATTEMPTS = 10;
-    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(2, 60);
+    public static final WaitRange JOB_ASSIGNMENT_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(4, 60);
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
     private final GetStateStoreByTableId stateStoreProvider;

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
 
+import static java.util.stream.Collectors.reducing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
@@ -113,15 +114,17 @@ public class StateStoreWaitForFilesTest {
         assertThatThrownBy(() -> waiter.wait(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
-                Duration.parse("PT1.461S"),
-                Duration.parse("PT0.962S"),
-                Duration.parse("PT5.099S"),
-                Duration.parse("PT8.806S"),
-                Duration.parse("PT19.121S"),
+                Duration.parse("PT2.923S"),
+                Duration.parse("PT1.924S"),
+                Duration.parse("PT10.198S"),
+                Duration.parse("PT17.613S"),
+                Duration.parse("PT35.852S"),
                 Duration.parse("PT19.993S"),
                 Duration.parse("PT23.111S"),
                 Duration.parse("PT59.09S"),
                 Duration.parse("PT52.75S"));
+        assertThat(foundWaitsTotal())
+                .isEqualTo(Duration.parse("PT3M43.454S"));
     }
 
     @Test
@@ -137,7 +140,6 @@ public class StateStoreWaitForFilesTest {
         assertThatThrownBy(() -> waiter.wait(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
-                Duration.ofSeconds(1),
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(4),
                 Duration.ofSeconds(8),
@@ -145,7 +147,16 @@ public class StateStoreWaitForFilesTest {
                 Duration.ofSeconds(30),
                 Duration.ofSeconds(30),
                 Duration.ofSeconds(30),
+                Duration.ofSeconds(30),
                 Duration.ofSeconds(30));
+        assertThat(foundWaitsTotal())
+                .isEqualTo(Duration.ofMinutes(3));
+    }
+
+    private Duration foundWaitsTotal() {
+        return foundWaits.stream()
+                .collect(reducing((Duration a, Duration b) -> a.plus(b)))
+                .orElse(Duration.ZERO);
     }
 
     private CompactionJob jobForFileAtRoot(FileReference... files) {
