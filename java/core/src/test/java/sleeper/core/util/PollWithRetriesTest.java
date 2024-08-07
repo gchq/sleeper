@@ -30,10 +30,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PollWithRetriesTest {
 
-    private List<Long> foundSleeps = new ArrayList<>();
+    private List<Duration> foundSleeps = new ArrayList<>();
 
     private PollWithRetries poll(Consumer<PollWithRetries.Builder> config) {
-        PollWithRetries.Builder builder = PollWithRetries.builder().sleepInInterval(foundSleeps::add);
+        PollWithRetries.Builder builder = PollWithRetries.builder()
+                .sleepInInterval(millis -> foundSleeps.add(Duration.ofMillis(millis)));
         config.accept(builder);
         return builder.build();
     }
@@ -53,7 +54,7 @@ class PollWithRetriesTest {
 
             // Then
             assertThat(iterator).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
         }
 
         @Test
@@ -81,7 +82,7 @@ class PollWithRetriesTest {
                     .isInstanceOf(PollWithRetries.TimedOutException.class)
                     .hasMessage("Timed out after 2 tries waiting for 0.2s until iterator returns true");
             assertThat(iterator).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
         }
 
         @Test
@@ -98,7 +99,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L, 100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100), Duration.ofMillis(100));
         }
     }
 
@@ -135,7 +136,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator).isExhausted();
             assertThat(result).isEqualTo("b");
-            assertThat(foundSleeps).containsExactly(100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
         }
 
         @Test
@@ -184,7 +185,7 @@ class PollWithRetriesTest {
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
         }
 
         @Test
@@ -202,7 +203,7 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
         }
 
         @Test
@@ -220,7 +221,25 @@ class PollWithRetriesTest {
             // Then
             assertThat(iterator1).isExhausted();
             assertThat(iterator2).isExhausted();
-            assertThat(foundSleeps).containsExactly(100L, 100L);
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100), Duration.ofMillis(100));
+        }
+
+        @Test
+        void shouldResetPollAttemptsOnCopy() throws Exception {
+            // Given
+            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
+                    .maxPolls(2).applyMaxPollsOverall());
+            Iterator<Boolean> iterator1 = List.of(false, true).iterator();
+            Iterator<Boolean> iterator2 = List.of(false, true).iterator();
+            poll.pollUntil("true is returned", iterator1::next);
+
+            // When
+            poll.toBuilder().build().pollUntil("true is returned", iterator2::next);
+
+            // Then
+            assertThat(iterator1).isExhausted();
+            assertThat(iterator2).isExhausted();
+            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100), Duration.ofMillis(100));
         }
     }
 }
