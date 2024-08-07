@@ -20,7 +20,6 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -112,7 +111,12 @@ public class PartitionFactory {
      * @return          builder for the new parent partition
      */
     public Partition.Builder parentJoining(String parentId, Partition.Builder left, Partition.Builder right) {
-        return parent(Arrays.asList(left, right), parentId, parentRegion(left.getRegion(), right.getRegion()));
+        left.parentPartitionId(parentId);
+        right.parentPartitionId(parentId);
+        return partition(parentId, parentRegion(left.getRegion(), right.getRegion()))
+                .childPartitionIds(List.of(left.getId(), right.getId()))
+                .leafPartition(false)
+                .dimension(0);
     }
 
     /**
@@ -126,17 +130,6 @@ public class PartitionFactory {
         return PartitionsFromSplitPoints
                 .createRootPartitionThatIsLeaf(schema, rangeFactory)
                 .id(id);
-    }
-
-    private Partition.Builder parent(List<Partition.Builder> children, String id, Region region) {
-        Partition.Builder parent = partition(id, region)
-                .childPartitionIds(children.stream()
-                        .map(Partition.Builder::getId)
-                        .collect(Collectors.toList()))
-                .leafPartition(false)
-                .dimension(0);
-        children.forEach(child -> child.parentPartitionId(id));
-        return parent;
     }
 
     private Region parentRegion(Region left, Region right) {

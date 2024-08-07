@@ -26,6 +26,8 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PartitionsBuilderTest {
 
@@ -123,8 +125,7 @@ class PartitionsBuilderTest {
 
     @Test
     void shouldBuildSinglePartitionTree() {
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Schema schema = schemaWithKey("key");
         PartitionTree tree = new PartitionsBuilder(schema)
                 .singlePartition("A")
                 .buildTree();
@@ -133,5 +134,26 @@ class PartitionsBuilderTest {
                 .containsExactly(tree.getRootPartition());
         assertThat(tree.getPartition("A"))
                 .isEqualTo(tree.getRootPartition());
+    }
+
+    @Test
+    void shouldFailSpecifyingRootTwice() {
+        Schema schema = schemaWithKey("key");
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root");
+
+        assertThatThrownBy(() -> builder.singlePartition("root"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFailSpecifyingSameChildTwice() {
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "A", "B", "aaa");
+
+        assertThatThrownBy(() -> builder.splitToNewChildren("root", "B", "C", "bbb"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -104,6 +104,9 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * @return          the builder
      */
     public PartitionsBuilderSplitsFirst parentJoining(String parentId, String leftId, String rightId) {
+        if (partitionById.containsKey(parentId)) {
+            throw new IllegalArgumentException("Partition specified twice: " + parentId);
+        }
         Partition.Builder left = partitionById(leftId);
         Partition.Builder right = partitionById(rightId);
         put(factory.parentJoining(parentId, left, right));

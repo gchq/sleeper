@@ -100,7 +100,7 @@ public class PartitionsBuilder {
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
         PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
-        splitResult.getChildren().forEach(this::put);
+        splitResult.getChildren().forEach(this::add);
         put(splitResult.getParent());
         return this;
     }
@@ -142,6 +142,13 @@ public class PartitionsBuilder {
 
     public Schema getSchema() {
         return schema;
+    }
+
+    protected Partition.Builder add(Partition.Builder partition) {
+        if (partitionById.containsKey(partition.getId())) {
+            throw new IllegalArgumentException("Partition specified twice: " + partition.getId());
+        }
+        return put(partition);
     }
 
     protected Partition.Builder put(Partition.Builder partition) {

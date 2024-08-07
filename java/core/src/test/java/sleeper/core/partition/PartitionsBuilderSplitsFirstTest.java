@@ -151,12 +151,27 @@ public class PartitionsBuilderSplitsFirstTest {
 
     @Test
     void shouldFailWhenStartingFromSplitsThenFromRoot() {
+        // Given
         PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schemaWithKey("key", new StringType()),
                 List.of("A", "B"), List.of("aaa"));
 
+        // When / Then
         assertThatThrownBy(() -> builder.rootFirst("root"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void shouldFailSpecifyingSameParentTwice() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionsBuilderSplitsFirst builder = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C"),
+                List.of("aaa", "bbb"))
+                .parentJoining("D", "A", "B");
+
+        // When / Then
+        assertThatThrownBy(() -> builder.parentJoining("D", "B", "C"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
