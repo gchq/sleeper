@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
@@ -107,7 +109,8 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        assertThatThrownBy(() -> waitForFilesWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS, job))
+        StateStoreWaitForFiles waiter = waitForFilesWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
+        assertThatThrownBy(() -> waiter.wait(job))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
                 Duration.parse("PT1.461S"),
@@ -121,17 +124,48 @@ public class StateStoreWaitForFilesTest {
                 Duration.parse("PT52.75S"));
     }
 
+    @Test
+    void shouldWaitWithAverageExponentialBackoff() throws Exception {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        stateStore.addFile(file);
+        CompactionJob job = jobForFileAtRoot(file);
+
+        // When / Then
+        StateStoreWaitForFiles waiter = waitForFilesWithAttempts(
+                JOB_ASSIGNMENT_WAIT_ATTEMPTS, constantJitterFraction(0.5));
+        assertThatThrownBy(() -> waiter.wait(job))
+                .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
+        assertThat(foundWaits).containsExactly(
+                Duration.ofSeconds(1),
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(4),
+                Duration.ofSeconds(8),
+                Duration.ofSeconds(16),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(30));
+    }
+
     private CompactionJob jobForFileAtRoot(FileReference... files) {
         return new CompactionJobFactory(instanceProperties, tableProperties).createCompactionJob(List.of(files), "root");
     }
 
     private void waitForFilesWithAttempts(int attempts, CompactionJob job) throws Exception {
-        new StateStoreWaitForFiles(attempts,
+        waitForFilesWithAttempts(attempts).wait(job);
+    }
+
+    private StateStoreWaitForFiles waitForFilesWithAttempts(int attempts) {
+        return waitForFilesWithAttempts(attempts, fixJitterSeed());
+    }
+
+    private StateStoreWaitForFiles waitForFilesWithAttempts(int attempts, DoubleSupplier jitter) {
+        return new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(
                         StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE,
-                        fixJitterSeed(), waiter),
-                Map.of(tableProperties.get(TABLE_ID), stateStore)::get)
-                .wait(job);
+                        jitter, waiter),
+                Map.of(tableProperties.get(TABLE_ID), stateStore)::get);
     }
 
     protected void actionAfterWait(WaitAction action) throws Exception {
