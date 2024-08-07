@@ -51,15 +51,6 @@ public interface PartitionSplittingProperty {
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_RESERVED_CONCURRENCY = Index.propertyBuilder("sleeper.partition.splitting.finder.reserved.concurrency")
-            .description("The number of lambda instances to reserve from your AWS account's quota for finding " +
-                    "partitions to split. Note that this will not provision instances until they are needed. Each " +
-                    "time partition splitting runs, a separate lambda invocation will be made for each Sleeper " +
-                    "table, to check for partitions that need splitting. If the reserved concurrency is less than " +
-                    "the number of Sleeper tables in the instance, these invocations will queue up.")
-            .defaultValue("2")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.memory")
             .description("The amount of memory in MB for the lambda function used to split partitions.")
             .defaultValue("2048")
