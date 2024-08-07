@@ -99,7 +99,7 @@ public class KryoSerializerTest {
                         .mapToObj(i -> new Field("key-" + i, new LongType()))
                         .collect(Collectors.toUnmodifiableList()))
                 .build())
-                .rootFirst("test-partition").build();
+                .rootFirst("test-partition");
     }
 
     private static Kryo kryo() {
