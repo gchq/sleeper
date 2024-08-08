@@ -20,6 +20,8 @@ import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +41,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Finds a split point for a partition by examining the sketches for each file.
+ */
 public class FindPartitionSplitPoint {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
@@ -196,6 +202,10 @@ public class FindPartitionSplitPoint {
 
     public interface SketchesLoader {
         Sketches load(String filename) throws IOException;
+    }
+
+    public static SketchesLoader loadSketchesFromFile(Schema schema, Configuration conf) {
+        return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
     }
 
 }

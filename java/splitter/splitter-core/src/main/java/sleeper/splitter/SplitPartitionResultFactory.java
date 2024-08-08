@@ -15,8 +15,6 @@
  */
 package sleeper.splitter;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +24,8 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,22 +49,20 @@ import java.util.stream.Collectors;
  * contradiction.
  * <p>
  */
-public class SplitMultiDimensionalPartitionImpl {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SplitMultiDimensionalPartitionImpl.class);
+public class SplitPartitionResultFactory {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionResultFactory.class);
 
-    private final StateStore stateStore;
     private final Schema schema;
     private final RangeFactory rangeFactory;
     private final Supplier<String> idSupplier;
 
-    public SplitMultiDimensionalPartitionImpl(StateStore stateStore, Schema schema, Supplier<String> idSupplier) {
-        this.stateStore = stateStore;
+    public SplitPartitionResultFactory(Schema schema, Supplier<String> idSupplier) {
         this.schema = schema;
         this.rangeFactory = new RangeFactory(schema);
         this.idSupplier = idSupplier;
     }
 
-    public void splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
+    public SplitPartitionResult splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
         Field fieldToSplitOn = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
@@ -113,20 +105,12 @@ public class SplitMultiDimensionalPartitionImpl {
         LOGGER.info("New partition: {}", leftChild);
         LOGGER.info("New partition: {}", rightChild);
 
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition, leftChild, rightChild);
+        return new SplitPartitionResult(partition, leftChild, rightChild);
     }
 
     private List<Range> removeRange(List<Range> inputRanges, String rangeToRemove) {
         return inputRanges.stream()
                 .filter(r -> !r.getFieldName().equals(rangeToRemove))
                 .collect(Collectors.toList());
-    }
-
-    public interface SketchesLoader {
-        Sketches load(String filename) throws IOException;
-    }
-
-    public static SketchesLoader loadSketchesFromFile(Schema schema, Configuration conf) {
-        return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
     }
 }

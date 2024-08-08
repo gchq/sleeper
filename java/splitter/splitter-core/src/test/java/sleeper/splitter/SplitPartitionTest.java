@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.Sketches;
-import sleeper.splitter.SplitMultiDimensionalPartitionImpl.SketchesLoader;
+import sleeper.splitter.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
