@@ -43,9 +43,13 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits sendNumbered(LongStream stream, BiConsumer<Long, SystemTestStateStoreFakeCommits> sendCommits) {
-        sendCommitMessages.accept(stream.mapToObj(i -> i).flatMap(i -> {
+        return sendBatched(stream.mapToObj(i -> committer -> sendCommits.accept(i, committer)));
+    }
+
+    public SystemTestStateStoreFakeCommits sendBatched(Stream<Consumer<SystemTestStateStoreFakeCommits>> sendCommits) {
+        sendCommitMessages.accept(sendCommits.flatMap(sender -> {
             List<Stream<StateStoreCommitMessage>> messages = new ArrayList<>();
-            sendCommits.accept(i, new SystemTestStateStoreFakeCommits(instance, messages::add));
+            sender.accept(new SystemTestStateStoreFakeCommits(instance, messages::add));
             return messages.stream().flatMap(s -> s);
         }));
         return this;

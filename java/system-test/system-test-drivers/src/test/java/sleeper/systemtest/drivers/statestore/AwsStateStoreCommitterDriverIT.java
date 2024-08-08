@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitRequestDeserialiser;
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
@@ -34,10 +33,14 @@ import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.statestore.SystemTestStateStoreFakeCommits;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -68,7 +71,7 @@ public class AwsStateStoreCommitterDriverIT {
 
         // Then
         String tableId = sleeper.tableProperties().get(TABLE_ID);
-        assertThat(messagesOnQueue(sleeper, STATESTORE_COMMITTER_QUEUE_URL))
+        assertThat(receiveCommitRequests(sleeper))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
                         StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
@@ -77,12 +80,50 @@ public class AwsStateStoreCommitterDriverIT {
                                 .build())));
     }
 
-    private Stream<Message> messagesOnQueue(SleeperSystemTest sleeper, InstanceProperty queueUrlProperty) {
+    @Test
+    void shouldSendMoreCommitsThanBatchSize(SleeperSystemTest sleeper) {
+        // When
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        List<FileReference> files = IntStream.rangeClosed(1, 11)
+                .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                .collect(toUnmodifiableList());
+        sleeper.partitioning().setPartitions(partitions);
+        sleeper.stateStore().fakeCommits().sendBatched(files.stream().map(this::addFiles));
+
+        // Then
+        String tableId = sleeper.tableProperties().get(TABLE_ID);
+        assertThat(receiveCommitRequestsForBatches(sleeper, 2))
+                .extracting(this::getMessageGroupId, this::readCommitRequest)
+                .containsExactlyElementsOf(files.stream().map(file -> tuple(tableId,
+                        StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
+                                .tableId(tableId)
+                                .fileReferences(List.of(file))
+                                .build())))
+                        .collect(toUnmodifiableList()));
+    }
+
+    private List<Message> receiveCommitRequests(SleeperSystemTest sleeper) {
         return sqs.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(sleeper.instanceProperties().get(queueUrlProperty))
+                .withQueueUrl(sleeper.instanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withAttributeNames("MessageGroupId")
-                .withWaitTimeSeconds(2))
-                .getMessages().stream();
+                .withWaitTimeSeconds(2)
+                .withVisibilityTimeout(60)
+                .withMaxNumberOfMessages(10))
+                .getMessages();
+    }
+
+    private List<Message> receiveCommitRequestsForBatches(SleeperSystemTest sleeper, int batches) {
+        List<Message> allMessages = new ArrayList<>();
+        for (int i = 0; i < batches; i++) {
+            List<Message> messages = receiveCommitRequests(sleeper);
+            if (messages.isEmpty()) {
+                break;
+            } else {
+                allMessages.addAll(messages);
+            }
+        }
+        return allMessages;
     }
 
     private String getMessageGroupId(Message message) {
@@ -92,6 +133,10 @@ public class AwsStateStoreCommitterDriverIT {
     private StateStoreCommitRequest readCommitRequest(Message message) {
         return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider())
                 .fromJson(message.getBody());
+    }
+
+    private Consumer<SystemTestStateStoreFakeCommits> addFiles(FileReference... files) {
+        return committer -> committer.addFiles(List.of(files));
     }
 
 }
