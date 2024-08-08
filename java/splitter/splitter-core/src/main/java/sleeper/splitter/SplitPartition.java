@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
+import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadSketchesFromFile;
 
 /**
  * Splits a partition. Delegates to {@link SplitMultiDimensionalPartitionImpl}.
@@ -42,7 +42,7 @@ public class SplitPartition {
     public SplitPartition(StateStore stateStore,
             Schema schema,
             Configuration conf) {
-        this(stateStore, schema, loadFromFile(schema, conf));
+        this(stateStore, schema, loadSketchesFromFile(schema, conf));
     }
 
     public SplitPartition(StateStore stateStore,

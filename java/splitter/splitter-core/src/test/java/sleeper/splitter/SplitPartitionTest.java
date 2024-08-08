@@ -521,11 +521,11 @@ public class SplitPartitionTest {
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    public SketchesLoader loadFromMap() {
+    public SketchesLoader loadSketchesFromMap() {
         return (filename) -> fileToSketchMap.get(filename);
     }
 
@@ -536,7 +536,7 @@ public class SplitPartitionTest {
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 

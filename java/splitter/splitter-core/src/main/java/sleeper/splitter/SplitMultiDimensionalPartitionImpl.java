@@ -302,7 +302,7 @@ public class SplitMultiDimensionalPartitionImpl {
         Sketches load(String filename) throws IOException;
     }
 
-    public static SketchesLoader loadFromFile(Schema schema, Configuration conf) {
+    public static SketchesLoader loadSketchesFromFile(Schema schema, Configuration conf) {
         return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
     }
 }
