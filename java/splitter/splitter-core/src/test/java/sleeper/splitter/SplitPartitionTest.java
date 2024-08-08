@@ -55,7 +55,7 @@ public class SplitPartitionTest {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
 
-    private Map<String, Sketches> fileToSketchMap = new HashMap<>();
+    private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
 
     @Nested
     @DisplayName("Skip split")
