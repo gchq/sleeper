@@ -525,10 +525,6 @@ public class SplitPartitionTest {
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    public SketchesLoader loadSketchesFromMap() {
-        return (filename) -> fileToSketchMap.get(filename);
-    }
-
     private void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
@@ -538,6 +534,10 @@ public class SplitPartitionTest {
                 .collect(Collectors.toList());
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
+    }
+
+    public SketchesLoader loadSketchesFromMap() {
+        return (filename) -> fileToSketchMap.get(filename);
     }
 
     private static Supplier<String> generateIds(String... ids) {
