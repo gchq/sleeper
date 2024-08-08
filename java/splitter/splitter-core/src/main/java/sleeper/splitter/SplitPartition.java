@@ -25,6 +25,7 @@ import sleeper.splitter.SplitMultiDimensionalPartitionImpl.SketchesLoader;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -62,7 +63,14 @@ public class SplitPartition {
     }
 
     public void splitPartition(Partition partition, List<String> fileNames) throws StateStoreException, IOException {
-        new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, idSupplier, sketchesLoader)
-                .splitPartition();
+        SplitMultiDimensionalPartitionImpl impl = new SplitMultiDimensionalPartitionImpl(stateStore, schema, idSupplier);
+        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesLoader::load);
+        for (int dimension = 0; dimension < schema.getRowKeyFields().size(); dimension++) {
+            Optional<Object> splitPointOpt = findSplitPoint.splitPointForDimension(dimension);
+            if (splitPointOpt.isPresent()) {
+                impl.splitPartition(partition, splitPointOpt.get(), dimension);
+                return;
+            }
+        }
     }
 }

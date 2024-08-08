@@ -15,11 +15,6 @@
  */
 package sleeper.splitter;
 
-import com.facebook.collections.ByteArray;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -31,11 +26,6 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.sketches.Sketches;
@@ -44,10 +34,7 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -73,186 +60,17 @@ public class SplitMultiDimensionalPartitionImpl {
 
     private final StateStore stateStore;
     private final Schema schema;
-    private final List<PrimitiveType> rowKeyTypes;
-    private final Partition partition;
-    private final List<String> fileNames; // These should be active files for the partition
     private final RangeFactory rangeFactory;
     private final Supplier<String> idSupplier;
-    private final SketchesLoader sketchesLoader;
 
-    public SplitMultiDimensionalPartitionImpl(StateStore stateStore,
-            Schema schema,
-            Partition partition,
-            List<String> fileNames,
-            Supplier<String> idSupplier,
-            SketchesLoader sketchesLoader) {
+    public SplitMultiDimensionalPartitionImpl(StateStore stateStore, Schema schema, Supplier<String> idSupplier) {
         this.stateStore = stateStore;
         this.schema = schema;
-        this.rowKeyTypes = schema.getRowKeyTypes();
-        this.partition = partition;
-        this.fileNames = fileNames;
         this.rangeFactory = new RangeFactory(schema);
         this.idSupplier = idSupplier;
-        this.sketchesLoader = sketchesLoader;
     }
 
-    void splitPartition() throws StateStoreException, IOException {
-        for (int dimension = 0; dimension < rowKeyTypes.size(); dimension++) {
-            Optional<Object> splitPointOpt = splitPointForDimension(dimension);
-            if (splitPointOpt.isPresent()) {
-                splitPartition(partition, splitPointOpt.get(), dimension);
-                return;
-            }
-        }
-    }
-
-    public Optional<Object> splitPointForDimension(int dimension) throws IOException {
-        PrimitiveType rowKeyType = rowKeyTypes.get(dimension);
-        LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
-                schema.getRowKeyFieldNames().get(dimension), rowKeyType, dimension);
-        if (rowKeyType instanceof IntType) {
-            return splitPointForDimension(getMinMedianMaxIntKey(dimension), dimension);
-        } else if (rowKeyType instanceof LongType) {
-            return splitPointForDimension(getMinMedianMaxLongKey(dimension), dimension);
-        } else if (rowKeyType instanceof StringType) {
-            return splitPointForDimension(getMinMedianMaxStringKey(dimension), dimension);
-        } else if (rowKeyType instanceof ByteArrayType) {
-            return splitPointForDimension(getMinMedianMaxByteArrayKey(dimension), dimension, ByteArray::getArray);
-        } else {
-            throw new IllegalArgumentException("Unknown type " + rowKeyType);
-        }
-    }
-
-    private <T extends Comparable<T>> Optional<Object> splitPointForDimension(
-            Triple<T, T, T> minMedianMax, int dimension) {
-        return splitPointForDimension(minMedianMax, dimension, median -> median);
-    }
-
-    private <T extends Comparable<T>> Optional<Object> splitPointForDimension(
-            Triple<T, T, T> minMedianMax, int dimension, Function<T, Object> getValue) {
-        T min = minMedianMax.getLeft();
-        T median = minMedianMax.getMiddle();
-        T max = minMedianMax.getRight();
-        LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
-        if (min.compareTo(max) > 0) {
-            throw new IllegalStateException("Min > max");
-        }
-        if (min.compareTo(median) < 0 && median.compareTo(max) < 0) {
-            LOGGER.debug("For dimension {} min < median && median < max", dimension);
-            return Optional.of(getValue.apply(median));
-        } else {
-            LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
-            return Optional.empty();
-        }
-    }
-
-    private Triple<Integer, Integer, Integer> getMinMedianMaxIntKey(int dimension) throws IOException {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<Integer>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<Integer> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<Integer> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<Integer> sketch = union.getResult();
-
-        Integer min = sketch.getMinValue();
-        Integer median = sketch.getQuantile(0.5D);
-        Integer max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private Triple<Long, Long, Long> getMinMedianMaxLongKey(int dimension) throws IOException {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<Long>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<Long> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<Long> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<Long> sketch = union.getResult();
-
-        Long min = sketch.getMinValue();
-        Long median = sketch.getQuantile(0.5D);
-        Long max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private Triple<String, String, String> getMinMedianMaxStringKey(int dimension) throws IOException {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<String>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<String> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<String> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<String> sketch = union.getResult();
-
-        String min = sketch.getMinValue();
-        String median = sketch.getQuantile(0.5D);
-        String max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private Triple<ByteArray, ByteArray, ByteArray> getMinMedianMaxByteArrayKey(int dimension) throws IOException {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<ByteArray>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<ByteArray> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<ByteArray> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<ByteArray> sketch = union.getResult();
-
-        ByteArray min = sketch.getMinValue();
-        ByteArray median = sketch.getQuantile(0.5D);
-        ByteArray max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private List<Range> removeRange(List<Range> inputRanges, String rangeToRemove) {
-        return inputRanges.stream()
-                .filter(r -> !r.getFieldName().equals(rangeToRemove))
-                .collect(Collectors.toList());
-    }
-
-    private void splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
+    public void splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
         Field fieldToSplitOn = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
@@ -296,6 +114,12 @@ public class SplitMultiDimensionalPartitionImpl {
         LOGGER.info("New partition: {}", rightChild);
 
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition, leftChild, rightChild);
+    }
+
+    private List<Range> removeRange(List<Range> inputRanges, String rangeToRemove) {
+        return inputRanges.stream()
+                .filter(r -> !r.getFieldName().equals(rangeToRemove))
+                .collect(Collectors.toList());
     }
 
     public interface SketchesLoader {
