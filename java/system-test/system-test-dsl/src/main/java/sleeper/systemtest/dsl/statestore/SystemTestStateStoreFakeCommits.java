@@ -31,20 +31,20 @@ import java.util.stream.Stream;
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
-    private final Consumer<Stream<String>> sendCommitMessages;
+    private final Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         this(context.instance(), buildCommitSender(context));
     }
 
-    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<String>> sendCommitMessages) {
+    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages) {
         this.instance = instance;
         this.sendCommitMessages = sendCommitMessages;
     }
 
     public SystemTestStateStoreFakeCommits sendNumbered(LongStream stream, BiConsumer<Long, SystemTestStateStoreFakeCommits> sendCommits) {
         sendCommitMessages.accept(stream.mapToObj(i -> i).flatMap(i -> {
-            List<Stream<String>> messages = new ArrayList<>();
+            List<Stream<StateStoreCommitMessage>> messages = new ArrayList<>();
             sendCommits.accept(i, new SystemTestStateStoreFakeCommits(instance, messages::add));
             return messages.stream().flatMap(s -> s);
         }));
@@ -52,29 +52,30 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits addPartitionFile(String partitionId, String filename, long records) {
-        addFiles(List.of(FileReference.builder()
+        return addFiles(List.of(FileReference.builder()
                 .partitionId(partitionId)
                 .filename(filename)
                 .numberOfRecords(records)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build()));
+    }
+
+    public SystemTestStateStoreFakeCommits addFiles(List<FileReference> files) {
+        String tableId = instance.getTableStatus().getTableUniqueId();
+        sendOne(tableId, new IngestAddFilesCommitRequestSerDe().toJson(
+                IngestAddFilesCommitRequest.builder()
+                        .tableId(tableId)
+                        .fileReferences(files)
+                        .build()));
         return this;
     }
 
-    private void addFiles(List<FileReference> files) {
-        sendOne(new IngestAddFilesCommitRequestSerDe().toJson(
-                IngestAddFilesCommitRequest.builder()
-                        .tableId(instance.getTableStatus().getTableUniqueId())
-                        .fileReferences(files)
-                        .build()));
+    private void sendOne(String tableId, String messageBody) {
+        sendCommitMessages.accept(Stream.of(StateStoreCommitMessage.tableIdAndBody(tableId, messageBody)));
     }
 
-    private void sendOne(String message) {
-        sendCommitMessages.accept(Stream.of(message));
-    }
-
-    private static Consumer<Stream<String>> buildCommitSender(SystemTestContext context) {
+    private static Consumer<Stream<StateStoreCommitMessage>> buildCommitSender(SystemTestContext context) {
         StateStoreCommitterDriver driver = context.instance().adminDrivers().stateStoreCommitter(context);
         return driver::sendCommitMessages;
     }
