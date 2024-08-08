@@ -279,7 +279,7 @@ public class SplitPartitionIT {
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
             // When
-            splitSinglePartitionFromMap(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -297,7 +297,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             LongStream.range(100L * i, 100L * (i + 1))
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
@@ -320,7 +320,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", String.format("A%s%s", i, r))))));
 
@@ -343,7 +343,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", new byte[]{(byte) r})))));
 
@@ -372,7 +372,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
@@ -399,7 +399,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", 10,
@@ -426,7 +426,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
@@ -453,7 +453,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     // The majority of the values are 10; so min should equal median
                                     .mapToObj(r -> new Record(Map.of(
@@ -482,7 +482,7 @@ public class SplitPartitionIT {
                     .buildList());
 
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) r},
@@ -509,7 +509,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) -100},
@@ -579,16 +579,11 @@ public class SplitPartitionIT {
     }
 
     private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(), generateIds);
         splitSinglePartition(stateStore, partitionSplitter);
     }
 
-    private void splitSinglePartitionFromMap(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(schema, new Configuration()), generateIds);
-        splitSinglePartition(stateStore, partitionSplitter);
-    }
-
-    public SketchesLoader loadFromMap(Schema schema, Configuration conf) {
+    public SketchesLoader loadFromMap() {
         return (filename) -> fileToSketchMap.get(filename);
     }
 
