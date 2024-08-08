@@ -15,12 +15,9 @@
  */
 package sleeper.splitter;
 
-import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -35,21 +32,12 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.SplitMultiDimensionalPartitionImpl.SketchesLoader;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -60,27 +48,14 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
-import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
 
-public class SplitPartitionIT {
-    @TempDir
-    public Path folder;
-
+public class SplitPartitionTest {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
 
     private Map<String, Sketches> fileToSketchMap = new HashMap<>();
-    private String localDir;
-    private String filePathPrefix;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        localDir = createTempDirectory(folder, null).toString();
-        filePathPrefix = createTempDirectory(folder, null).toString();
-    }
 
     @Nested
     @DisplayName("Skip split")
@@ -106,7 +81,7 @@ public class SplitPartitionIT {
                         record.put("key", r);
                         records.add(record);
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -148,7 +123,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -175,11 +150,6 @@ public class SplitPartitionIT {
             for (Partition partition : tree.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
                     List<Record> records = new ArrayList<>();
-                    for (int r = 0; r < 100; r++) {
-                        Record record = new Record();
-                        record.put("key", new byte[]{(byte) r});
-                        records.add(record);
-                    }
                     if (partition.getId().equals("id1")) {
                         int j = 0;
                         for (byte r = (byte) 0;
@@ -202,7 +172,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -251,7 +221,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -527,22 +497,6 @@ public class SplitPartitionIT {
         }
     }
 
-    private static void ingestRecordsFromIterator(
-            Schema schema, StateStore stateStore, String localDir,
-            String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
-        ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
-        IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
-                stateStore, schema,
-                ArrayListRecordBatchFactory.builder()
-                        .localWorkingDirectory(localDir)
-                        .maxNoOfRecordsInMemory(1000000)
-                        .maxNoOfRecordsInLocalStore(100000000)
-                        .parquetConfiguration(parquetConfiguration)
-                        .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
-        new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
-    }
-
     private void ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
         Sketches sketches = Sketches.from(schema);
         AtomicLong recordCount = new AtomicLong();
@@ -562,39 +516,27 @@ public class SplitPartitionIT {
         fileToSketchMap.put(recordFileReference.getFilename(), sketches);
     }
 
-    private void ingestFileFromRecords(Schema schema, StateStore stateStore, Stream<Record> recordsStream) {
-        try {
-            ingestRecordsFromIterator(schema, stateStore, localDir, filePathPrefix, recordsStream.iterator());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void splitSinglePartition(StateStore stateStore, SplitPartition partitionSplitter) throws Exception {
+    private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        partitionSplitter.splitPartition(partition, fileNames);
-    }
-
-    private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(), generateIds);
-        splitSinglePartition(stateStore, partitionSplitter);
+        partitionSplitter.splitPartition(partition, fileNames);
     }
 
     public SketchesLoader loadFromMap() {
         return (filename) -> fileToSketchMap.get(filename);
     }
 
-    private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
+    private void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
