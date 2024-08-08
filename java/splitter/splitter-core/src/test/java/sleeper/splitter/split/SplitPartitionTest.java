@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter;
+package sleeper.splitter.split;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.Sketches;
-import sleeper.splitter.FindPartitionSplitPoint.SketchesLoader;
+import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;

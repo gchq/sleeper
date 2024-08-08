@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter;
+package sleeper.splitter.split;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -21,7 +21,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.FindPartitionSplitPoint.SketchesLoader;
+import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.splitter.FindPartitionSplitPoint.loadSketchesFromFile;
+import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one

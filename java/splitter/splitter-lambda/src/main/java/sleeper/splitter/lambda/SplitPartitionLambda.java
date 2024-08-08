@@ -33,9 +33,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.splitter.SplitPartition;
-import sleeper.splitter.SplitPartitionJobDefinition;
-import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.find.SplitPartitionJobDefinition;
+import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.split.SplitPartition;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
