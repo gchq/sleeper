@@ -99,12 +99,6 @@ public class SplitPartitionResultFactory {
                 .childPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()))
                 .dimension(dimension).build();
 
-        LOGGER.info("Updating StateStore:");
-        LOGGER.info("Split partition ({}) is marked as not a leaf partition, split on field {}",
-                partition.getId(), fieldToSplitOn.getName());
-        LOGGER.info("New partition: {}", leftChild);
-        LOGGER.info("New partition: {}", rightChild);
-
         return new SplitPartitionResult(partition, leftChild, rightChild);
     }
 

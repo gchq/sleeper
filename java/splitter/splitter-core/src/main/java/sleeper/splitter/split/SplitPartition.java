@@ -16,8 +16,11 @@
 package sleeper.splitter.split;
 
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -45,6 +48,8 @@ import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFil
  * contradiction.
  */
 public class SplitPartition {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SplitPartition.class);
+
     private final StateStore stateStore;
     private final Schema schema;
     private final SketchesLoader sketchesLoader;
@@ -79,9 +84,24 @@ public class SplitPartition {
             if (splitPointOpt.isPresent()) {
                 SplitPartitionResult result = new SplitPartitionResultFactory(schema, idSupplier)
                         .splitPartition(partition, splitPointOpt.get(), dimension);
-                stateStore.atomicallyUpdatePartitionAndCreateNewOnes(result.getParentPartition(), result.getLeftChild(), result.getRightChild());
+                apply(result);
                 return;
             }
         }
+    }
+
+    private void apply(SplitPartitionResult result) throws StateStoreException {
+
+        Partition parentPartition = result.getParentPartition();
+        Partition leftChild = result.getLeftChild();
+        Partition rightChild = result.getRightChild();
+        Field splitField = schema.getRowKeyFields().get(parentPartition.getDimension());
+        LOGGER.info("Updating StateStore:");
+        LOGGER.info("Split partition ({}) is marked as not a leaf partition, split on field {}",
+                parentPartition.getId(), splitField.getName());
+        LOGGER.info("New partition: {}", leftChild);
+        LOGGER.info("New partition: {}", rightChild);
+
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
     }
 }
