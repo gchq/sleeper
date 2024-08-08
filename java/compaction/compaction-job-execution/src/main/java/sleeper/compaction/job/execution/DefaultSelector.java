@@ -70,6 +70,8 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
 
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
+            case GPU:
+                return new GPUCompaction(tablePropertiesProvider, stateStoreProvider);
             case RUST:
                 return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
