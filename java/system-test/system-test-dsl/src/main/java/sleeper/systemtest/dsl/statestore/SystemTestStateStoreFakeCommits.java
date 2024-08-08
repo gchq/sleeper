@@ -21,6 +21,7 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -30,18 +31,23 @@ import java.util.stream.Stream;
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
-    private final Consumer<String> sendCommitMessage;
+    private final Consumer<Stream<String>> sendCommitMessages;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         this(context.instance(), buildCommitSender(context));
     }
 
-    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<String> sendCommitMessage) {
+    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<String>> sendCommitMessages) {
         this.instance = instance;
-        this.sendCommitMessage = sendCommitMessage;
+        this.sendCommitMessages = sendCommitMessages;
     }
 
-    public SystemTestStateStoreFakeCommits forEach(LongStream stream, BiConsumer<Long, SystemTestStateStoreFakeCommits> sendCommits) {
+    public SystemTestStateStoreFakeCommits sendNumbered(LongStream stream, BiConsumer<Long, SystemTestStateStoreFakeCommits> sendCommits) {
+        sendCommitMessages.accept(stream.mapToObj(i -> i).flatMap(i -> {
+            List<Stream<String>> messages = new ArrayList<>();
+            sendCommits.accept(i, new SystemTestStateStoreFakeCommits(instance, messages::add));
+            return messages.stream().flatMap(s -> s);
+        }));
         return this;
     }
 
@@ -57,15 +63,19 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     private void addFiles(List<FileReference> files) {
-        sendCommitMessage.accept(new IngestAddFilesCommitRequestSerDe().toJson(
+        sendOne(new IngestAddFilesCommitRequestSerDe().toJson(
                 IngestAddFilesCommitRequest.builder()
                         .tableId(instance.getTableStatus().getTableUniqueId())
                         .fileReferences(files)
                         .build()));
     }
 
-    private static Consumer<String> buildCommitSender(SystemTestContext context) {
+    private void sendOne(String message) {
+        sendCommitMessages.accept(Stream.of(message));
+    }
+
+    private static Consumer<Stream<String>> buildCommitSender(SystemTestContext context) {
         StateStoreCommitterDriver driver = context.instance().adminDrivers().stateStoreCommitter(context);
-        return message -> driver.sendCommitMessages(Stream.of(message));
+        return driver::sendCommitMessages;
     }
 }

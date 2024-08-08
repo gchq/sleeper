@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.statestore;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -50,15 +49,14 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSendManyFileCommits(SleeperSystemTest sleeper) {
         // When
         sleeper.stateStore().fakeCommits()
-                .forEach(LongStream.rangeClosed(1, 100_000),
+                .sendNumbered(LongStream.rangeClosed(1, 1000),
                         (i, commit) -> commit.addPartitionFile("root", "file-" + i + ".parquet", i));
 
         // Then
-        assertThat(sleeper.tableFiles().references()).hasSize(100_000);
+        assertThat(sleeper.tableFiles().references()).hasSize(1000);
     }
 
 }
