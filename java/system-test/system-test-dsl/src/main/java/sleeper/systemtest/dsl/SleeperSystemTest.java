@@ -39,6 +39,7 @@ import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -175,6 +176,10 @@ public class SleeperSystemTest {
 
     public <T> void disableOptionalStack(Class<T> stackClass) {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stackClass);
+    }
+
+    public SystemTestStateStore stateStore() {
+        return new SystemTestStateStore(context);
     }
 
     public SystemTestTables tables() {

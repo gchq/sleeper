@@ -40,6 +40,7 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
@@ -55,6 +56,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
@@ -74,6 +76,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
+    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -104,6 +107,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         return new InMemoryGeneratedIngestSourceFilesDriver(sourceFiles);
+    }
+
+    @Override
+    public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
+        return stateStoreCommitter.withContext(context);
     }
 
     @Override
