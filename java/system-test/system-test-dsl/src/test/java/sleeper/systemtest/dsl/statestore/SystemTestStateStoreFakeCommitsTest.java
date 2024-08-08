@@ -38,7 +38,8 @@ public class SystemTestStateStoreFakeCommitsTest {
     @Test
     void shouldSendOneFileCommit(SleeperSystemTest sleeper) {
         // When
-        sleeper.stateStore().fakeCommits().addPartitionFile("root", "file.parquet", 100);
+        sleeper.stateStore().fakeCommits()
+                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
 
         // Then
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
@@ -52,8 +53,8 @@ public class SystemTestStateStoreFakeCommitsTest {
     void shouldSendManyFileCommits(SleeperSystemTest sleeper) {
         // When
         sleeper.stateStore().fakeCommits()
-                .sendNumbered(LongStream.rangeClosed(1, 1000),
-                        (i, commit) -> commit.addPartitionFile("root", "file-" + i + ".parquet", i));
+                .sendBatched(factory -> LongStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)));
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
