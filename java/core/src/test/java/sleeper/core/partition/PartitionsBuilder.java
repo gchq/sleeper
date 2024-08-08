@@ -33,13 +33,13 @@ public class PartitionsBuilder {
 
     private final Schema schema;
     protected final PartitionFactory factory;
-    protected final Map<String, Partition.Builder> partitionById;
+    protected final Map<String, Partition> partitionById;
 
     public PartitionsBuilder(Schema schema) {
         this(schema, new PartitionFactory(schema), new LinkedHashMap<>());
     }
 
-    protected PartitionsBuilder(Schema schema, PartitionFactory factory, LinkedHashMap<String, Partition.Builder> partitionById) {
+    protected PartitionsBuilder(Schema schema, PartitionFactory factory, LinkedHashMap<String, Partition> partitionById) {
         this.schema = schema;
         this.factory = factory;
         this.partitionById = partitionById;
@@ -98,9 +98,9 @@ public class PartitionsBuilder {
      */
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
-        Partition.Builder parent = partitionById(parentId);
-        PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
-        splitResult.getChildren().forEach(this::put);
+        Partition parent = partitionById(parentId);
+        PartitionRelation splitResult = factory.split(parent, leftId, rightId, dimension, splitPoint);
+        splitResult.getChildren().forEach(this::add);
         put(splitResult.getParent());
         return this;
     }
@@ -116,9 +116,9 @@ public class PartitionsBuilder {
      * @throws StateStoreException if the state store update failed
      */
     public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
-        Partition toSplit = partitionById(partitionId).build();
-        Partition left = partitionById(toSplit.getChildPartitionIds().get(0)).build();
-        Partition right = partitionById(toSplit.getChildPartitionIds().get(1)).build();
+        Partition toSplit = partitionById(partitionId);
+        Partition left = partitionById(toSplit.getChildPartitionIds().get(0));
+        Partition right = partitionById(toSplit.getChildPartitionIds().get(1));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
     }
 
@@ -128,7 +128,7 @@ public class PartitionsBuilder {
      * @return the list of all partitions that were created
      */
     public List<Partition> buildList() {
-        return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
+        return partitionById.values().stream().collect(Collectors.toList());
     }
 
     /**
@@ -144,12 +144,19 @@ public class PartitionsBuilder {
         return schema;
     }
 
-    protected Partition.Builder put(Partition.Builder partition) {
+    protected Partition add(Partition partition) {
+        if (partitionById.containsKey(partition.getId())) {
+            throw new IllegalArgumentException("Partition specified twice: " + partition.getId());
+        }
+        return put(partition);
+    }
+
+    protected Partition put(Partition partition) {
         partitionById.put(partition.getId(), partition);
         return partition;
     }
 
-    protected Partition.Builder partitionById(String id) {
+    protected Partition partitionById(String id) {
         return Optional.ofNullable(partitionById.get(id))
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }
