@@ -274,10 +274,9 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketch(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(100 * i, 100 * (i + 1))
-                                    .mapToObj(r -> new Record(Map.of("key", r))),
-                            "A"));
+                                    .mapToObj(r -> new Record(Map.of("key", r)))));
 
             // When
             splitSinglePartitionFromMap(schema, stateStore, generateIds("B", "C"));
@@ -544,7 +543,7 @@ public class SplitPartitionIT {
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 
-    private void ingestRecordsToSketch(Schema schema, StateStore stateStore, Stream<Record> recordsStream, String partitionId) {
+    private void ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
         Sketches sketches = Sketches.from(schema);
         AtomicLong recordCount = new AtomicLong();
 
