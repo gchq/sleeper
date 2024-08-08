@@ -35,6 +35,7 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -60,7 +61,7 @@ public class FindPartitionSplitPoint {
         this.sketchesLoader = sketchesLoader;
     }
 
-    public Optional<Object> splitPointForDimension(int dimension) throws IOException {
+    public Optional<Object> splitPointForDimension(int dimension) {
         PrimitiveType rowKeyType = rowKeyTypes.get(dimension);
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 schema.getRowKeyFieldNames().get(dimension), rowKeyType, dimension);
@@ -100,7 +101,7 @@ public class FindPartitionSplitPoint {
         }
     }
 
-    private Triple<Integer, Integer, Integer> getMinMedianMaxIntKey(int dimension) throws IOException {
+    private Triple<Integer, Integer, Integer> getMinMedianMaxIntKey(int dimension) {
         String keyField = schema.getRowKeyFields().get(dimension).getName();
 
         // Read all sketches
@@ -108,7 +109,7 @@ public class FindPartitionSplitPoint {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
+            Sketches sketches = loadSketches(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -125,7 +126,7 @@ public class FindPartitionSplitPoint {
         return new ImmutableTriple<>(min, median, max);
     }
 
-    private Triple<Long, Long, Long> getMinMedianMaxLongKey(int dimension) throws IOException {
+    private Triple<Long, Long, Long> getMinMedianMaxLongKey(int dimension) {
         String keyField = schema.getRowKeyFields().get(dimension).getName();
 
         // Read all sketches
@@ -133,7 +134,7 @@ public class FindPartitionSplitPoint {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
+            Sketches sketches = loadSketches(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -150,7 +151,7 @@ public class FindPartitionSplitPoint {
         return new ImmutableTriple<>(min, median, max);
     }
 
-    private Triple<String, String, String> getMinMedianMaxStringKey(int dimension) throws IOException {
+    private Triple<String, String, String> getMinMedianMaxStringKey(int dimension) {
         String keyField = schema.getRowKeyFields().get(dimension).getName();
 
         // Read all sketches
@@ -158,7 +159,7 @@ public class FindPartitionSplitPoint {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
+            Sketches sketches = loadSketches(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -175,7 +176,7 @@ public class FindPartitionSplitPoint {
         return new ImmutableTriple<>(min, median, max);
     }
 
-    private Triple<ByteArray, ByteArray, ByteArray> getMinMedianMaxByteArrayKey(int dimension) throws IOException {
+    private Triple<ByteArray, ByteArray, ByteArray> getMinMedianMaxByteArrayKey(int dimension) {
         String keyField = schema.getRowKeyFields().get(dimension).getName();
 
         // Read all sketches
@@ -183,7 +184,7 @@ public class FindPartitionSplitPoint {
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = sketchesLoader.load(sketchesFile);
+            Sketches sketches = loadSketches(sketchesFile);
             sketchList.add(sketches.getQuantilesSketch(keyField));
         }
 
@@ -198,6 +199,14 @@ public class FindPartitionSplitPoint {
         ByteArray median = sketch.getQuantile(0.5D);
         ByteArray max = sketch.getMaxValue();
         return new ImmutableTriple<>(min, median, max);
+    }
+
+    private Sketches loadSketches(String filename) {
+        try {
+            return sketchesLoader.load(filename);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public interface SketchesLoader {

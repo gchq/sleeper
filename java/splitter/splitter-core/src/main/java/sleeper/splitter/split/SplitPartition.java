@@ -26,11 +26,11 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
@@ -77,20 +77,25 @@ public class SplitPartition {
         this.idSupplier = idSupplier;
     }
 
-    public void splitPartition(Partition partition, List<String> fileNames) throws StateStoreException, IOException {
-        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesLoader::load);
-        for (int dimension = 0; dimension < schema.getRowKeyFields().size(); dimension++) {
-            Optional<Object> splitPointOpt = findSplitPoint.splitPointForDimension(dimension);
-            if (splitPointOpt.isPresent()) {
-                SplitPartitionResult result = new SplitPartitionResultFactory(schema, idSupplier)
-                        .splitPartition(partition, splitPointOpt.get(), dimension);
-                apply(result);
-                return;
-            }
-        }
+    public void splitPartition(Partition partition, List<String> fileNames) {
+        getResultIfSplittable(partition, fileNames)
+                .ifPresent(this::apply);
     }
 
-    private void apply(SplitPartitionResult result) throws StateStoreException {
+    private Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, List<String> fileNames) {
+        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesLoader);
+        return IntStream.range(0, schema.getRowKeyFields().size())
+                .mapToObj(dimension -> findSplitPoint.splitPointForDimension(dimension)
+                        .map(splitPoint -> resultFactory().splitPartition(partition, splitPoint, dimension)))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    private SplitPartitionResultFactory resultFactory() {
+        return new SplitPartitionResultFactory(schema, idSupplier);
+    }
+
+    private void apply(SplitPartitionResult result) {
 
         Partition parentPartition = result.getParentPartition();
         Partition leftChild = result.getLeftChild();
@@ -102,6 +107,10 @@ public class SplitPartition {
         LOGGER.info("New partition: {}", leftChild);
         LOGGER.info("New partition: {}", rightChild);
 
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+        try {
+            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

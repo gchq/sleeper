@@ -24,7 +24,6 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +61,7 @@ public class SplitPartitionResultFactory {
         this.idSupplier = idSupplier;
     }
 
-    public SplitPartitionResult splitPartition(Partition partition, Object splitPoint, int dimension) throws StateStoreException {
+    public SplitPartitionResult splitPartition(Partition partition, Object splitPoint, int dimension) {
         Field fieldToSplitOn = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
