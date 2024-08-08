@@ -24,6 +24,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,10 +60,9 @@ public class PartitionTreeNearestCommonAncestorTest {
     @Test
     public void shouldGetMidPartitionForPartitionsWithSameMidParent() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("abc", "def"))
+        PartitionTree tree = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C"),
+                List.of("abc", "def"))
                 .parentJoining("D", "A", "B")
                 .parentJoining("E", "D", "C")
                 .buildTree();
@@ -74,10 +74,9 @@ public class PartitionTreeNearestCommonAncestorTest {
     @Test
     public void shouldGetMidPartitionForPartitionsWithSeparatedMidAncestor() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C", "D"),
-                        Arrays.asList("abc", "def", "ghi"))
+        PartitionTree tree = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B", "C", "D"),
+                List.of("abc", "def", "ghi"))
                 .parentJoining("E", "A", "B")
                 .parentJoining("F", "E", "C")
                 .parentJoining("G", "F", "D")

@@ -45,15 +45,11 @@ public class SplitPartitionJobDefinitionSerDe {
     private final Gson gsonPrettyPrinting;
 
     public SplitPartitionJobDefinitionSerDe(TablePropertiesProvider tablePropertiesProvider) {
-        try {
-            GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(SplitPartitionJobDefinition.class.getName()), new SplitPartitionJobDefinitionJsonSerDe(tablePropertiesProvider))
-                    .serializeNulls();
-            this.gson = builder.create();
-            this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Exception creating Gson", e);
-        }
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(SplitPartitionJobDefinition.class, new SplitPartitionJobDefinitionJsonSerDe(tablePropertiesProvider))
+                .serializeNulls();
+        this.gson = builder.create();
+        this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
     public String toJson(SplitPartitionJobDefinition splitPartitionJobDefinition) {

@@ -23,12 +23,6 @@ JARS_DIR="$SCRIPTS_DIR/jars"
 DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
-if [ "$#" -lt 1 ]; then
-  MAVEN_PARAMS=(clean install -Pquick -T 1C -DskipRust)
-else
-  MAVEN_PARAMS=("$@")
-fi
-
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_BUILD_TIME=$(record_time)
 pushd "$MAVEN_DIR"
@@ -40,7 +34,7 @@ echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
 SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-bin/scripts"
-mvn "${MAVEN_PARAMS[@]}"
+mvn clean install -q -Pquick -T 1C "$@"
 
 mkdir -p "$JARS_DIR"
 mkdir -p "$DOCKER_DIR"

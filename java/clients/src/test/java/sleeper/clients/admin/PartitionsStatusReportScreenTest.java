@@ -21,10 +21,11 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,18 +36,20 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PARTITI
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldRunPartitionStatusReport() throws Exception {
         // Given
-        StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
-                .parentJoining("parent", "A", "B"))
+        StateStore stateStore = StateStoreTestBuilder.from(
+                PartitionsBuilderSplitsFirst.leavesWithSplits(
+                        schemaWithKey("key", new StringType()),
+                        List.of("A", "B"), List.of("aaa"))
+                        .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
         setStateStoreForTable("test-table", stateStore);

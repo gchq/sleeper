@@ -23,134 +23,71 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PartitionsBuilderTest {
 
     @Test
-    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
+    void shouldBuildPartitionsSpecifyingSplitPointsRootFirst() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
         PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
-                .parentJoining("D", "A", "B")
-                .parentJoining("E", "D", "C");
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .splitToNewChildren("R", "RL", "RR", "bbb");
 
         // Then
-        List<Partition> expectedPartitions = Arrays.asList(
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<Partition> expectedPartitions = List.of(
+                Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "", null)))
+                        .id("root")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds(List.of("L", "R"))
+                        .dimension(0)
+                        .build(),
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "", "aaa")))
-                        .id("A")
+                        .id("L")
                         .leafPartition(true)
-                        .parentPartitionId("D")
-                        .childPartitionIds(Collections.emptyList())
+                        .parentPartitionId("root")
+                        .childPartitionIds(List.of())
                         .dimension(-1)
                         .build(),
                 Partition.builder()
+                        .region(new Region(rangeFactory.createRange(field, "aaa", null)))
+                        .id("R")
+                        .leafPartition(false)
+                        .parentPartitionId("root")
+                        .childPartitionIds(List.of("RL", "RR"))
+                        .dimension(0)
+                        .build(),
+                Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
-                        .id("B")
+                        .id("RL")
                         .leafPartition(true)
-                        .parentPartitionId("D")
-                        .childPartitionIds(Collections.emptyList())
+                        .parentPartitionId("R")
+                        .childPartitionIds(List.of())
                         .dimension(-1)
                         .build(),
                 Partition.builder()
                         .region(new Region(rangeFactory.createRange(field, "bbb", null)))
-                        .id("C")
+                        .id("RR")
                         .leafPartition(true)
-                        .parentPartitionId("E")
-                        .childPartitionIds(Collections.emptyList())
+                        .parentPartitionId("R")
+                        .childPartitionIds(List.of())
                         .dimension(-1)
-                        .build(),
-                Partition.builder()
-                        .region(new Region(rangeFactory.createRange(field, "", "bbb")))
-                        .id("D")
-                        .leafPartition(false)
-                        .parentPartitionId("E")
-                        .childPartitionIds(Arrays.asList("A", "B"))
-                        .dimension(0)
-                        .build(),
-                Partition.builder()
-                        .region(new Region(rangeFactory.createRange(field, "", null)))
-                        .id("E")
-                        .leafPartition(false)
-                        .parentPartitionId(null)
-                        .childPartitionIds(Arrays.asList("D", "C"))
-                        .dimension(0)
                         .build());
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
         assertThat(builder.buildTree()).isEqualTo(new PartitionTree(expectedPartitions));
-    }
-
-    @Test
-    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        // When I only care about leaf partitions, so I want any tree without caring about
-        // the structure or the non-leaf IDs
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
-                .anyTreeJoiningAllLeaves()
-                .buildTree();
-
-        // Then all leaves have a path to the root partition
-        assertThat(tree.getAllAncestors("A")).endsWith(tree.getRootPartition());
-        assertThat(tree.getAllAncestors("B")).endsWith(tree.getRootPartition());
-        assertThat(tree.getAllAncestors("C")).endsWith(tree.getRootPartition());
-    }
-
-    @Test
-    void failJoiningAllLeavesIfNonLeafSpecified() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
-                .parentJoining("D", "A", "B");
-
-        // When / Then
-        assertThatThrownBy(builder::anyTreeJoiningAllLeaves)
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldBuildPartitionsSpecifyingSplitOnSecondDimension() {
-        // Given
-        Field field1 = new Field("key1", new StringType());
-        Field field2 = new Field("key2", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
-
-        // When
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
-                .anyTreeJoiningAllLeaves()
-                .buildTree();
-
-        // Then
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(Arrays.asList(
-                rangeFactory.createRange(field1, "", null),
-                rangeFactory.createRange(field2, "", "aaa"))));
-        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
-                rangeFactory.createRange(field1, "", null),
-                rangeFactory.createRange(field2, "aaa", null))));
     }
 
     @Test
@@ -188,8 +125,7 @@ class PartitionsBuilderTest {
 
     @Test
     void shouldBuildSinglePartitionTree() {
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Schema schema = schemaWithKey("key");
         PartitionTree tree = new PartitionsBuilder(schema)
                 .singlePartition("A")
                 .buildTree();
@@ -201,48 +137,23 @@ class PartitionsBuilderTest {
     }
 
     @Test
-    void shouldGeneratePartitionIdsRootFirst() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .fromRoot(root -> root.split("split-point"))
-                .buildTree();
+    void shouldFailSpecifyingRootTwice() {
+        Schema schema = schemaWithKey("key");
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root");
 
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .buildTree());
+        assertThatThrownBy(() -> builder.singlePartition("root"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void shouldGenerateNestedPartitionIdsRootFirst() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .fromRoot(root -> root.splitToLeftAndRight("split-point",
-                        left -> left.split("left-split-point"),
-                        right -> right.split("right-split-point")))
-                .buildTree();
+    void shouldFailSpecifyingSameChildTwice() {
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "A", "B", "aaa");
 
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .splitToNewChildren("L", "LL", "LR", "left-split-point")
-                        .splitToNewChildren("R", "RL", "RR", "right-split-point")
-                        .buildTree());
-    }
-
-    @Test
-    void shouldBuildTreeWithSingleSplitPoint() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .treeWithSingleSplitPoint("split-point")
-                .buildTree();
-
-        assertThat(tree)
-                .isEqualTo(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", "split-point")
-                        .buildTree());
+        assertThatThrownBy(() -> builder.splitToNewChildren("root", "B", "C", "bbb"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

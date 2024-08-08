@@ -30,6 +30,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -67,10 +68,19 @@ public class CompactionJobTestDataHelper {
     }
 
     public void partitionTree(Consumer<PartitionsBuilder> config) {
+        partitionTreeFromSchema(schema -> {
+            PartitionsBuilder builder = new PartitionsBuilder(schema);
+            config.accept(builder);
+            return builder;
+        });
+    }
+
+    public void partitionTreeFromSchema(Function<Schema, PartitionsBuilder> config) {
         if (isPartitionsSpecified()) {
             throw new IllegalStateException("Partition tree already initialised");
         }
-        setPartitions(createPartitions(config));
+        PartitionsBuilder builder = config.apply(SCHEMA);
+        setPartitions(builder.buildList());
     }
 
     public CompactionJob singleFileCompaction() {
@@ -114,12 +124,6 @@ public class CompactionJobTestDataHelper {
 
     private List<Partition> createSinglePartition() {
         return new PartitionsFromSplitPoints(SCHEMA, Collections.emptyList()).construct();
-    }
-
-    private List<Partition> createPartitions(Consumer<PartitionsBuilder> config) {
-        PartitionsBuilder builder = new PartitionsBuilder(SCHEMA);
-        config.accept(builder);
-        return builder.buildList();
     }
 
     private void validatePartitionSpecified(Partition checkPartition) {

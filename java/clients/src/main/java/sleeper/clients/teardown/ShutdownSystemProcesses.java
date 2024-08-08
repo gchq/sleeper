@@ -26,14 +26,16 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
@@ -45,6 +47,10 @@ public class ShutdownSystemProcesses {
     private final AmazonElasticMapReduce emrClient;
     private final EmrServerlessClient emrServerlessClient;
 
+    public ShutdownSystemProcesses(TearDownClients clients) {
+        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless());
+    }
+
     public ShutdownSystemProcesses(
             AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
             AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
@@ -55,6 +61,7 @@ public class ShutdownSystemProcesses {
     }
 
     public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
+        LOGGER.info("Shutting down system processes for instance {}", instanceProperties.get(ID));
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
@@ -76,7 +83,7 @@ public class ShutdownSystemProcesses {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
+    public static <T extends SleeperProperty> void stopTasks(AmazonECS ecs, SleeperProperties<T> properties, T property) {
         if (!properties.isSet(property)) {
             return;
         }

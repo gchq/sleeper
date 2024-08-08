@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -28,12 +29,10 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
@@ -96,8 +95,8 @@ class PartitionsStatusReportTest {
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .build();
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(schema, 10);
-        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("A", "B"), List.of(new byte[42]))
+        StateStore store = StateStoreTestBuilder.from(PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B"), List.of(new byte[42]))
                 .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
@@ -110,10 +109,12 @@ class PartitionsStatusReportTest {
     @Test
     void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
         // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
-        StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B"), List.of(
-                        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+        StateStore store = StateStoreTestBuilder.from(PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("A", "B"), List.of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
                 .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
@@ -161,8 +162,11 @@ class PartitionsStatusReportTest {
 
     @Test
     void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
         TableProperties properties = createTablePropertiesWithSplitThreshold(10);
-        StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "abc"))
                 .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)

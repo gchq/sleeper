@@ -24,7 +24,6 @@ import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
-import static sleeper.systemtest.cdk.SystemTestBucketStack.buildSystemTestBucketName;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
@@ -46,14 +45,13 @@ public class LocalStackSystemTestDeploymentDriver implements SystemTestDeploymen
 
     @Override
     public SystemTestStandaloneProperties loadProperties() {
-        return SystemTestStandaloneProperties.fromS3(s3,
-                buildSystemTestBucketName(parameters.getSystemTestShortId()));
+        return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, parameters.getSystemTestShortId());
     }
 
     @Override
     public boolean deployIfNotPresent(SystemTestStandaloneProperties properties) {
         String deploymentId = properties.get(SYSTEM_TEST_ID);
-        String bucketName = buildSystemTestBucketName(deploymentId);
+        String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(deploymentId);
         if (s3.doesBucketExistV2(bucketName)) {
             LOGGER.info("Deployment already exists: {}", deploymentId);
             return false;

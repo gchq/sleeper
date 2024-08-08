@@ -16,6 +16,7 @@
 package sleeper.systemtest.drivers.cdk;
 
 import sleeper.clients.teardown.TearDownInstance;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,14 +38,24 @@ public class TearDownTestInstance {
         if (args.length < 1 || args.length > 2) {
             throw new IllegalArgumentException("Usage: <scripts directory> <optional instance id>");
         }
-        TearDownInstance.builder()
-                .scriptsDir(Path.of(args[0]))
+        builder().scriptsDir(Path.of(args[0]))
                 .instanceId(optionalArgument(args, 1).orElse(null))
-                .getExtraEcsClusters(properties -> Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
-                        .stream().collect(Collectors.toUnmodifiableList()))
-                .getExtraEcrRepositories(properties -> List.of(
-                        Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
-                                .orElseGet(() -> properties.get(ID) + "/system-test")))
                 .tearDownWithDefaultClients();
+    }
+
+    public static TearDownInstance.Builder builder() {
+        return TearDownInstance.builder()
+                .getExtraEcsClusters(properties -> getSystemTestEcsClusters(properties))
+                .getExtraEcrRepositories(properties -> getSystemTestEcrRepositories(properties));
+    }
+
+    public static List<String> getSystemTestEcsClusters(InstanceProperties properties) {
+        return Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
+                .stream().collect(Collectors.toUnmodifiableList());
+    }
+
+    public static List<String> getSystemTestEcrRepositories(InstanceProperties properties) {
+        return List.of(Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
+                .orElseGet(() -> properties.get(ID) + "/system-test"));
     }
 }

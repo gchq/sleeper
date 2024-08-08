@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionECSLaunchType;
+import sleeper.configuration.properties.validation.CompactionMethod;
 
 import java.util.List;
 
@@ -286,8 +287,8 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
             .description("Select what compaction method to use on a table. Current options are JAVA, RUST and GPU. Rust and GPU compaction support are " +
                     "experimental.")
-            .defaultValue("JAVA")
-            .validationPredicate(Utils::isValidCompactionMethod)
+            .defaultValue(CompactionMethod.JAVA.toString())
+            .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

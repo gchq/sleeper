@@ -24,16 +24,20 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
@@ -68,7 +72,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
@@ -76,7 +80,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StateStoreCommitterTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
@@ -346,6 +350,54 @@ public class StateStoreCommitterTest {
         }
     }
 
+    @Nested
+    @DisplayName("Split a partition to create child partitions")
+    class SplitPartition {
+
+        @Test
+        void shouldApplySplitPartitionRequest() throws Exception {
+            // Given
+            PartitionTree afterTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "aaa")
+                    .buildTree();
+            StateStore stateStore = createTable("test-table");
+            SplitPartitionCommitRequest commitRequest = new SplitPartitionCommitRequest("test-table",
+                    afterTree.getPartition("root"),
+                    afterTree.getPartition("left"),
+                    afterTree.getPartition("right"));
+
+            // When
+            committer().apply(StateStoreCommitRequest.forSplitPartition(commitRequest));
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(afterTree.getAllPartitions());
+        }
+
+        @Test
+        void shouldFailWhenPartitionHasAlreadyBeenSplit() throws Exception {
+            // Given
+            PartitionTree afterTree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", "aaa")
+                    .buildTree();
+            StateStore stateStore = createTable("test-table");
+            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                    afterTree.getPartition("root"),
+                    afterTree.getPartition("left"),
+                    afterTree.getPartition("right"));
+            SplitPartitionCommitRequest commitRequest = new SplitPartitionCommitRequest("test-table",
+                    afterTree.getPartition("root"),
+                    afterTree.getPartition("left"),
+                    afterTree.getPartition("right"));
+
+            // When / Then
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forSplitPartition(commitRequest)))
+                    .isInstanceOf(StateStoreException.class);
+        }
+    }
+
     private StateStoreCommitter committer() {
         return committerWithTimes(Instant::now);
     }
@@ -355,11 +407,11 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, dataBucketObjectByKey::get, timeSupplier);
+        return new StateStoreCommitter(new FixedTablePropertiesProvider(List.of()), compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, dataBucketObjectByKey::get, timeSupplier);
     }
 
     private StateStore createTable(String tableId) {
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions.getAllPartitions());
         stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
         createTable(tableId, stateStore);
         return stateStore;
