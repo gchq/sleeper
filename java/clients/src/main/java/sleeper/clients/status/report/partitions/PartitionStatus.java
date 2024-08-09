@@ -22,8 +22,8 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.splitter.PartitionSplitCheck;
+import sleeper.splitter.find.FindPartitionsToSplit;
+import sleeper.splitter.find.PartitionSplitCheck;
 
 import java.util.List;
 import java.util.Set;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.splitter;
+package sleeper.splitter.find;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

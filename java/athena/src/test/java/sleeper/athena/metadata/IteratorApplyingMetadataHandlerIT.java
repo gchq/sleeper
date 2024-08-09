@@ -49,7 +49,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitter.SplitPartition;
+import sleeper.splitter.split.SplitPartition;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;

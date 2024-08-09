@@ -45,9 +45,9 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.splitter.SplitPartitionJobDefinition;
-import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.find.FindPartitionsToSplit;
+import sleeper.splitter.find.SplitPartitionJobDefinition;
+import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.File;
