@@ -74,12 +74,20 @@ public class StateStoreCommitterThroughputIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = schemaWithKey("key", new StringType());
-    private final TableProperties tableProperties = createTable(schema);
-    private final String tableId = tableProperties.get(TABLE_ID);
 
     @Test
     void shouldSendManyAddFilesRequestsWithNoJob() throws Exception {
+        Stats stats10 = runAddFilesRequestsGetStats(10);
+        Stats stats200 = runAddFilesRequestsGetStats(200);
+        Stats stats1000 = runAddFilesRequestsGetStats(1000);
+        stats10.log();
+        stats200.log();
+        stats1000.log();
+    }
+
+    private Stats runAddFilesRequestsGetStats(int numberOfRequests) throws Exception {
+        Schema schema = schemaWithKey("key", new StringType());
+        String tableId = createTable(schema).get(TABLE_ID);
         StateStoreCommitter committer = committer();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
         committer.apply(StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
@@ -87,30 +95,48 @@ public class StateStoreCommitterThroughputIT {
                 .fileReferences(List.of(fileFactory.rootFile("prewarm-file.parquet", 123)))
                 .build()));
 
-        runRequestsAndLogThroughput(committer, IntStream.rangeClosed(1, 200)
+        return runRequestsGetStats(committer, IntStream.rangeClosed(1, numberOfRequests)
                 .mapToObj(i -> StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
                         .tableId(tableId)
                         .fileReferences(List.of(fileFactory.rootFile("file-" + i + ".parquet", i)))
                         .build())));
     }
 
-    private void runRequestsAndLogThroughput(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {
+    private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {
         Instant startTime = Instant.now();
-        AtomicInteger numRequests = new AtomicInteger();
+        AtomicInteger numRequestsTracker = new AtomicInteger();
         requests.forEach(request -> {
             try {
                 committer.apply(request);
-                numRequests.incrementAndGet();
+                numRequestsTracker.incrementAndGet();
             } catch (StateStoreException e) {
                 throw new RuntimeException(e);
             }
         });
         Instant endTime = Instant.now();
-        Duration duration = Duration.between(startTime, endTime);
-        Duration averageRequestDuration = duration.dividedBy(numRequests.get());
-        LOGGER.info("Processed {} requests in {}", numRequests, LoggedDuration.withFullOutput(duration));
-        LOGGER.info("Average rate of {}/s", (double) numRequests.get() / duration.toMillis() / 1000.0);
-        LOGGER.info("Average request time: {}", LoggedDuration.withFullOutput(averageRequestDuration));
+        return new Stats(numRequestsTracker.get(), startTime, endTime);
+    }
+
+    private static class Stats {
+
+        private final int numRequests;
+        private final Instant startTime;
+        private final Instant endTime;
+
+        Stats(int numRequests, Instant startTime, Instant endTime) {
+            this.numRequests = numRequests;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        void log() {
+            Duration duration = Duration.between(startTime, endTime);
+            double durationSeconds = duration.toMillis() / 1000.0;
+            Duration averageRequestDuration = duration.dividedBy(numRequests);
+            LOGGER.info("Processed {} requests in {}", numRequests, LoggedDuration.withFullOutput(duration));
+            LOGGER.info("Average rate of {}/s", numRequests / durationSeconds);
+            LOGGER.info("Average request time: {}", LoggedDuration.withFullOutput(averageRequestDuration));
+        }
     }
 
     private InstanceProperties createInstance() {
