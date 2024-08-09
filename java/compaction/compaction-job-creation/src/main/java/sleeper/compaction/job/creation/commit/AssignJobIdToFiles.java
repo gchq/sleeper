@@ -51,13 +51,13 @@ public interface AssignJobIdToFiles {
         static AssignJobIdQueueSender bySqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
             CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
             return (request) -> {
+                LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
                 sqsClient.sendMessage(new SendMessageRequest()
                         .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                         .withMessageBody(serDe.toJson(request))
                         .withMessageGroupId(request.getTableId())
                         .withMessageDeduplicationId(UUID.randomUUID().toString()));
-                LOGGER.debug("Sent request: {}", request);
-                LOGGER.info("Submitted asynchronous request to assign compaction input files via state store committer queue");
+                LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
             };
         }
     }

@@ -64,9 +64,10 @@ public class CompactionJobCommitterOrSendToLambda {
         boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         statusStore.jobFinished(finishedEvent);
         if (commitAsync) {
-            LOGGER.debug("Sending compaction job {} to queue to be committed asynchronously", job.getId());
-            jobCommitQueueSender.send(new CompactionJobCommitRequest(job,
-                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary()));
+            CompactionJobCommitRequest request = new CompactionJobCommitRequest(job,
+                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary());
+            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+            jobCommitQueueSender.send(request);
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());

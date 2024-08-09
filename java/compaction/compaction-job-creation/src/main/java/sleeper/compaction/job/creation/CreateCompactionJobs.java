@@ -56,7 +56,6 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
@@ -174,7 +173,7 @@ public class CreateCompactionJobs {
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(assignJobIdsToFiles, tableProperties.get(TABLE_ID), batch);
+            batchCreateJobs(assignJobIdsToFiles, table, batch);
         }
         Instant finishTime = Instant.now();
 
@@ -206,7 +205,7 @@ public class CreateCompactionJobs {
         return outList;
     }
 
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, String tableId, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
         for (CompactionJob compactionJob : compactionJobs) {
             // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
             // task trying to record that the job was started.
@@ -218,10 +217,10 @@ public class CreateCompactionJobs {
             jobSender.send(compactionJob);
         }
         // Update the statuses of these files to record that a compaction job is in progress
-        LOGGER.debug("Updating status of files in StateStore");
+        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()), tableId);
+                .collect(Collectors.toList()), table.getTableUniqueId());
     }
 
     private void createJobsFromLeftoverFiles(
