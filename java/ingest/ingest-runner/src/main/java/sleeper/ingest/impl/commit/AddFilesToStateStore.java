@@ -81,6 +81,7 @@ public interface AddFilesToStateStore {
             requestConfig.accept(requestBuilder);
             IngestAddFilesCommitRequest request = requestBuilder.build();
             String json = serDe.toJson(request);
+            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             // Store in S3 if the request will not fit in an SQS message
             if (json.length() > 262144) {
                 String s3Key = StateStoreCommitRequestInS3.createFileS3Key(request.getTableId(), s3FilenameSupplier.get());
@@ -93,7 +94,6 @@ public interface AddFilesToStateStore {
                     .withMessageBody(json)
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            LOGGER.debug("Sent request: {}", request);
             LOGGER.info("Submitted asynchronous request to add files via state store committer queue");
         };
     }
