@@ -70,4 +70,8 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     public SnapshotsDriver snapshots() {
         return new LocalStackSnapshotsDriver();
     }
+
+    public SystemTestClients clients() {
+        return clients;
+    }
 }

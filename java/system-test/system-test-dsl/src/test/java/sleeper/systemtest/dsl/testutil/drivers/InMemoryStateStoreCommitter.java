@@ -20,6 +20,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 import java.time.Instant;
@@ -52,10 +53,10 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public void sendCommitMessages(Stream<String> messages) {
+        public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
             messages.forEach(message -> {
                 try {
-                    committer.applyFromJson(message);
+                    committer.applyFromJson(message.getBody());
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);
                 }
