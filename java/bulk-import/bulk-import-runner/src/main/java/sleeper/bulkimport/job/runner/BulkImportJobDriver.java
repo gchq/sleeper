@@ -43,6 +43,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -98,9 +99,10 @@ public class BulkImportJobDriver {
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
+        TableStatus table = tableProperties.getStatus();
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
-        LOGGER.info("Job is {}", job);
+        LOGGER.info("Job is for table {}: {}", table, job);
         statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
                 .jobRunId(jobRunId).taskId(taskId).build());
 
@@ -122,11 +124,11 @@ public class BulkImportJobDriver {
                         .jobRunId(jobRunId).taskId(taskId)
                         .writtenTime(getTime.get())
                         .build());
-                LOGGER.info("Submitted {} files to statestore committer for job {}", output.numFiles(), job.getId());
+                LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
                 stateStoreProvider.getStateStore(tableProperties)
                         .addFiles(output.fileReferences());
-                LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+                LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException | StateStoreException e) {
             statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
@@ -274,7 +276,7 @@ public class BulkImportJobDriver {
                     .withMessageBody(json)
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            LOGGER.info("Submitted asynchronous request to add files via state store committer queue");
+            LOGGER.debug("Sent request: {}", request);
         };
     }
 }

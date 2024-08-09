@@ -156,6 +156,7 @@ public class ECSCompactionTaskRunner {
                     .withMessageDeduplicationId(UUID.randomUUID().toString())
                     .withMessageGroupId(tableId)
                     .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request)));
+            LOGGER.debug("Sent request: {}", request);
         };
     }
 }
