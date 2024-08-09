@@ -31,14 +31,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitter.split.SplitPartition;
 import sleeper.statestore.StateStoreProvider;
-
-import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -72,19 +69,15 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         propertiesReloader.reloadIfNeeded();
-        try {
-            for (SQSEvent.SQSMessage message : event.getRecords()) {
-                String serialisedJob = message.getBody();
-                SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                        .fromJson(serialisedJob);
-                LOGGER.info("Received partition splitting job {}", job);
-                TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
-                splitPartition.splitPartition(job.getPartition(), job.getFileNames());
-            }
-        } catch (IOException | StateStoreException ex) {
-            LOGGER.error("Exception handling partition splitting job", ex);
+        for (SQSEvent.SQSMessage message : event.getRecords()) {
+            String serialisedJob = message.getBody();
+            SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
+                    .fromJson(serialisedJob);
+            LOGGER.info("Received partition splitting job {}", job);
+            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
+            splitPartition.splitPartition(job.getPartition(), job.getFileNames());
         }
         return null;
     }
