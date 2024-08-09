@@ -84,6 +84,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
                 SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
                 splitPartition.splitPartition(job.getPartition(), job.getFileNames());
             } catch (RuntimeException e) {
+                LOGGER.error("Failed partition splitting", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
         }
