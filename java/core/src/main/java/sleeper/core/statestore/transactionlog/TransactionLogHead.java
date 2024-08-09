@@ -82,7 +82,7 @@ class TransactionLogHead<T> {
      */
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
-        LOGGER.info("Adding transaction of type {} to table {}",
+        LOGGER.debug("Adding transaction of type {} to table {}",
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
