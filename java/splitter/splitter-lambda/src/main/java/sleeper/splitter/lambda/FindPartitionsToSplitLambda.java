@@ -37,7 +37,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.splitter.find.FindPartitionsToSplit;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;

@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.splitter.FindPartitionsToSplit.JobSender;
-import sleeper.splitter.SplitPartition;
+import sleeper.splitter.find.FindPartitionsToSplit;
+import sleeper.splitter.find.FindPartitionsToSplit.JobSender;
+import sleeper.splitter.split.SplitPartition;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
