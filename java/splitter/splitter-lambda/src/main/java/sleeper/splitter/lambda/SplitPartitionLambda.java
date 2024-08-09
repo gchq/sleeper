@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -37,13 +39,15 @@ import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitter.split.SplitPartition;
 import sleeper.statestore.StateStoreProvider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.
  */
-@SuppressWarnings("unused")
-public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
+public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private final PropertiesReloader propertiesReloader;
     private final Configuration conf;
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionLambda.class);
@@ -67,18 +71,22 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     @Override
-    public Void handleRequest(SQSEvent event, Context context) {
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         propertiesReloader.reloadIfNeeded();
+        List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         for (SQSEvent.SQSMessage message : event.getRecords()) {
-            String serialisedJob = message.getBody();
-            SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                    .fromJson(serialisedJob);
-            LOGGER.info("Received partition splitting job {}", job);
-            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
-            splitPartition.splitPartition(job.getPartition(), job.getFileNames());
+            try {
+                SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
+                        .fromJson(message.getBody());
+                LOGGER.info("Received partition splitting job {}", job);
+                TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+                SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
+                splitPartition.splitPartition(job.getPartition(), job.getFileNames());
+            } catch (RuntimeException e) {
+                batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
+            }
         }
-        return null;
+        return new SQSBatchResponse(batchItemFailures);
     }
 }
