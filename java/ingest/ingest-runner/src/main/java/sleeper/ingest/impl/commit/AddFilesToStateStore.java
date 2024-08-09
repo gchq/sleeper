@@ -93,7 +93,7 @@ public interface AddFilesToStateStore {
                     .withMessageBody(json)
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            LOGGER.info("Submitted asynchronous request to add files to state store committer queue");
+            LOGGER.info("Submitted asynchronous request to add files via state store committer queue");
         };
     }
 }

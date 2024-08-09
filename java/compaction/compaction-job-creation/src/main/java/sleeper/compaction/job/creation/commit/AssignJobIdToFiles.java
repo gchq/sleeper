@@ -17,6 +17,8 @@ package sleeper.compaction.job.creation.commit;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
@@ -31,6 +33,8 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 public interface AssignJobIdToFiles {
+    Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
+
     void assignJobIds(List<AssignJobIdRequest> requests, String tableId) throws StateStoreException;
 
     static AssignJobIdToFiles synchronous(StateStore stateStore) {
@@ -52,6 +56,7 @@ public interface AssignJobIdToFiles {
                         .withMessageBody(serDe.toJson(request))
                         .withMessageGroupId(request.getTableId())
                         .withMessageDeduplicationId(UUID.randomUUID().toString()));
+                LOGGER.info("Submitted asynchronous request to assign compaction input files via state store committer queue");
             };
         }
     }
