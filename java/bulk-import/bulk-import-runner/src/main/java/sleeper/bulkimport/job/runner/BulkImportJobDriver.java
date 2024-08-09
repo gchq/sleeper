@@ -43,6 +43,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -98,9 +99,10 @@ public class BulkImportJobDriver {
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
+        TableStatus table = tableProperties.getStatus();
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
-        LOGGER.info("Job is {}", job);
+        LOGGER.info("Job is for table {}: {}", table, job);
         statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
                 .jobRunId(jobRunId).taskId(taskId).build());
 
@@ -116,17 +118,19 @@ public class BulkImportJobDriver {
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
             if (asyncCommit) {
-                addFilesAsync.submit(IngestAddFilesCommitRequest.builder()
+                IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
                         .ingestJob(job.toIngestJob())
                         .fileReferences(output.fileReferences())
                         .jobRunId(jobRunId).taskId(taskId)
                         .writtenTime(getTime.get())
-                        .build());
-                LOGGER.info("Submitted {} files to statestore committer for job {}", output.numFiles(), job.getId());
+                        .build();
+                LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+                addFilesAsync.submit(request);
+                LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
                 stateStoreProvider.getStateStore(tableProperties)
                         .addFiles(output.fileReferences());
-                LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
+                LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException | StateStoreException e) {
             statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
@@ -267,6 +271,7 @@ public class BulkImportJobDriver {
                 String s3Key = StateStoreCommitRequestInS3.createFileS3Key(request.getTableId(), s3FilenameSupplier.get());
                 s3Client.putObject(instanceProperties.get(DATA_BUCKET), s3Key, json);
                 json = new StateStoreCommitRequestInS3SerDe().toJson(new StateStoreCommitRequestInS3(s3Key));
+                LOGGER.info("Request to add files was too big for an SQS message. Will submit a reference to file in data bucket: {}", s3Key);
             }
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
