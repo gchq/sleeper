@@ -27,8 +27,6 @@ import sleeper.splitter.split.SplitPartition;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
-import java.io.IOException;
-
 public class InMemoryPartitionSplittingDriver implements PartitionSplittingDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionSplittingDriver.class);
     private final SystemTestInstanceContext instance;
@@ -59,11 +57,7 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
             TableProperties tableProperties = instance.getTablePropertiesProvider().getById(job.getTableId());
             StateStore stateStore = instance.getStateStoreProvider().getStateStore(tableProperties);
             SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), sketches::load);
-            try {
-                splitPartition.splitPartition(job.getPartition(), job.getFileNames());
-            } catch (IOException | StateStoreException e) {
-                throw new RuntimeException("Failed to split partition", e);
-            }
+            splitPartition.splitPartition(job.getPartition(), job.getFileNames());
         };
     }
 }
