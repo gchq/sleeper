@@ -37,8 +37,14 @@ import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 public abstract class SystemTestDriversBase implements SystemTestDrivers {
+
+    @Override
+    public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {

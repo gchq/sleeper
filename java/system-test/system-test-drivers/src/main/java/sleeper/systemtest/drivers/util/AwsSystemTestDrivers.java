@@ -74,6 +74,7 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -106,6 +107,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public SleeperTablesDriver tables(SystemTestParameters parameters) {
         return new AwsSleeperTablesDriver(clients);
+    }
+
+    @Override
+    public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

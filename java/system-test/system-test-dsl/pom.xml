@@ -156,6 +156,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>statestore-commit</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>garbage-collector</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
