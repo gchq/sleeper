@@ -18,6 +18,8 @@ package sleeper.ingest.impl.commit;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -41,6 +43,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 @FunctionalInterface
 public interface AddFilesToStateStore {
+    Logger LOGGER = LoggerFactory.getLogger(AddFilesToStateStore.class);
 
     void addFiles(List<FileReference> references) throws StateStoreException;
 
@@ -83,12 +86,14 @@ public interface AddFilesToStateStore {
                 String s3Key = StateStoreCommitRequestInS3.createFileS3Key(request.getTableId(), s3FilenameSupplier.get());
                 s3Client.putObject(instanceProperties.get(DATA_BUCKET), s3Key, json);
                 json = new StateStoreCommitRequestInS3SerDe().toJson(new StateStoreCommitRequestInS3(s3Key));
+                LOGGER.info("Request to add files was too big for an SQS message. Will submit a reference to file in data bucket: {}", s3Key);
             }
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                     .withMessageBody(json)
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
+            LOGGER.info("Submitted asynchronous request to add files to state store committer queue");
         };
     }
 }
