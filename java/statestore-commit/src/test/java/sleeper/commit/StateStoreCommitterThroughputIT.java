@@ -77,15 +77,15 @@ public class StateStoreCommitterThroughputIT {
 
     @Test
     void shouldSendManyAddFilesRequestsWithNoJob() throws Exception {
-        Stats stats10 = runAddFilesRequestsGetStats(10);
-        Stats stats200 = runAddFilesRequestsGetStats(200);
-        Stats stats1000 = runAddFilesRequestsGetStats(1000);
+        Stats stats10 = runAddFilesRequestsWithNoJobGetStats(10);
+        Stats stats200 = runAddFilesRequestsWithNoJobGetStats(200);
+        Stats stats1000 = runAddFilesRequestsWithNoJobGetStats(1000);
         stats10.log();
         stats200.log();
         stats1000.log();
     }
 
-    private Stats runAddFilesRequestsGetStats(int numberOfRequests) throws Exception {
+    private Stats runAddFilesRequestsWithNoJobGetStats(int numberOfRequests) throws Exception {
         Schema schema = schemaWithKey("key", new StringType());
         String tableId = createTable(schema).get(TABLE_ID);
         StateStoreCommitter committer = committer();
