@@ -56,6 +56,7 @@ public interface AssignJobIdToFiles {
                         .withMessageBody(serDe.toJson(request))
                         .withMessageGroupId(request.getTableId())
                         .withMessageDeduplicationId(UUID.randomUUID().toString()));
+                LOGGER.debug("Sent request: {}", request);
                 LOGGER.info("Submitted asynchronous request to assign compaction input files via state store committer queue");
             };
         }
