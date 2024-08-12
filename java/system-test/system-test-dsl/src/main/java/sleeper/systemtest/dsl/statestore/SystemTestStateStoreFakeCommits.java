@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.statestore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -25,6 +26,7 @@ public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
+    private final AtomicInteger commitsSent = new AtomicInteger();
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         instance = context.instance();
@@ -32,13 +34,18 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
-        driver.sendCommitMessages(buildCommits.apply(messageFactory()));
+        send(buildCommits.apply(messageFactory()));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
-        driver.sendCommitMessages(Stream.of(buildCommit.apply(messageFactory())));
+        send(Stream.of(buildCommit.apply(messageFactory())));
         return this;
+    }
+
+    private void send(Stream<StateStoreCommitMessage> messages) {
+        driver.sendCommitMessages(messages
+                .peek(message -> commitsSent.incrementAndGet()));
     }
 
     private StateStoreCommitMessageFactory messageFactory() {
