@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one
@@ -113,6 +114,7 @@ public class SplitPartition {
             if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
                 stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
             } else {
+                sendAsyncCommit.accept(new SplitPartitionCommitRequest(tableProperties.get(TABLE_ID), parentPartition, leftChild, rightChild));
             }
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

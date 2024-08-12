@@ -55,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class SplitPartitionTest {
@@ -521,6 +522,7 @@ public class SplitPartitionTest {
                             .mapToObj(i -> new Record(Map.of("key", i))));
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
             tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
+            tableProperties.set(TABLE_ID, "tableId");
 
             // When
             partitionSplitter(stateStore, tableProperties, generateIds("B", "C"))
@@ -529,6 +531,17 @@ public class SplitPartitionTest {
             // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
+
+            PartitionTree resultant = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", 51)
+                    .buildTree();
+
+            assertThat(sentAsyncCommits).containsExactly(new SplitPartitionCommitRequest(
+                    "tableId",
+                    resultant.getPartition("A"),
+                    resultant.getPartition("B"),
+                    resultant.getPartition("C")));
         }
     }
 
