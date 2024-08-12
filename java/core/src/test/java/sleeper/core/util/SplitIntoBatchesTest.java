@@ -21,7 +21,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -131,49 +135,54 @@ public class SplitIntoBatchesTest {
     }
 
     @Nested
-    @DisplayName("Split a stream into batches partitioning to multiple lists")
-    class SplitAStreamPartitioningToLists {
+    @DisplayName("Process streamed batches in parallel")
+    class ParallelBatches {
 
         @Test
         void shouldSplitIntoTwoFullBatches() {
-            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C", "D")))
-                    .containsExactly(List.of("A", "B"), List.of("C", "D"));
+            assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C", "D")))
+                    .containsExactlyInAnyOrder("A", "B", "C", "D");
         }
 
         @Test
         void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
-            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C")))
-                    .containsExactly(List.of("A", "B"), List.of("C"));
+            assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C")))
+                    .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
         void shouldSplitIntoOneFullBatch() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B", "C")))
-                    .containsExactly(List.of("A", "B", "C"));
+            assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B", "C")))
+                    .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
         void shouldSplitIntoOnePartialBatch() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B")))
-                    .containsExactly(List.of("A", "B"));
+            assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B")))
+                    .containsExactlyInAnyOrder("A", "B");
         }
 
         @Test
         void shouldSplitEmptyStreamToNoBatches() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of()))
+            assertThat(consumeParallelBatchesOf(3, Stream.of()))
                     .isEmpty();
         }
 
         @Test
         void shouldFailWithBatchSizeLowerThanOne() {
-            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B")))
+            Consumer<List<String>> notInvoked = batch -> {
+                throw new IllegalStateException("Did not expect operation to be called");
+            };
+            assertThatThrownBy(() -> SplitIntoBatches.inParallelBatchesOf(0, Stream.of("A", "B"), notInvoked))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
-        @Test
-        void shouldFailWithParallelStream() {
-            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B").parallel()))
-                    .isInstanceOf(IllegalArgumentException.class);
+        private Collection<String> consumeParallelBatchesOf(int batchSize, Stream<String> stream) {
+            Map<String, String> output = new ConcurrentHashMap<>();
+            SplitIntoBatches.inParallelBatchesOf(batchSize, stream, batch -> {
+                batch.forEach(value -> output.put(UUID.randomUUID().toString(), value));
+            });
+            return output.values();
         }
     }
 }
