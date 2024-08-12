@@ -30,7 +30,6 @@ import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
@@ -59,7 +58,6 @@ public class StateStoreCommitter {
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
-    private final LoadS3ObjectFromDataBucket loadFromDataBucket;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -69,11 +67,10 @@ public class StateStoreCommitter {
             GetStateStoreByTableId stateStoreProvider,
             LoadS3ObjectFromDataBucket loadFromDataBucket,
             Supplier<Instant> timeSupplier) {
-        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider);
+        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, loadFromDataBucket);
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
-        this.loadFromDataBucket = loadFromDataBucket;
         this.timeSupplier = timeSupplier;
     }
 
@@ -137,15 +134,6 @@ public class StateStoreCommitter {
     void apply(SplitPartitionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
-    }
-
-    void apply(StateStoreCommitRequestInS3 request) throws StateStoreException {
-        String json = loadFromDataBucket.loadFromDataBucket(request.getKeyInS3());
-        StateStoreCommitRequest requestFromS3 = deserialiser.fromJson(json);
-        if (requestFromS3.getRequest() instanceof StateStoreCommitRequestInS3) {
-            throw new IllegalArgumentException("Found a request stored in S3 pointing to another S3 object: " + request.getKeyInS3());
-        }
-        apply(requestFromS3);
     }
 
     void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {

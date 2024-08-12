@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitRequestDeserialiser;
+import sleeper.commit.StateStoreCommitter.LoadS3ObjectFromDataBucket;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
@@ -129,7 +130,10 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
-        return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider())
+        LoadS3ObjectFromDataBucket noLoadFromS3 = key -> {
+            throw new UnsupportedOperationException("Did not expect message held in S3");
+        };
+        return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider(), noLoadFromS3)
                 .fromJson(message.getBody());
     }
 

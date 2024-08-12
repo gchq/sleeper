@@ -19,7 +19,6 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
@@ -71,16 +70,6 @@ public class StateStoreCommitRequest {
      */
     public static StateStoreCommitRequest forSplitPartition(SplitPartitionCommitRequest request) {
         return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.apply(request));
-    }
-
-    /**
-     * Creates a request which is stored in S3.
-     *
-     * @param  request the commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest storedInS3(StateStoreCommitRequestInS3 request) {
-        return new StateStoreCommitRequest(request, null, committer -> committer.apply(request));
     }
 
     private StateStoreCommitRequest(Object request, String tableId, ApplyRequest applyRequest) {
