@@ -66,16 +66,20 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
     public SplitPartitionLambda() {
-        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        if (null == s3Bucket) {
-            throw new RuntimeException("Couldn't get S3 bucket from environment variable");
-        }
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient());
+    }
 
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+    private SplitPartitionLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient) {
+        this(loadInstanceProperties(s3Client), s3Client, dynamoDBClient, sqsClient);
+    }
+
+    private SplitPartitionLambda(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient) {
+        this(instanceProperties, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties), s3Client, dynamoDBClient, sqsClient);
+    }
+
+    public SplitPartitionLambda(InstanceProperties instanceProperties, Configuration conf, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient) {
+        this.instanceProperties = instanceProperties;
+        this.conf = conf;
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
@@ -109,7 +113,17 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         splitPartition.splitPartition(job.getPartition(), job.getFileNames());
     }
 
-    public static Consumer<SplitPartitionCommitRequest> sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        if (null == s3Bucket) {
+            throw new RuntimeException("Couldn't get S3 bucket from environment variable");
+        }
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        return instanceProperties;
+    }
+
+    private static Consumer<SplitPartitionCommitRequest> sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
         SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe(tableProperties.getSchema());
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
