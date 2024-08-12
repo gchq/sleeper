@@ -62,14 +62,6 @@ public class SplitPartition {
     public SplitPartition(StateStore stateStore,
             TableProperties tableProperties,
             SketchesLoader sketchesLoader,
-            Supplier<String> idSupplier) {
-        this(stateStore, tableProperties, sketchesLoader, idSupplier, request -> {
-        });
-    }
-
-    public SplitPartition(StateStore stateStore,
-            TableProperties tableProperties,
-            SketchesLoader sketchesLoader,
             Supplier<String> idSupplier,
             Consumer<SplitPartitionCommitRequest> sendAsyncCommit) {
         this.stateStore = stateStore;

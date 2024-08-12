@@ -538,7 +538,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
         return new SplitPartition(stateStore, tableProperties,
                 loadSketchesFromFile(tableProperties, new Configuration()),
-                () -> UUID.randomUUID().toString());
+                () -> UUID.randomUUID().toString(), null);
     }
 
     private static class SleeperMetadataHandlerImpl extends SleeperMetadataHandler {

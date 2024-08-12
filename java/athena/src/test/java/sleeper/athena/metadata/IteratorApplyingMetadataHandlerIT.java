@@ -317,7 +317,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
         return new SplitPartition(stateStore, tableProperties,
                 loadSketchesFromFile(tableProperties, new Configuration()),
-                () -> UUID.randomUUID().toString());
+                () -> UUID.randomUUID().toString(), null);
     }
 
     private void validateSplit(Set<Split> splits, Integer expectedValue) {

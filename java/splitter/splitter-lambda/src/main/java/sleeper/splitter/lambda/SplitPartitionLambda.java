@@ -24,6 +24,9 @@ import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFa
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
@@ -42,19 +47,23 @@ import sleeper.statestore.StateStoreProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.
  */
 public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionLambda.class);
     private final PropertiesReloader propertiesReloader;
     private final Configuration conf;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionLambda.class);
+    private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
     public SplitPartitionLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -62,7 +71,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
@@ -85,7 +94,8 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
                         loadSketchesFromFile(tableProperties, conf),
-                        () -> UUID.randomUUID().toString());
+                        () -> UUID.randomUUID().toString(),
+                        sendAsyncCommit(sqsClient, instanceProperties, tableProperties));
                 splitPartition.splitPartition(job.getPartition(), job.getFileNames());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed partition splitting", e);
@@ -93,5 +103,14 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
             }
         }
         return new SQSBatchResponse(batchItemFailures);
+    }
+
+    public static Consumer<SplitPartitionCommitRequest> sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe(tableProperties.getSchema());
+        return request -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMessageBody(serDe.toJson(request))
+                .withMessageGroupId(request.getTableId())
+                .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }
 }

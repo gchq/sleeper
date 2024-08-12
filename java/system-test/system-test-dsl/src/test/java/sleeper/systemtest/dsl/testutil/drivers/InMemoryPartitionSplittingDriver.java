@@ -58,7 +58,7 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
         return job -> {
             TableProperties tableProperties = instance.getTablePropertiesProvider().getById(job.getTableId());
             StateStore stateStore = instance.getStateStoreProvider().getStateStore(tableProperties);
-            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketches::load, () -> UUID.randomUUID().toString());
+            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketches::load, () -> UUID.randomUUID().toString(), null);
             splitPartition.splitPartition(job.getPartition(), job.getFileNames());
         };
     }
