@@ -15,10 +15,10 @@
  */
 package sleeper.splitter.split;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -28,11 +28,8 @@ import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-
-import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one
@@ -56,23 +53,11 @@ public class SplitPartition {
     private final Supplier<String> idSupplier;
 
     public SplitPartition(StateStore stateStore,
-            Schema schema,
-            Configuration conf) {
-        this(stateStore, schema, loadSketchesFromFile(schema, conf));
-    }
-
-    public SplitPartition(StateStore stateStore,
-            Schema schema,
-            SketchesLoader sketchesLoader) {
-        this(stateStore, schema, sketchesLoader, () -> UUID.randomUUID().toString());
-    }
-
-    public SplitPartition(StateStore stateStore,
-            Schema schema,
+            TableProperties tableProperties,
             SketchesLoader sketchesLoader,
             Supplier<String> idSupplier) {
         this.stateStore = stateStore;
-        this.schema = schema;
+        this.schema = tableProperties.getSchema();
         this.sketchesLoader = sketchesLoader;
         this.idSupplier = idSupplier;
     }

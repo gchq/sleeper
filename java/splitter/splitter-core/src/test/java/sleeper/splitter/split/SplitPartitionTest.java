@@ -19,6 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -49,11 +51,14 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class SplitPartitionTest {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
 
@@ -521,7 +526,8 @@ public class SplitPartitionTest {
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
@@ -532,7 +538,8 @@ public class SplitPartitionTest {
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 

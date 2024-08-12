@@ -41,8 +41,10 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.
@@ -81,7 +83,9 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
                 LOGGER.info("Received partition splitting job {}", job);
                 TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
+                SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
+                        loadSketchesFromFile(tableProperties, conf),
+                        () -> UUID.randomUUID().toString());
                 splitPartition.splitPartition(job.getPartition(), job.getFileNames());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed partition splitting", e);

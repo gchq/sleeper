@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,7 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
@@ -489,7 +491,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
+        SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
                 .stream()
@@ -531,6 +533,12 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Then
         assertThat(handler.schemaEnhancementsCalled).isOne();
 
+    }
+
+    private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
+        return new SplitPartition(stateStore, tableProperties,
+                loadSketchesFromFile(tableProperties, new Configuration()),
+                () -> UUID.randomUUID().toString());
     }
 
     private static class SleeperMetadataHandlerImpl extends SleeperMetadataHandler {
