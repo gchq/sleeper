@@ -160,6 +160,10 @@ public class StateStoreCommitRequestDeserialiser {
         }
     }
 
+    /**
+     * Reads and deserialises a commit request from the data bucket. An alternative implementation will refuse reading
+     * from the bucket because the pointer was already stored in S3.
+     */
     @FunctionalInterface
     private interface DeserialiseFromDataBucket {
         StateStoreCommitRequest read(StateStoreCommitRequestInS3 request);
