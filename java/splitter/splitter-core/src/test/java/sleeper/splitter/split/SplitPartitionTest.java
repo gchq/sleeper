@@ -15,7 +15,6 @@
  */
 package sleeper.splitter.split;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -511,7 +510,6 @@ public class SplitPartitionTest {
     class AsynchronousCommit {
 
         @Test
-        @Disabled("TODO")
         void shouldCommitPartitionSplitAsynchronously() throws Exception {
             // Given
             PartitionTree tree = new PartitionsBuilder(schema)

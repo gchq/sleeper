@@ -33,6 +33,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one
  * where it is not equal to the minimum value and not equal to the maximum value) then that is used to split the
@@ -50,6 +52,7 @@ public class SplitPartition {
     public static final Logger LOGGER = LoggerFactory.getLogger(SplitPartition.class);
 
     private final StateStore stateStore;
+    private final TableProperties tableProperties;
     private final Schema schema;
     private final SketchesLoader sketchesLoader;
     private final Supplier<String> idSupplier;
@@ -69,6 +72,7 @@ public class SplitPartition {
             Supplier<String> idSupplier,
             Consumer<SplitPartitionCommitRequest> sendAsyncCommit) {
         this.stateStore = stateStore;
+        this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.sketchesLoader = sketchesLoader;
         this.idSupplier = idSupplier;
@@ -106,7 +110,10 @@ public class SplitPartition {
         LOGGER.info("New partition: {}", rightChild);
 
         try {
-            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+            if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
+                stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+            } else {
+            }
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
