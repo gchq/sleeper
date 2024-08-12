@@ -22,9 +22,11 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 
 import java.time.Instant;
 import java.util.function.Supplier;
@@ -57,20 +59,24 @@ public class CompactionJobCommitterOrSendToLambda {
     }
 
     public void commit(CompactionJob job, CompactionJobFinishedEvent finishedEvent) throws StateStoreException {
-        boolean commitAsync = tablePropertiesProvider.getById(job.getTableId()).getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+        TableStatus table = tableProperties.getStatus();
+        boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         statusStore.jobFinished(finishedEvent);
         if (commitAsync) {
-            LOGGER.info("Sending compaction job {} to queue to be committed asynchronously", job.getId());
-            jobCommitQueueSender.send(new CompactionJobCommitRequest(job,
-                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary()));
+            CompactionJobCommitRequest request = new CompactionJobCommitRequest(job,
+                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary());
+            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+            jobCommitQueueSender.send(request);
+            LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
-            LOGGER.info("Committing compaction job {} inside compaction task", job.getId());
+            LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
             CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
             statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job, timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
                     .build());
-            LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
+            LOGGER.info("Successfully committed compaction job {} to table {}", job.getId(), table);
         }
     }
 
