@@ -24,10 +24,12 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -51,15 +53,26 @@ public class SplitPartition {
     private final Schema schema;
     private final SketchesLoader sketchesLoader;
     private final Supplier<String> idSupplier;
+    private final Consumer<SplitPartitionCommitRequest> sendAsyncCommit;
 
     public SplitPartition(StateStore stateStore,
             TableProperties tableProperties,
             SketchesLoader sketchesLoader,
             Supplier<String> idSupplier) {
+        this(stateStore, tableProperties, sketchesLoader, idSupplier, request -> {
+        });
+    }
+
+    public SplitPartition(StateStore stateStore,
+            TableProperties tableProperties,
+            SketchesLoader sketchesLoader,
+            Supplier<String> idSupplier,
+            Consumer<SplitPartitionCommitRequest> sendAsyncCommit) {
         this.stateStore = stateStore;
         this.schema = tableProperties.getSchema();
         this.sketchesLoader = sketchesLoader;
         this.idSupplier = idSupplier;
+        this.sendAsyncCommit = sendAsyncCommit;
     }
 
     public void splitPartition(Partition partition, List<String> fileNames) {
