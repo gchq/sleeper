@@ -1,10 +1,12 @@
-#include "filters.hpp"
+#include "cudf_compact/filters.hpp"
 
 #include <cudf/ast/expressions.hpp>
-#include <cudf/scalar.hpp>
+#include <cudf/scalar/scalar.hpp>
 #include <cudf/stream_compaction.hpp>
 #include <cudf/transform.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
+#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 #include <exception>
 
@@ -29,8 +31,9 @@ std::unique_ptr<cudf::table> filter_table_by_range(cudf::table_view const &input
 
 // AST support
 
-std::string
-  to_string(std::string val, parquet::format::Type::type col_type, parquet::format::ConvertedType::type conv_type)
+std::string to_string(std::string val,
+  parquet::format::Type::type col_type,
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
 {
     if (val == "-inf" || val == "inf") return val;
     switch (col_type) {
@@ -48,12 +51,13 @@ std::string
         return val;
     default:
         SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error();
+        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
     }
 }
 
-std::shared_ptr<cudf::scalar>
-  to_scalar(std::string val, parquet::format::Type::type col_type, parquet::format::ConvertedType::type conv_type)
+std::shared_ptr<cudf::scalar> to_scalar(std::string val,
+  parquet::format::Type::type col_type,
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
 {
     switch (col_type) {
     case parquet::format::Type::INT32: {
@@ -70,13 +74,13 @@ std::shared_ptr<cudf::scalar>
         return std::make_shared<cudf::string_scalar>(val);
     default:
         SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error();
+        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
     }
 }
 
 // TODO: support more types
 std::shared_ptr<cudf::scalar> min_for_type(parquet::format::Type::type col_type,
-  parquet::format::ConvertedType::type conv_type)
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
 {
     using parquet::format::Type;
     switch (col_type) {
@@ -88,12 +92,12 @@ std::shared_ptr<cudf::scalar> min_for_type(parquet::format::Type::type col_type,
         return std::make_shared<cudf::string_scalar>("");
     default:
         SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error();
+        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
     }
 }
 
 std::shared_ptr<cudf::scalar> max_for_type(parquet::format::Type::type col_type,
-  parquet::format::ConvertedType::type conv_type)
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
 {
     using parquet::format::Type;
     switch (col_type) {
@@ -105,6 +109,6 @@ std::shared_ptr<cudf::scalar> max_for_type(parquet::format::Type::type col_type,
         return std::make_shared<cudf::string_scalar>("\xff\xff\xff\xff");
     default:
         SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error();
+        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
     }
 }

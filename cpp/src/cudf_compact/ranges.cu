@@ -1,5 +1,5 @@
 
-#include "ranges.hpp"
+#include "cudf_compact/ranges.hpp"
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_uvector.hpp>
@@ -10,7 +10,7 @@
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
 
-#include "filters.hpp"
+#include "cudf_compact/filters.hpp"
 
 template<typename UnaryFunction>
 inline __device__ auto make_counting_transform_iterator(cudf::size_type start, UnaryFunction f)

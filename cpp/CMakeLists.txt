@@ -14,6 +14,10 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 20)
 endif()
 
+if(NOT DEFINED CMAKE_CUDA_STANDARD)
+  set(CMAKE_CUDA_STANDARD "${CMAKE_CXX_STANDARD}")
+endif()
+
 # strongly encouraged to enable this globally to avoid conflicts between
 # -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
 # when compiling with PCH enabled
@@ -25,7 +29,7 @@ project(
   VERSION 0.1.0
   DESCRIPTION "Provides a GPU based compaction"
   HOMEPAGE_URL "https://github.com/gchq/sleeper"
-  LANGUAGES CXX C)
+  LANGUAGES CXX CUDA)
 
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)

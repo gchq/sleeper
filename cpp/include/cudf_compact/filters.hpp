@@ -35,7 +35,7 @@ struct literal_converter
     }
 
     template<typename T, std::enable_if_t<!is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()(cudf::scalar &_value)
+    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value)
     {
         CUDF_FAIL("Unsupported type for literal");
     }
