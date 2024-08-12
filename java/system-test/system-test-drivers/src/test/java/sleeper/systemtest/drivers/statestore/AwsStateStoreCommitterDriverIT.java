@@ -94,7 +94,7 @@ public class AwsStateStoreCommitterDriverIT {
         String tableId = sleeper.tableProperties().get(TABLE_ID);
         assertThat(receiveCommitRequestsForBatches(sleeper, 2))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
-                .containsExactlyElementsOf(files.stream().map(file -> tuple(tableId,
+                .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
                         StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
                                 .tableId(tableId)
                                 .fileReferences(List.of(file))

@@ -21,10 +21,18 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -131,49 +139,87 @@ public class SplitIntoBatchesTest {
     }
 
     @Nested
-    @DisplayName("Split a stream into batches partitioning to multiple lists")
-    class SplitAStreamPartitioningToLists {
+    @DisplayName("Process streamed batches in parallel")
+    class ParallelBatches {
 
         @Test
-        void shouldSplitIntoTwoFullBatches() {
-            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C", "D")))
-                    .containsExactly(List.of("A", "B"), List.of("C", "D"));
+        void shouldSplitIntoTwoFullBatches() throws Exception {
+            assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C", "D")))
+                    .containsExactlyInAnyOrder("A", "B", "C", "D");
         }
 
         @Test
-        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
-            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C")))
-                    .containsExactly(List.of("A", "B"), List.of("C"));
+        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() throws Exception {
+            assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C")))
+                    .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
-        void shouldSplitIntoOneFullBatch() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B", "C")))
-                    .containsExactly(List.of("A", "B", "C"));
+        void shouldSplitIntoOneFullBatch() throws Exception {
+            assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B", "C")))
+                    .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
-        void shouldSplitIntoOnePartialBatch() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B")))
-                    .containsExactly(List.of("A", "B"));
+        void shouldSplitIntoOnePartialBatch() throws Exception {
+            assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B")))
+                    .containsExactlyInAnyOrder("A", "B");
         }
 
         @Test
-        void shouldSplitEmptyStreamToNoBatches() {
-            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of()))
+        void shouldSplitEmptyStreamToNoBatches() throws Exception {
+            assertThat(consumeParallelBatchesOf(3, Stream.of()))
                     .isEmpty();
         }
 
         @Test
-        void shouldFailWithBatchSizeLowerThanOne() {
-            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B")))
-                    .isInstanceOf(IllegalArgumentException.class);
+        void shouldTakeConsistentFullBatchesOverManyValues() throws Exception {
+            List<String> input = List.of(
+                    "A", "B",
+                    "C", "D",
+                    "E", "F",
+                    "G", "H",
+                    "I", "J",
+                    "K", "L",
+                    "M");
+            List<List<String>> output = trackParallelBatchesOf(2, input.stream());
+            assertThat(checkConsumedValues(output)).containsExactlyInAnyOrderElementsOf(input);
+            assertThat(checkBatchSizes(output))
+                    .isEqualTo(Map.of(2, 6, 1, 1));
         }
 
         @Test
-        void shouldFailWithParallelStream() {
-            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B").parallel()))
+        void shouldFailWithBatchSizeLowerThanOne() {
+            Consumer<List<String>> notInvoked = batch -> {
+                throw new IllegalStateException("Did not expect operation to be called");
+            };
+            assertThatThrownBy(() -> SplitIntoBatches.inParallelBatchesOf(0, Stream.of("A", "B"), notInvoked))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        private Collection<String> consumeParallelBatchesOf(int batchSize, Stream<String> stream) throws Exception {
+            return trackParallelBatchesOf(batchSize, stream).stream()
+                    .flatMap(List::stream).collect(toUnmodifiableList());
+        }
+
+        private List<String> checkConsumedValues(List<List<String>> output) throws Exception {
+            return output.stream().flatMap(List::stream).collect(toUnmodifiableList());
+        }
+
+        private Map<Integer, Integer> checkBatchSizes(List<List<String>> output) throws Exception {
+            return output.stream()
+                    .collect(groupingBy(batch -> batch.size(), summingInt(batch -> 1)));
+        }
+
+        private List<List<String>> trackParallelBatchesOf(int batchSize, Stream<String> stream) throws Exception {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            List<List<String>> output = new ArrayList<>();
+            SplitIntoBatches.inParallelBatchesOf(batchSize, stream, batch -> {
+                executor.submit(() -> output.add(batch));
+            });
+            executor.shutdown();
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+            return output;
         }
     }
 }

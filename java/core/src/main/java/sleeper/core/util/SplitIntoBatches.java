@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A utility class to help split a collection of items into batches.
@@ -76,30 +77,24 @@ public class SplitIntoBatches {
     }
 
     /**
-     * Splits a stream into lists of a given batch size. A new list will be created for each batch. Does not support
-     * parallel streams.
+     * Performs an operation in parallel on each batch of a given size. A new list will be created for each batch.
      *
-     * @param  <T>       the item type
-     * @param  batchSize the number of items to process in a batch
-     * @param  items     a stream of items to split into batches
-     * @return           a stream of batches of the given size
+     * @param <T>       the item type
+     * @param batchSize the number of items to process in a batch
+     * @param items     a stream of items to split into batches
+     * @param operation an operation to perform on a batch of items
      */
-    public static <T> Stream<List<T>> toListsOfSize(int batchSize, Stream<T> items) {
+    public static <T> void inParallelBatchesOf(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
         }
-        if (items.isParallel()) {
-            throw new IllegalArgumentException("Cannot split parallel stream");
-        }
         StreamBatcher<T> batcher = new StreamBatcher<>(batchSize);
-        Stream<List<T>> fullBatches = items.flatMap(item -> {
+        Stream<List<T>> fullBatches = items.sequential().flatMap(item -> {
             batcher.add(item);
             return batcher.takeBatchIfFull().stream();
         });
-        Stream<List<T>> remainingPartialBatch = Stream.generate(
-                () -> batcher.takeBatchIfNotEmpty())
-                .limit(1).flatMap(Optional::stream);
-        return Stream.concat(fullBatches, remainingPartialBatch);
+        StreamSupport.stream(fullBatches.spliterator(), true).forEach(operation);
+        batcher.takeBatchIfNotEmpty().ifPresent(operation);
     }
 
     /**

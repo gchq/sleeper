@@ -43,8 +43,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     @Override
     public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
-        SplitIntoBatches.toListsOfSize(10, messages)
-                .parallel().forEach(this::sendMessageBatch);
+        SplitIntoBatches.inParallelBatchesOf(10, messages, this::sendMessageBatch);
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {
