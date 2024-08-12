@@ -87,22 +87,26 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         for (SQSEvent.SQSMessage message : event.getRecords()) {
             try {
-                SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                        .fromJson(message.getBody());
-                LOGGER.info("Received partition splitting job {}", job);
-                TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
-                        loadSketchesFromFile(tableProperties, conf),
-                        () -> UUID.randomUUID().toString(),
-                        sendAsyncCommit(sqsClient, instanceProperties, tableProperties));
-                splitPartition.splitPartition(job.getPartition(), job.getFileNames());
+                splitPartitionFromJson(message.getBody());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed partition splitting", e);
                 batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
             }
         }
         return new SQSBatchResponse(batchItemFailures);
+    }
+
+    public void splitPartitionFromJson(String json) {
+        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
+                .fromJson(json);
+        LOGGER.info("Received partition splitting job {}", job);
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
+                loadSketchesFromFile(tableProperties, conf),
+                () -> UUID.randomUUID().toString(),
+                sendAsyncCommit(sqsClient, instanceProperties, tableProperties));
+        splitPartition.splitPartition(job.getPartition(), job.getFileNames());
     }
 
     public static Consumer<SplitPartitionCommitRequest> sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
