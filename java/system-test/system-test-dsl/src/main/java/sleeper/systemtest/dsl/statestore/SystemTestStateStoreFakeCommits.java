@@ -15,66 +15,42 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import sleeper.core.statestore.FileReference;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.LongStream;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
-    private final Consumer<Stream<String>> sendCommitMessages;
+    private final Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         this(context.instance(), buildCommitSender(context));
     }
 
-    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<String>> sendCommitMessages) {
+    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages) {
         this.instance = instance;
         this.sendCommitMessages = sendCommitMessages;
     }
 
-    public SystemTestStateStoreFakeCommits sendNumbered(LongStream stream, BiConsumer<Long, SystemTestStateStoreFakeCommits> sendCommits) {
-        sendCommitMessages.accept(stream.mapToObj(i -> i).flatMap(i -> {
-            List<Stream<String>> messages = new ArrayList<>();
-            sendCommits.accept(i, new SystemTestStateStoreFakeCommits(instance, messages::add));
-            return messages.stream().flatMap(s -> s);
-        }));
+    public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
+        sendCommitMessages.accept(buildCommits.apply(messageFactory()));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits addPartitionFile(String partitionId, String filename, long records) {
-        addFiles(List.of(FileReference.builder()
-                .partitionId(partitionId)
-                .filename(filename)
-                .numberOfRecords(records)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build()));
+    public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
+        sendCommitMessages.accept(Stream.of(buildCommit.apply(messageFactory())));
         return this;
     }
 
-    private void addFiles(List<FileReference> files) {
-        sendOne(new IngestAddFilesCommitRequestSerDe().toJson(
-                IngestAddFilesCommitRequest.builder()
-                        .tableId(instance.getTableStatus().getTableUniqueId())
-                        .fileReferences(files)
-                        .build()));
+    private StateStoreCommitMessageFactory messageFactory() {
+        return new StateStoreCommitMessageFactory(instance.getTableStatus().getTableUniqueId());
     }
 
-    private void sendOne(String message) {
-        sendCommitMessages.accept(Stream.of(message));
-    }
-
-    private static Consumer<Stream<String>> buildCommitSender(SystemTestContext context) {
+    private static Consumer<Stream<StateStoreCommitMessage>> buildCommitSender(SystemTestContext context) {
         StateStoreCommitterDriver driver = context.instance().adminDrivers().stateStoreCommitter(context);
         return driver::sendCommitMessages;
     }

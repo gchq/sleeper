@@ -15,10 +15,26 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import java.util.stream.Stream;
+public class StateStoreCommitMessage {
 
-public interface StateStoreCommitterDriver {
+    private final String tableId;
+    private final String body;
 
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+    private StateStoreCommitMessage(String tableId, String body) {
+        this.tableId = tableId;
+        this.body = body;
+    }
+
+    public static StateStoreCommitMessage tableIdAndBody(String tableId, String body) {
+        return new StateStoreCommitMessage(tableId, body);
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getBody() {
+        return body;
+    }
 
 }
