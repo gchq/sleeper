@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.splitter;
+package sleeper.splitter.find;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
