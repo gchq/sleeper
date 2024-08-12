@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A utility class to help split a collection of items into batches.
@@ -88,10 +89,11 @@ public class SplitIntoBatches {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
         }
         StreamBatcher<T> batcher = new StreamBatcher<>(batchSize);
-        items.sequential().flatMap(item -> {
+        Stream<List<T>> fullBatches = items.sequential().flatMap(item -> {
             batcher.add(item);
             return batcher.takeBatchIfFull().stream();
-        }).parallel().forEach(operation);
+        });
+        StreamSupport.stream(fullBatches.spliterator(), true).forEach(operation);
         batcher.takeBatchIfNotEmpty().ifPresent(operation);
     }
 

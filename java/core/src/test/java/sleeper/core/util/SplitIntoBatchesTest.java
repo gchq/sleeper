@@ -24,11 +24,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -139,33 +143,49 @@ public class SplitIntoBatchesTest {
     class ParallelBatches {
 
         @Test
-        void shouldSplitIntoTwoFullBatches() {
+        void shouldSplitIntoTwoFullBatches() throws Exception {
             assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C", "D")))
                     .containsExactlyInAnyOrder("A", "B", "C", "D");
         }
 
         @Test
-        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
+        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() throws Exception {
             assertThat(consumeParallelBatchesOf(2, Stream.of("A", "B", "C")))
                     .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
-        void shouldSplitIntoOneFullBatch() {
+        void shouldSplitIntoOneFullBatch() throws Exception {
             assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B", "C")))
                     .containsExactlyInAnyOrder("A", "B", "C");
         }
 
         @Test
-        void shouldSplitIntoOnePartialBatch() {
+        void shouldSplitIntoOnePartialBatch() throws Exception {
             assertThat(consumeParallelBatchesOf(3, Stream.of("A", "B")))
                     .containsExactlyInAnyOrder("A", "B");
         }
 
         @Test
-        void shouldSplitEmptyStreamToNoBatches() {
+        void shouldSplitEmptyStreamToNoBatches() throws Exception {
             assertThat(consumeParallelBatchesOf(3, Stream.of()))
                     .isEmpty();
+        }
+
+        @Test
+        void shouldTakeConsistentFullBatchesOverManyValues() throws Exception {
+            List<String> input = List.of(
+                    "A", "B",
+                    "C", "D",
+                    "E", "F",
+                    "G", "H",
+                    "I", "J",
+                    "K", "L",
+                    "M");
+            List<List<String>> output = trackParallelBatchesOf(2, input.stream());
+            assertThat(checkConsumedValues(output)).containsExactlyInAnyOrderElementsOf(input);
+            assertThat(checkBatchSizes(output))
+                    .isEqualTo(Map.of(2, 6, 1, 1));
         }
 
         @Test
@@ -177,12 +197,29 @@ public class SplitIntoBatchesTest {
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
-        private Collection<String> consumeParallelBatchesOf(int batchSize, Stream<String> stream) {
-            Map<String, String> output = new ConcurrentHashMap<>();
+        private Collection<String> consumeParallelBatchesOf(int batchSize, Stream<String> stream) throws Exception {
+            return trackParallelBatchesOf(batchSize, stream).stream()
+                    .flatMap(List::stream).collect(toUnmodifiableList());
+        }
+
+        private List<String> checkConsumedValues(List<List<String>> output) throws Exception {
+            return output.stream().flatMap(List::stream).collect(toUnmodifiableList());
+        }
+
+        private Map<Integer, Integer> checkBatchSizes(List<List<String>> output) throws Exception {
+            return output.stream()
+                    .collect(groupingBy(batch -> batch.size(), summingInt(batch -> 1)));
+        }
+
+        private List<List<String>> trackParallelBatchesOf(int batchSize, Stream<String> stream) throws Exception {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            List<List<String>> output = new ArrayList<>();
             SplitIntoBatches.inParallelBatchesOf(batchSize, stream, batch -> {
-                batch.forEach(value -> output.put(UUID.randomUUID().toString(), value));
+                executor.submit(() -> output.add(batch));
             });
-            return output.values();
+            executor.shutdown();
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+            return output;
         }
     }
 }
