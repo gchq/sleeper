@@ -79,7 +79,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -105,7 +106,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -140,7 +142,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table-id");
     }
 
     @Test
@@ -166,7 +169,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -186,7 +190,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -209,7 +214,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(requestInBucket));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(requestInBucket))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
