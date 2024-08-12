@@ -72,8 +72,8 @@ public class SplitIntoBatchesTest {
     }
 
     @Nested
-    @DisplayName("Split a stream into batches")
-    class SplitAStream {
+    @DisplayName("Split a stream into batches reusing a list")
+    class SplitAStreamReusingList {
 
         @Test
         void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
@@ -127,6 +127,53 @@ public class SplitIntoBatchesTest {
             SplitIntoBatches.reusingListOfSize(batchSize, stream,
                     batch -> batches.add(new ArrayList<>(batch)));
             return batches;
+        }
+    }
+
+    @Nested
+    @DisplayName("Split a stream into batches partitioning to multiple lists")
+    class SplitAStreamPartitioningToLists {
+
+        @Test
+        void shouldSplitIntoTwoFullBatches() {
+            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C", "D")))
+                    .containsExactly(List.of("A", "B"), List.of("C", "D"));
+        }
+
+        @Test
+        void shouldSplitIntoOneFullBatchAndOnePartialBatchLeftOver() {
+            assertThat(SplitIntoBatches.toListsOfSize(2, Stream.of("A", "B", "C")))
+                    .containsExactly(List.of("A", "B"), List.of("C"));
+        }
+
+        @Test
+        void shouldSplitIntoOneFullBatch() {
+            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B", "C")))
+                    .containsExactly(List.of("A", "B", "C"));
+        }
+
+        @Test
+        void shouldSplitIntoOnePartialBatch() {
+            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of("A", "B")))
+                    .containsExactly(List.of("A", "B"));
+        }
+
+        @Test
+        void shouldSplitEmptyStreamToNoBatches() {
+            assertThat(SplitIntoBatches.toListsOfSize(3, Stream.of()))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldFailWithBatchSizeLowerThanOne() {
+            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B")))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldFailWithParallelStream() {
+            assertThatThrownBy(() -> SplitIntoBatches.toListsOfSize(0, Stream.of("A", "B").parallel()))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 }

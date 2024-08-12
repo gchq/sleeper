@@ -18,6 +18,7 @@ package sleeper.core.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -71,6 +72,70 @@ public class SplitIntoBatches {
         });
         if (!batch.isEmpty()) {
             operation.accept(batch);
+        }
+    }
+
+    /**
+     * Splits a stream into lists of a given batch size. A new list will be created for each batch. Does not support
+     * parallel streams.
+     *
+     * @param  <T>       the item type
+     * @param  batchSize the number of items to process in a batch
+     * @param  items     a stream of items to split into batches
+     * @return           a stream of batches of the given size
+     */
+    public static <T> Stream<List<T>> toListsOfSize(int batchSize, Stream<T> items) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
+        }
+        if (items.isParallel()) {
+            throw new IllegalArgumentException("Cannot split parallel stream");
+        }
+        StreamBatcher<T> batcher = new StreamBatcher<>(batchSize);
+        Stream<List<T>> fullBatches = items.flatMap(item -> {
+            batcher.add(item);
+            return batcher.takeBatchIfFull().stream();
+        });
+        Stream<List<T>> remainingPartialBatch = Stream.generate(
+                () -> batcher.takeBatchIfNotEmpty())
+                .limit(1).flatMap(Optional::stream);
+        return Stream.concat(fullBatches, remainingPartialBatch);
+    }
+
+    /**
+     * Partitions a non-parallel stream into batches.
+     *
+     * @param <T> the item type
+     */
+    private static class StreamBatcher<T> {
+        private final int batchSize;
+        private List<T> batch;
+
+        private StreamBatcher(int batchSize) {
+            this.batchSize = batchSize;
+            batch = new ArrayList<>(batchSize);
+        }
+
+        void add(T item) {
+            batch.add(item);
+        }
+
+        Optional<List<T>> takeBatchIfFull() {
+            if (batch.size() == batchSize) {
+                List<T> fullBatch = batch;
+                batch = new ArrayList<>(batchSize);
+                return Optional.of(fullBatch);
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        Optional<List<T>> takeBatchIfNotEmpty() {
+            if (batch.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(batch);
+            }
         }
     }
 }
