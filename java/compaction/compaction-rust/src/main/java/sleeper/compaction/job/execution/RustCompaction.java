@@ -33,6 +33,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class RustCompaction implements CompactionRunner {
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob job) throws Exception {
+    public RecordsProcessed compact(CompactionJob job) throws IOException, StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
         Schema schema = tableProperties.getSchema();

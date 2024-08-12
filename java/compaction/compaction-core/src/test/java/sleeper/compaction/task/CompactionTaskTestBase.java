@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES;
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -147,7 +148,7 @@ public class CompactionTaskTestBase {
 
     private WaitForFileAssignment waitForFileAssignment() {
         return new StateStoreWaitForFiles(1,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
+                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE), JOB_ASSIGNMENT_THROTTLING_RETRIES,
                 stateStoreByTableId::get);
     }
 

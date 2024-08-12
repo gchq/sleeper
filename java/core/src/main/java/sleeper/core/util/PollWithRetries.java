@@ -89,6 +89,14 @@ public class PollWithRetries {
         return builder().immediateRetries(retries).build();
     }
 
+    public Builder toBuilder() {
+        return builder()
+                .pollIntervalMillis(pollIntervalMillis)
+                .maxPolls(maxPolls)
+                .pollsTracker(pollsTracker)
+                .sleepInInterval(sleepInInterval);
+    }
+
     /**
      * Starts polling until an exit condition is met or the maximum polls has been reached.
      *
@@ -240,14 +248,14 @@ public class PollWithRetries {
         }
 
         /**
-         * Sets to apply the maximum number of polls across all calls to poll a method. By default the maximum number
-         * of polls is only applied within a single call to poll a method.
+         * Sets a tracker to restrict the maximum number of polls. This is restricted across all future calls to poll a
+         * method via this object. Without this, the default is to apply the maximum number of polls within each
+         * individual call to poll a method.
          *
          * @return the builder
          */
-        public Builder applyMaxPollsOverall() {
-            pollsTracker = new TrackAttemptsAcrossInvocations();
-            return this;
+        public Builder trackMaxPollsAcrossInvocations() {
+            return pollsTracker(new TrackAttemptsAcrossInvocations());
         }
 
         /**
@@ -267,6 +275,11 @@ public class PollWithRetries {
          */
         public Builder noRetries() {
             return maxPolls(1);
+        }
+
+        private Builder pollsTracker(PollsTracker pollsTracker) {
+            this.pollsTracker = pollsTracker;
+            return this;
         }
 
         /**
