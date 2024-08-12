@@ -79,6 +79,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 
@@ -137,6 +138,12 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
             .description("Partitions in this table with more than the following number of records in will be split.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT)
+            .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the partition splitting lambda will apply splits synchronously.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")

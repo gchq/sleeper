@@ -785,6 +785,10 @@ sleeper.partition.splitting.reserved.concurrency=10
 # following number of records in will be split. This value can be overridden on a per-table basis.
 sleeper.default.partition.splitting.threshold=1000000000
 
+# If true, partition splits will be applied via asynchronous requests sent to the state store
+# committer lambda. If false, the partition splitting lambda will apply splits synchronously.
+sleeper.default.partition.splitting.commit.async=true
+
 
 ## The following properties relate to garbage collection.
 
