@@ -1,7 +1,8 @@
 #pragma once
 
+#include "cudf_compact/parquet_types.h"
+
 #include <cstddef>
-#include <parquet_types.h>
 
 struct col_schema
 {

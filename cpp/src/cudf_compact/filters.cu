@@ -1,5 +1,4 @@
-
-#include "filters.h"
+#include "filters.hpp"
 
 #include <cudf/ast/expressions.hpp>
 #include <cudf/scalar.hpp>

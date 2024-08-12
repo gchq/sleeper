@@ -70,6 +70,8 @@
   "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
   "cmake.sourceDirectory": "/workspace/cpp",
   "files.associations": {
-    "*.inc": "cpp"
+    "*.inc": "cpp",
+    "memory": "cpp",
+    "cstddef": "cpp"
   }
 }

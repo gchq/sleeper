@@ -1,4 +1,4 @@
-#include "cudf_compact.hpp"
+#include "cudf_compact/cudf_compact.hpp"
 
 #include <cudf/ast/expressions.hpp>
 #include <cudf/io/parquet.hpp>
@@ -9,16 +9,16 @@
 #include <cudf/utilities/default_stream.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <rmm/cuda_stream_view.hpp>
-#include <rmm/mr/device_memory_resource.hpp>
+#include <rmm/mr/device/device_memory_resource.hpp>
 #include <spdlog/spdlog.h>
 
-#include "common_types.hpp"
-#include "filters.h"
-#include "metadata.h"
-#include "parquet_types.h"
-#include "ranges.h"
+#include "cudf_compact/common_types.hpp"
+#include "cudf_compact/filters.hpp"
+#include "cudf_compact/metadata.hpp"
+#include "cudf_compact/parquet_types.h"
+#include "cudf_compact/ranges.hpp"
 
-#include <algorithm>//std::reduce
+#include <algorithm>// std::reduce
 #include <cstddef>
 #include <exception>
 #include <memory>
@@ -207,126 +207,124 @@ std::optional<size_t> page_size(col_schema const &schema,
 
 CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inputData)
 {
-    {
-        // TODO this should be read from compaction input details, will consist of row keys and sort keys
-        // get the column to use for ranges
-        cudf::size_type const range_col = { 0 };
+    // TODO this should be read from compaction input details, will consist of row keys and sort keys
+    // get the column to use for ranges
+    cudf::size_type const range_col = { 0 };
 
-        // force gpu initialization so it's not included in the time
-        rmm::cuda_stream_default.synchronize();
+    // force gpu initialization so it's not included in the time
+    rmm::cuda_stream_default.synchronize();
 
-        // need to create table_input_metadata to get column names and nullability correct
-        int num_columns = 0;
-        size_t total_rows = 0;
-        std::vector<std::vector<parquet::format::ColumnIndex>> indexes_per_file;
+    // need to create table_input_metadata to get column names and nullability correct
+    int num_columns = 0;
+    size_t total_rows = 0;
+    std::vector<std::vector<parquet::format::ColumnIndex>> indexes_per_file;
 
-        std::vector<parquet::format::SchemaElement> schema;
-        std::vector<col_schema> flat_schema;
-        std::vector<page_info> pages;
+    std::vector<parquet::format::SchemaElement> schema;
+    std::vector<col_schema> flat_schema;
+    std::vector<page_info> pages;
 
-        // collect per-page sizing info
-        std::vector<std::string> const &inputFiles = details.inputFiles;
-        int global_pg_idx = 0;
-        for (int f = 0; f < input_files.size(); f++) {
-            auto [fmeta, offset_index, column_index] = read_indexes(input_files[f]);
+    // collect per-page sizing info
+    std::vector<std::string> const &inputFiles = details.inputFiles;
+    int global_pg_idx = 0;
+    for (int f = 0; f < input_files.size(); f++) {
+        auto [fmeta, offset_index, column_index] = read_indexes(input_files[f]);
 
-            // use first input file to get schema and column info
-            if (f == 0) {
-                schema = fmeta.schema;
-                num_columns = fmeta.row_groups[0].columns.size();
+        // use first input file to get schema and column info
+        if (f == 0) {
+            schema = fmeta.schema;
+            num_columns = fmeta.row_groups[0].columns.size();
 
-                // flatten the schema so we can use it for size estimation later
-                walk_schema(fmeta, flat_schema, 0, 0, 0);
-            }
+            // flatten the schema so we can use it for size estimation later
+            walk_schema(fmeta, flat_schema, 0, 0, 0);
+        }
 
-            int file_colidx = 0;
-            for (int rg_idx = 0; rg_idx < fmeta.row_groups.size(); rg_idx++) {
-                auto const &row_grp = fmeta.row_groups[rg_idx];
-                total_rows += row_grp.num_rows;
-                for (int col_idx = 0; col_idx < row_grp.columns.size(); col_idx++, file_colidx++) {
-                    auto const &col = row_grp.columns[col_idx];
-                    auto const &offsets = offset_index[file_colidx];
-                    auto const &colidxs = column_index[file_colidx];
-                    int const global_col_idx = f * num_columns + col_idx;
+        int file_colidx = 0;
+        for (int rg_idx = 0; rg_idx < fmeta.row_groups.size(); rg_idx++) {
+            auto const &row_grp = fmeta.row_groups[rg_idx];
+            total_rows += row_grp.num_rows;
+            for (int col_idx = 0; col_idx < row_grp.columns.size(); col_idx++, file_colidx++) {
+                auto const &col = row_grp.columns[col_idx];
+                auto const &offsets = offset_index[file_colidx];
+                auto const &colidxs = column_index[file_colidx];
+                int const global_col_idx = f * num_columns + col_idx;
 
-                    size_t const num_pages = offsets.page_locations.size();
-                    for (int pg_idx = 0; pg_idx < num_pages; pg_idx++, global_pg_idx++) {
-                        auto const &page_loc = offsets.page_locations[pg_idx];
-                        auto const page_sz =
-                          page_size(flat_schema[col_idx], offsets, colidxs, pg_idx, num_pages, row_grp.num_rows);
-                        if (not page_sz.has_value()) {
-                            SPDLOG_CRITICAL("no sizing info, exiting");
-                            throw std::runtime_error();
-                        }
-
-                        int const num_rows =
-                          pg_idx == num_pages - 1
-                            ? row_grp.num_rows - page_loc.first_row_index
-                            : offsets.page_locations[pg_idx + 1].first_row_index - page_loc.first_row_index;
-
-                        pages.push_back(
-                          { f, rg_idx, file_colidx, pg_idx, col_idx, global_col_idx, num_rows, page_sz.value() });
+                size_t const num_pages = offsets.page_locations.size();
+                for (int pg_idx = 0; pg_idx < num_pages; pg_idx++, global_pg_idx++) {
+                    auto const &page_loc = offsets.page_locations[pg_idx];
+                    auto const page_sz =
+                      page_size(flat_schema[col_idx], offsets, colidxs, pg_idx, num_pages, row_grp.num_rows);
+                    if (not page_sz.has_value()) {
+                        SPDLOG_CRITICAL("no sizing info, exiting");
+                        throw std::runtime_error();
                     }
+
+                    int const num_rows = pg_idx == num_pages - 1 ? row_grp.num_rows - page_loc.first_row_index
+                                                                 : offsets.page_locations[pg_idx + 1].first_row_index
+                                                                     - page_loc.first_row_index;
+
+                    pages.push_back(
+                      { f, rg_idx, file_colidx, pg_idx, col_idx, global_col_idx, num_rows, page_sz.value() });
                 }
             }
-
-            indexes_per_file.push_back(std::move(column_index));
         }
 
-        // get type for range_col
-        int schema_idx = 0;
-        int col_idx = -1;
-        parquet::format::Type::type col_type;
-        parquet::format::LogicalType log_type;
-        parquet::format::ConvertedType::type conv_type;
-        for (auto const &se : schema) {
-            if (se.num_children == 0) {
-                col_idx++;
-                if (col_idx == range_col) {
-                    col_type = se.type;
-                    conv_type = se.converted_type;
-                    log_type = se.logicalType;
-                    break;
-                }
-            }
-            schema_idx++;
-        }
-
-        cudf::logger().set_level(spdlog::level::info);
-
-        // chunk-size is in GB
-        // TODO read from config/options
-        size_t const chunk_size = 5 * 1024 * 1024 * 1024;
-        // calculate input ranges
-        auto ranges = getRanges(pages, range_col, col_type, conv_type, chunk_size, indexes_per_file);
-
-        // use pooled memory...speeds up mallocs for table copies
-        auto mr = make_pooled_mr();
-
-        // will be lazy initialized
-        std::unique_ptr<cudf::io::parquet_chunked_writer> writer;
-
-        auto tstart = timestamp();
-        std::size_t count = 0;
-        while (!ranges.empty()) {
-            scalar_pair &curr = ranges.front();
-            SPDLOG_INFO("attempt range {} , {}", std::get<0>(curr), std::get<2>(curr));
-            try {
-                count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer);
-                ranges.pop_front();
-            } catch (std::exception const &e) {
-                SPDLOG_ERROR("processing range failed {}", e.what());
-                throw;
-            }
-        }
-
-        writer->close();
-
-        auto tend = timestamp();
-
-        SPDLOG_INFO("total num rows read {:d}", count);
-        SPDLOG_INFO("total time {} seconds", std::chrono::seconds(tend - tstart));
-        return { count, count };
+        indexes_per_file.push_back(std::move(column_index));
     }
+
+    // get type for range_col
+    int schema_idx = 0;
+    int col_idx = -1;
+    parquet::format::Type::type col_type;
+    parquet::format::LogicalType log_type;
+    parquet::format::ConvertedType::type conv_type;
+    for (auto const &se : schema) {
+        if (se.num_children == 0) {
+            col_idx++;
+            if (col_idx == range_col) {
+                col_type = se.type;
+                conv_type = se.converted_type;
+                log_type = se.logicalType;
+                break;
+            }
+        }
+        schema_idx++;
+    }
+
+    cudf::logger().set_level(spdlog::level::info);
+
+    // chunk-size is in GB
+    // TODO read from config/options
+    size_t const chunk_size = 5 * 1024 * 1024 * 1024;
+    // calculate input ranges
+    auto ranges = getRanges(pages, range_col, col_type, conv_type, chunk_size, indexes_per_file);
+
+    // use pooled memory...speeds up mallocs for table copies
+    auto mr = make_pooled_mr();
+
+    // will be lazy initialized
+    std::unique_ptr<cudf::io::parquet_chunked_writer> writer;
+
+    auto tstart = timestamp();
+    std::size_t count = 0;
+    while (!ranges.empty()) {
+        scalar_pair &curr = ranges.front();
+        SPDLOG_INFO("attempt range {} , {}", std::get<0>(curr), std::get<2>(curr));
+        try {
+            count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer);
+            ranges.pop_front();
+        } catch (std::exception const &e) {
+            SPDLOG_ERROR("processing range failed {}", e.what());
+            throw;
+        }
+    }
+
+    writer->close();
+
+    auto tend = timestamp();
+
+    SPDLOG_INFO("total num rows read {:d}", count);
+    SPDLOG_INFO("total time {} seconds", std::chrono::seconds(tend - tstart));
+    return { count, count };
+}
 
 }// namespace gpu_compact::cudf_compact

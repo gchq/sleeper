@@ -4,8 +4,12 @@ add_library(
   cudf_compact
   cudf_compact.cpp
   parquet_types.cpp
+  ../../include/cudf_compact/common_types.hpp
   ../../include/cudf_compact/cudf_compact.hpp
-  ../../include/cudf_compact/parquet_types.h)
+  ../../include/cudf_compact/filters.hpp
+  ../../include/cudf_compact/metadata.hpp
+  ../../include/cudf_compact/parquet_types.h
+  ../../include/cudf_compact/ranges.hpp)
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
 

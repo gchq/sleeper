@@ -1,21 +1,23 @@
-#include <CLI/CLI.hpp>// NOLINT
-#include <exception>
-// #include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
-#include <cstdlib>
-#include <regex>
+#include "configure_logging.hpp"
+#include "cudf_compact/cudf_compact.hpp"
+#include "locale_set.hpp"
+
 #ifdef SPDLOG_ACTIVE_LEVEL
 #undef SPDLOG_ACTIVE_LEVEL
 #endif
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include <CLI/CLI.hpp>// NOLINT
 #include <spdlog/spdlog.h>
+// #include <lefticus/tools/non_promoting_ints.hpp>// NOLINT
+
+#include <cstdlib>
+#include <exception>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "configure_logging.hpp"
-#include "cudf_compact/cudf_compact.hpp"
-#include "locale_set.hpp"
 
 using gpu_compact::cudf_compact::PartitionBound;
 using gpu_compact::cudf_compact::ColRange;

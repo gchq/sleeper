@@ -1,5 +1,10 @@
 #pragma once
 
+#include <thrift/protocol/TCompactProtocol.h>
+#include <thrift/transport/TBufferTransports.h>
+
+#include "cudf_compact/parquet_types.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <cudf/types.hpp>
@@ -10,10 +15,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "parquet_types.h"
-#include <thrift/protocol/TCompactProtocol.h>
-#include <thrift/transport/TBufferTransports.h>
 
 namespace gpu_compact::cudf_compact {
 

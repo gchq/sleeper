@@ -1,9 +1,9 @@
 #pragma once
-#include "parquet_types.h"
+
 #include <cudf/ast/expressions.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/scalar.hpp>
+#include <cudf/scalar/scalar.hpp>
 #include <cudf/strings/string_view.hpp>
 #include <cudf/utilities/traits.hpp>
 #include <rmm/cuda_device.hpp>
@@ -12,6 +12,8 @@
 #include <rmm/mr/device/per_device_resource.hpp>
 #include <rmm/mr/device/pool_memory_resource.hpp>
 #include <spdlog/spdlog.h>
+
+#include "cudf_compact/parquet_types.h"
 
 #include <algorithm>// std::ranges::equal
 #include <chrono>

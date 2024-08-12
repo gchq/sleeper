@@ -1,13 +1,13 @@
 #pragma once
 
-#include "common_types.hpp"
-#include "parquet_types.h"
-
-#include <cstddef>
 #include <cudf/ast/expressions.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 
+#include "cudf_compact/common_types.hpp"
+#include "cudf_compact/parquet_types.h"
+
+#include <cstddef>
 #include <deque>
 #include <memory>
 #include <string>

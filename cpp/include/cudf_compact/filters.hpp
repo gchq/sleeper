@@ -1,18 +1,16 @@
-
 #pragma once
-
-#include "parquet_types.h"
 
 #include <cudf/ast/expressions.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 
+#include "cudf_compact/parquet_types.h"
+
 #include <cstddef>
 #include <memory>
 #include <string>
 #include <type_traits>
-
 
 std::unique_ptr<cudf::table> filter_table_by_range(cudf::table_view const &input,
   cudf::size_type sort_col_id,
