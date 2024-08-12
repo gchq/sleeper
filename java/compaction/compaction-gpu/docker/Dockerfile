@@ -1,5 +1,5 @@
 # A C++ Nvidia RAPIDS development image
-FROM nvcr.io/nvidia/rapidsai/base:24.04-cuda12.2-py3.11 AS base
+FROM nvcr.io/nvidia/rapidsai/base:24.08-cuda12.5-py3.11 AS base
 
 USER root
 # Install tools
