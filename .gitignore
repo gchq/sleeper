@@ -27,3 +27,4 @@ python/env/
 target/coverage/*
 cmake-build-*/
 conan-cache/
+test_data/

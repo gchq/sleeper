@@ -212,9 +212,10 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &deta
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges
     cudf::size_type const range_col = { 0 };
-
+    SPDLOG_INFO("here");
     // force gpu initialization so it's not included in the time
     rmm::cuda_stream_default.synchronize();
+    SPDLOG_INFO("here");
 
     // need to create table_input_metadata to get column names and nullability correct
     size_t num_columns = 0;
@@ -283,6 +284,7 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &deta
         indexes_per_file.push_back(std::move(column_index));
     }
 
+    SPDLOG_INFO("here");
     // get type for range_col
     int schema_idx = 0;
     int col_idx = -1;
