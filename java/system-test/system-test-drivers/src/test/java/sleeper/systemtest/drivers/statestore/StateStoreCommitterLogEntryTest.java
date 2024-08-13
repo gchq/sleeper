@@ -56,4 +56,13 @@ public class StateStoreCommitterLogEntryTest {
         assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
                 new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")));
     }
+
+    @Test
+    void shouldReadUnrecognisedLog() {
+        // Given
+        String message = "some other log";
+
+        // When / Then
+        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isNull();
+    }
 }

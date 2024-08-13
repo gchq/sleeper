@@ -67,6 +67,15 @@ public class StateStoreCommitterRunsBuilderTest {
                         List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
     }
 
+    @Test
+    void shouldIgnoreUnrecognisedLog() {
+        // Given
+        add("test-logstream", "Some unknown message");
+
+        // When / Then
+        assertThat(builder.buildRuns()).isEmpty();
+    }
+
     void add(String logStream, String message) {
         builder.add(List.of(
                 ResultField.builder().field("@logStream").value(logStream).build(),
