@@ -43,8 +43,10 @@ public class StateStoreCommitterRunsBuilder {
             switch (field.field()) {
                 case "@logStream":
                     logStream = logStreamByName.computeIfAbsent(field.value(), name -> new LogStream());
+                    break;
                 case "@message":
                     message = field.value();
+                    break;
                 default:
             }
         }
