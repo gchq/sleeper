@@ -92,7 +92,7 @@ public class StateStoreCommitter {
         request.apply(this);
     }
 
-    void apply(CompactionJobCommitRequest request) throws StateStoreException {
+    void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
         CompactionJob job = request.getJob();
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
@@ -117,7 +117,7 @@ public class StateStoreCommitter {
         }
     }
 
-    void apply(IngestAddFilesCommitRequest request) throws StateStoreException {
+    void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(request.getFileReferences());
         stateStore.addFilesWithReferences(files);
@@ -131,12 +131,12 @@ public class StateStoreCommitter {
         }
     }
 
-    void apply(SplitPartitionCommitRequest request) throws StateStoreException {
+    void splitPartition(SplitPartitionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
     }
 
-    void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
+    void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
     }

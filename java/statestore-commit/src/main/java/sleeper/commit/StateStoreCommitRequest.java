@@ -39,7 +39,7 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getJob().getTableId(), committer -> committer.apply(request));
+        return new StateStoreCommitRequest(request, request.getJob().getTableId(), committer -> committer.commitCompaction(request));
     }
 
     /**
@@ -49,7 +49,7 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forCompactionJobIdAssignment(CompactionJobIdAssignmentCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.apply(request));
+        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.assignCompactionInputFiles(request));
     }
 
     /**
@@ -59,7 +59,7 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.apply(request));
+        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.addFiles(request));
     }
 
     /**
@@ -69,7 +69,7 @@ public class StateStoreCommitRequest {
      * @return         a state store commit request
      */
     public static StateStoreCommitRequest forSplitPartition(SplitPartitionCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.apply(request));
+        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.splitPartition(request));
     }
 
     private StateStoreCommitRequest(Object request, String tableId, ApplyRequest applyRequest) {
