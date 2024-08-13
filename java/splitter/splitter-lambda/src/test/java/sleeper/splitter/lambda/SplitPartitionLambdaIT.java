@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -49,7 +48,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreProvider;
@@ -88,23 +86,22 @@ public class SplitPartitionLambdaIT {
     private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final TableProperties tableProperties = createTable(schema, partitionTree);
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
-    private final SplitPartitionLambda lambda = new SplitPartitionLambda(instanceProperties, conf, s3, dynamoDB, sqs);
     private final SplitPartitionJobDefinitionSerDe serDe = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider());
 
     @TempDir
     private Path tempDir;
 
     @Test
-    @Disabled("TODO")
     void shouldCommitToStateStoreDirectly() throws Exception {
         // Given
         List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Record(Map.of("key", i))));
 
         // When
-        lambda.splitPartitionFromJson(serDe.toJson(new SplitPartitionJobDefinition(
-                tableProperties.get(TABLE_ID),
-                partitionTree.getRootPartition(), filenames)));
+        lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
+                serDe.toJson(new SplitPartitionJobDefinition(
+                        tableProperties.get(TABLE_ID),
+                        partitionTree.getRootPartition(), filenames)));
 
         // Then
         assertThat(stateStore().getAllPartitions()).containsExactlyInAnyOrderElementsOf(
@@ -145,8 +142,11 @@ public class SplitPartitionLambdaIT {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return new StateStoreProvider(instanceProperties, s3, dynamoDB,
-                HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+        return new StateStoreProvider(instanceProperties, s3, dynamoDB, conf);
+    }
+
+    private SplitPartitionLambda lambdaWithNewPartitionIds(String... ids) {
+        return new SplitPartitionLambda(instanceProperties, conf, s3, dynamoDB, sqs, List.of(ids).iterator()::next);
     }
 
     private List<String> ingestRecordsGetFilenames(Stream<Record> records) throws Exception {

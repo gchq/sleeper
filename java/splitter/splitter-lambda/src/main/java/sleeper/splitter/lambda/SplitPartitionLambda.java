@@ -47,6 +47,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -63,6 +64,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+    private final Supplier<String> idSupplier;
 
     public SplitPartitionLambda() {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient());
@@ -73,15 +75,16 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     }
 
     private SplitPartitionLambda(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient) {
-        this(instanceProperties, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties), s3Client, dynamoDBClient, sqsClient);
+        this(instanceProperties, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties), s3Client, dynamoDBClient, sqsClient, () -> UUID.randomUUID().toString());
     }
 
-    public SplitPartitionLambda(InstanceProperties instanceProperties, Configuration conf, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient) {
+    public SplitPartitionLambda(InstanceProperties instanceProperties, Configuration conf, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
         this.conf = conf;
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.idSupplier = idSupplier;
     }
 
     @Override
@@ -106,8 +109,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
-                loadSketchesFromFile(tableProperties, conf),
-                () -> UUID.randomUUID().toString(),
+                loadSketchesFromFile(tableProperties, conf), idSupplier,
                 sendAsyncCommit(sqsClient, instanceProperties, tableProperties));
         splitPartition.splitPartition(job.getPartition(), job.getFileNames());
     }
