@@ -36,18 +36,17 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitter.split.SplitPartition;
+import sleeper.splitter.split.SplitPartition.SendAsyncCommit;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -123,7 +122,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         return instanceProperties;
     }
 
-    private static Consumer<SplitPartitionCommitRequest> sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
+    private static SendAsyncCommit sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
         SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe(tableProperties.getSchema());
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))

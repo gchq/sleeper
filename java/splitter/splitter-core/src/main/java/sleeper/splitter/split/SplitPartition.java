@@ -29,7 +29,6 @@ import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -57,13 +56,13 @@ public class SplitPartition {
     private final Schema schema;
     private final SketchesLoader sketchesLoader;
     private final Supplier<String> idSupplier;
-    private final Consumer<SplitPartitionCommitRequest> sendAsyncCommit;
+    private final SendAsyncCommit sendAsyncCommit;
 
     public SplitPartition(StateStore stateStore,
             TableProperties tableProperties,
             SketchesLoader sketchesLoader,
             Supplier<String> idSupplier,
-            Consumer<SplitPartitionCommitRequest> sendAsyncCommit) {
+            SendAsyncCommit sendAsyncCommit) {
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
@@ -102,14 +101,22 @@ public class SplitPartition {
         LOGGER.info("New partition: {}", leftChild);
         LOGGER.info("New partition: {}", rightChild);
 
-        try {
-            if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
+        if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
+            try {
                 stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
-            } else {
-                sendAsyncCommit.accept(new SplitPartitionCommitRequest(tableProperties.get(TABLE_ID), parentPartition, leftChild, rightChild));
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
             }
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
+        } else {
+            sendAsyncCommit.sendCommit(new SplitPartitionCommitRequest(tableProperties.get(TABLE_ID), parentPartition, leftChild, rightChild));
         }
+    }
+
+    /**
+     * Sends commit state store updates to the state store committer.
+     */
+    @FunctionalInterface
+    public interface SendAsyncCommit {
+        void sendCommit(SplitPartitionCommitRequest splitPartitionCommitRequest);
     }
 }
