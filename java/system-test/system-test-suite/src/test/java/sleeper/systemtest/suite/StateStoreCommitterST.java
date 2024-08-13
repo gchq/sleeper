@@ -21,11 +21,15 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.time.Duration;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 
@@ -38,18 +42,23 @@ public class StateStoreCommitterST {
     }
 
     @Test
-    void shouldAddManyFiles(SleeperSystemTest sleeper) {
+    void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        sleeper.stateStore().fakeCommits().sendBatched(
-                commitFactory -> IntStream.rangeClosed(1, 1000)
+        sleeper.stateStore().fakeCommits()
+                .sendBatched(commitFactory -> IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(commitFactory::addFile));
+                        .map(commitFactory::addFile))
+                .waitForCommits(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2)));
 
         // Then
+        assertThat(sleeper.tableFiles().references())
+                .containsExactlyElementsOf(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .collect(toUnmodifiableList()));
     }
 }

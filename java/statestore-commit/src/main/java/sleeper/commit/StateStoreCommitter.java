@@ -77,10 +77,13 @@ public class StateStoreCommitter {
     /**
      * Applies a state store commit request.
      *
-     * @param json the commit request JSON string
+     * @param  json the commit request JSON string
+     * @return      the commit request
      */
-    public void applyFromJson(String json) throws StateStoreException {
-        apply(deserialiser.fromJson(json));
+    public StateStoreCommitRequest applyFromJson(String json) throws StateStoreException {
+        StateStoreCommitRequest request = deserialiser.fromJson(json);
+        apply(request);
+        return request;
     }
 
     /**

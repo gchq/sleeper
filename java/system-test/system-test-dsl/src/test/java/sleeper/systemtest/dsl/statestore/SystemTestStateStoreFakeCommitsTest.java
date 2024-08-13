@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.statestore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -36,10 +37,11 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldSendOneFileCommit(SleeperSystemTest sleeper) {
+    void shouldSendOneFileCommit(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
-                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
+                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100))
+                .waitForCommits(PollWithRetries.noRetries());
 
         // Then
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
@@ -50,11 +52,12 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldSendManyFileCommits(SleeperSystemTest sleeper) {
+    void shouldSendManyFileCommits(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
                 .sendBatched(factory -> LongStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)));
+                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)))
+                .waitForCommits(PollWithRetries.noRetries());
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);

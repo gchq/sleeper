@@ -15,22 +15,32 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
-    private final AtomicInteger commitsSent = new AtomicInteger();
+    private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
+    private Instant findCommitsFromTime;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         instance = context.instance();
         driver = context.instance().adminDrivers().stateStoreCommitter(context);
+        findCommitsFromTime = context.reporting().getRecordingStartTime();
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
@@ -43,9 +53,45 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
+    public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
+        poll.pollUntil("all state store commits are applied", () -> {
+            List<StateStoreCommitterRun> runs = driver.getRunsAfter(findCommitsFromTime);
+            decrementWaitForNumCommits(runs);
+            updateFindCommitsFromTime(runs);
+            return waitForNumCommitsByTableId.isEmpty();
+        });
+        return this;
+    }
+
     private void send(Stream<StateStoreCommitMessage> messages) {
         driver.sendCommitMessages(messages
-                .peek(message -> commitsSent.incrementAndGet()));
+                .peek(message -> waitForNumCommitsByTableId.compute(
+                        message.getTableId(),
+                        (id, count) -> count == null ? 1 : count + 1)));
+    }
+
+    private void decrementWaitForNumCommits(List<StateStoreCommitterRun> runs) {
+        Map<String, Integer> numCommitsByTableId = runs.stream()
+                .flatMap(run -> run.getCommits().stream())
+                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+        numCommitsByTableId.forEach((tableId, numCommits) -> {
+            waitForNumCommitsByTableId.compute(tableId, (id, count) -> {
+                if (count == null) {
+                    return null;
+                } else if (numCommits >= count) {
+                    return null;
+                } else {
+                    return count - numCommits;
+                }
+            });
+        });
+    }
+
+    private void updateFindCommitsFromTime(List<StateStoreCommitterRun> runs) {
+        runs.stream()
+                .map(StateStoreCommitterRun::getFinishTime)
+                .max(Comparator.naturalOrder())
+                .ifPresent(lastTime -> findCommitsFromTime = lastTime);
     }
 
     private StateStoreCommitMessageFactory messageFactory() {

@@ -16,12 +16,27 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.stream.Stream;
 
-public interface StateStoreCommitterDriver {
+public class StateStoreCommitSummary {
+    private final String tableId;
+    private final String type;
+    private final Instant finishTime;
 
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+    public StateStoreCommitSummary(String tableId, String type, Instant finishTime) {
+        this.tableId = tableId;
+        this.type = type;
+        this.finishTime = finishTime;
+    }
 
-    List<StateStoreCommitterRun> getRunsAfter(Instant startTime);
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Instant getFinishTime() {
+        return finishTime;
+    }
 }

@@ -15,16 +15,25 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryStateStoreCommitter {
 
@@ -42,6 +51,8 @@ public class InMemoryStateStoreCommitter {
 
     public class Driver implements StateStoreCommitterDriver {
         private final StateStoreCommitter committer;
+        private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
+        private final List<StateStoreCommitterRun> runs = new ArrayList<>();
 
         private Driver(SystemTestContext context) {
             SystemTestInstanceContext instance = context.instance();
@@ -54,13 +65,32 @@ public class InMemoryStateStoreCommitter {
 
         @Override
         public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
-            messages.forEach(message -> {
+            messages.forEach(queue::add);
+        }
+
+        @Override
+        public List<StateStoreCommitterRun> getRunsAfter(Instant startTime) {
+            runCommitter();
+            return runs.stream()
+                    .filter(run -> run.getStartTime().compareTo(startTime) >= 0)
+                    .collect(toUnmodifiableList());
+        }
+
+        private void runCommitter() {
+            Instant startTime = Instant.now();
+            List<StateStoreCommitSummary> commits = new ArrayList<>();
+            for (StateStoreCommitMessage message = queue.poll(); message != null; message = queue.poll()) {
                 try {
-                    committer.applyFromJson(message.getBody());
+                    StateStoreCommitRequest appliedRequest = committer.applyFromJson(message.getBody());
+                    commits.add(new StateStoreCommitSummary(
+                            appliedRequest.getTableId(), appliedRequest.getRequest().getClass().getSimpleName(), Instant.now()));
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }
+            if (!commits.isEmpty()) {
+                runs.add(new StateStoreCommitterRun(startTime, Instant.now(), commits));
+            }
         }
     }
 

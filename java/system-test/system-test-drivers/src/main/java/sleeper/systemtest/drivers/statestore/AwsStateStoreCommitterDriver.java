@@ -23,7 +23,9 @@ import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -44,6 +46,12 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     @Override
     public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
         SplitIntoBatches.inParallelBatchesOf(10, messages, this::sendMessageBatch);
+    }
+
+    @Override
+    public List<StateStoreCommitterRun> getRunsAfter(Instant startTime) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {
