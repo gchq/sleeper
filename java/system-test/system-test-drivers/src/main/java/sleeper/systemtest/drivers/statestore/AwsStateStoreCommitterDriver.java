@@ -19,11 +19,11 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 
+import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -43,17 +43,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     @Override
     public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
-        List<StateStoreCommitMessage> batch = new ArrayList<>();
-        messages.forEach(message -> {
-            batch.add(message);
-            if (batch.size() == 10) {
-                sendMessageBatch(batch);
-                batch.clear();
-            }
-        });
-        if (!batch.isEmpty()) {
-            sendMessageBatch(batch);
-        }
+        SplitIntoBatches.inParallelBatchesOf(10, messages, this::sendMessageBatch);
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {

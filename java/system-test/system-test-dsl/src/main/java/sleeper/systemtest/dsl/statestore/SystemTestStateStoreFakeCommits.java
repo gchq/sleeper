@@ -18,40 +18,30 @@ package sleeper.systemtest.dsl.statestore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
-    private final Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages;
+    private final StateStoreCommitterDriver driver;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
-        this(context.instance(), buildCommitSender(context));
-    }
-
-    private SystemTestStateStoreFakeCommits(SystemTestInstanceContext instance, Consumer<Stream<StateStoreCommitMessage>> sendCommitMessages) {
-        this.instance = instance;
-        this.sendCommitMessages = sendCommitMessages;
+        instance = context.instance();
+        driver = context.instance().adminDrivers().stateStoreCommitter(context);
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
-        sendCommitMessages.accept(buildCommits.apply(messageFactory()));
+        driver.sendCommitMessages(buildCommits.apply(messageFactory()));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
-        sendCommitMessages.accept(Stream.of(buildCommit.apply(messageFactory())));
+        driver.sendCommitMessages(Stream.of(buildCommit.apply(messageFactory())));
         return this;
     }
 
     private StateStoreCommitMessageFactory messageFactory() {
         return new StateStoreCommitMessageFactory(instance.getTableStatus().getTableUniqueId());
-    }
-
-    private static Consumer<Stream<StateStoreCommitMessage>> buildCommitSender(SystemTestContext context) {
-        StateStoreCommitterDriver driver = context.instance().adminDrivers().stateStoreCommitter(context);
-        return driver::sendCommitMessages;
     }
 }
