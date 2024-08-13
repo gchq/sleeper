@@ -87,6 +87,23 @@ public class StateStoreCommitterRunsBuilderTest {
                 new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
     }
 
+    @Test
+    void shouldIgnoreExtraFieldsInLogMessage() {
+        // Given
+        builder.add(List.of(
+                ResultField.builder().field("@logStream").value("test-logstream").build(),
+                ResultField.builder().field("@someField").value("Some ignored field").build(),
+                ResultField.builder().field("@message").value("[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z").build()));
+        builder.add(List.of(
+                ResultField.builder().field("@logStream").value("test-logstream").build(),
+                ResultField.builder().field("@message").value("[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)").build(),
+                ResultField.builder().field("@otherField").value("Other ignored field").build()));
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
+    }
+
     void add(String logStream, String message) {
         builder.add(List.of(
                 ResultField.builder().field("@logStream").value(logStream).build(),

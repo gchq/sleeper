@@ -48,6 +48,7 @@ public class StateStoreCommitterRunsBuilder {
                     message = field.value();
                     break;
                 default:
+                    break;
             }
         }
         Objects.requireNonNull(logStream, "Log stream not found");
