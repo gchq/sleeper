@@ -25,7 +25,9 @@ target_compile_features(cudf_compact PUBLIC cxx_std_20 cuda_std_20)
 #           --expt-extended-lambda
 #           -Xfatbin
 #           -compress-all)
-# set_target_properties(cudf_compact PROPERTIES CUDA_ARCHITECTURES "75")
+set_target_properties(cudf_compact PROPERTIES CUDA_ARCHITECTURES "75")
+set_source_files_properties(ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all")
+
 
 set_target_properties(
   cudf_compact
