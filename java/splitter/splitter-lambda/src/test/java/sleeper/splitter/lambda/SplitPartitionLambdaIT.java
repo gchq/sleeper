@@ -21,6 +21,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,6 +49,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
@@ -56,6 +61,8 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -64,7 +71,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -111,14 +120,62 @@ public class SplitPartitionLambdaIT {
                         .buildList());
     }
 
+    @Test
+    void shouldSendAsyncRequestToStateStoreCommitter() throws Exception {
+        // Given
+        tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
+        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
+        List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
+                .mapToObj(i -> new Record(Map.of("key", i))));
+
+        // When
+        lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
+                serDe.toJson(new SplitPartitionJobDefinition(
+                        tableProperties.get(TABLE_ID),
+                        partitionTree.getRootPartition(), filenames)));
+
+        // Then
+        PartitionTree expectedTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 51)
+                .buildTree();
+        assertThat(stateStore().getAllPartitions()).containsExactlyElementsOf(partitionTree.getAllPartitions());
+        assertThat(receiveSplitPartitionCommitMessages()).containsExactly(
+                new SplitPartitionCommitRequest(
+                        tableProperties.get(TABLE_ID),
+                        expectedTree.getRootPartition(),
+                        expectedTree.getPartition("L"),
+                        expectedTree.getPartition("R")));
+    }
+
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
         return instanceProperties;
+    }
+
+    private String createFifoQueueGetUrl() {
+        return sqs.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
+    }
+
+    private List<SplitPartitionCommitRequest> receiveSplitPartitionCommitMessages() {
+        return receiveCommitMessages().stream()
+                .map(message -> new SplitPartitionCommitRequestSerDe(schema).fromJson(message.getBody()))
+                .collect(Collectors.toList());
+    }
+
+    private List<Message> receiveCommitMessages() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqs.receiveMessage(receiveMessageRequest).getMessages();
     }
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {

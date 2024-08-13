@@ -63,7 +63,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+    private final AmazonSQS sqsClient;
     private final Supplier<String> idSupplier;
 
     public SplitPartitionLambda() {
@@ -84,6 +84,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.sqsClient = sqsClient;
         this.idSupplier = idSupplier;
     }
 
