@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class StateStoreCommitSummary {
     private final String tableId;
@@ -38,5 +39,27 @@ public class StateStoreCommitSummary {
 
     public Instant getFinishTime() {
         return finishTime;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, type, finishTime);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStoreCommitSummary)) {
+            return false;
+        }
+        StateStoreCommitSummary other = (StateStoreCommitSummary) obj;
+        return Objects.equals(tableId, other.tableId) && Objects.equals(type, other.type) && Objects.equals(finishTime, other.finishTime);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStoreCommitSummary{tableId=" + tableId + ", type=" + type + ", finishTime=" + finishTime + "}";
     }
 }

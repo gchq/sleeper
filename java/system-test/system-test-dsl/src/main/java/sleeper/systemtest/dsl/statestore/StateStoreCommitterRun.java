@@ -17,10 +17,7 @@ package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
+import java.util.Objects;
 
 public class StateStoreCommitterRun {
 
@@ -46,8 +43,25 @@ public class StateStoreCommitterRun {
         return commits;
     }
 
-    public Map<String, Integer> countCommitsByTableId() {
-        return commits.stream()
-                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+    @Override
+    public int hashCode() {
+        return Objects.hash(startTime, finishTime, commits);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStoreCommitterRun)) {
+            return false;
+        }
+        StateStoreCommitterRun other = (StateStoreCommitterRun) obj;
+        return Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(commits, other.commits);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStoreCommitterRun{startTime=" + startTime + ", finishTime=" + finishTime + ", commits=" + commits + "}";
     }
 }
