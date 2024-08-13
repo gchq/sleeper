@@ -3,7 +3,6 @@
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_uvector.hpp>
-#include <spdlog/spdlog.h>
 #include <thrust/binary_search.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/discard_iterator.h>
@@ -11,6 +10,8 @@
 #include <thrust/sort.h>
 
 #include "cudf_compact/filters.hpp"
+
+#include <iostream>
 
 template<typename UnaryFunction>
 inline __device__ auto make_counting_transform_iterator(cudf::size_type start, UnaryFunction f)
@@ -186,8 +187,11 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
           last_scalar,
           to_string(end_val, col_type, conv_type),
           split_pos == filtered_pages.size() - 1 ? max_scalar : end_sclr });
-        SPDLOG_INFO(
-          "adding range {} -> {}", to_string(last_val, col_type, conv_type), to_string(end_val, col_type, conv_type));
+
+        std::string rangeBegin = to_string(last_val, col_type, conv_type);
+        std::string rangeEnd = to_string(end_val, col_type, conv_type);
+
+        std::cout << "Adding range \"" << rangeBegin << "\"->\"" << rangeEnd << "\"\n";
 
         last_val = min;
         last_scalar = end_sclr;

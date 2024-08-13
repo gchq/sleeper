@@ -72,6 +72,8 @@
   "files.associations": {
     "*.inc": "cpp",
     "memory": "cpp",
-    "cstddef": "cpp"
+    "cstddef": "cpp",
+    "bitset": "cpp",
+    "string_view": "cpp"
   }
 }

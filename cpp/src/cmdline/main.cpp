@@ -125,6 +125,7 @@ int main(int argc, const char **argv)
             .region = std::move(region) };
 
         auto [rowsRead, rowsWritten] = gpu_compact::cudf_compact::merge_sorted_files(details);
+
         SPDLOG_INFO("Compaction finished, rows read = {:Ld}, rows written = {:Ld}", rowsRead, rowsWritten);
     } catch (std::exception const &e) {
         spdlog::error("Unhandled exception in main: {}", e.what());

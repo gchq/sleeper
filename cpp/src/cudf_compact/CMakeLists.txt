@@ -2,15 +2,15 @@ include(GenerateExportHeader)
 
 add_library(
   cudf_compact
-  #   cudf_compact.cpp
-  filters.cpp
-  parquet_types.cpp
+    cudf_compact.cpp
+    filters.cpp
+    parquet_types.cpp
   ranges.cu
-  ../../include/cudf_compact/common_types.hpp
-  ../../include/cudf_compact/cudf_compact.hpp
-  ../../include/cudf_compact/filters.hpp
-  ../../include/cudf_compact/metadata.hpp
-  ../../include/cudf_compact/parquet_types.h
+    ../../include/cudf_compact/common_types.hpp
+    ../../include/cudf_compact/cudf_compact.hpp
+    ../../include/cudf_compact/filters.hpp
+    ../../include/cudf_compact/metadata.hpp
+    ../../include/cudf_compact/parquet_types.h
   ../../include/cudf_compact/ranges.hpp)
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
@@ -19,15 +19,10 @@ target_link_libraries(cudf_compact PRIVATE gpu_compact_options gpu_compact_warni
 target_include_directories(cudf_compact ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                                                                 $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 target_compile_features(cudf_compact PUBLIC cxx_std_20 cuda_std_20)
-# target_compile_options(
-#   cudf_compact
-#   PRIVATE --expt-relaxed-constexpr
-#           --expt-extended-lambda
-#           -Xfatbin
-#           -compress-all)
 set_target_properties(cudf_compact PROPERTIES CUDA_ARCHITECTURES "75")
-set_source_files_properties(ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all")
 
+set_source_files_properties(
+  ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all")
 
 set_target_properties(
   cudf_compact
