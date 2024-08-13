@@ -171,32 +171,4 @@ inline std::vector<parquet::format::SchemaElement> trim_schema(
     return result;
 }
 
-// inline cudf::io::column_in_metadata convert_schema(std::vector<parquet::format::SchemaElement> const &schema,
-//   int &schema_pos)
-// {
-//     schema_pos++;
-//     auto const &se = schema[schema_pos];
-//     cudf::io::column_in_metadata cim(se.name);
-//     cim.set_nullability(se.repetition_type != parquet::format::FieldRepetitionType::REQUIRED);
-
-//     for (int i = 0; i < se.num_children; i++) {
-//         cim.add_child(convert_schema(schema, schema_pos));
-//         // flatten lists
-//         if (se.logicalType.__isset.LIST) cim.add_child(cim.child(0).child(0));
-//     }
-
-//     return cim;
-// }
-
-// inline cudf::io::table_input_metadata to_cudf_metadata(parquet::format::FileMetaData const &fmd)
-// {
-//     // need to create table_input_metadata to get column names and nullability correct
-//     cudf::io::table_input_metadata tim;
-//     int schema_pos = 0;
-//     do {
-//         tim.column_metadata.push_back(convert_schema(fmd.schema, schema_pos));
-//     } while (schema_pos < fmd.schema.size() - 1);
-
-//     return tim;
-// }
 }// namespace gpu_compact::cudf_compact

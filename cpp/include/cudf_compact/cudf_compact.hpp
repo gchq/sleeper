@@ -75,7 +75,7 @@ struct CompactionInput
 CompactionResult merge_sorted_files(CompactionInput const &inputData);
 
 template<typename CharT>
-[[nodiscard]] inline bool iequals(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) noexcept
+[[nodiscard]] bool iequals(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) noexcept
 {
     static auto defLocale = std::locale();
     return std::ranges::equal(
@@ -83,7 +83,7 @@ template<typename CharT>
 }
 
 // move most of below code to a CPP file
-cudf::io::compression_type toCudfCompression(std::string_view compression) noexcept
+inline cudf::io::compression_type toCudfCompression(std::string_view compression) noexcept
 {
     using namespace std::literals;
     if (iequals(compression, "uncompressed"sv)) {
@@ -108,7 +108,7 @@ cudf::io::compression_type toCudfCompression(std::string_view compression) noexc
     }
 }
 
-cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInput const &details,
+inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInput const &details,
   cudf::io::sink_info const &sink,
   cudf::io::table_input_metadata &&tim) noexcept
 {
@@ -127,7 +127,7 @@ cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInput cons
                            : cudf::io::dictionary_policy::NEVER);
 }
 
-std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
+inline std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
   cudf::io::table_input_metadata &&tim)
 {
     cudf::io::sink_info destination{ details.outputFile };
