@@ -79,47 +79,49 @@ template<typename CharT>
 {
     static auto defLocale = std::locale();
     return std::ranges::equal(
-      lhs, rhs, [&](auto a, auto b) { std::tolower(a, defLocale) == std::tolower(b, defLocale) });
+      lhs, rhs, [&](auto a, auto b) { return std::tolower(a, defLocale) == std::tolower(b, defLocale); });
 }
 
 // move most of below code to a CPP file
 cudf::io::compression_type toCudfCompression(std::string_view compression) noexcept
 {
-    if (iequals(compression, "uncompressed")) {
+    using namespace std::literals;
+    if (iequals(compression, "uncompressed"sv)) {
         return cudf::io::compression_type::NONE;
-    } else if (iequals(compression, "snappy")) {
-        return cudf::io::compression_type::SNAPPY
-    } else if (iequals(compression, "gzip")) {
-        return cudf::io::compression_type::GZIP
-    } else if (iequals(compression, "lzo")) {
-        return cudf::io::compression_type::LZO
-    } else if (iequals(compression, "lz4")) {
-        return cudf::io::compression_type::LZ4
-    } else if (iequals(compression, "brotli")) {
-        return cudf::io::compression_type::BROTLI
-    } else if (iequals(compression, "zstd")) {
-        return cudf::io::compression_type::ZSTD
-    } else if (iequals(compression, "snappy")) {
-        return cudf::io::compression_type::NONE
+    } else if (iequals(compression, "snappy"sv)) {
+        return cudf::io::compression_type::SNAPPY;
+    } else if (iequals(compression, "gzip"sv)) {
+        return cudf::io::compression_type::GZIP;
+    } else if (iequals(compression, "lzo"sv)) {
+        return cudf::io::compression_type::LZO;
+    } else if (iequals(compression, "lz4"sv)) {
+        return cudf::io::compression_type::LZ4;
+    } else if (iequals(compression, "brotli"sv)) {
+        return cudf::io::compression_type::BROTLI;
+    } else if (iequals(compression, "zstd"sv)) {
+        return cudf::io::compression_type::ZSTD;
+    } else if (iequals(compression, "snappy"sv)) {
+        return cudf::io::compression_type::NONE;
     } else {
         SPDLOG_WARN("unrecognised compression type {}, using ZSTD");
         return cudf::io::compression_type::ZSTD;
     }
 }
 
-template<typename writer_options>
 cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInput const &details,
   cudf::io::sink_info const &sink,
   cudf::io::table_input_metadata &&tim) noexcept
 {
+    using namespace std::literals;
+    // TODO: sanity check the input details here! static_casts from max row group sizes, etc.
     return cudf::io::chunked_parquet_writer_options::builder(sink)
       .metadata(std::move(tim))
       .compression(toCudfCompression(details.compression))
-      .row_group_size_rows(details.maxRowGroupSize)
+      .row_group_size_rows(static_cast<cudf::size_type>(details.maxRowGroupSize))
       .max_page_size_bytes(details.maxPageSize)
-      .column_index_truncate_length(details.columnTruncateLength)
+      .column_index_truncate_length(static_cast<int32_t>(details.columnTruncateLength))
       .stats_level(cudf::io::statistics_freq::STATISTICS_COLUMN)
-      .write_v2_headers(iequals(details.writerVersion, "v2"))
+      .write_v2_headers(iequals(static_cast<std::string_view>(details.writerVersion), "v2"sv))
       .dictionary_policy((details.dictEncRowKeys || details.dictEncSortKeys || details.dictEncValues)
                            ? cudf::io::dictionary_policy::ADAPTIVE
                            : cudf::io::dictionary_policy::NEVER);
@@ -149,7 +151,7 @@ struct literal_converter
     }
 
     template<typename T, std::enable_if_t<!is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()(cudf::scalar &_value)
+    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value)
     {
         CUDF_FAIL("Unsupported type for literal");
     }

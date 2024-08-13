@@ -7,6 +7,7 @@
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 #include <cudf/utilities/default_stream.hpp>
+#include <cudf/utilities/logger.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/device_memory_resource.hpp>
@@ -28,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 namespace gpu_compact::cudf_compact {
 
 cudf::io::table_with_metadata
@@ -91,7 +93,7 @@ std::size_t write_range_low_mem(CompactionInput const &details,
         throw;
     }
 
-    return table.tbl->num_rows();
+    return static_cast<std::size_t>(table.tbl->num_rows());
 }
 
 int walk_schema(parquet::format::FileMetaData const &fmd,
@@ -100,7 +102,7 @@ int walk_schema(parquet::format::FileMetaData const &fmd,
   int max_def_level,
   int max_rep_level)
 {
-    if (idx >= 0 && idx < fmd.schema.size()) {
+    if (idx >= 0 && idx < static_cast<int>(fmd.schema.size())) {
         parquet::format::SchemaElement const &se = fmd.schema[idx];
         if (se.repetition_type == parquet::format::FieldRepetitionType::OPTIONAL) {
             ++max_def_level;
@@ -200,12 +202,12 @@ std::optional<size_t> page_size(col_schema const &schema,
 
     case parquet::format::Type::FIXED_LEN_BYTE_ARRAY:
         return schema.se.type_length;
+    default:
+        return std::nullopt;
     }
-
-    return std::nullopt;
 }
 
-CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inputData)
+CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &details)
 {
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges
@@ -215,7 +217,7 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
     rmm::cuda_stream_default.synchronize();
 
     // need to create table_input_metadata to get column names and nullability correct
-    int num_columns = 0;
+    size_t num_columns = 0;
     size_t total_rows = 0;
     std::vector<std::vector<parquet::format::ColumnIndex>> indexes_per_file;
 
@@ -226,8 +228,8 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
     // collect per-page sizing info
     std::vector<std::string> const &inputFiles = details.inputFiles;
     int global_pg_idx = 0;
-    for (int f = 0; f < input_files.size(); f++) {
-        auto [fmeta, offset_index, column_index] = read_indexes(input_files[f]);
+    for (size_t f = 0; f < inputFiles.size(); f++) {
+        auto [fmeta, offset_index, column_index] = read_indexes(inputFiles[f]);
 
         // use first input file to get schema and column info
         if (f == 0) {
@@ -239,31 +241,41 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
         }
 
         int file_colidx = 0;
-        for (int rg_idx = 0; rg_idx < fmeta.row_groups.size(); rg_idx++) {
+        for (int rg_idx = 0; rg_idx < static_cast<int>(fmeta.row_groups.size()); rg_idx++) {
             auto const &row_grp = fmeta.row_groups[rg_idx];
             total_rows += row_grp.num_rows;
-            for (int col_idx = 0; col_idx < row_grp.columns.size(); col_idx++, file_colidx++) {
-                auto const &col = row_grp.columns[col_idx];
+            for (int col_idx = 0; col_idx < static_cast<int>(row_grp.columns.size()); col_idx++, file_colidx++) {
                 auto const &offsets = offset_index[file_colidx];
                 auto const &colidxs = column_index[file_colidx];
-                int const global_col_idx = f * num_columns + col_idx;
+                int const global_col_idx = static_cast<int>(f * num_columns + col_idx);
 
                 size_t const num_pages = offsets.page_locations.size();
-                for (int pg_idx = 0; pg_idx < num_pages; pg_idx++, global_pg_idx++) {
+                for (unsigned int pg_idx = 0; pg_idx < num_pages; pg_idx++, global_pg_idx++) {
                     auto const &page_loc = offsets.page_locations[pg_idx];
-                    auto const page_sz =
-                      page_size(flat_schema[col_idx], offsets, colidxs, pg_idx, num_pages, row_grp.num_rows);
+                    auto const page_sz = page_size(flat_schema[col_idx],
+                      offsets,
+                      colidxs,
+                      pg_idx,
+                      static_cast<int>(num_pages),
+                      static_cast<int>(row_grp.num_rows));
                     if (not page_sz.has_value()) {
-                        SPDLOG_CRITICAL("no sizing info, exiting");
-                        throw std::runtime_error();
+                        SPDLOG_CRITICAL("no sizing info");
+                        throw std::runtime_error("no sizing info");
                     }
 
-                    int const num_rows = pg_idx == num_pages - 1 ? row_grp.num_rows - page_loc.first_row_index
-                                                                 : offsets.page_locations[pg_idx + 1].first_row_index
-                                                                     - page_loc.first_row_index;
+                    int const num_rows = static_cast<int>(
+                      pg_idx == num_pages - 1
+                        ? row_grp.num_rows - page_loc.first_row_index
+                        : offsets.page_locations[pg_idx + 1].first_row_index - page_loc.first_row_index);
 
-                    pages.push_back(
-                      { f, rg_idx, file_colidx, pg_idx, col_idx, global_col_idx, num_rows, page_sz.value() });
+                    pages.push_back({ static_cast<int>(f),
+                      rg_idx,
+                      file_colidx,
+                      static_cast<int>(pg_idx),
+                      col_idx,
+                      global_col_idx,
+                      num_rows,
+                      page_sz.value() });
                 }
             }
         }
@@ -274,9 +286,9 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
     // get type for range_col
     int schema_idx = 0;
     int col_idx = -1;
-    parquet::format::Type::type col_type;
+    parquet::format::Type::type col_type = parquet::format::Type::BOOLEAN;
     parquet::format::LogicalType log_type;
-    parquet::format::ConvertedType::type conv_type;
+    parquet::format::ConvertedType::type conv_type = parquet::format::ConvertedType::BSON;
     for (auto const &se : schema) {
         if (se.num_children == 0) {
             col_idx++;
@@ -294,7 +306,7 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
 
     // chunk-size is in GB
     // TODO read from config/options
-    size_t const chunk_size = 5 * 1024 * 1024 * 1024;
+    size_t const chunk_size = 5 * 1024ul * 1024ul * 1024ul;
     // calculate input ranges
     auto ranges = getRanges(pages, range_col, col_type, conv_type, chunk_size, indexes_per_file);
 
@@ -323,7 +335,8 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &inpu
     auto tend = timestamp();
 
     SPDLOG_INFO("total num rows read {:d}", count);
-    SPDLOG_INFO("total time {} seconds", std::chrono::seconds(tend - tstart));
+    using fseconds = std::chrono::duration<double, std::chrono::seconds::period>;
+    SPDLOG_INFO("total time {} seconds", std::chrono::duration_cast<fseconds>(tend - tstart).count());
     return { count, count };
 }
 

@@ -45,20 +45,20 @@ struct file_ender_s
 class SeekableMemoryBuffer : public apache::thrift::transport::TMemoryBuffer
 {
   private:
-    int _length;
+    std::size_t _length;
 
   public:
-    SeekableMemoryBuffer(int len) : TMemoryBuffer(len), _length(len) {}
+    SeekableMemoryBuffer(std::size_t len) : TMemoryBuffer(static_cast<uint32_t>(len)), _length(len) {}
 
     inline void seek(uint32_t offset)
     {
         resetBuffer();// sets read/write ptrs to 0
-        wroteBytes(_length);// sets write ptr to length (bytes now available)
+        wroteBytes(static_cast<uint32_t>(_length));// sets write ptr to length (bytes now available)
         resetConsumedMessageSize(-1);// tell transport we're clean again
         if (offset == 0) { return; }
         uint8_t *foo{ nullptr };
         uint32_t len{ offset };
-        auto const fooptr = borrow(foo, &len);
+        borrow(foo, &len);
         consume(offset);// sets read ptr to offset
     }
 };
@@ -75,7 +75,7 @@ inline bool read_footer(std::ifstream &source, std::string const &filepath, parq
     file_header_s header;
     source.read(reinterpret_cast<char *>(&header), header_len);
     file_ender_s ender;
-    source.seekg(len - ender_len);
+    source.seekg(static_cast<std::streamoff>(len - ender_len));
     source.read(reinterpret_cast<char *>(&ender), ender_len);
 
     // checks for valid header, footer, and file length
@@ -86,8 +86,8 @@ inline bool read_footer(std::ifstream &source, std::string const &filepath, parq
     // parquet files end with 4-byte footer_length and 4-byte magic == "PAR1"
     // seek backwards from the end of the file (footer_length + 8 bytes of ender)
     std::shared_ptr<TMemoryBuffer> strBuf(new TMemoryBuffer(ender.footer_len));
-    source.seekg(len - ender_len - ender.footer_len);
-    source.read((char *)strBuf->getWritePtr(ender.footer_len), ender.footer_len);
+    source.seekg(static_cast<std::streamoff>(len - ender_len - ender.footer_len));
+    source.read(reinterpret_cast<char *>(strBuf->getWritePtr(ender.footer_len)), ender.footer_len);
     strBuf->wroteBytes(ender.footer_len);
 
     TCompactProtocol proto{ strBuf };
@@ -120,28 +120,24 @@ inline std::tuple<parquet::format::FileMetaData,
     auto const &last_col = fmd.row_groups.back().columns.back();
     int64_t const max_offset = last_col.offset_index_offset + last_col.offset_index_length;
 
-    int64_t const length = max_offset - min_offset;
+    size_t const length = static_cast<size_t>(max_offset - min_offset);
     auto idx_buf = std::unique_ptr<char>(new char[length]);
 
     std::shared_ptr<SeekableMemoryBuffer> buf(new SeekableMemoryBuffer(length));
     source.seekg(min_offset);
-    source.read((char *)buf->getWritePtr(length), length);
+    source.read(
+      reinterpret_cast<char *>(buf->getWritePtr(static_cast<uint32_t>(length))), static_cast<uint32_t>(length));
 
     TCompactProtocol proto{ buf };
 
     // find size metadata
     for (auto const &rg : fmd.row_groups) {
         for (auto const &col : rg.columns) {
-            auto const &col_md = col.meta_data;
-
-            int64_t size_offset = 0;
-            int64_t size_size = 0;
-
             auto const oi_offset = col.offset_index_offset - min_offset;
             auto const oi_len = col.offset_index_length;
             if (oi_len > 0 and oi_offset >= 0) {
                 parquet::format::OffsetIndex oi;
-                buf->seek(oi_offset);
+                buf->seek(static_cast<uint32_t>(oi_offset));
                 oi.read(&proto);
                 offset_index.push_back(std::move(oi));
             } else {
@@ -152,7 +148,7 @@ inline std::tuple<parquet::format::FileMetaData,
             auto const ci_len = col.column_index_length;
             if (ci_len > 0 and ci_offset >= 0) {
                 parquet::format::ColumnIndex ci;
-                buf->seek(ci_offset);
+                buf->seek(static_cast<uint32_t>(ci_offset));
                 ci.read(&proto);
                 column_index.push_back(std::move(ci));
             } else {
