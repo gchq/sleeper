@@ -90,6 +90,8 @@ public class StateStoreCommitter {
      */
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
         request.apply(this);
+        LOGGER.info("Applied request to table ID {} with type {}",
+                request.getTableId(), request.getRequest().getClass().getSimpleName());
     }
 
     void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
@@ -99,7 +101,7 @@ public class StateStoreCommitter {
                     stateStoreProvider.getByTableId(job.getTableId()));
             compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
+            LOGGER.debug("Successfully committed compaction job {}", job.getId());
         } catch (ReplaceRequestsFailedException e) {
             Exception failure = e.getFailures().get(0);
             if (failure instanceof FileNotFoundException
@@ -125,9 +127,9 @@ public class StateStoreCommitter {
         if (job != null) {
             ingestJobStatusStore.jobAddedFiles(IngestJobAddedFilesEvent.ingestJobAddedFiles(job, files, request.getWrittenTime())
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.info("Successfully committed new files for ingest job {} to table with ID {}", job.getId(), request.getTableId());
+            LOGGER.debug("Successfully committed new files for ingest job {}", job.getId());
         } else {
-            LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
+            LOGGER.debug("Successfully committed new files for ingest with no job");
         }
     }
 
