@@ -30,7 +30,7 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.QuerySerDe;
-import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
