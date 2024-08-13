@@ -18,9 +18,9 @@ package sleeper.systemtest.drivers.statestore;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
+import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -31,23 +31,44 @@ public class StateStoreCommitterRunsBuilderTest {
 
     @Test
     void shouldBuildSingleRunNoCommits() {
-        add(
-                "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z",
-                "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)");
+        // Given
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z");
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)");
+
+        // When / Then
         assertThat(builder.buildRuns()).containsExactly(
                 new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
     }
 
-    void add(String... messages) {
-        Instant startTime = Instant.now();
-        for (int i = 0; i < messages.length; i++) {
-            add(startTime.plus(Duration.ofMillis(i)), "test-logstream", messages[i]);
-        }
+    @Test
+    void shouldBuildOverlappingRunsOnTwoLogStreams() {
+        // Given
+        add("stream-1", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z");
+        add("stream-2", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:30Z");
+        add("stream-1", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)");
+        add("stream-2", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:30Z (ran for 1 minute)");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()),
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:30Z"), Instant.parse("2024-08-13T12:13:30Z"), List.of()));
     }
 
-    void add(Instant timestamp, String logStream, String message) {
+    @Test
+    void shouldBuildSingleRunWithOneCommit() {
+        // Given
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z");
+        add("test-logstream", "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z");
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"),
+                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+    }
+
+    void add(String logStream, String message) {
         builder.add(List.of(
-                ResultField.builder().field("@timestamp").value("" + timestamp.toEpochMilli()).build(),
                 ResultField.builder().field("@logStream").value(logStream).build(),
                 ResultField.builder().field("@message").value(message).build()));
     }

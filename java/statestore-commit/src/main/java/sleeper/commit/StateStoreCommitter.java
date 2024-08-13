@@ -93,8 +93,8 @@ public class StateStoreCommitter {
      */
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
         request.apply(this);
-        LOGGER.info("Applied request to table ID {} with type {}",
-                request.getTableId(), request.getRequest().getClass().getSimpleName());
+        LOGGER.info("Applied request to table ID {} with type {} at time {}",
+                request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
     }
 
     void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {

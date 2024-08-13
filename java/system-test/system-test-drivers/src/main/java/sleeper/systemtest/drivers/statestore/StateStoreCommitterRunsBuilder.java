@@ -24,7 +24,7 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class StateStoreCommitterRunsBuilder {
 
-    private final Map<String, LogStream> logStreamByName = new HashMap<>();
+    private final Map<String, LogStream> logStreamByName = new LinkedHashMap<>();
 
     public void add(List<ResultField> entry) {
         LogStream logStream = null;
@@ -50,7 +50,7 @@ public class StateStoreCommitterRunsBuilder {
         }
         Objects.requireNonNull(logStream, "Log stream not found");
         Objects.requireNonNull(message, "Log message not found");
-        logStream.add(StateStoreCommitterLogEntry.from(message));
+        logStream.add(StateStoreCommitterLogEntry.readEvent(message));
     }
 
     public List<StateStoreCommitterRun> buildRuns() {
@@ -65,13 +65,14 @@ public class StateStoreCommitterRunsBuilder {
         private final List<LambdaRun> runs = new ArrayList<>();
         private LambdaRun lastRun;
 
-        void add(StateStoreCommitterLogEntry entry) {
-            Object event = entry.getEvent();
+        void add(Object event) {
             if (event instanceof LambdaStarted) {
                 lastRun = new LambdaRun((LambdaStarted) event);
                 runs.add(lastRun);
             } else if (event instanceof LambdaFinished) {
                 lastRun.finished((LambdaFinished) event);
+            } else if (event instanceof StateStoreCommitSummary) {
+                lastRun.committed((StateStoreCommitSummary) event);
             }
         }
 
@@ -91,6 +92,10 @@ public class StateStoreCommitterRunsBuilder {
 
         void finished(LambdaFinished event) {
             finishTime = event.getFinishTime();
+        }
+
+        void committed(StateStoreCommitSummary commit) {
+            commits.add(commit);
         }
 
         StateStoreCommitterRun build() {

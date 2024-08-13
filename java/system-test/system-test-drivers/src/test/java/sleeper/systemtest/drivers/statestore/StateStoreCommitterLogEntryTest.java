@@ -19,23 +19,21 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.drivers.statestore.StateStoreCommitterLogEntry.LambdaFinished;
 import sleeper.systemtest.drivers.statestore.StateStoreCommitterLogEntry.LambdaStarted;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterLogTest {
+public class StateStoreCommitterLogEntryTest {
 
     @Test
     void shouldReadLambdaStarted() {
         // Given
         String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
 
-        // When
-        StateStoreCommitterLogEntry log = StateStoreCommitterLogEntry.from(message);
-
-        // Then
-        assertThat(log.getEvent()).isEqualTo(
+        // When / Then
+        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
                 new LambdaStarted(Instant.parse("2024-08-13T12:12:00Z")));
     }
 
@@ -44,12 +42,18 @@ public class StateStoreCommitterLogTest {
         // Given
         String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)";
 
-        // When
-        StateStoreCommitterLogEntry log = StateStoreCommitterLogEntry.from(message);
-
-        // Then
-        assertThat(log.getEvent()).isEqualTo(
+        // When / Then
+        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
                 new LambdaFinished(Instant.parse("2024-08-13T12:13:00Z")));
     }
 
+    @Test
+    void shouldReadCommitApplied() {
+        // Given
+        String message = "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z";
+
+        // When / Then
+        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
+                new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")));
+    }
 }

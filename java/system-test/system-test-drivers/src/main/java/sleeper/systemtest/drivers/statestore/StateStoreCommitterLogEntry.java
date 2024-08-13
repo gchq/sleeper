@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
+import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -22,22 +24,13 @@ import java.util.regex.Pattern;
 
 public class StateStoreCommitterLogEntry {
 
-    private static final Pattern MESSAGE_PATTERN = Pattern.compile("Lambda started at (.+)|Lambda finished at ([^ ]+) ");
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("Lambda started at (.+)|Lambda finished at ([^ ]+) |Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)");
 
-    private final String message;
-    private final Object event;
-
-    private StateStoreCommitterLogEntry(String message, Object event) {
-        this.message = message;
-        this.event = event;
+    private StateStoreCommitterLogEntry() {
     }
 
-    public static StateStoreCommitterLogEntry from(String message) {
+    public static Object readEvent(String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
-        return new StateStoreCommitterLogEntry(message, readEvent(matcher));
-    }
-
-    private static Object readEvent(Matcher matcher) {
         if (!matcher.find()) {
             return null;
         }
@@ -49,15 +42,13 @@ public class StateStoreCommitterLogEntry {
         if (finishTime != null) {
             return new LambdaFinished(Instant.parse(finishTime));
         }
+        String tableId = matcher.group(3);
+        if (tableId != null) {
+            String type = matcher.group(4);
+            String commitTime = matcher.group(5);
+            return new StateStoreCommitSummary(tableId, type, Instant.parse(commitTime));
+        }
         return null;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public Object getEvent() {
-        return event;
     }
 
     public static class LambdaStarted {
