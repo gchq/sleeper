@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -23,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitRequestDeserialiser;
-import sleeper.commit.StateStoreCommitter.LoadS3ObjectFromDataBucket;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
@@ -51,12 +52,14 @@ import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 public class AwsStateStoreCommitterDriverIT {
 
     private AmazonSQS sqs;
+    private AmazonS3 s3;
     private SystemTestInstanceContext instance;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstance(MAIN);
         sqs = drivers.clients().getSqs();
+        s3 = drivers.clients().getS3();
         instance = context.instance();
     }
 
@@ -130,10 +133,8 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
-        LoadS3ObjectFromDataBucket noLoadFromS3 = key -> {
-            throw new UnsupportedOperationException("Did not expect message held in S3");
-        };
-        return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider(), noLoadFromS3)
+        return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider(),
+                key -> s3.getObjectAsString(instance.getInstanceProperties().get(DATA_BUCKET), key))
                 .fromJson(message.getBody());
     }
 
