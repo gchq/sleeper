@@ -28,17 +28,17 @@ import java.util.Map;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
-public class WaitForStateStoreCommits {
-    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForStateStoreCommits.class);
+public class WaitForStateStoreCommitLogs {
+    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForStateStoreCommitLogs.class);
     private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofSeconds(5);
 
     private final StateStoreCommitterLogsDriver driver;
 
-    public WaitForStateStoreCommits(StateStoreCommitterLogsDriver driver) {
+    public WaitForStateStoreCommitLogs(StateStoreCommitterLogsDriver driver) {
         this.driver = driver;
     }
 
-    public void waitForCommits(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
+    public void waitForCommitLogs(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         Instant startTime = getRunsAfterTime.minus(QUERY_RUNS_TIME_SLACK);
         poll.pollUntil("all state store commits are applied", () -> {

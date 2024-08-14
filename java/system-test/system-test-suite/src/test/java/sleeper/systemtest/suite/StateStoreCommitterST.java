@@ -53,7 +53,7 @@ public class StateStoreCommitterST {
                 .sendBatched(commitFactory -> IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
                         .map(commitFactory::addFile))
-                .waitForCommits(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
         assertThat(sleeper.tableFiles().references())

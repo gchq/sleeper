@@ -30,7 +30,7 @@ public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
-    private final WaitForStateStoreCommits waiter;
+    private final WaitForStateStoreCommitLogs waiter;
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
     private final Instant getRunsAfterTime;
 
@@ -38,7 +38,7 @@ public class SystemTestStateStoreFakeCommits {
         instance = context.instance();
         SystemTestDrivers adminDrivers = context.instance().adminDrivers();
         driver = adminDrivers.stateStoreCommitter(context);
-        waiter = new WaitForStateStoreCommits(adminDrivers.stateStoreCommitterLogs(context));
+        waiter = new WaitForStateStoreCommitLogs(adminDrivers.stateStoreCommitterLogs(context));
         getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
@@ -52,8 +52,8 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
-        waiter.waitForCommits(poll, waitForNumCommitsByTableId, getRunsAfterTime);
+    public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
+        waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
         waitForNumCommitsByTableId.clear();
         return this;
     }

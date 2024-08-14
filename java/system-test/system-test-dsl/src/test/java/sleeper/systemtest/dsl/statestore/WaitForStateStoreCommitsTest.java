@@ -131,8 +131,8 @@ public class WaitForStateStoreCommitsTest {
         return new StateStoreCommitSummary("test-stream", tableId, "test-commit-type", time);
     }
 
-    private WaitForStateStoreCommits withLogs(List<StateStoreCommitterLogEntry> logs) {
-        return new WaitForStateStoreCommits(InMemoryStateStoreCommitter.logsDriver(logs));
+    private WaitForStateStoreCommitLogs withLogs(List<StateStoreCommitterLogEntry> logs) {
+        return new WaitForStateStoreCommitLogs(InMemoryStateStoreCommitter.logsDriver(logs));
     }
 
 }

@@ -49,7 +49,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         // When
         sleeper.stateStore().fakeCommits()
                 .send(factory -> factory.addPartitionFile("root", "file.parquet", 100))
-                .waitForCommits(PollWithRetries.noRetries());
+                .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
@@ -65,7 +65,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(factory -> LongStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)))
-                .waitForCommits(PollWithRetries.noRetries());
+                .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
@@ -80,7 +80,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         committer.addFakeLog(new StateStoreCommitSummary("test-stream", sleeper.tableProperties().get(TABLE_ID), "test-commit", Instant.now()));
 
         // When / Then
-        assertThatCode(() -> commitsDsl.waitForCommits(PollWithRetries.noRetries()))
+        assertThatCode(() -> commitsDsl.waitForCommitLogs(PollWithRetries.noRetries()))
                 .doesNotThrowAnyException();
     }
 
