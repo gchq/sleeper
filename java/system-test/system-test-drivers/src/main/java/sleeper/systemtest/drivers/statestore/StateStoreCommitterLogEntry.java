@@ -25,9 +25,20 @@ import java.util.regex.Pattern;
 public class StateStoreCommitterLogEntry {
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at (?<startTime>.+)|" + // Lambda started message type
-            "Lambda finished at (?<finishTime>[^ ]+) |" + // Lambda finished message type
-            "Applied request to table ID (?<tableId>[^ ]+) with type (?<type>[^ ]+) at time (?<commitTime>[^ ]+)"); // Commit applied message type
+            "Lambda started at (.+)|" + // Lambda started message type
+            "Lambda finished at ([^ ]+) |" + // Lambda finished message type
+            "Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)"); // Commit applied message type
+
+    private static class CaptureGroups {
+        private static final int START_TIME = 1;
+        private static final int FINISH_TIME = 2;
+        private static final int TABLE_ID = 3;
+        private static final int TYPE = 4;
+        private static final int COMMIT_TIME = 5;
+
+        private CaptureGroups() {
+        }
+    }
 
     private StateStoreCommitterLogEntry() {
     }
@@ -40,18 +51,18 @@ public class StateStoreCommitterLogEntry {
         // The pattern can only match one type of log message at a time.
         // Each capture group will be null unless its message type was matched.
         // We determine which type of message was found based on which capture group is set.
-        String startTime = matcher.group("startTime");
+        String startTime = matcher.group(CaptureGroups.START_TIME);
         if (startTime != null) {
             return new LambdaStarted(Instant.parse(startTime));
         }
-        String finishTime = matcher.group("finishTime");
+        String finishTime = matcher.group(CaptureGroups.FINISH_TIME);
         if (finishTime != null) {
             return new LambdaFinished(Instant.parse(finishTime));
         }
-        String tableId = matcher.group("tableId");
+        String tableId = matcher.group(CaptureGroups.TABLE_ID);
         if (tableId != null) {
-            String type = matcher.group("type");
-            String commitTime = matcher.group("commitTime");
+            String type = matcher.group(CaptureGroups.TYPE);
+            String commitTime = matcher.group(CaptureGroups.COMMIT_TIME);
             return new StateStoreCommitSummary(tableId, type, Instant.parse(commitTime));
         }
         return null;
