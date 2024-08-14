@@ -90,6 +90,27 @@ public class StateStoreCommitterRunsBuilderTest {
     }
 
     @Test
+    void shouldBuildRunWithOneCommitAndNoStartMessage() {
+        // Given
+        add("test-logstream", "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(null, null,
+                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+    }
+
+    @Test
+    void shouldBuildRunWithOnlyFinishMessage() {
+        // Given
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:30Z (ran for 1 minute)");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(null, Instant.parse("2024-08-13T12:13:30Z"), List.of()));
+    }
+
+    @Test
     void shouldIgnoreUnrecognisedLog() {
         // Given
         add("test-logstream", "Some unknown message");

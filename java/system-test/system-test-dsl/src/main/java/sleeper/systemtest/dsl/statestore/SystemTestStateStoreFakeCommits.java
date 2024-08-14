@@ -20,7 +20,6 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,7 +53,7 @@ public class SystemTestStateStoreFakeCommits {
         poll.pollUntil("all state store commits are applied", () -> {
             List<StateStoreCommitterRun> runs = driver.getRunsAfter(findCommitsFromTime);
             StateStoreCommitterRun.decrementWaitForNumCommits(runs, waitForNumCommitsByTableId);
-            updateFindCommitsFromTime(runs);
+            StateStoreCommitterRun.getLastTime(runs).ifPresent(lastTime -> findCommitsFromTime = lastTime);
             return waitForNumCommitsByTableId.isEmpty();
         });
         return this;
@@ -65,13 +64,6 @@ public class SystemTestStateStoreFakeCommits {
                 .peek(message -> waitForNumCommitsByTableId.compute(
                         message.getTableId(),
                         (id, count) -> count == null ? 1 : count + 1)));
-    }
-
-    private void updateFindCommitsFromTime(List<StateStoreCommitterRun> runs) {
-        runs.stream()
-                .map(StateStoreCommitterRun::getLastTime)
-                .max(Comparator.naturalOrder())
-                .ifPresent(lastTime -> findCommitsFromTime = lastTime);
     }
 
     private StateStoreCommitMessageFactory messageFactory() {

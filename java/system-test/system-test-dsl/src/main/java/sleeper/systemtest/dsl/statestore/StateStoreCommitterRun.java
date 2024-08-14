@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
@@ -53,6 +54,12 @@ public class StateStoreCommitterRun {
         });
     }
 
+    public static Optional<Instant> getLastTime(List<StateStoreCommitterRun> runs) {
+        return runs.stream()
+                .flatMap(run -> run.getLastTime().stream())
+                .max(Comparator.naturalOrder());
+    }
+
     public Instant getStartTime() {
         return startTime;
     }
@@ -61,14 +68,18 @@ public class StateStoreCommitterRun {
         return finishTime;
     }
 
-    public Instant getLastTime() {
+    public Optional<Instant> getLastTime() {
         if (finishTime != null) {
-            return finishTime;
+            return Optional.of(finishTime);
         }
-        return commits.stream()
+        Optional<Instant> commitTime = commits.stream()
                 .map(StateStoreCommitSummary::getFinishTime)
-                .max(Comparator.naturalOrder())
-                .orElse(startTime);
+                .max(Comparator.naturalOrder());
+        if (commitTime.isPresent()) {
+            return commitTime;
+        } else {
+            return Optional.ofNullable(startTime);
+        }
     }
 
     public List<StateStoreCommitSummary> getCommits() {

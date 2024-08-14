@@ -73,10 +73,18 @@ public class StateStoreCommitterRunsBuilder {
                 lastRun = new LambdaRun((LambdaStarted) event);
                 runs.add(lastRun);
             } else if (event instanceof LambdaFinished) {
-                lastRun.finished((LambdaFinished) event);
+                lastRunOrUnknownStartTime().finished((LambdaFinished) event);
             } else if (event instanceof StateStoreCommitSummary) {
-                lastRun.committed((StateStoreCommitSummary) event);
+                lastRunOrUnknownStartTime().committed((StateStoreCommitSummary) event);
             }
+        }
+
+        private LambdaRun lastRunOrUnknownStartTime() {
+            if (lastRun == null) {
+                lastRun = new LambdaRun();
+                runs.add(lastRun);
+            }
+            return lastRun;
         }
 
         Stream<LambdaRun> runs() {
@@ -88,6 +96,10 @@ public class StateStoreCommitterRunsBuilder {
         private final Instant startTime;
         private Instant finishTime;
         private List<StateStoreCommitSummary> commits = new ArrayList<>();
+
+        LambdaRun() {
+            startTime = null;
+        }
 
         LambdaRun(LambdaStarted event) {
             this.startTime = event.getStartTime();
