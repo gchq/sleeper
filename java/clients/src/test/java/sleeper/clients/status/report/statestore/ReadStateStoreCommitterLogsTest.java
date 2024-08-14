@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.statestore;
+package sleeper.clients.status.report.statestore;
 
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
-
-import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRunFinished;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRunStarted;
 
 import java.time.Instant;
 import java.util.List;
