@@ -16,19 +16,10 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
 
 public interface StateStoreCommitterLogEntry {
 
     String getLogStream();
 
     Instant getTimeInCommitter();
-
-    static Optional<Instant> getLastTime(List<StateStoreCommitterLogEntry> entries) {
-        return entries.stream()
-                .map(StateStoreCommitterLogEntry::getTimeInCommitter)
-                .max(Comparator.naturalOrder());
-    }
 }
