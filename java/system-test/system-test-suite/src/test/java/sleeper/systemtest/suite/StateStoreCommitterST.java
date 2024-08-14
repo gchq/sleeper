@@ -29,6 +29,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,7 +62,7 @@ public class StateStoreCommitterST {
         Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
                 .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
         assertThat(recordsByFilename).isEqualTo(
-                IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
     }
 }
