@@ -33,7 +33,7 @@ public class WaitForStateStoreCommitLogsTest {
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
 
         // Then
         assertThat(remainingCommits).isEqualTo(Map.of("test-table", 1));
@@ -48,7 +48,7 @@ public class WaitForStateStoreCommitLogsTest {
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
 
         // Then
         assertThat(remainingCommits).isEmpty();
@@ -62,7 +62,7 @@ public class WaitForStateStoreCommitLogsTest {
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
 
         // Then
         assertThat(remainingCommits).isEqualTo(Map.of("test-table", 2));
@@ -77,7 +77,7 @@ public class WaitForStateStoreCommitLogsTest {
         Map<String, Integer> waitForCommits = Map.of("table-1", 2, "table-2", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
 
         // When / Then
         assertThat(remainingCommits).isEqualTo(Map.of("table-1", 1, "table-2", 1));

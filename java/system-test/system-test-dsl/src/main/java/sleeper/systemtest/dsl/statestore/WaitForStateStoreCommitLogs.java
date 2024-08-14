@@ -23,11 +23,7 @@ import sleeper.core.util.PollWithRetries;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
 
 public class WaitForStateStoreCommitLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForStateStoreCommitLogs.class);
@@ -39,7 +35,7 @@ public class WaitForStateStoreCommitLogs {
         this.driver = driver;
     }
 
-    public List<StateStoreCommitterLogEntry> waitForCommitLogs(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
+    public StateStoreCommitterLogs waitForCommitLogs(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         Instant startTime = getRunsAfterTime.minus(QUERY_RUNS_TIME_SLACK);
         return poll.queryUntil("all state store commits are applied", () -> {
@@ -48,18 +44,11 @@ public class WaitForStateStoreCommitLogs {
         }, logs -> getRemainingCommits(waitForNumCommitsByTableId, logs).isEmpty());
     }
 
-    public static Map<String, Integer> getRemainingCommits(Map<String, Integer> waitForNumCommitsByTableId, List<StateStoreCommitterLogEntry> logs) {
-        Map<String, Integer> numCommitsByTableId = getNumCommitsByTableId(logs);
+    public static Map<String, Integer> getRemainingCommits(Map<String, Integer> waitForNumCommitsByTableId, StateStoreCommitterLogs logs) {
+        Map<String, Integer> numCommitsByTableId = logs.getNumCommitsByTableId();
         Map<String, Integer> remainingCommitsByTableId = getRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
         LOGGER.info("Remaining unapplied commits by table ID: {}", remainingCommitsByTableId);
         return remainingCommitsByTableId;
-    }
-
-    private static Map<String, Integer> getNumCommitsByTableId(List<StateStoreCommitterLogEntry> logs) {
-        return logs.stream()
-                .filter(entry -> entry instanceof StateStoreCommitSummary)
-                .map(entry -> (StateStoreCommitSummary) entry)
-                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
     }
 
     private static Map<String, Integer> getRemainingCommitsByTableId(

@@ -15,9 +15,21 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
-public interface StateStoreCommitterLogsDriver {
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 
-    StateStoreCommitterLogs getLogsInPeriod(Instant startTime, Instant endTime);
+public interface StateStoreCommitterLogs {
+
+    Map<String, Integer> getNumCommitsByTableId();
+
+    static StateStoreCommitterLogs from(List<StateStoreCommitterLogEntry> logs) {
+        return () -> logs.stream()
+                .filter(entry -> entry instanceof StateStoreCommitSummary)
+                .map(entry -> (StateStoreCommitSummary) entry)
+                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+    }
+
 }

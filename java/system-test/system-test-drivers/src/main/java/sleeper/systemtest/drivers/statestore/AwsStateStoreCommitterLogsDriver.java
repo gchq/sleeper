@@ -23,12 +23,11 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -46,7 +45,7 @@ public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogs
     }
 
     @Override
-    public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
+    public StateStoreCommitterLogs getLogsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instance.getInstanceProperties().get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
         String queryId = cloudWatch.startQuery(builder -> builder
@@ -58,9 +57,10 @@ public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogs
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
-        return waitForQuery(queryId).results().stream()
-                .map(ReadStateStoreCommitterLogs::read)
-                .collect(toUnmodifiableList());
+        return StateStoreCommitterLogs.from(
+                waitForQuery(queryId).results().stream()
+                        .map(ReadStateStoreCommitterLogs::read)
+                        .collect(toUnmodifiableList()));
     }
 
     private GetQueryResultsResponse waitForQuery(String queryId) {
