@@ -20,15 +20,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
@@ -56,10 +58,10 @@ public class StateStoreCommitterST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        assertThat(sleeper.tableFiles().references())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrderElementsOf(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .collect(toUnmodifiableList()));
+        Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
+                .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
+        assertThat(recordsByFilename).isEqualTo(
+                IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                        .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
     }
 }
