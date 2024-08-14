@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntries;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
