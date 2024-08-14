@@ -24,7 +24,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,9 +61,7 @@ public class SystemTestStateStoreFakeCommits {
         poll.pollUntil("all state store commits are applied", () -> {
             List<StateStoreCommitterLogEntry> logs = driver.getLogsInPeriod(getRunsAfterTime, Instant.now().plus(QUERY_RUNS_TIME_SLACK));
             WaitForStateStoreCommits.decrementWaitForNumCommits(logs, waitForNumCommitsByTableId);
-            logs.stream()
-                    .map(StateStoreCommitterLogEntry::getTimeInCommitter)
-                    .max(Comparator.naturalOrder())
+            StateStoreCommitterLogEntry.getLastTime(logs)
                     .ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_TIME_SLACK));
             LOGGER.info("Remaining unapplied commits by table ID: {}", waitForNumCommitsByTableId);
             return waitForNumCommitsByTableId.isEmpty();
