@@ -57,6 +57,7 @@ public class StateStoreCommitterST {
 
         // Then
         assertThat(sleeper.tableFiles().references())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
                         .collect(toUnmodifiableList()));
