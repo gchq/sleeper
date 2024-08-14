@@ -24,6 +24,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,9 +60,12 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         poll.pollUntil("all state store commits are applied", () -> {
-            List<StateStoreCommitterRun> runs = driver.getRunsInPeriod(getRunsAfterTime, Instant.now().plus(QUERY_RUNS_TIME_SLACK));
-            StateStoreCommitterRun.decrementWaitForNumCommits(runs, waitForNumCommitsByTableId);
-            StateStoreCommitterRun.getLastTime(runs).ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_TIME_SLACK));
+            List<StateStoreCommitterLogEntry> logs = driver.getLogsInPeriod(getRunsAfterTime, Instant.now().plus(QUERY_RUNS_TIME_SLACK));
+            WaitForStateStoreCommits.decrementWaitForNumCommits(logs, waitForNumCommitsByTableId);
+            logs.stream()
+                    .map(StateStoreCommitterLogEntry::getTimeInCommitter)
+                    .max(Comparator.naturalOrder())
+                    .ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_TIME_SLACK));
             LOGGER.info("Remaining unapplied commits by table ID: {}", waitForNumCommitsByTableId);
             return waitForNumCommitsByTableId.isEmpty();
         });

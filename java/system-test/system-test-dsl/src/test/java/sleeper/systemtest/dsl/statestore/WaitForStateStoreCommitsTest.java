@@ -21,12 +21,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterRunWaitForCommitsTest {
+public class WaitForStateStoreCommitsTest {
     Map<String, Integer> waitForNumCommitsByTableId = new HashMap<>();
 
     @Test
@@ -35,8 +33,8 @@ public class StateStoreCommitterRunWaitForCommitsTest {
         waitForNumCommitsByTableId.put("test-table", 2);
 
         // When
-        StateStoreCommitterRun.decrementWaitForNumCommits(
-                List.of(runWithCommitsToTable(1, "test-table")),
+        WaitForStateStoreCommits.decrementWaitForNumCommits(
+                List.of(commitToTable("test-table")),
                 waitForNumCommitsByTableId);
 
         // Then
@@ -49,8 +47,8 @@ public class StateStoreCommitterRunWaitForCommitsTest {
         waitForNumCommitsByTableId.put("test-table", 2);
 
         // When
-        StateStoreCommitterRun.decrementWaitForNumCommits(
-                List.of(runWithCommitsToTable(2, "test-table")),
+        WaitForStateStoreCommits.decrementWaitForNumCommits(
+                List.of(commitToTable("test-table"), commitToTable("test-table")),
                 waitForNumCommitsByTableId);
 
         // Then
@@ -63,8 +61,8 @@ public class StateStoreCommitterRunWaitForCommitsTest {
         waitForNumCommitsByTableId.put("test-table", 2);
 
         // When
-        StateStoreCommitterRun.decrementWaitForNumCommits(
-                List.of(runWithCommitsToTable(1, "other-table")),
+        WaitForStateStoreCommits.decrementWaitForNumCommits(
+                List.of(commitToTable("other-table")),
                 waitForNumCommitsByTableId);
 
         // Then
@@ -78,8 +76,8 @@ public class StateStoreCommitterRunWaitForCommitsTest {
         waitForNumCommitsByTableId.put("table-2", 2);
 
         // When
-        StateStoreCommitterRun.decrementWaitForNumCommits(
-                List.of(runWithCommits(List.of(commitToTable("table-1"), commitToTable("table-2")))),
+        WaitForStateStoreCommits.decrementWaitForNumCommits(
+                List.of(commitToTable("table-1"), commitToTable("table-2")),
                 waitForNumCommitsByTableId);
 
         // Then
@@ -93,27 +91,17 @@ public class StateStoreCommitterRunWaitForCommitsTest {
         waitForNumCommitsByTableId.put("table-2", 2);
 
         // When
-        StateStoreCommitterRun.decrementWaitForNumCommits(List.of(
-                runWithCommitsToTable(1, "table-1"),
-                runWithCommitsToTable(1, "table-2")),
+        WaitForStateStoreCommits.decrementWaitForNumCommits(List.of(
+                commitToTable("table-1"),
+                commitToTable("table-2")),
                 waitForNumCommitsByTableId);
 
         // Then
         assertThat(waitForNumCommitsByTableId).isEqualTo(Map.of("table-1", 1, "table-2", 1));
     }
 
-    private StateStoreCommitterRun runWithCommitsToTable(int commits, String tableId) {
-        return runWithCommits(IntStream.range(0, commits)
-                .mapToObj(i -> new StateStoreCommitSummary(tableId, "test-commit-type", Instant.now()))
-                .collect(toUnmodifiableList()));
-    }
-
-    private StateStoreCommitterRun runWithCommits(List<StateStoreCommitSummary> commits) {
-        return new StateStoreCommitterRun(Instant.now(), Instant.now(), commits);
-    }
-
     private StateStoreCommitSummary commitToTable(String tableId) {
-        return new StateStoreCommitSummary(tableId, "test-commit-type", Instant.now());
+        return new StateStoreCommitSummary("test-stream", tableId, "test-commit-type", Instant.now());
     }
 
 }

@@ -101,13 +101,13 @@ public class InMemoryStateStoreCommitter {
                 try {
                     StateStoreCommitRequest appliedRequest = committer.applyFromJson(message.getBody());
                     commits.add(new StateStoreCommitSummary(
-                            appliedRequest.getTableId(), appliedRequest.getRequest().getClass().getSimpleName(), Instant.now()));
+                            "test-stream", appliedRequest.getTableId(), appliedRequest.getRequest().getClass().getSimpleName(), Instant.now()));
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);
                 }
             }
             if (!commits.isEmpty()) {
-                runs.add(new StateStoreCommitterRun(startTime, Instant.now(), commits));
+                runs.add(new StateStoreCommitterRun("test-stream", startTime, Instant.now(), commits));
             }
         }
 

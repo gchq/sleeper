@@ -43,7 +43,7 @@ public class StateStoreCommitterLogEntry {
     private StateStoreCommitterLogEntry() {
     }
 
-    public static Object readEvent(String message) {
+    public static Object readEvent(String logStream, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
             return null;
@@ -63,7 +63,7 @@ public class StateStoreCommitterLogEntry {
         if (tableId != null) {
             String type = matcher.group(CapturingGroups.TYPE);
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
-            return new StateStoreCommitSummary(tableId, type, Instant.parse(commitTime));
+            return new StateStoreCommitSummary(logStream, tableId, type, Instant.parse(commitTime));
         }
         return null;
     }

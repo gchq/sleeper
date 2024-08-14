@@ -16,48 +16,23 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
+import java.util.stream.Stream;
 
 public class StateStoreCommitterRun {
 
+    private final String logStream;
     private final Instant startTime;
     private final Instant finishTime;
     private final List<StateStoreCommitSummary> commits;
 
-    public StateStoreCommitterRun(Instant startTime, Instant finishTime, List<StateStoreCommitSummary> commits) {
+    public StateStoreCommitterRun(String logStream, Instant startTime, Instant finishTime, List<StateStoreCommitSummary> commits) {
+        this.logStream = logStream;
         this.startTime = startTime;
         this.finishTime = finishTime;
         this.commits = commits;
-    }
-
-    public static void decrementWaitForNumCommits(List<StateStoreCommitterRun> runs, Map<String, Integer> waitForNumCommitsByTableId) {
-        Map<String, Integer> numCommitsByTableId = runs.stream()
-                .flatMap(run -> run.getCommits().stream())
-                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
-        numCommitsByTableId.forEach((tableId, numCommits) -> {
-            waitForNumCommitsByTableId.compute(tableId, (id, count) -> {
-                if (count == null) {
-                    return null;
-                } else if (numCommits >= count) {
-                    return null;
-                } else {
-                    return count - numCommits;
-                }
-            });
-        });
-    }
-
-    public static Optional<Instant> getLastTime(List<StateStoreCommitterRun> runs) {
-        return runs.stream()
-                .flatMap(run -> run.getLastTime().stream())
-                .max(Comparator.naturalOrder());
     }
 
     public Instant getStartTime() {
@@ -68,22 +43,16 @@ public class StateStoreCommitterRun {
         return finishTime;
     }
 
-    public Optional<Instant> getLastTime() {
-        if (finishTime != null) {
-            return Optional.of(finishTime);
-        }
-        Optional<Instant> commitTime = commits.stream()
-                .map(StateStoreCommitSummary::getFinishTime)
-                .max(Comparator.naturalOrder());
-        if (commitTime.isPresent()) {
-            return commitTime;
-        } else {
-            return Optional.ofNullable(startTime);
-        }
-    }
-
     public List<StateStoreCommitSummary> getCommits() {
         return commits;
+    }
+
+    public Stream<StateStoreCommitterLogEntry> logs() {
+        return Stream.of(
+                Optional.ofNullable(startTime).map(time -> new StateStoreCommitterRunStarted(logStream, time)).stream(),
+                commits.stream(),
+                Optional.ofNullable(finishTime).map(time -> new StateStoreCommitterRunFinished(logStream, time)).stream())
+                .flatMap(s -> s);
     }
 
     @Override

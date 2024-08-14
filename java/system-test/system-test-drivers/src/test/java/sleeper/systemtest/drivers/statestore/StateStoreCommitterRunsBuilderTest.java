@@ -37,7 +37,7 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
+                new StateStoreCommitterRun("test-logstream", Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
     }
 
     @Test
@@ -50,8 +50,8 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()),
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:30Z"), Instant.parse("2024-08-13T12:13:30Z"), List.of()));
+                new StateStoreCommitterRun("stream-1", Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()),
+                new StateStoreCommitterRun("stream-2", Instant.parse("2024-08-13T12:12:30Z"), Instant.parse("2024-08-13T12:13:30Z"), List.of()));
     }
 
     @Test
@@ -63,8 +63,8 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"),
-                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+                new StateStoreCommitterRun("test-logstream", Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"),
+                        List.of(new StateStoreCommitSummary("test-logstream", "test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), null, List.of()));
+                new StateStoreCommitterRun("test-stream", Instant.parse("2024-08-13T12:12:00Z"), null, List.of()));
     }
 
     @Test
@@ -85,8 +85,8 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), null,
-                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+                new StateStoreCommitterRun("test-logstream", Instant.parse("2024-08-13T12:12:00Z"), null,
+                        List.of(new StateStoreCommitSummary("test-logstream", "test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
     }
 
     @Test
@@ -96,8 +96,8 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(null, null,
-                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+                new StateStoreCommitterRun("test-logstream", null, null,
+                        List.of(new StateStoreCommitSummary("test-logstream", "test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(null, Instant.parse("2024-08-13T12:13:30Z"), List.of()));
+                new StateStoreCommitterRun("test-logstream", null, Instant.parse("2024-08-13T12:13:30Z"), List.of()));
     }
 
     @Test
@@ -127,7 +127,7 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
+                new StateStoreCommitterRun("test-logstream", Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
     }
 
     @Test
@@ -144,7 +144,7 @@ public class StateStoreCommitterRunsBuilderTest {
 
         // When / Then
         assertThat(builder.buildRuns()).containsExactly(
-                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
+                new StateStoreCommitterRun("test-logstream", Instant.parse("2024-08-13T12:12:00Z"), Instant.parse("2024-08-13T12:13:00Z"), List.of()));
     }
 
     void add(String logStream, String message) {

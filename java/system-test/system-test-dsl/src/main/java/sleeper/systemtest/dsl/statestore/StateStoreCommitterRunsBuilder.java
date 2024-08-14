@@ -15,21 +15,6 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Stream;
+public class StateStoreCommitterRunsBuilder {
 
-import static java.util.stream.Collectors.toUnmodifiableList;
-
-public interface StateStoreCommitterDriver {
-
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
-
-    List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime);
-
-    default List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
-        return getRunsInPeriod(startTime, endTime)
-                .stream().flatMap(run -> run.logs())
-                .collect(toUnmodifiableList());
-    }
 }

@@ -16,20 +16,19 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Optional;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+public interface StateStoreCommitterLogEntry {
 
-public interface StateStoreCommitterDriver {
+    String getLogStream();
 
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+    Instant getTimeInCommitter();
 
-    List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime);
-
-    default List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
-        return getRunsInPeriod(startTime, endTime)
-                .stream().flatMap(run -> run.logs())
-                .collect(toUnmodifiableList());
+    static Optional<Instant> getLastTime(List<StateStoreCommitterLogEntry> entries) {
+        return entries.stream()
+                .map(StateStoreCommitterLogEntry::getTimeInCommitter)
+                .max(Comparator.naturalOrder());
     }
 }

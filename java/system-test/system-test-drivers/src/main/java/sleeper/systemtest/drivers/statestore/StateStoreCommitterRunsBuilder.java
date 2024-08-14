@@ -37,12 +37,12 @@ public class StateStoreCommitterRunsBuilder {
     private final Map<String, LogStream> logStreamByName = new LinkedHashMap<>();
 
     public void add(List<ResultField> entry) {
-        LogStream logStream = null;
+        String logStream = null;
         String message = null;
         for (ResultField field : entry) {
             switch (field.field()) {
                 case "@logStream":
-                    logStream = logStreamByName.computeIfAbsent(field.value(), name -> new LogStream());
+                    logStream = field.value();
                     break;
                 case "@message":
                     message = field.value();
@@ -53,13 +53,14 @@ public class StateStoreCommitterRunsBuilder {
         }
         Objects.requireNonNull(logStream, "Log stream not found");
         Objects.requireNonNull(message, "Log message not found");
-        logStream.add(StateStoreCommitterLogEntry.readEvent(message));
+        logStreamByName.computeIfAbsent(logStream, name -> new LogStream())
+                .add(StateStoreCommitterLogEntry.readEvent(logStream, message));
     }
 
     public List<StateStoreCommitterRun> buildRuns() {
-        return logStreamByName.values().stream()
-                .flatMap(LogStream::runs)
-                .map(LambdaRun::build)
+        return logStreamByName.entrySet().stream()
+                .flatMap(entry -> entry.getValue().runs()
+                        .map(run -> run.build(entry.getKey())))
                 .collect(toUnmodifiableList());
     }
 
@@ -113,8 +114,8 @@ public class StateStoreCommitterRunsBuilder {
             commits.add(commit);
         }
 
-        StateStoreCommitterRun build() {
-            return new StateStoreCommitterRun(startTime, finishTime, commits);
+        StateStoreCommitterRun build(String logStream) {
+            return new StateStoreCommitterRun(logStream, startTime, finishTime, commits);
         }
     }
 

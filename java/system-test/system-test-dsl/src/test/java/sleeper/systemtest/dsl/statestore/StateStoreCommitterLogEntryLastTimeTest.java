@@ -22,16 +22,16 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterRunLastTimeTest {
+public class StateStoreCommitterLogEntryLastTimeTest {
 
     @Test
     void shouldGetStartTimeWhenRunJustStarted() {
         // Given
         Instant startTime = Instant.parse("2024-08-14T09:58:00Z");
-        List<StateStoreCommitterRun> runs = List.of(unfinishedRun(startTime));
+        List<StateStoreCommitterLogEntry> entries = List.of(runStarted(startTime));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(startTime);
     }
 
@@ -40,10 +40,10 @@ public class StateStoreCommitterRunLastTimeTest {
         // Given
         Instant startTime = Instant.parse("2024-08-14T09:58:00Z");
         Instant finishTime = Instant.parse("2024-08-14T09:58:10Z");
-        List<StateStoreCommitterRun> runs = List.of(finishedRun(startTime, finishTime));
+        List<StateStoreCommitterLogEntry> entries = List.of(runStarted(startTime), runFinished(finishTime));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(finishTime);
     }
 
@@ -53,10 +53,11 @@ public class StateStoreCommitterRunLastTimeTest {
         Instant startTime = Instant.parse("2024-08-14T09:58:00Z");
         Instant commitTime = Instant.parse("2024-08-14T09:58:05Z");
         Instant finishTime = Instant.parse("2024-08-14T09:58:10Z");
-        List<StateStoreCommitterRun> runs = List.of(finishedRun(startTime, finishTime, commitAtTime(commitTime)));
+        List<StateStoreCommitterLogEntry> entries = List.of(
+                runStarted(startTime), commitAtTime(commitTime), runFinished(finishTime));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(finishTime);
     }
 
@@ -65,10 +66,10 @@ public class StateStoreCommitterRunLastTimeTest {
         // Given
         Instant startTime = Instant.parse("2024-08-14T09:58:00Z");
         Instant commitTime = Instant.parse("2024-08-14T09:58:05Z");
-        List<StateStoreCommitterRun> runs = List.of(unfinishedRun(startTime, commitAtTime(commitTime)));
+        List<StateStoreCommitterLogEntry> entries = List.of(runStarted(startTime), commitAtTime(commitTime));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(commitTime);
     }
 
@@ -77,10 +78,10 @@ public class StateStoreCommitterRunLastTimeTest {
         // Given
         Instant runTime1 = Instant.parse("2024-08-14T09:58:00Z");
         Instant runTime2 = Instant.parse("2024-08-14T09:59:00Z");
-        List<StateStoreCommitterRun> runs = List.of(unfinishedRun(runTime1), unfinishedRun(runTime2));
+        List<StateStoreCommitterLogEntry> entries = List.of(runStarted(runTime1), runStarted(runTime2));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(runTime2);
     }
 
@@ -89,10 +90,10 @@ public class StateStoreCommitterRunLastTimeTest {
         // Given
         Instant runTime1 = Instant.parse("2024-08-14T09:58:00Z");
         Instant runTime2 = Instant.parse("2024-08-14T09:59:00Z");
-        List<StateStoreCommitterRun> runs = List.of(unfinishedRun(runTime2), unfinishedRun(runTime1));
+        List<StateStoreCommitterLogEntry> entries = List.of(runStarted(runTime2), runStarted(runTime1));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(runTime2);
     }
 
@@ -102,11 +103,11 @@ public class StateStoreCommitterRunLastTimeTest {
         Instant runTime = Instant.parse("2024-08-14T09:58:00Z");
         Instant commitTime1 = Instant.parse("2024-08-14T09:58:01Z");
         Instant commitTime2 = Instant.parse("2024-08-14T09:58:02Z");
-        List<StateStoreCommitterRun> runs = List.of(
-                unfinishedRun(runTime, commitAtTime(commitTime1), commitAtTime(commitTime2)));
+        List<StateStoreCommitterLogEntry> entries = List.of(
+                runStarted(runTime), commitAtTime(commitTime1), commitAtTime(commitTime2));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(commitTime2);
     }
 
@@ -116,11 +117,11 @@ public class StateStoreCommitterRunLastTimeTest {
         Instant runTime = Instant.parse("2024-08-14T09:58:00Z");
         Instant commitTime1 = Instant.parse("2024-08-14T09:58:01Z");
         Instant commitTime2 = Instant.parse("2024-08-14T09:58:02Z");
-        List<StateStoreCommitterRun> runs = List.of(
-                unfinishedRun(runTime, commitAtTime(commitTime2), commitAtTime(commitTime1)));
+        List<StateStoreCommitterLogEntry> entries = List.of(
+                runStarted(runTime), commitAtTime(commitTime2), commitAtTime(commitTime1));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(commitTime2);
     }
 
@@ -128,45 +129,31 @@ public class StateStoreCommitterRunLastTimeTest {
     void shouldGetCommitTimeWhenRunStartTimeUnknown() {
         // Given
         Instant commitTime = Instant.parse("2024-08-14T09:58:01Z");
-        List<StateStoreCommitterRun> runs = List.of(
-                unknownStartUnfinishedRun(commitAtTime(commitTime)));
+        List<StateStoreCommitterLogEntry> entries = List.of(commitAtTime(commitTime));
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs))
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries))
                 .contains(commitTime);
     }
 
     @Test
     void shouldGetNoTimeWhenNoRuns() {
         // Given
-        List<StateStoreCommitterRun> runs = List.of();
+        List<StateStoreCommitterLogEntry> entries = List.of();
 
         // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs)).isEmpty();
+        assertThat(StateStoreCommitterLogEntry.getLastTime(entries)).isEmpty();
     }
 
-    @Test
-    void shouldGetNoTimeWhenRunWithUnknownTime() {
-        // Given
-        List<StateStoreCommitterRun> runs = List.of(unknownStartUnfinishedRun());
-
-        // When / Then
-        assertThat(StateStoreCommitterRun.getLastTime(runs)).isEmpty();
+    private StateStoreCommitterRunStarted runStarted(Instant time) {
+        return new StateStoreCommitterRunStarted("test-stream", time);
     }
 
-    private StateStoreCommitterRun unfinishedRun(Instant startTime, StateStoreCommitSummary... commits) {
-        return new StateStoreCommitterRun(startTime, null, List.of(commits));
-    }
-
-    private StateStoreCommitterRun finishedRun(Instant startTime, Instant finishTime, StateStoreCommitSummary... commits) {
-        return new StateStoreCommitterRun(startTime, finishTime, List.of(commits));
-    }
-
-    private StateStoreCommitterRun unknownStartUnfinishedRun(StateStoreCommitSummary... commits) {
-        return new StateStoreCommitterRun(null, null, List.of(commits));
+    private StateStoreCommitterRunFinished runFinished(Instant time) {
+        return new StateStoreCommitterRunFinished("test-stream", time);
     }
 
     private StateStoreCommitSummary commitAtTime(Instant time) {
-        return new StateStoreCommitSummary("test-table", "test-commit-type", time);
+        return new StateStoreCommitSummary("test-stream", "test-table", "test-commit-type", time);
     }
 }

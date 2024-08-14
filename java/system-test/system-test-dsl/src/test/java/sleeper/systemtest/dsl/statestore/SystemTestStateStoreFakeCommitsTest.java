@@ -78,8 +78,8 @@ public class SystemTestStateStoreFakeCommitsTest {
         committer.setRunCommitterOnSend(sleeper, false);
         SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
         commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
-        committer.addRunClearQueue(new StateStoreCommitterRun(Instant.now(), null,
-                List.of(new StateStoreCommitSummary(sleeper.tableProperties().get(TABLE_ID), "test-file-added", Instant.now()))));
+        committer.addRunClearQueue(new StateStoreCommitterRun("test-stream", Instant.now(), null,
+                List.of(new StateStoreCommitSummary("test-stream", sleeper.tableProperties().get(TABLE_ID), "test-file-added", Instant.now()))));
 
         // When / Then
         assertThatCode(() -> commitsDsl.waitForCommits(PollWithRetries.noRetries()))

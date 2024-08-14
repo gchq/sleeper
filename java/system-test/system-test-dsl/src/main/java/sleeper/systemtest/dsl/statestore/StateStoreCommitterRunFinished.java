@@ -18,34 +18,22 @@ package sleeper.systemtest.dsl.statestore;
 import java.time.Instant;
 import java.util.Objects;
 
-public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
+public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEntry {
     private final String logStream;
-    private final String tableId;
-    private final String type;
     private final Instant finishTime;
 
-    public StateStoreCommitSummary(String logStream, String tableId, String type, Instant finishTime) {
+    public StateStoreCommitterRunFinished(String logStream, Instant finishTime) {
         this.logStream = logStream;
-        this.tableId = tableId;
-        this.type = type;
         this.finishTime = finishTime;
-    }
-
-    public String getTableId() {
-        return tableId;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public Instant getFinishTime() {
-        return finishTime;
     }
 
     @Override
     public String getLogStream() {
         return logStream;
+    }
+
+    public Instant getFinishTime() {
+        return finishTime;
     }
 
     @Override
@@ -55,7 +43,7 @@ public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(logStream, tableId, type, finishTime);
+        return Objects.hash(logStream, finishTime);
     }
 
     @Override
@@ -63,15 +51,15 @@ public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof StateStoreCommitSummary)) {
+        if (!(obj instanceof StateStoreCommitterRunFinished)) {
             return false;
         }
-        StateStoreCommitSummary other = (StateStoreCommitSummary) obj;
-        return Objects.equals(logStream, other.logStream) && Objects.equals(tableId, other.tableId) && Objects.equals(type, other.type) && Objects.equals(finishTime, other.finishTime);
+        StateStoreCommitterRunFinished other = (StateStoreCommitterRunFinished) obj;
+        return Objects.equals(logStream, other.logStream) && Objects.equals(finishTime, other.finishTime);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitSummary{logStream=" + logStream + ", tableId=" + tableId + ", type=" + type + ", finishTime=" + finishTime + "}";
+        return "StateStoreCommitterRunFinished{logStream=" + logStream + ", finishTime=" + finishTime + "}";
     }
 }

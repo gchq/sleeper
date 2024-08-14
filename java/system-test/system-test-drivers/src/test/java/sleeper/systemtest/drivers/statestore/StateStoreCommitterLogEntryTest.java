@@ -33,7 +33,7 @@ public class StateStoreCommitterLogEntryTest {
         String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
 
         // When / Then
-        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
+        assertThat(StateStoreCommitterLogEntry.readEvent("test-stream", message)).isEqualTo(
                 new LambdaStarted(Instant.parse("2024-08-13T12:12:00Z")));
     }
 
@@ -43,7 +43,7 @@ public class StateStoreCommitterLogEntryTest {
         String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)";
 
         // When / Then
-        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
+        assertThat(StateStoreCommitterLogEntry.readEvent("test-stream", message)).isEqualTo(
                 new LambdaFinished(Instant.parse("2024-08-13T12:13:00Z")));
     }
 
@@ -53,8 +53,8 @@ public class StateStoreCommitterLogEntryTest {
         String message = "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z";
 
         // When / Then
-        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isEqualTo(
-                new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")));
+        assertThat(StateStoreCommitterLogEntry.readEvent("test-stream", message)).isEqualTo(
+                new StateStoreCommitSummary("test-stream", "test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")));
     }
 
     @Test
@@ -63,6 +63,6 @@ public class StateStoreCommitterLogEntryTest {
         String message = "some other log";
 
         // When / Then
-        assertThat(StateStoreCommitterLogEntry.readEvent(message)).isNull();
+        assertThat(StateStoreCommitterLogEntry.readEvent("test-stream", message)).isNull();
     }
 }
