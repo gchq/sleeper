@@ -19,6 +19,7 @@ import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
@@ -28,12 +29,15 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryStateStoreCommitter {
 
@@ -41,7 +45,7 @@ public class InMemoryStateStoreCommitter {
     private final InMemoryCompaction compaction;
     private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
     private final List<StateStoreCommitterRun> runs = new ArrayList<>();
-    private boolean runCommitterOnSend = true;
+    private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
     public InMemoryStateStoreCommitter(InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
         this.ingest = ingest;
@@ -52,19 +56,21 @@ public class InMemoryStateStoreCommitter {
         return new Driver(context);
     }
 
-    public void setRunCommitterOnSend(boolean runCommitterOnSend) {
-        this.runCommitterOnSend = runCommitterOnSend;
+    public void setRunCommitterOnSend(SleeperSystemTest sleeper, boolean runCommitterOnSend) {
+        runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
 
-    public void addRun(StateStoreCommitterRun run) {
+    public void addRunClearQueue(StateStoreCommitterRun run) {
         runs.add(run);
+        queue.clear();
     }
 
     public class Driver implements StateStoreCommitterDriver {
+        private final SystemTestInstanceContext instance;
         private final StateStoreCommitter committer;
 
         private Driver(SystemTestContext context) {
-            SystemTestInstanceContext instance = context.instance();
+            instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
             committer = new StateStoreCommitter(tablePropertiesProvider,
                     compaction.jobStore(), ingest.jobStore(),
@@ -75,7 +81,7 @@ public class InMemoryStateStoreCommitter {
         @Override
         public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
             messages.forEach(queue::add);
-            if (runCommitterOnSend) {
+            if (isRunCommitterOnSend()) {
                 runCommitter();
             }
         }
@@ -102,6 +108,12 @@ public class InMemoryStateStoreCommitter {
             if (!commits.isEmpty()) {
                 runs.add(new StateStoreCommitterRun(startTime, Instant.now(), commits));
             }
+        }
+
+        private boolean isRunCommitterOnSend() {
+            return runCommitterOnSendByTableId.getOrDefault(
+                    instance.getTableStatus().getTableUniqueId(),
+                    true);
         }
     }
 

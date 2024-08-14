@@ -75,10 +75,10 @@ public class SystemTestStateStoreFakeCommitsTest {
     @Test
     void shouldWaitForCommitWhenCommitWasMadeButRunIsUnfinished(SleeperSystemTest sleeper) throws Exception {
         // Given
-        committer.setRunCommitterOnSend(false);
+        committer.setRunCommitterOnSend(sleeper, false);
         SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
         commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
-        committer.addRun(new StateStoreCommitterRun(Instant.now(), null,
+        committer.addRunClearQueue(new StateStoreCommitterRun(Instant.now(), null,
                 List.of(new StateStoreCommitSummary(sleeper.tableProperties().get(TABLE_ID), "test-file-added", Instant.now()))));
 
         // When / Then
