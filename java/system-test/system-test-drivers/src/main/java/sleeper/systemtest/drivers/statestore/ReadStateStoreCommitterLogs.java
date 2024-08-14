@@ -17,10 +17,10 @@ package sleeper.systemtest.drivers.statestore;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
-import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunFinished;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunStarted;
+import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
+import sleeper.clients.status.report.statestore.StateStoreCommitterLogEntry;
+import sleeper.clients.status.report.statestore.StateStoreCommitterRunFinished;
+import sleeper.clients.status.report.statestore.StateStoreCommitterRunStarted;
 
 import java.time.Instant;
 import java.util.List;

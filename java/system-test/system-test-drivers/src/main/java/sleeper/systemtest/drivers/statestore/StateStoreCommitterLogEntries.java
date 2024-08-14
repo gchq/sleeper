@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
+import sleeper.clients.status.report.statestore.StateStoreCommitterLogEntry;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 
 import java.util.List;
