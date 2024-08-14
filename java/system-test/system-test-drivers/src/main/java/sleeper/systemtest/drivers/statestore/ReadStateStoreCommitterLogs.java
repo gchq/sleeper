@@ -30,6 +30,9 @@ import java.util.regex.Pattern;
 
 public class ReadStateStoreCommitterLogs {
 
+    private ReadStateStoreCommitterLogs() {
+    }
+
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "Lambda started at (.+)|" + // Lambda started message type
             "Lambda finished at ([^ ]+) |" + // Lambda finished message type
@@ -44,9 +47,6 @@ public class ReadStateStoreCommitterLogs {
 
         private CapturingGroups() {
         }
-    }
-
-    private ReadStateStoreCommitterLogs() {
     }
 
     private static StateStoreCommitterLogEntry readMessage(String logStream, String message) {
@@ -93,73 +93,4 @@ public class ReadStateStoreCommitterLogs {
                 Objects.requireNonNull(logStream, "Log stream not found"),
                 Objects.requireNonNull(message, "Log message not found"));
     }
-
-    public static class LambdaStarted {
-        private final Instant startTime;
-
-        public LambdaStarted(Instant startTime) {
-            this.startTime = startTime;
-        }
-
-        public Instant getStartTime() {
-            return startTime;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(startTime);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof LambdaStarted)) {
-                return false;
-            }
-            LambdaStarted other = (LambdaStarted) obj;
-            return Objects.equals(startTime, other.startTime);
-        }
-
-        @Override
-        public String toString() {
-            return "LambdaStarted{startTime=" + startTime + "}";
-        }
-    }
-
-    public static class LambdaFinished {
-        private final Instant finishTime;
-
-        public LambdaFinished(Instant finishTime) {
-            this.finishTime = finishTime;
-        }
-
-        public Instant getFinishTime() {
-            return finishTime;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(finishTime);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof LambdaFinished)) {
-                return false;
-            }
-            LambdaFinished other = (LambdaFinished) obj;
-            return Objects.equals(finishTime, other.finishTime);
-        }
-
-        @Override
-        public String toString() {
-            return "LambdaFinished{finishTime=" + finishTime + "}";
-        }
-    }
-
 }
