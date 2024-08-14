@@ -29,7 +29,7 @@ import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -61,7 +61,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     @Override
-    public List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime) {
+    public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instance.getInstanceProperties().get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
         String queryId = cloudWatch.startQuery(builder -> builder
@@ -73,10 +73,9 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
-        GetQueryResultsResponse response = waitForQuery(queryId);
-        StateStoreCommitterRunsBuilder builder = new StateStoreCommitterRunsBuilder();
-        response.results().forEach(builder::add);
-        return builder.buildRuns();
+        return waitForQuery(queryId).results().stream()
+                .map(ReadStateStoreCommitterLogs::read)
+                .collect(toUnmodifiableList());
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {

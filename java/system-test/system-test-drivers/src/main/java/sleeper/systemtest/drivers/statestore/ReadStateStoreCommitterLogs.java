@@ -18,6 +18,9 @@ package sleeper.systemtest.drivers.statestore;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunFinished;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunStarted;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,7 +49,7 @@ public class ReadStateStoreCommitterLogs {
     private ReadStateStoreCommitterLogs() {
     }
 
-    public static Object readEvent(String logStream, String message) {
+    private static StateStoreCommitterLogEntry readMessage(String logStream, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
             return null;
@@ -56,11 +59,11 @@ public class ReadStateStoreCommitterLogs {
         // We determine which type of message was found based on which capturing group is set.
         String startTime = matcher.group(CapturingGroups.START_TIME);
         if (startTime != null) {
-            return new LambdaStarted(Instant.parse(startTime));
+            return new StateStoreCommitterRunStarted(logStream, Instant.parse(startTime));
         }
         String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
         if (finishTime != null) {
-            return new LambdaFinished(Instant.parse(finishTime));
+            return new StateStoreCommitterRunFinished(logStream, Instant.parse(finishTime));
         }
         String tableId = matcher.group(CapturingGroups.TABLE_ID);
         if (tableId != null) {
@@ -71,7 +74,7 @@ public class ReadStateStoreCommitterLogs {
         return null;
     }
 
-    public static Object readEvent(List<ResultField> entry) {
+    public static StateStoreCommitterLogEntry read(List<ResultField> entry) {
         String logStream = null;
         String message = null;
         for (ResultField field : entry) {
@@ -86,7 +89,7 @@ public class ReadStateStoreCommitterLogs {
                     break;
             }
         }
-        return readEvent(
+        return readMessage(
                 Objects.requireNonNull(logStream, "Log stream not found"),
                 Objects.requireNonNull(message, "Log message not found"));
     }

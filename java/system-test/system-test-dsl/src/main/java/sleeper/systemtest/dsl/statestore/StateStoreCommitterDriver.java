@@ -19,19 +19,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
-
 public interface StateStoreCommitterDriver {
 
     void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
 
-    default List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime) {
-        return List.of();
-    }
-
-    default List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
-        return getRunsInPeriod(startTime, endTime)
-                .stream().flatMap(run -> run.logs())
-                .collect(toUnmodifiableList());
-    }
+    List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime);
 }
