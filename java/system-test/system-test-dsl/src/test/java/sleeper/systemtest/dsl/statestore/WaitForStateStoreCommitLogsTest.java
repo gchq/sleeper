@@ -17,8 +17,6 @@ package sleeper.systemtest.dsl.statestore;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,8 +26,7 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindOneCommitWasMadeAgainstCorrectTable() {
         // Given
-        StateStoreCommitterLogs logs = logs(
-                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")));
+        StateStoreCommitterLogs logs = logsWithTableCommits(Map.of("test-table", 1));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
@@ -42,9 +39,7 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindAllCommitsWereMadeAgainstCorrectTable() {
         // Given
-        StateStoreCommitterLogs logs = logs(
-                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")),
-                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:30Z")));
+        StateStoreCommitterLogs logs = logsWithTableCommits(Map.of("test-table", 2));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
@@ -57,8 +52,7 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindCommitAgainstWrongTable() {
         // Given
-        StateStoreCommitterLogs logs = logs(
-                commitToTableAtTime("other-table", Instant.parse("2024-08-14T12:14:00Z")));
+        StateStoreCommitterLogs logs = logsWithTableCommits(Map.of("other-table", 1));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
@@ -71,9 +65,7 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindCommitsAgainstMultipleTables() throws Exception {
         // Given
-        StateStoreCommitterLogs logs = logs(
-                commitToTableAtTime("table-1", Instant.parse("2024-08-14T12:14:00Z")),
-                commitToTableAtTime("table-2", Instant.parse("2024-08-14T12:14:30Z")));
+        StateStoreCommitterLogs logs = logsWithTableCommits(Map.of("table-1", 1, "table-2", 1));
         Map<String, Integer> waitForCommits = Map.of("table-1", 2, "table-2", 2);
 
         // When
@@ -83,12 +75,8 @@ public class WaitForStateStoreCommitLogsTest {
         assertThat(remainingCommits).isEqualTo(Map.of("table-1", 1, "table-2", 1));
     }
 
-    private StateStoreCommitterLogs logs(StateStoreCommitSummary... commits) {
-        return new StateStoreCommitterLogEntries(List.of(commits));
-    }
-
-    private StateStoreCommitSummary commitToTableAtTime(String tableId, Instant time) {
-        return new StateStoreCommitSummary("test-stream", tableId, "test-commit-type", time);
+    private StateStoreCommitterLogs logsWithTableCommits(Map<String, Integer> commitsByTableId) {
+        return () -> commitsByTableId;
     }
 
 }
