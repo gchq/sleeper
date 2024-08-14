@@ -136,6 +136,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .build());
 
         logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
+        logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
         configBucketStack.grantRead(handlerFunction);
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
