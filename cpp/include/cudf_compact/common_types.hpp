@@ -3,7 +3,7 @@
 #include "cudf_compact/parquet_types.h"
 
 #include <cstddef>
-
+#include <iosfwd>
 struct col_schema
 {
     parquet::format::SchemaElement se;
@@ -22,3 +22,10 @@ struct page_info
     int row_count;
     size_t size_bytes;
 };
+
+inline std::ostream &operator<<(std::ostream &out, page_info const &p)
+{
+    return out << "file_idx " << p.file_idx << " rg_idx " << p.rg_idx << " col_idx " << p.col_idx << " page_idx "
+               << p.page_idx << " schema_idx " << p.schema_idx << " global_col_idx " << p.global_col_idx
+               << " row_count " << p.row_count << " size_bytes " << p.size_bytes;
+}

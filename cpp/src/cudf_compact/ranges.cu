@@ -167,7 +167,6 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
                && (split_pos < 0 || filtered_pages[split_pos].row_count == cur_row_count)) {
             split_pos++;
         }
-
         auto const start_row = cur_row_count;
         cur_row_count = filtered_pages[split_pos].row_count;
 
@@ -180,7 +179,6 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
         auto const &colidx = indexes_per_file[splt.file_idx][splt.col_idx];
         auto const &min = colidx.min_values[splt.page_idx];
         auto const &end_val = split_pos == filtered_pages.size() - 1 ? max_val : min;
-
         auto end_sclr = to_scalar(min, col_type, conv_type);
 
         ranges.emplace_back(scalar_pair{ to_string(last_val, col_type, conv_type),
