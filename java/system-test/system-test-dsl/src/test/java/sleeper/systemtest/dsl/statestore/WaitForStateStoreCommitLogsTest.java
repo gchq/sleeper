@@ -28,12 +28,12 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindOneCommitWasMadeAgainstCorrectTable() {
         // Given
-        List<StateStoreCommitterLogEntry> logs = List.of(
+        StateStoreCommitterLogs logs = logs(
                 commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
 
         // Then
         assertThat(remainingCommits).isEqualTo(Map.of("test-table", 1));
@@ -42,13 +42,13 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindAllCommitsWereMadeAgainstCorrectTable() {
         // Given
-        List<StateStoreCommitterLogEntry> logs = List.of(
+        StateStoreCommitterLogs logs = logs(
                 commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")),
                 commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:30Z")));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
 
         // Then
         assertThat(remainingCommits).isEmpty();
@@ -57,12 +57,12 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindCommitAgainstWrongTable() {
         // Given
-        List<StateStoreCommitterLogEntry> logs = List.of(
+        StateStoreCommitterLogs logs = logs(
                 commitToTableAtTime("other-table", Instant.parse("2024-08-14T12:14:00Z")));
         Map<String, Integer> waitForCommits = Map.of("test-table", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
 
         // Then
         assertThat(remainingCommits).isEqualTo(Map.of("test-table", 2));
@@ -71,16 +71,20 @@ public class WaitForStateStoreCommitLogsTest {
     @Test
     void shouldFindCommitsAgainstMultipleTables() throws Exception {
         // Given
-        List<StateStoreCommitterLogEntry> logs = List.of(
+        StateStoreCommitterLogs logs = logs(
                 commitToTableAtTime("table-1", Instant.parse("2024-08-14T12:14:00Z")),
                 commitToTableAtTime("table-2", Instant.parse("2024-08-14T12:14:30Z")));
         Map<String, Integer> waitForCommits = Map.of("table-1", 2, "table-2", 2);
 
         // When
-        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, StateStoreCommitterLogs.from(logs));
+        Map<String, Integer> remainingCommits = WaitForStateStoreCommitLogs.getRemainingCommits(waitForCommits, logs);
 
         // When / Then
         assertThat(remainingCommits).isEqualTo(Map.of("table-1", 1, "table-2", 1));
+    }
+
+    private StateStoreCommitterLogs logs(StateStoreCommitSummary... commits) {
+        return new StateStoreCommitterLogEntries(List.of(commits));
     }
 
     private StateStoreCommitSummary commitToTableAtTime(String tableId, Instant time) {

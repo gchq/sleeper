@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntries;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
@@ -57,7 +58,7 @@ public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogs
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
-        return StateStoreCommitterLogs.from(
+        return new StateStoreCommitterLogEntries(
                 waitForQuery(queryId).results().stream()
                         .map(ReadStateStoreCommitterLogs::read)
                         .collect(toUnmodifiableList()));

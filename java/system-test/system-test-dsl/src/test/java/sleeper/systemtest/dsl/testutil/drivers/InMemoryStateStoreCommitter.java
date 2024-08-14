@@ -26,8 +26,8 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntries;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunFinished;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunStarted;
@@ -74,7 +74,7 @@ public class InMemoryStateStoreCommitter {
     }
 
     public static StateStoreCommitterLogsDriver logsDriver(List<StateStoreCommitterLogEntry> logs) {
-        return (startTime, endTime) -> StateStoreCommitterLogs.from(logs.stream()
+        return (startTime, endTime) -> new StateStoreCommitterLogEntries(logs.stream()
                 .filter(run -> run.getTimeInCommitter().compareTo(startTime) >= 0)
                 .filter(run -> run.getTimeInCommitter().compareTo(endTime) <= 0)
                 .collect(toUnmodifiableList()));
