@@ -23,7 +23,6 @@ import sleeper.core.util.PollWithRetries;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -50,20 +49,24 @@ public class WaitForStateStoreCommits {
     }
 
     public Map<String, Integer> getRemainingCommitsInPeriod(Map<String, Integer> waitForNumCommitsByTableId, Instant startTime, Instant endTime) {
-        Map<String, Integer> remainingCommitsByTableId = new HashMap<>(waitForNumCommitsByTableId);
-        List<StateStoreCommitterLogEntry> logs = driver.getLogsInPeriod(startTime, endTime);
-        WaitForStateStoreCommits.decrementWaitForNumCommits(logs, remainingCommitsByTableId);
+        Map<String, Integer> numCommitsByTableId = getNumCommitsByTableIdInPeriod(startTime, endTime);
+        Map<String, Integer> remainingCommitsByTableId = getRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
         LOGGER.info("Remaining unapplied commits by table ID: {}", remainingCommitsByTableId);
         return remainingCommitsByTableId;
     }
 
-    public static void decrementWaitForNumCommits(List<StateStoreCommitterLogEntry> entries, Map<String, Integer> waitForNumCommitsByTableId) {
-        Map<String, Integer> numCommitsByTableId = entries.stream()
+    private Map<String, Integer> getNumCommitsByTableIdInPeriod(Instant startTime, Instant endTime) {
+        return driver.getLogsInPeriod(startTime, endTime).stream()
                 .filter(entry -> entry instanceof StateStoreCommitSummary)
                 .map(entry -> (StateStoreCommitSummary) entry)
                 .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+    }
+
+    private static Map<String, Integer> getRemainingCommitsByTableId(
+            Map<String, Integer> waitForNumCommitsByTableId, Map<String, Integer> numCommitsByTableId) {
+        Map<String, Integer> remainingCommitsByTableId = new HashMap<>(waitForNumCommitsByTableId);
         numCommitsByTableId.forEach((tableId, numCommits) -> {
-            waitForNumCommitsByTableId.compute(tableId, (id, count) -> {
+            remainingCommitsByTableId.compute(tableId, (id, count) -> {
                 if (count == null) {
                     return null;
                 } else if (numCommits >= count) {
@@ -73,5 +76,6 @@ public class WaitForStateStoreCommits {
                 }
             });
         });
+        return remainingCommitsByTableId;
     }
 }

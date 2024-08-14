@@ -93,6 +93,40 @@ public class WaitForStateStoreCommitsTest {
         assertThat(remainingCommits).isEqualTo(Map.of("table-1", 1, "table-2", 1));
     }
 
+    @Test
+    void shouldIgnoreCommitBeforePeriod() throws Exception {
+        // Given
+        List<StateStoreCommitterLogEntry> logs = List.of(
+                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")),
+                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:16:00Z")));
+        Map<String, Integer> waitForCommits = Map.of("test-table", 2);
+
+        // When
+        Map<String, Integer> remainingCommits = withLogs(logs).getRemainingCommitsInPeriod(waitForCommits,
+                Instant.parse("2024-08-14T12:13:00Z"),
+                Instant.parse("2024-08-14T12:15:00Z"));
+
+        // When / Then
+        assertThat(remainingCommits).isEqualTo(Map.of("test-table", 1));
+    }
+
+    @Test
+    void shouldIgnoreCommitAfterPeriod() throws Exception {
+        // Given
+        List<StateStoreCommitterLogEntry> logs = List.of(
+                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:14:00Z")),
+                commitToTableAtTime("test-table", Instant.parse("2024-08-14T12:16:00Z")));
+        Map<String, Integer> waitForCommits = Map.of("test-table", 2);
+
+        // When
+        Map<String, Integer> remainingCommits = withLogs(logs).getRemainingCommitsInPeriod(waitForCommits,
+                Instant.parse("2024-08-14T12:15:00Z"),
+                Instant.parse("2024-08-14T12:17:00Z"));
+
+        // When / Then
+        assertThat(remainingCommits).isEqualTo(Map.of("test-table", 1));
+    }
+
     private StateStoreCommitSummary commitToTableAtTime(String tableId, Instant time) {
         return new StateStoreCommitSummary("test-stream", tableId, "test-commit-type", time);
     }
