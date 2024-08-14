@@ -24,7 +24,10 @@ import java.util.regex.Pattern;
 
 public class StateStoreCommitterLogEntry {
 
-    private static final Pattern MESSAGE_PATTERN = Pattern.compile("Lambda started at (.+)|Lambda finished at ([^ ]+) |Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)");
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
+            "Lambda started at (.+)|" + // Lambda started message type has capture group 1
+            "Lambda finished at ([^ ]+) |" + // Lambda finished message type has capture group 2
+            "Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)"); // Capture groups 3, 4 and 5
 
     private StateStoreCommitterLogEntry() {
     }
@@ -34,6 +37,9 @@ public class StateStoreCommitterLogEntry {
         if (!matcher.find()) {
             return null;
         }
+        // The pattern can only match one type of log message at a time.
+        // Each capture group will be null unless its message type was matched.
+        // We determine which type of message was found based on which capture group is set.
         String startTime = matcher.group(1);
         if (startTime != null) {
             return new LambdaStarted(Instant.parse(startTime));
