@@ -25,9 +25,9 @@ import java.util.regex.Pattern;
 public class StateStoreCommitterLogEntry {
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at (.+)|" + // Lambda started message type has capture group 1
-            "Lambda finished at ([^ ]+) |" + // Lambda finished message type has capture group 2
-            "Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)"); // Capture groups 3, 4 and 5
+            "Lambda started at (?<startTime>.+)|" + // Lambda started message type
+            "Lambda finished at (?<finishTime>[^ ]+) |" + // Lambda finished message type
+            "Applied request to table ID (?<tableId>[^ ]+) with type (?<type>[^ ]+) at time (?<commitTime>[^ ]+)"); // Commit applied message type
 
     private StateStoreCommitterLogEntry() {
     }
@@ -40,18 +40,18 @@ public class StateStoreCommitterLogEntry {
         // The pattern can only match one type of log message at a time.
         // Each capture group will be null unless its message type was matched.
         // We determine which type of message was found based on which capture group is set.
-        String startTime = matcher.group(1);
+        String startTime = matcher.group("startTime");
         if (startTime != null) {
             return new LambdaStarted(Instant.parse(startTime));
         }
-        String finishTime = matcher.group(2);
+        String finishTime = matcher.group("finishTime");
         if (finishTime != null) {
             return new LambdaFinished(Instant.parse(finishTime));
         }
-        String tableId = matcher.group(3);
+        String tableId = matcher.group("tableId");
         if (tableId != null) {
-            String type = matcher.group(4);
-            String commitTime = matcher.group(5);
+            String type = matcher.group("type");
+            String commitTime = matcher.group("commitTime");
             return new StateStoreCommitSummary(tableId, type, Instant.parse(commitTime));
         }
         return null;
