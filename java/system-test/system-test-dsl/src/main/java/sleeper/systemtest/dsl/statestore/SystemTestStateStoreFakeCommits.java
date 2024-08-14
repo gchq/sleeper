@@ -15,9 +15,6 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -30,7 +27,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SystemTestStateStoreFakeCommits {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
