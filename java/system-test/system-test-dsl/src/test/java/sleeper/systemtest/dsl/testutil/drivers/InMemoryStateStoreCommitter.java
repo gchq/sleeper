@@ -68,11 +68,8 @@ public class InMemoryStateStoreCommitter {
         runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
 
-    public void fakeRunWithCommits(SleeperSystemTest sleeper, int numCommits) {
-        String tableId = sleeper.tableProperties().get(TABLE_ID);
-        logs.add(new StateStoreCommitterRunStarted("test-stream", Instant.now()));
-        logs.add(new StateStoreCommitterRunFinished("test-stream", Instant.now()));
-        logs.add(new StateStoreCommitSummary("test-stream", tableId, "test-commit", Instant.now()));
+    public void addFakeLog(StateStoreCommitterLogEntry entry) {
+        logs.add(entry);
     }
 
     public static StateStoreCommitterLogsDriver logsDriver(List<StateStoreCommitterLogEntry> logs) {
