@@ -23,5 +23,5 @@ public interface StateStoreCommitterDriver {
 
     void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
 
-    List<StateStoreCommitterRun> getRunsAfter(Instant startTime);
+    List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime);
 }

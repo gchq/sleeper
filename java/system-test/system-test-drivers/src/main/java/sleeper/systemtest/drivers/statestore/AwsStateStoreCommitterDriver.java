@@ -61,13 +61,13 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     @Override
-    public List<StateStoreCommitterRun> getRunsAfter(Instant startTime) {
+    public List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instance.getInstanceProperties().get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
         String queryId = cloudWatch.startQuery(builder -> builder
                 .logGroupName(logGroupName)
                 .startTime(startTime.getEpochSecond())
-                .endTime(Instant.now().plus(Duration.ofMinutes(1)).getEpochSecond())
+                .endTime(endTime.getEpochSecond())
                 .limit(10000)
                 .queryString("fields @timestamp, @message, @logStream " +
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +

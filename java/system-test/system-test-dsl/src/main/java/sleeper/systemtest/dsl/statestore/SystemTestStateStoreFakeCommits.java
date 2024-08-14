@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class SystemTestStateStoreFakeCommits {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
 
-    private static final Duration QUERY_RUNS_SINCE_AGE = Duration.ofMinutes(1);
+    private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofMinutes(1);
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
@@ -43,7 +43,7 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         instance = context.instance();
         driver = context.instance().adminDrivers().stateStoreCommitter(context);
-        getRunsAfterTime = context.reporting().getRecordingStartTime().minus(QUERY_RUNS_SINCE_AGE);
+        getRunsAfterTime = context.reporting().getRecordingStartTime().minus(QUERY_RUNS_TIME_SLACK);
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
@@ -59,9 +59,9 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         poll.pollUntil("all state store commits are applied", () -> {
-            List<StateStoreCommitterRun> runs = driver.getRunsAfter(getRunsAfterTime);
+            List<StateStoreCommitterRun> runs = driver.getRunsInPeriod(getRunsAfterTime, Instant.now().plus(QUERY_RUNS_TIME_SLACK));
             StateStoreCommitterRun.decrementWaitForNumCommits(runs, waitForNumCommitsByTableId);
-            StateStoreCommitterRun.getLastTime(runs).ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_SINCE_AGE));
+            StateStoreCommitterRun.getLastTime(runs).ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_TIME_SLACK));
             LOGGER.info("Remaining unapplied commits by table ID: {}", waitForNumCommitsByTableId);
             return waitForNumCommitsByTableId.isEmpty();
         });

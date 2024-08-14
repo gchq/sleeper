@@ -87,9 +87,10 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public List<StateStoreCommitterRun> getRunsAfter(Instant startTime) {
+        public List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime) {
             return runs.stream()
                     .filter(run -> run.getStartTime().compareTo(startTime) >= 0)
+                    .filter(run -> run.getStartTime().compareTo(endTime) <= 0)
                     .collect(toUnmodifiableList());
         }
 
