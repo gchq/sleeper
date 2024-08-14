@@ -73,7 +73,7 @@ public class StateStoreCommitterStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
-        lambdaToCommitStateStoreUpdates(committerJar,
+        lambdaToCommitStateStoreUpdates(policiesStack, committerJar,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionStatusStore, ingestStatusStore);
     }
@@ -110,8 +110,8 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            LambdaCode committerJar, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            StateStoreStacks stateStoreStacks,
+            ManagedPoliciesStack policiesStack, LambdaCode committerJar,
+            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionStatusStoreResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -135,6 +135,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .build());
 
+        logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
         configBucketStack.grantRead(handlerFunction);
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
