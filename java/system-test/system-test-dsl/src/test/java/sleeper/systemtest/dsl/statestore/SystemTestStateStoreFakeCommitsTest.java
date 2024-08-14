@@ -24,13 +24,10 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
@@ -78,8 +75,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         committer.setRunCommitterOnSend(sleeper, false);
         SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
         commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
-        committer.addRunClearQueue(new StateStoreCommitterRun("test-stream", Instant.now(), null,
-                List.of(new StateStoreCommitSummary("test-stream", sleeper.tableProperties().get(TABLE_ID), "test-file-added", Instant.now()))));
+        committer.fakeRunWithCommits(sleeper, 1);
 
         // When / Then
         assertThatCode(() -> commitsDsl.waitForCommits(PollWithRetries.noRetries()))

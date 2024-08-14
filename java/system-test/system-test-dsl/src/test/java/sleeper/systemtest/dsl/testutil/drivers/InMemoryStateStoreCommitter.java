@@ -19,13 +19,16 @@ import sleeper.commit.StateStoreCommitRequest;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunFinished;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunStarted;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -44,7 +47,7 @@ public class InMemoryStateStoreCommitter {
     private final InMemoryIngestByQueue ingest;
     private final InMemoryCompaction compaction;
     private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
-    private final List<StateStoreCommitterRun> runs = new ArrayList<>();
+    private final List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
     public InMemoryStateStoreCommitter(InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
@@ -60,9 +63,11 @@ public class InMemoryStateStoreCommitter {
         runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
 
-    public void addRunClearQueue(StateStoreCommitterRun run) {
-        runs.add(run);
-        queue.clear();
+    public void fakeRunWithCommits(SleeperSystemTest sleeper, int numCommits) {
+        String tableId = sleeper.tableProperties().get(TABLE_ID);
+        logs.add(new StateStoreCommitterRunStarted("test-stream", Instant.now()));
+        logs.add(new StateStoreCommitterRunFinished("test-stream", Instant.now()));
+        logs.add(new StateStoreCommitSummary("test-stream", tableId, "test-commit", Instant.now()));
     }
 
     public class Driver implements StateStoreCommitterDriver {
@@ -87,10 +92,10 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public List<StateStoreCommitterRun> getRunsInPeriod(Instant startTime, Instant endTime) {
-            return runs.stream()
-                    .filter(run -> run.getStartTime().compareTo(startTime) >= 0)
-                    .filter(run -> run.getStartTime().compareTo(endTime) <= 0)
+        public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
+            return logs.stream()
+                    .filter(run -> run.getTimeInCommitter().compareTo(startTime) >= 0)
+                    .filter(run -> run.getTimeInCommitter().compareTo(endTime) <= 0)
                     .collect(toUnmodifiableList());
         }
 
@@ -104,10 +109,14 @@ public class InMemoryStateStoreCommitter {
                             "test-stream", appliedRequest.getTableId(), appliedRequest.getRequest().getClass().getSimpleName(), Instant.now()));
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);
+                } catch (TableNotFoundException e) {
+                    // Discard messages from other tests
                 }
             }
             if (!commits.isEmpty()) {
-                runs.add(new StateStoreCommitterRun("test-stream", startTime, Instant.now(), commits));
+                logs.add(new StateStoreCommitterRunStarted("test-stream", startTime));
+                logs.addAll(commits);
+                logs.add(new StateStoreCommitterRunFinished("test-stream", Instant.now()));
             }
         }
 
