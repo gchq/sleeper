@@ -68,6 +68,28 @@ public class StateStoreCommitterRunsBuilderTest {
     }
 
     @Test
+    void shouldBuildUnfinishedRun() {
+        // Given
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), null, List.of()));
+    }
+
+    @Test
+    void shouldBuildUnfinishedRunWithOneCommit() {
+        // Given
+        add("test-logstream", "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z");
+        add("test-logstream", "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z");
+
+        // When / Then
+        assertThat(builder.buildRuns()).containsExactly(
+                new StateStoreCommitterRun(Instant.parse("2024-08-13T12:12:00Z"), null,
+                        List.of(new StateStoreCommitSummary("test-table", "TestRequest", Instant.parse("2024-08-13T12:12:30Z")))));
+    }
+
+    @Test
     void shouldIgnoreUnrecognisedLog() {
         // Given
         add("test-logstream", "Some unknown message");
