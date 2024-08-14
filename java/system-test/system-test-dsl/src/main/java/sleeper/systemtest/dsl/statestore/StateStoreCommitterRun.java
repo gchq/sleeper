@@ -18,7 +18,11 @@ package sleeper.systemtest.dsl.statestore;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 
 public class StateStoreCommitterRun {
 
@@ -30,6 +34,23 @@ public class StateStoreCommitterRun {
         this.startTime = startTime;
         this.finishTime = finishTime;
         this.commits = commits;
+    }
+
+    public static void decrementWaitForNumCommits(List<StateStoreCommitterRun> runs, Map<String, Integer> waitForNumCommitsByTableId) {
+        Map<String, Integer> numCommitsByTableId = runs.stream()
+                .flatMap(run -> run.getCommits().stream())
+                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+        numCommitsByTableId.forEach((tableId, numCommits) -> {
+            waitForNumCommitsByTableId.compute(tableId, (id, count) -> {
+                if (count == null) {
+                    return null;
+                } else if (numCommits >= count) {
+                    return null;
+                } else {
+                    return count - numCommits;
+                }
+            });
+        });
     }
 
     public Instant getStartTime() {

@@ -27,9 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
-
 public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
@@ -56,7 +53,7 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
         poll.pollUntil("all state store commits are applied", () -> {
             List<StateStoreCommitterRun> runs = driver.getRunsAfter(findCommitsFromTime);
-            decrementWaitForNumCommits(runs);
+            StateStoreCommitterRun.decrementWaitForNumCommits(runs, waitForNumCommitsByTableId);
             updateFindCommitsFromTime(runs);
             return waitForNumCommitsByTableId.isEmpty();
         });
@@ -68,23 +65,6 @@ public class SystemTestStateStoreFakeCommits {
                 .peek(message -> waitForNumCommitsByTableId.compute(
                         message.getTableId(),
                         (id, count) -> count == null ? 1 : count + 1)));
-    }
-
-    private void decrementWaitForNumCommits(List<StateStoreCommitterRun> runs) {
-        Map<String, Integer> numCommitsByTableId = runs.stream()
-                .flatMap(run -> run.getCommits().stream())
-                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
-        numCommitsByTableId.forEach((tableId, numCommits) -> {
-            waitForNumCommitsByTableId.compute(tableId, (id, count) -> {
-                if (count == null) {
-                    return null;
-                } else if (numCommits >= count) {
-                    return null;
-                } else {
-                    return count - numCommits;
-                }
-            });
-        });
     }
 
     private void updateFindCommitsFromTime(List<StateStoreCommitterRun> runs) {
