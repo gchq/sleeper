@@ -18,28 +18,38 @@ package sleeper.systemtest.dsl.statestore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 
+import java.time.Instant;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsTest {
 
+    private InMemoryStateStoreCommitter committer;
+
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
         sleeper.connectToInstance(MAIN);
+        committer = drivers.stateStoreCommitter();
     }
 
     @Test
-    void shouldSendOneFileCommit(SleeperSystemTest sleeper) {
+    void shouldSendOneFileCommit(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
-                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
+                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100))
+                .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
@@ -50,14 +60,28 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldSendManyFileCommits(SleeperSystemTest sleeper) {
+    void shouldSendManyFileCommits(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
                 .sendBatched(factory -> LongStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)));
+                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)))
+                .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
+    }
+
+    @Test
+    void shouldWaitForCommitWhenCommitWasMadeButNoRunStartOrFinishLogsWereMade(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        committer.setRunCommitterOnSend(sleeper, false);
+        SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
+        commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
+        committer.addFakeLog(new StateStoreCommitSummary("test-stream", sleeper.tableProperties().get(TABLE_ID), "test-commit", Instant.now()));
+
+        // When / Then
+        assertThatCode(() -> commitsDsl.waitForCommitLogs(PollWithRetries.noRetries()))
+                .doesNotThrowAnyException();
     }
 
 }

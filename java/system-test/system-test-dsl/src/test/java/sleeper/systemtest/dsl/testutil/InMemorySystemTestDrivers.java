@@ -41,6 +41,7 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
@@ -112,6 +113,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
         return stateStoreCommitter.withContext(context);
+    }
+
+    @Override
+    public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
+        return stateStoreCommitter.logsDriver();
     }
 
     @Override
@@ -209,6 +215,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports.partitions(context.instance());
     }
 
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new InMemorySnapshotsDriver();
+    }
+
     public InMemoryReports reports() {
         return reports;
     }
@@ -217,9 +228,8 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return data;
     }
 
-    @Override
-    public SnapshotsDriver snapshots() {
-        return new InMemorySnapshotsDriver();
+    public InMemoryStateStoreCommitter stateStoreCommitter() {
+        return stateStoreCommitter;
     }
 
 }

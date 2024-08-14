@@ -44,6 +44,7 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -67,6 +68,8 @@ public interface SystemTestDrivers {
     IngestSourceFilesDriver sourceFiles(SystemTestContext context);
 
     StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context);
+
+    StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context);
 
     PartitionSplittingDriver partitionSplitting(SystemTestContext context);
 

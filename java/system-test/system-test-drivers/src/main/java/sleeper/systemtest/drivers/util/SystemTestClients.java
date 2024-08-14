@@ -40,6 +40,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
@@ -78,6 +79,7 @@ public class SystemTestClients {
     private final AmazonAutoScaling autoScaling;
     private final AmazonECR ecr;
     private final CloudWatchClient cloudWatch;
+    private final CloudWatchLogsClient cloudWatchLogs;
     private final AmazonCloudWatchEvents cloudWatchEvents;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
@@ -100,6 +102,7 @@ public class SystemTestClients {
         autoScaling = builder.autoScaling;
         ecr = builder.ecr;
         cloudWatch = builder.cloudWatch;
+        cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
@@ -128,6 +131,7 @@ public class SystemTestClients {
                 .autoScaling(AmazonAutoScalingClientBuilder.defaultClient())
                 .ecr(AmazonECRClientBuilder.defaultClient())
                 .cloudWatch(CloudWatchClient.create())
+                .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(AmazonCloudWatchEventsClientBuilder.defaultClient())
                 .build();
     }
@@ -156,6 +160,7 @@ public class SystemTestClients {
                 .autoScaling(v1.buildClient(AmazonAutoScalingClientBuilder.standard()))
                 .ecr(v1.buildClient(AmazonECRClientBuilder.standard()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
+                .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(v1.buildClient(AmazonCloudWatchEventsClientBuilder.standard()))
                 .getAuthEnvVars(v1::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
@@ -222,6 +227,10 @@ public class SystemTestClients {
         return cloudWatch;
     }
 
+    public CloudWatchLogsClient getCloudWatchLogs() {
+        return cloudWatchLogs;
+    }
+
     public AmazonCloudWatchEvents getCloudWatchEvents() {
         return cloudWatchEvents;
     }
@@ -264,6 +273,7 @@ public class SystemTestClients {
         private AmazonAutoScaling autoScaling;
         private AmazonECR ecr;
         private CloudWatchClient cloudWatch;
+        private CloudWatchLogsClient cloudWatchLogs;
         private AmazonCloudWatchEvents cloudWatchEvents;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
@@ -349,6 +359,11 @@ public class SystemTestClients {
 
         public Builder cloudWatch(CloudWatchClient cloudWatch) {
             this.cloudWatch = cloudWatch;
+            return this;
+        }
+
+        public Builder cloudWatchLogs(CloudWatchLogsClient cloudWatchLogs) {
+            this.cloudWatchLogs = cloudWatchLogs;
             return this;
         }
 

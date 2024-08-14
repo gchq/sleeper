@@ -15,9 +15,11 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import java.util.stream.Stream;
+import java.time.Instant;
 
-public interface StateStoreCommitterDriver {
+public interface StateStoreCommitterLogEntry {
 
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+    String getLogStream();
+
+    Instant getTimeInCommitter();
 }

@@ -57,5 +57,4 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
                                 .withMessageBody(message.getBody()))
                         .collect(toUnmodifiableList())));
     }
-
 }

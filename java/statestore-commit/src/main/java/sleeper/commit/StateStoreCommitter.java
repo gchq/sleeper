@@ -30,7 +30,6 @@ import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
@@ -59,7 +58,6 @@ public class StateStoreCommitter {
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
-    private final LoadS3ObjectFromDataBucket loadFromDataBucket;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -69,21 +67,23 @@ public class StateStoreCommitter {
             GetStateStoreByTableId stateStoreProvider,
             LoadS3ObjectFromDataBucket loadFromDataBucket,
             Supplier<Instant> timeSupplier) {
-        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider);
+        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, loadFromDataBucket);
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
-        this.loadFromDataBucket = loadFromDataBucket;
         this.timeSupplier = timeSupplier;
     }
 
     /**
      * Applies a state store commit request.
      *
-     * @param json the commit request JSON string
+     * @param  json the commit request JSON string
+     * @return      the commit request
      */
-    public void applyFromJson(String json) throws StateStoreException {
-        apply(deserialiser.fromJson(json));
+    public StateStoreCommitRequest applyFromJson(String json) throws StateStoreException {
+        StateStoreCommitRequest request = deserialiser.fromJson(json);
+        apply(request);
+        return request;
     }
 
     /**
@@ -92,30 +92,19 @@ public class StateStoreCommitter {
      * @param request the commit request
      */
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
-        Object requestObj = request.getRequest();
-        if (requestObj instanceof CompactionJobCommitRequest) {
-            apply((CompactionJobCommitRequest) requestObj);
-        } else if (requestObj instanceof IngestAddFilesCommitRequest) {
-            apply((IngestAddFilesCommitRequest) requestObj);
-        } else if (requestObj instanceof StateStoreCommitRequestInS3) {
-            apply((StateStoreCommitRequestInS3) requestObj);
-        } else if (requestObj instanceof CompactionJobIdAssignmentCommitRequest) {
-            apply((CompactionJobIdAssignmentCommitRequest) requestObj);
-        } else if (requestObj instanceof SplitPartitionCommitRequest) {
-            apply((SplitPartitionCommitRequest) requestObj);
-        } else {
-            throw new IllegalArgumentException("Unsupported commit request type: " + requestObj.getClass().getName());
-        }
+        request.apply(this);
+        LOGGER.info("Applied request to table ID {} with type {} at time {}",
+                request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
     }
 
-    private void apply(CompactionJobCommitRequest request) throws StateStoreException {
+    void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
         CompactionJob job = request.getJob();
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
                     stateStoreProvider.getByTableId(job.getTableId()));
             compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.info("Successfully committed compaction job {} to table with ID {}", job.getId(), job.getTableId());
+            LOGGER.debug("Successfully committed compaction job {}", job.getId());
         } catch (ReplaceRequestsFailedException e) {
             Exception failure = e.getFailures().get(0);
             if (failure instanceof FileNotFoundException
@@ -133,7 +122,7 @@ public class StateStoreCommitter {
         }
     }
 
-    private void apply(IngestAddFilesCommitRequest request) throws StateStoreException {
+    void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(request.getFileReferences());
         stateStore.addFilesWithReferences(files);
@@ -141,24 +130,20 @@ public class StateStoreCommitter {
         if (job != null) {
             ingestJobStatusStore.jobAddedFiles(IngestJobAddedFilesEvent.ingestJobAddedFiles(job, files, request.getWrittenTime())
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.info("Successfully committed new files for ingest job {} to table with ID {}", job.getId(), request.getTableId());
+            LOGGER.debug("Successfully committed new files for ingest job {}", job.getId());
         } else {
-            LOGGER.info("Successfully committed new files for ingest to table with ID {}", request.getTableId());
+            LOGGER.debug("Successfully committed new files for ingest with no job");
         }
     }
 
-    private void apply(SplitPartitionCommitRequest request) throws StateStoreException {
+    void splitPartition(SplitPartitionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
     }
 
-    private void apply(StateStoreCommitRequestInS3 request) throws StateStoreException {
-        String json = loadFromDataBucket.loadFromDataBucket(request.getKeyInS3());
-        StateStoreCommitRequest requestFromS3 = deserialiser.fromJson(json);
-        if (requestFromS3.getRequest() instanceof StateStoreCommitRequestInS3) {
-            throw new IllegalArgumentException("Found a request stored in S3 pointing to another S3 object: " + request.getKeyInS3());
-        }
-        apply(requestFromS3);
+    void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.assignJobIds(request.getAssignJobIdRequests());
     }
 
     /**
@@ -172,10 +157,5 @@ public class StateStoreCommitter {
          * @return     the content
          */
         String loadFromDataBucket(String key);
-    }
-
-    private void apply(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
-        stateStore.assignJobIds(request.getAssignJobIdRequests());
     }
 }

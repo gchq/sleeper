@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -41,6 +42,7 @@ import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_BATCH_SIZE;
@@ -71,7 +73,7 @@ public class StateStoreCommitterStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
-        lambdaToCommitStateStoreUpdates(committerJar,
+        lambdaToCommitStateStoreUpdates(policiesStack, committerJar,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionStatusStore, ingestStatusStore);
     }
@@ -108,14 +110,16 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            LambdaCode committerJar, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            StateStoreStacks stateStoreStacks,
+            ManagedPoliciesStack policiesStack, LambdaCode committerJar,
+            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionStatusStoreResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
+        LogGroup logGroup = createLambdaLogGroup(this, "StateStoreCommitterLogGroup", functionName, instanceProperties);
+        instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 
         IFunction handlerFunction = committerJar.buildFunction(this, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
@@ -125,12 +129,14 @@ public class StateStoreCommitterStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLambdaLogGroup(this, "StateStoreCommitterLogGroup", functionName, instanceProperties)));
+                .logGroup(logGroup));
 
         handlerFunction.addEventSource(SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .build());
 
+        logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
+        logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
         configBucketStack.grantRead(handlerFunction);
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);

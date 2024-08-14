@@ -69,7 +69,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 .build();
         for (int i = 0; i < messages.size(); i++) {
             SQSMessage message = messages.get(i);
-            LOGGER.info("Found message: {}", message.getBody());
+            LOGGER.debug("Found message: {}", message.getBody());
             try {
                 DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                     try {

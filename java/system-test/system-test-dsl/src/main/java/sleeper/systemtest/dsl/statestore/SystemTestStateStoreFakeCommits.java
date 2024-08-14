@@ -15,9 +15,14 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -25,20 +30,39 @@ public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
+    private final WaitForStateStoreCommitLogs waiter;
+    private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
+    private final Instant getRunsAfterTime;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         instance = context.instance();
-        driver = context.instance().adminDrivers().stateStoreCommitter(context);
+        SystemTestDrivers adminDrivers = context.instance().adminDrivers();
+        driver = adminDrivers.stateStoreCommitter(context);
+        waiter = new WaitForStateStoreCommitLogs(adminDrivers.stateStoreCommitterLogs(context));
+        getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
-        driver.sendCommitMessages(buildCommits.apply(messageFactory()));
+        send(buildCommits.apply(messageFactory()));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
-        driver.sendCommitMessages(Stream.of(buildCommit.apply(messageFactory())));
+        send(Stream.of(buildCommit.apply(messageFactory())));
         return this;
+    }
+
+    public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
+        waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
+        waitForNumCommitsByTableId.clear();
+        return this;
+    }
+
+    private void send(Stream<StateStoreCommitMessage> messages) {
+        driver.sendCommitMessages(messages
+                .peek(message -> waitForNumCommitsByTableId.compute(
+                        message.getTableId(),
+                        (id, count) -> count == null ? 1 : count + 1)));
     }
 
     private StateStoreCommitMessageFactory messageFactory() {

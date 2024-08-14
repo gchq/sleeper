@@ -43,7 +43,9 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,6 +58,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class StateStoreCommitRequestDeserialiserTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<TableProperties> tables = new ArrayList<>();
+    private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
 
     @Test
     void shouldDeserialiseCompactionJobCommitRequest() {
@@ -76,7 +79,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -102,7 +106,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
+                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -137,7 +142,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table-id");
     }
 
     @Test
@@ -163,7 +169,8 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -183,19 +190,46 @@ public class StateStoreCommitRequestDeserialiserTest {
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest));
+                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
     void shouldDeserialiseCommitRequestInS3() {
         // Given
+        FileReference file = FileReference.builder()
+                .filename("file.parquet")
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        IngestAddFilesCommitRequest requestInBucket = IngestAddFilesCommitRequest.builder()
+                .tableId("test-table")
+                .fileReferences(List.of(file))
+                .build();
         String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        dataBucketObjectByKey.put(s3Key, new IngestAddFilesCommitRequestSerDe().toJson(requestInBucket));
         StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
         String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.storedInS3(commitRequest));
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(requestInBucket))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
+    }
+
+    @Test
+    void shouldRefuseReferenceToS3HeldInS3() throws Exception {
+        // Given we have a request pointing to itself
+        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
+        dataBucketObjectByKey.put(s3Key, new StateStoreCommitRequestInS3SerDe().toJson(commitRequest));
+        String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
+
+        // When / Then
+        StateStoreCommitRequestDeserialiser deserialiser = deserialiser();
+        assertThatThrownBy(() -> deserialiser.fromJson(jsonString))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -215,6 +249,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
-        return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables));
+        return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables), dataBucketObjectByKey::get);
     }
 }
