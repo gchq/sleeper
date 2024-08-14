@@ -15,14 +15,17 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
+import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
+
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StateStoreCommitterLogEntry {
+public class ReadStateStoreCommitterLogs {
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "Lambda started at (.+)|" + // Lambda started message type
@@ -40,7 +43,7 @@ public class StateStoreCommitterLogEntry {
         }
     }
 
-    private StateStoreCommitterLogEntry() {
+    private ReadStateStoreCommitterLogs() {
     }
 
     public static Object readEvent(String logStream, String message) {
@@ -66,6 +69,26 @@ public class StateStoreCommitterLogEntry {
             return new StateStoreCommitSummary(logStream, tableId, type, Instant.parse(commitTime));
         }
         return null;
+    }
+
+    public static Object readEvent(List<ResultField> entry) {
+        String logStream = null;
+        String message = null;
+        for (ResultField field : entry) {
+            switch (field.field()) {
+                case "@logStream":
+                    logStream = field.value();
+                    break;
+                case "@message":
+                    message = field.value();
+                    break;
+                default:
+                    break;
+            }
+        }
+        return readEvent(
+                Objects.requireNonNull(logStream, "Log stream not found"),
+                Objects.requireNonNull(message, "Log message not found"));
     }
 
     public static class LambdaStarted {

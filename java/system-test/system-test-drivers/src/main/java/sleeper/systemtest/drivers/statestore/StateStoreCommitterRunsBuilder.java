@@ -17,8 +17,8 @@ package sleeper.systemtest.drivers.statestore;
 
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
-import sleeper.systemtest.drivers.statestore.StateStoreCommitterLogEntry.LambdaFinished;
-import sleeper.systemtest.drivers.statestore.StateStoreCommitterLogEntry.LambdaStarted;
+import sleeper.systemtest.drivers.statestore.ReadStateStoreCommitterLogs.LambdaFinished;
+import sleeper.systemtest.drivers.statestore.ReadStateStoreCommitterLogs.LambdaStarted;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRun;
 
@@ -54,7 +54,7 @@ public class StateStoreCommitterRunsBuilder {
         Objects.requireNonNull(logStream, "Log stream not found");
         Objects.requireNonNull(message, "Log message not found");
         logStreamByName.computeIfAbsent(logStream, name -> new LogStream())
-                .add(StateStoreCommitterLogEntry.readEvent(logStream, message));
+                .add(ReadStateStoreCommitterLogs.readEvent(logStream, message));
     }
 
     public List<StateStoreCommitterRun> buildRuns() {
