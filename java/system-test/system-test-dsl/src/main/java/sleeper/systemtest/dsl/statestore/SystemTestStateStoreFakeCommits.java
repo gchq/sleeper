@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class SystemTestStateStoreFakeCommits {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
 
-    private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofMinutes(1);
+    private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofSeconds(5);
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
