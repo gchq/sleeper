@@ -55,7 +55,11 @@ public class InMemoryStateStoreCommitter {
     }
 
     public StateStoreCommitterLogsDriver logsDriver() {
-        return (startTime, endTime) -> new Logs();
+        return (startTime, endTime) -> new FakeLogs(numCommitsByTableId);
+    }
+
+    public static StateStoreCommitterLogs fakeLogsFromNumCommitsByTableId(Map<String, Integer> numCommitsByTableId) {
+        return new FakeLogs(numCommitsByTableId);
     }
 
     public void setRunCommitterOnSend(SleeperSystemTest sleeper, boolean runCommitterOnSend) {
@@ -111,7 +115,14 @@ public class InMemoryStateStoreCommitter {
         }
     }
 
-    private class Logs implements StateStoreCommitterLogs {
+    private static class FakeLogs implements StateStoreCommitterLogs {
+
+        private final Map<String, Integer> numCommitsByTableId;
+
+        FakeLogs(Map<String, Integer> numCommitsByTableId) {
+            this.numCommitsByTableId = numCommitsByTableId;
+        }
+
         @Override
         public Map<String, Integer> getNumCommitsByTableId() {
             return numCommitsByTableId;

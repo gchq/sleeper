@@ -17,6 +17,8 @@ package sleeper.systemtest.dsl.statestore;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
+
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,7 +78,7 @@ public class WaitForStateStoreCommitLogsTest {
     }
 
     private StateStoreCommitterLogs logsWithTableCommits(Map<String, Integer> commitsByTableId) {
-        return () -> commitsByTableId;
+        return InMemoryStateStoreCommitter.fakeLogsFromNumCommitsByTableId(commitsByTableId);
     }
 
 }
