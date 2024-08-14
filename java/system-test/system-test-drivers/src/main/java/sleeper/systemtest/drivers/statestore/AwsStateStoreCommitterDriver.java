@@ -18,8 +18,6 @@ package sleeper.systemtest.drivers.statestore;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -34,7 +32,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
 
     private final SystemTestInstanceContext instance;
     private final AmazonSQS sqs;
