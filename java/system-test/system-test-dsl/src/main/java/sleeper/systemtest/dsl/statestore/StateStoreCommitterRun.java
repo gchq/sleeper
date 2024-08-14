@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,6 +38,16 @@ public class StateStoreCommitterRun {
 
     public Instant getFinishTime() {
         return finishTime;
+    }
+
+    public Instant getLastTime() {
+        if (finishTime != null) {
+            return finishTime;
+        }
+        return commits.stream()
+                .map(StateStoreCommitSummary::getFinishTime)
+                .max(Comparator.naturalOrder())
+                .orElse(startTime);
     }
 
     public List<StateStoreCommitSummary> getCommits() {

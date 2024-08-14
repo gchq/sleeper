@@ -209,6 +209,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports.partitions(context.instance());
     }
 
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new InMemorySnapshotsDriver();
+    }
+
     public InMemoryReports reports() {
         return reports;
     }
@@ -217,9 +222,8 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return data;
     }
 
-    @Override
-    public SnapshotsDriver snapshots() {
-        return new InMemorySnapshotsDriver();
+    public InMemoryStateStoreCommitter stateStoreCommitter() {
+        return stateStoreCommitter;
     }
 
 }

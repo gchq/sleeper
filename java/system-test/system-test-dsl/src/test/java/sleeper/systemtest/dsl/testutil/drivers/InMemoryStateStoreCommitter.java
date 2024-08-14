@@ -39,6 +39,9 @@ public class InMemoryStateStoreCommitter {
 
     private final InMemoryIngestByQueue ingest;
     private final InMemoryCompaction compaction;
+    private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
+    private final List<StateStoreCommitterRun> runs = new ArrayList<>();
+    private boolean runCommitterOnSend = true;
 
     public InMemoryStateStoreCommitter(InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
         this.ingest = ingest;
@@ -49,10 +52,16 @@ public class InMemoryStateStoreCommitter {
         return new Driver(context);
     }
 
+    public void setRunCommitterOnSend(boolean runCommitterOnSend) {
+        this.runCommitterOnSend = runCommitterOnSend;
+    }
+
+    public void addRun(StateStoreCommitterRun run) {
+        runs.add(run);
+    }
+
     public class Driver implements StateStoreCommitterDriver {
         private final StateStoreCommitter committer;
-        private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
-        private final List<StateStoreCommitterRun> runs = new ArrayList<>();
 
         private Driver(SystemTestContext context) {
             SystemTestInstanceContext instance = context.instance();
@@ -66,11 +75,13 @@ public class InMemoryStateStoreCommitter {
         @Override
         public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
             messages.forEach(queue::add);
+            if (runCommitterOnSend) {
+                runCommitter();
+            }
         }
 
         @Override
         public List<StateStoreCommitterRun> getRunsAfter(Instant startTime) {
-            runCommitter();
             return runs.stream()
                     .filter(run -> run.getStartTime().compareTo(startTime) >= 0)
                     .collect(toUnmodifiableList());

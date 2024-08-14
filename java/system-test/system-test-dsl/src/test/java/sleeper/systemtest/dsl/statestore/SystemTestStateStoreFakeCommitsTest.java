@@ -21,19 +21,28 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsTest {
 
+    private InMemoryStateStoreCommitter committer;
+
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
         sleeper.connectToInstance(MAIN);
+        committer = drivers.stateStoreCommitter();
     }
 
     @Test
@@ -61,6 +70,20 @@ public class SystemTestStateStoreFakeCommitsTest {
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
+    }
+
+    @Test
+    void shouldWaitForCommitWhenCommitWasMadeButRunIsUnfinished(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        committer.setRunCommitterOnSend(false);
+        SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
+        commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
+        committer.addRun(new StateStoreCommitterRun(Instant.now(), null,
+                List.of(new StateStoreCommitSummary(sleeper.tableProperties().get(TABLE_ID), "test-file-added", Instant.now()))));
+
+        // When / Then
+        assertThatCode(() -> commitsDsl.waitForCommits(PollWithRetries.noRetries()))
+                .doesNotThrowAnyException();
     }
 
 }

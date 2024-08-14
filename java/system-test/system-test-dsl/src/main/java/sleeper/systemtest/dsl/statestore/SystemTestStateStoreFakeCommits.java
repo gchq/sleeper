@@ -89,7 +89,7 @@ public class SystemTestStateStoreFakeCommits {
 
     private void updateFindCommitsFromTime(List<StateStoreCommitterRun> runs) {
         runs.stream()
-                .map(StateStoreCommitterRun::getFinishTime)
+                .map(StateStoreCommitterRun::getLastTime)
                 .max(Comparator.naturalOrder())
                 .ifPresent(lastTime -> findCommitsFromTime = lastTime);
     }
