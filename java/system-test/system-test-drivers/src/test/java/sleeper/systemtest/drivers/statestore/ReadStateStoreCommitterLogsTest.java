@@ -72,9 +72,12 @@ public class ReadStateStoreCommitterLogsTest {
     void shouldReadLogWithFieldsInReverseOrder() {
         // Given
         String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
+        List<ResultField> entry = List.of(
+                ResultField.builder().field("@message").value(message).build(),
+                ResultField.builder().field("@logStream").value("test-stream").build());
 
         // When / Then
-        assertThat(ReadStateStoreCommitterLogs.read(logEntryReversed("test-stream", message))).isEqualTo(
+        assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
                 new StateStoreCommitterRunStarted("test-stream", Instant.parse("2024-08-13T12:12:00Z")));
     }
 
@@ -98,11 +101,5 @@ public class ReadStateStoreCommitterLogsTest {
         return List.of(
                 ResultField.builder().field("@logStream").value(logStream).build(),
                 ResultField.builder().field("@message").value(message).build());
-    }
-
-    private List<ResultField> logEntryReversed(String logStream, String message) {
-        return List.of(
-                ResultField.builder().field("@message").value(message).build(),
-                ResultField.builder().field("@logStream").value(logStream).build());
     }
 }
