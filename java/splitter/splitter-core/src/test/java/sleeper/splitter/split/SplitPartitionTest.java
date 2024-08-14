@@ -19,6 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -32,6 +34,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
@@ -49,13 +52,19 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class SplitPartitionTest {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
+    private final List<SplitPartitionCommitRequest> sentAsyncCommits = new ArrayList<>();
 
     @Nested
     @DisplayName("Skip split")
@@ -497,7 +506,46 @@ public class SplitPartitionTest {
         }
     }
 
-    private void ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
+    @Nested
+    @DisplayName("Commit partition split asynchronously")
+    class AsynchronousCommit {
+
+        @Test
+        void shouldCommitPartitionSplitAsynchronously() throws Exception {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildTree();
+            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            String filename = ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    IntStream.rangeClosed(1, 100)
+                            .mapToObj(i -> new Record(Map.of("key", i))));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+            tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
+            tableProperties.set(TABLE_ID, "tableId");
+
+            // When
+            partitionSplitter(stateStore, tableProperties, generateIds("B", "C"))
+                    .splitPartition(tree.getRootPartition(), List.of(filename));
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
+
+            PartitionTree resultant = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", 51)
+                    .buildTree();
+
+            assertThat(sentAsyncCommits).containsExactly(new SplitPartitionCommitRequest(
+                    "tableId",
+                    resultant.getPartition("A"),
+                    resultant.getPartition("B"),
+                    resultant.getPartition("C")));
+        }
+    }
+
+    private String ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
         Sketches sketches = Sketches.from(schema);
         AtomicLong recordCount = new AtomicLong();
 
@@ -514,6 +562,7 @@ public class SplitPartitionTest {
         }
 
         fileToSketchMap.put(recordFileReference.getFilename(), sketches);
+        return recordFileReference.getFilename();
     }
 
     private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
@@ -521,7 +570,8 @@ public class SplitPartitionTest {
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
@@ -532,8 +582,13 @@ public class SplitPartitionTest {
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadSketchesFromMap(), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
+    }
+
+    private SplitPartition partitionSplitter(StateStore stateStore, TableProperties tableProperties, Supplier<String> generateIds) {
+        return new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds, sentAsyncCommits::add);
     }
 
     public SketchesLoader loadSketchesFromMap() {

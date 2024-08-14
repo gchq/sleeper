@@ -15,24 +15,25 @@
  */
 package sleeper.splitter.split;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one
@@ -51,30 +52,23 @@ public class SplitPartition {
     public static final Logger LOGGER = LoggerFactory.getLogger(SplitPartition.class);
 
     private final StateStore stateStore;
+    private final TableProperties tableProperties;
     private final Schema schema;
     private final SketchesLoader sketchesLoader;
     private final Supplier<String> idSupplier;
+    private final SendAsyncCommit sendAsyncCommit;
 
     public SplitPartition(StateStore stateStore,
-            Schema schema,
-            Configuration conf) {
-        this(stateStore, schema, loadSketchesFromFile(schema, conf));
-    }
-
-    public SplitPartition(StateStore stateStore,
-            Schema schema,
-            SketchesLoader sketchesLoader) {
-        this(stateStore, schema, sketchesLoader, () -> UUID.randomUUID().toString());
-    }
-
-    public SplitPartition(StateStore stateStore,
-            Schema schema,
+            TableProperties tableProperties,
             SketchesLoader sketchesLoader,
-            Supplier<String> idSupplier) {
+            Supplier<String> idSupplier,
+            SendAsyncCommit sendAsyncCommit) {
         this.stateStore = stateStore;
-        this.schema = schema;
+        this.tableProperties = tableProperties;
+        this.schema = tableProperties.getSchema();
         this.sketchesLoader = sketchesLoader;
         this.idSupplier = idSupplier;
+        this.sendAsyncCommit = sendAsyncCommit;
     }
 
     public void splitPartition(Partition partition, List<String> fileNames) {
@@ -107,10 +101,22 @@ public class SplitPartition {
         LOGGER.info("New partition: {}", leftChild);
         LOGGER.info("New partition: {}", rightChild);
 
-        try {
-            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
+        if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
+            try {
+                stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            sendAsyncCommit.sendCommit(new SplitPartitionCommitRequest(tableProperties.get(TABLE_ID), parentPartition, leftChild, rightChild));
         }
+    }
+
+    /**
+     * Sends commit state store updates to the state store committer.
+     */
+    @FunctionalInterface
+    public interface SendAsyncCommit {
+        void sendCommit(SplitPartitionCommitRequest splitPartitionCommitRequest);
     }
 }

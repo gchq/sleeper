@@ -58,6 +58,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 
 public class InstancePropertiesTestHelper {
 
@@ -108,6 +109,8 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, id + "-qt");
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.setNumber(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 1);
+
+        instanceProperties.set(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, "false");
 
         // Ingest
         instanceProperties.set(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, "false");

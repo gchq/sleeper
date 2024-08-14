@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -215,6 +216,11 @@ public class FindPartitionSplitPoint {
 
     public static SketchesLoader loadSketchesFromFile(Schema schema, Configuration conf) {
         return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
+    }
+
+    public static SketchesLoader loadSketchesFromFile(TableProperties tableProperties, Configuration conf) {
+        SketchesSerDeToS3 serDe = new SketchesSerDeToS3(tableProperties.getSchema());
+        return (filename) -> serDe.loadFromHadoopFS(new Path(filename), conf);
     }
 
 }
