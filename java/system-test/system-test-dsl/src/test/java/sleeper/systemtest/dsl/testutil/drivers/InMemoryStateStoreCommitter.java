@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitSummary;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunFinished;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterRunStarted;
 
@@ -59,6 +60,10 @@ public class InMemoryStateStoreCommitter {
         return new Driver(context);
     }
 
+    public StateStoreCommitterLogsDriver logsDriver() {
+        return logsDriver(logs);
+    }
+
     public void setRunCommitterOnSend(SleeperSystemTest sleeper, boolean runCommitterOnSend) {
         runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
@@ -68,6 +73,13 @@ public class InMemoryStateStoreCommitter {
         logs.add(new StateStoreCommitterRunStarted("test-stream", Instant.now()));
         logs.add(new StateStoreCommitterRunFinished("test-stream", Instant.now()));
         logs.add(new StateStoreCommitSummary("test-stream", tableId, "test-commit", Instant.now()));
+    }
+
+    public static StateStoreCommitterLogsDriver logsDriver(List<StateStoreCommitterLogEntry> logs) {
+        return (startTime, endTime) -> logs.stream()
+                .filter(run -> run.getTimeInCommitter().compareTo(startTime) >= 0)
+                .filter(run -> run.getTimeInCommitter().compareTo(endTime) <= 0)
+                .collect(toUnmodifiableList());
     }
 
     public class Driver implements StateStoreCommitterDriver {
@@ -89,14 +101,6 @@ public class InMemoryStateStoreCommitter {
             if (isRunCommitterOnSend()) {
                 runCommitter();
             }
-        }
-
-        @Override
-        public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
-            return logs.stream()
-                    .filter(run -> run.getTimeInCommitter().compareTo(startTime) >= 0)
-                    .filter(run -> run.getTimeInCommitter().compareTo(endTime) <= 0)
-                    .collect(toUnmodifiableList());
         }
 
         private void runCommitter() {

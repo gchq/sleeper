@@ -20,11 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -33,17 +32,18 @@ import java.util.stream.Stream;
 public class SystemTestStateStoreFakeCommits {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
 
-    private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofSeconds(5);
-
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
+    private final WaitForStateStoreCommits waiter;
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
-    private Instant getRunsAfterTime;
+    private final Instant getRunsAfterTime;
 
     public SystemTestStateStoreFakeCommits(SystemTestContext context) {
         instance = context.instance();
-        driver = context.instance().adminDrivers().stateStoreCommitter(context);
-        getRunsAfterTime = context.reporting().getRecordingStartTime().minus(QUERY_RUNS_TIME_SLACK);
+        SystemTestDrivers adminDrivers = context.instance().adminDrivers();
+        driver = adminDrivers.stateStoreCommitter(context);
+        waiter = new WaitForStateStoreCommits(adminDrivers.stateStoreCommitterLogs(context));
+        getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
@@ -57,15 +57,8 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits waitForCommits(PollWithRetries poll) throws InterruptedException {
-        LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
-        poll.pollUntil("all state store commits are applied", () -> {
-            List<StateStoreCommitterLogEntry> logs = driver.getLogsInPeriod(getRunsAfterTime, Instant.now().plus(QUERY_RUNS_TIME_SLACK));
-            WaitForStateStoreCommits.decrementWaitForNumCommits(logs, waitForNumCommitsByTableId);
-            StateStoreCommitterLogEntry.getLastTime(logs)
-                    .ifPresent(lastTime -> getRunsAfterTime = lastTime.minus(QUERY_RUNS_TIME_SLACK));
-            LOGGER.info("Remaining unapplied commits by table ID: {}", waitForNumCommitsByTableId);
-            return waitForNumCommitsByTableId.isEmpty();
-        });
+        waiter.waitForCommits(poll, waitForNumCommitsByTableId, getRunsAfterTime);
+        waitForNumCommitsByTableId.clear();
         return this;
     }
 

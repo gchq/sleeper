@@ -46,6 +46,7 @@ import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
+import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -76,6 +77,7 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -112,7 +114,12 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs(), clients.getCloudWatchLogs());
+        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs());
+    }
+
+    @Override
+    public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
+        return new AwsStateStoreCommitterLogsDriver(context.instance(), clients.getCloudWatchLogs());
     }
 
     @Override
