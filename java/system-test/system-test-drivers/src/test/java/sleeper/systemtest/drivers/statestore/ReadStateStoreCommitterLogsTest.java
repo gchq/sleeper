@@ -32,7 +32,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLambdaStarted() {
         // Given
-        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
+        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", message))).isEqualTo(
@@ -42,7 +42,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLambdaFinished() {
         // Given
-        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)";
+        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)\n";
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", message))).isEqualTo(
@@ -52,7 +52,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadCommitApplied() {
         // Given
-        String message = "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z";
+        String message = "[main] sleeper.commit.StateStoreCommitter INFO - Applied request to table ID test-table with type TestRequest at time 2024-08-13T12:12:30Z\n";
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", message))).isEqualTo(
@@ -62,7 +62,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadUnrecognisedLog() {
         // Given
-        String message = "some other log";
+        String message = "some other log\n";
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", message))).isNull();
@@ -71,7 +71,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLogWithFieldsInReverseOrder() {
         // Given
-        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
+        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
         List<ResultField> entry = List.of(
                 ResultField.builder().field("@message").value(message).build(),
                 ResultField.builder().field("@logStream").value("test-stream").build());
@@ -84,7 +84,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLogWithExtraFields() {
         // Given
-        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z";
+        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
         List<ResultField> entry = List.of(
                 ResultField.builder().field("@extraField").value("some value").build(),
                 ResultField.builder().field("@message").value(message).build(),

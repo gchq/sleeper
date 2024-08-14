@@ -34,9 +34,9 @@ public class ReadStateStoreCommitterLogs {
     }
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at (.+)|" + // Lambda started message type
-            "Lambda finished at ([^ ]+) |" + // Lambda finished message type
-            "Applied request to table ID ([^ ]+) with type ([^ ]+) at time ([^ ]+)"); // Commit applied message type
+            "Lambda started at ([^\\s]+)|" + // Lambda started message type
+            "Lambda finished at ([^\\s]+) |" + // Lambda finished message type
+            "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     private static class CapturingGroups {
         private static final int START_TIME = 1;
