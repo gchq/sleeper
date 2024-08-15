@@ -32,7 +32,7 @@ public class StateStoreCommitterRuns {
     }
 
     public static List<StateStoreCommitterRun> findRunsByLogStream(List<StateStoreCommitterLogEntry> logs) {
-        Builder builder = new Builder();
+        BuilderByLogStream builder = new BuilderByLogStream();
         logs.forEach(builder::add);
         return builder.build();
     }
@@ -51,7 +51,7 @@ public class StateStoreCommitterRuns {
         return runsByTableId;
     }
 
-    private static class Builder {
+    private static class BuilderByLogStream {
         private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
 
         private void add(StateStoreCommitterLogEntry entry) {
