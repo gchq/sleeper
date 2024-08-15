@@ -18,29 +18,25 @@ package sleeper.clients.status.report.statestore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class StateStoreCommitterRun {
 
     private final String logStream;
-    private final Instant startTime;
-    private final Instant finishTime;
+    private final StateStoreCommitterRunStarted start;
+    private final StateStoreCommitterRunFinished finish;
     private final List<StateStoreCommitSummary> commits;
-
-    public StateStoreCommitterRun(String logStream, Instant startTime, Instant finishTime, List<StateStoreCommitSummary> commits) {
-        this.logStream = logStream;
-        this.startTime = startTime;
-        this.finishTime = finishTime;
-        this.commits = commits;
-    }
 
     public StateStoreCommitterRun(Builder builder) {
         logStream = Objects.requireNonNull(builder.logStream, "logStream must not be null");
-        startTime = builder.startTime;
-        finishTime = builder.finishTime;
+        start = builder.start;
+        finish = builder.finish;
         commits = Objects.requireNonNull(builder.commits, "commits must not be null");
     }
 
@@ -52,24 +48,54 @@ public class StateStoreCommitterRun {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         Map<String, Builder> lastRunByLogStream = new LinkedHashMap<>();
         for (StateStoreCommitterLogEntry entry : logs) {
-            Builder builder = lastRunByLogStream.computeIfAbsent(entry.getLogStream(),
-                    stream -> builder().logStream(stream).commits(new ArrayList<>()));
             if (entry instanceof StateStoreCommitterRunStarted) {
-                builder.started((StateStoreCommitterRunStarted) entry);
+                Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
+                        .ifPresent(builder -> runs.add(builder.build()));
+                lastRunByLogStream.put(entry.getLogStream(),
+                        newRun(entry).start((StateStoreCommitterRunStarted) entry));
             } else if (entry instanceof StateStoreCommitSummary) {
-                builder.commit((StateStoreCommitSummary) entry);
+                lastRunOrNew(lastRunByLogStream, entry)
+                        .commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
-                runs.add(builder.finished((StateStoreCommitterRunFinished) entry).build());
-                lastRunByLogStream.remove(entry.getLogStream());
+                runs.add(Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
+                        .orElseGet(() -> newRun(entry))
+                        .finish((StateStoreCommitterRunFinished) entry)
+                        .build());
             }
         }
         lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
         return runs;
     }
 
+    private static Builder lastRunOrNew(Map<String, Builder> lastRunByLogStream, StateStoreCommitterLogEntry entry) {
+        return lastRunByLogStream.computeIfAbsent(entry.getLogStream(), stream -> newRun(entry));
+    }
+
+    private static Builder newRun(StateStoreCommitterLogEntry entry) {
+        return builder().logStream(entry.getLogStream()).commits(new ArrayList<>());
+    }
+
     public double computeRequestsPerSecond() {
-        return (double) commits.size() /
-                (Duration.between(startTime, finishTime).toMillis() / 1000.0);
+        Instant startTime = getStartTime();
+        if (startTime == null) {
+            return 0.0;
+        }
+        Duration duration = Duration.between(startTime, getFinishTimeOrLastCommitTime().orElse(startTime));
+        double seconds = duration.toMillis() / 1000.0;
+        if (seconds <= 0.0) {
+            return 0.0;
+        }
+        return commits.size() / seconds;
+    }
+
+    private Optional<Instant> getFinishTimeOrLastCommitTime() {
+        Instant finishTime = getFinishTime();
+        if (finishTime != null) {
+            return Optional.of(finishTime);
+        }
+        return commits.stream()
+                .map(StateStoreCommitSummary::getFinishTime)
+                .max(Comparator.naturalOrder());
     }
 
     public String getLogStream() {
@@ -77,20 +103,34 @@ public class StateStoreCommitterRun {
     }
 
     public Instant getStartTime() {
-        return startTime;
+        if (start == null) {
+            return null;
+        }
+        return start.getTimeInCommitter();
     }
 
     public Instant getFinishTime() {
-        return finishTime;
+        if (finish == null) {
+            return null;
+        }
+        return finish.getTimeInCommitter();
     }
 
     public List<StateStoreCommitSummary> getCommits() {
         return commits;
     }
 
+    public Stream<StateStoreCommitterLogEntry> entries() {
+        return Stream.of(
+                Optional.ofNullable(start).stream(),
+                commits.stream(),
+                Optional.ofNullable(finish).stream())
+                .flatMap(s -> s);
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(logStream, startTime, finishTime, commits);
+        return Objects.hash(logStream, getStartTime(), getFinishTime(), commits);
     }
 
     @Override
@@ -102,18 +142,18 @@ public class StateStoreCommitterRun {
             return false;
         }
         StateStoreCommitterRun other = (StateStoreCommitterRun) obj;
-        return Objects.equals(logStream, other.logStream) && Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(commits, other.commits);
+        return Objects.equals(logStream, other.logStream) && Objects.equals(start, other.start) && Objects.equals(finish, other.finish) && Objects.equals(commits, other.commits);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitterRun{logStream=" + logStream + ", startTime=" + startTime + ", finishTime=" + finishTime + ", commits=" + commits + "}";
+        return "StateStoreCommitterRun{logStream=" + logStream + ", start=" + start + ", finish=" + finish + ", commits=" + commits + "}";
     }
 
     public static class Builder {
         private String logStream;
-        private Instant startTime;
-        private Instant finishTime;
+        private StateStoreCommitterRunStarted start;
+        private StateStoreCommitterRunFinished finish;
         private List<StateStoreCommitSummary> commits;
 
         private Builder() {
@@ -124,27 +164,19 @@ public class StateStoreCommitterRun {
             return this;
         }
 
-        public Builder startTime(Instant startTime) {
-            this.startTime = startTime;
+        public Builder start(StateStoreCommitterRunStarted start) {
+            this.start = start;
             return this;
         }
 
-        public Builder finishTime(Instant finishTime) {
-            this.finishTime = finishTime;
+        public Builder finish(StateStoreCommitterRunFinished finish) {
+            this.finish = finish;
             return this;
         }
 
         public Builder commits(List<StateStoreCommitSummary> commits) {
             this.commits = commits;
             return this;
-        }
-
-        private Builder started(StateStoreCommitterRunStarted started) {
-            return logStream(started.getLogStream()).startTime(started.getStartTime()).commits(new ArrayList<>());
-        }
-
-        private Builder finished(StateStoreCommitterRunFinished finished) {
-            return finishTime(finished.getFinishTime());
         }
 
         private Builder commit(StateStoreCommitSummary commit) {

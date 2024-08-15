@@ -25,10 +25,10 @@ public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
     private final Instant finishTime;
 
     public StateStoreCommitSummary(String logStream, String tableId, String type, Instant finishTime) {
-        this.logStream = logStream;
-        this.tableId = tableId;
-        this.type = type;
-        this.finishTime = finishTime;
+        this.logStream = Objects.requireNonNull(logStream, "logStream must not be null");
+        this.tableId = Objects.requireNonNull(tableId, "tableId must not be null");
+        this.type = Objects.requireNonNull(type, "type must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
     }
 
     public String getTableId() {

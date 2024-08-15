@@ -94,6 +94,61 @@ public class StateStoreCommitterLogIndexThroughputTest {
         assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
     }
 
+    @Test
+    void shouldIncludeRunWithNoFinishTime() {
+        // Given
+        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
+        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+    }
+
+    @Test
+    void shouldIgnoreRunWithNoStartTime() {
+        // Given
+        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
+        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+    }
+
+    @Test
+    void shouldIgnoreRunWithNoCommits() {
+        // Given
+        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
+        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:02Z"));
+        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
+        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+    }
+
+    @Test
+    void shouldFindNoLogs() {
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
+        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+    }
+
     private StateStoreCommitterRunStarted runStartedOnStreamAtTime(String logStream, Instant time) {
         return add(new StateStoreCommitterRunStarted(logStream, time));
     }

@@ -163,6 +163,20 @@ public class StateStoreCommitterLogIndexRunsTest {
                 .containsExactly(finishedRunUnknownStart(finished), unfinishedRun(started));
     }
 
+    @Test
+    void shouldReadTwoStartedRunsOnSameStream() {
+        // Given
+        StateStoreCommitterRunStarted started1 = runStartedOnStream("test-stream");
+        StateStoreCommitterRunStarted started2 = runStartedOnStream("test-stream");
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getRuns())
+                .containsExactly(unfinishedRun(started1), unfinishedRun(started2));
+    }
+
     private StateStoreCommitterRunStarted runStartedOnStream(String logStream) {
         return add(new StateStoreCommitterRunStarted(logStream, Instant.now()));
     }
@@ -180,10 +194,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         return log;
     }
 
-    private StateStoreCommitterRun unfinishedRun(StateStoreCommitterRunStarted started, StateStoreCommitSummary... commits) {
+    private StateStoreCommitterRun unfinishedRun(StateStoreCommitterRunStarted start, StateStoreCommitSummary... commits) {
         return StateStoreCommitterRun.builder()
-                .logStream(started.getLogStream())
-                .startTime(started.getStartTime())
+                .logStream(start.getLogStream())
+                .start(start)
                 .commits(List.of(commits))
                 .build();
     }
@@ -195,19 +209,19 @@ public class StateStoreCommitterLogIndexRunsTest {
                 .build();
     }
 
-    private StateStoreCommitterRun finishedRun(StateStoreCommitterRunStarted started, StateStoreCommitterRunFinished finished, StateStoreCommitSummary... commits) {
+    private StateStoreCommitterRun finishedRun(StateStoreCommitterRunStarted start, StateStoreCommitterRunFinished finish, StateStoreCommitSummary... commits) {
         return StateStoreCommitterRun.builder()
-                .logStream(started.getLogStream())
-                .startTime(started.getStartTime())
-                .finishTime(finished.getFinishTime())
+                .logStream(start.getLogStream())
+                .start(start)
+                .finish(finish)
                 .commits(List.of(commits))
                 .build();
     }
 
-    private StateStoreCommitterRun finishedRunUnknownStart(StateStoreCommitterRunFinished finished, StateStoreCommitSummary... commits) {
+    private StateStoreCommitterRun finishedRunUnknownStart(StateStoreCommitterRunFinished finish, StateStoreCommitSummary... commits) {
         return StateStoreCommitterRun.builder()
-                .logStream(finished.getLogStream())
-                .finishTime(finished.getFinishTime())
+                .logStream(finish.getLogStream())
+                .finish(finish)
                 .commits(List.of(commits))
                 .build();
     }

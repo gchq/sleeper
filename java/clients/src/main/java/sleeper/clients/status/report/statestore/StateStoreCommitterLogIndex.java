@@ -33,8 +33,9 @@ public class StateStoreCommitterLogIndex {
     private StateStoreCommitterLogIndex(Builder builder) {
         runs = builder.buildRuns();
         averageRequestsPerSecondInRuns = runs.stream()
+                .filter(run -> !run.getCommits().isEmpty())
                 .collect(averagingDouble(StateStoreCommitterRun::computeRequestsPerSecond));
-        averageRequestsPerSecondOverall = builder.computeAverageRequestsPerSecondOverall();
+        averageRequestsPerSecondOverall = computeAverageRequestsPerSecondOverall(runs);
     }
 
     public static StateStoreCommitterLogIndex from(List<StateStoreCommitterLogEntry> logs) {
@@ -56,21 +57,11 @@ public class StateStoreCommitterLogIndex {
     }
 
     private static class Builder {
-        private StateStoreCommitterLogEntry firstLogEntry;
-        private StateStoreCommitterLogEntry lastLogEntry;
-        private final List<StateStoreCommitSummary> commits = new ArrayList<>();
         private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
 
         private void add(StateStoreCommitterLogEntry entry) {
             entriesByLogStream.computeIfAbsent(entry.getLogStream(), stream -> new ArrayList<>())
                     .add(entry);
-            if (entry instanceof StateStoreCommitSummary) {
-                commits.add((StateStoreCommitSummary) entry);
-            }
-            if (firstLogEntry == null) {
-                firstLogEntry = entry;
-            }
-            lastLogEntry = entry;
         }
 
         private StateStoreCommitterLogIndex build() {
@@ -82,14 +73,34 @@ public class StateStoreCommitterLogIndex {
                     .flatMap(entries -> StateStoreCommitterRun.splitIntoRuns(entries).stream())
                     .collect(toUnmodifiableList());
         }
+    }
 
-        private double computeAverageRequestsPerSecondOverall() {
-            return (double) commits.size() /
-                    (Duration.between(
-                            firstLogEntry.getTimeInCommitter(),
-                            lastLogEntry.getTimeInCommitter())
-                            .toMillis() / 1000.0);
+    private static double computeAverageRequestsPerSecondOverall(List<StateStoreCommitterRun> runs) {
+        StateStoreCommitterLogEntry firstLogEntry = null;
+        StateStoreCommitterLogEntry lastLogEntry = null;
+        int numCommits = 0;
+        for (StateStoreCommitterRun run : runs) {
+            List<StateStoreCommitSummary> commits = run.getCommits();
+            if (commits.isEmpty()) {
+                continue;
+            }
+            numCommits += commits.size();
+            for (StateStoreCommitterLogEntry entry : (Iterable<StateStoreCommitterLogEntry>) () -> run.entries().iterator()) {
+                if (firstLogEntry == null) {
+                    firstLogEntry = entry;
+                }
+                lastLogEntry = entry;
+            }
         }
+        if (firstLogEntry == null || lastLogEntry == null) {
+            return 0.0;
+        }
+        Duration duration = Duration.between(firstLogEntry.getTimeInCommitter(), lastLogEntry.getTimeInCommitter());
+        double seconds = duration.toMillis() / 1000.0;
+        if (seconds <= 0.0) {
+            return 0.0;
+        }
+        return numCommits / seconds;
     }
 
 }
