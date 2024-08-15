@@ -94,6 +94,6 @@ public class StateStoreCommitterRuns {
     }
 
     private static StateStoreCommitterRun.Builder newRun(StateStoreCommitterLogEntry entry) {
-        return StateStoreCommitterRun.builder().logStream(entry.getLogStream()).commits(new ArrayList<>());
+        return StateStoreCommitterRun.builder().logStream(entry.getLogStream());
     }
 }

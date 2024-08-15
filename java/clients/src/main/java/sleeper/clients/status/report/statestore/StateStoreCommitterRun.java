@@ -17,6 +17,7 @@ package sleeper.clients.status.report.statestore;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -120,7 +121,7 @@ public class StateStoreCommitterRun {
         private String logStream;
         private StateStoreCommitterRunStarted start;
         private StateStoreCommitterRunFinished finish;
-        private List<StateStoreCommitSummary> commits;
+        private List<StateStoreCommitSummary> commits = new ArrayList<>();
 
         private Builder() {
         }
@@ -145,7 +146,7 @@ public class StateStoreCommitterRun {
             return this;
         }
 
-        Builder commit(StateStoreCommitSummary commit) {
+        public Builder commit(StateStoreCommitSummary commit) {
             commits.add(commit);
             return this;
         }
