@@ -390,7 +390,7 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldFailWhenFileHasNotBeenDeleted() throws Exception {
+        void shouldFailWhenFileStillHasAReference() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
             stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
