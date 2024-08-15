@@ -20,12 +20,15 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.statestore.StateStoreCommitterRequestsPerSecond.averageRequestsPerSecondInRunsAndOverall;
 
-public class StateStoreCommitterReportTest {
+public class StateStoreCommitterRequestsPerSecondTest {
 
     private static final String DEFAULT_LOG_STREAM = "test-stream";
+    private static final String DEFAULT_TABLE_ID = "test-table";
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
@@ -37,11 +40,11 @@ public class StateStoreCommitterReportTest {
         runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
 
     @Test
@@ -53,11 +56,11 @@ public class StateStoreCommitterReportTest {
         runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(2.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(2.0, 2.0));
     }
 
     @Test
@@ -71,11 +74,11 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 2.0));
     }
 
     @Test
@@ -89,11 +92,11 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.5);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.5, 2.0));
     }
 
     @Test
@@ -103,11 +106,11 @@ public class StateStoreCommitterReportTest {
         committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
 
     @Test
@@ -117,11 +120,11 @@ public class StateStoreCommitterReportTest {
         runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
     }
 
     @Test
@@ -134,25 +137,49 @@ public class StateStoreCommitterReportTest {
         runFinishedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
 
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
 
     @Test
     void shouldFindNoLogs() {
         // When
-        StateStoreCommitterReport report = report();
+        StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
-        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
-        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
     }
 
-    private StateStoreCommitterReport report() {
-        return StateStoreCommitterReport.fromRuns(
+    @Test
+    void shouldReportByTable() {
+        // Given
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        committedToTableAtTime("table-1", Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:41:00Z"));
+        committedToTableAtTime("table-2", Instant.parse("2024-08-15T10:41:00.500Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:41:00.500Z"));
+
+        // When
+        Map<String, StateStoreCommitterRequestsPerSecond> report = reportByTable();
+
+        // Then
+        assertThat(report).isEqualTo(Map.of(
+                "table-1", averageRequestsPerSecondInRunsAndOverall(1.0, 1.0),
+                "table-2", averageRequestsPerSecondInRunsAndOverall(2.0, 2.0)));
+    }
+
+    private StateStoreCommitterRequestsPerSecond report() {
+        return StateStoreCommitterRequestsPerSecond.fromRuns(
+                StateStoreCommitterRuns.findRunsByLogStream(logs));
+    }
+
+    private Map<String, StateStoreCommitterRequestsPerSecond> reportByTable() {
+        return StateStoreCommitterRequestsPerSecond.byTableIdFromRuns(
                 StateStoreCommitterRuns.findRunsByLogStream(logs));
     }
 
@@ -169,7 +196,11 @@ public class StateStoreCommitterReportTest {
     }
 
     private void committedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitSummary(logStream, "test-table", "test-commit", time));
+        add(new StateStoreCommitSummary(logStream, DEFAULT_TABLE_ID, "test-commit", time));
+    }
+
+    private void committedToTableAtTime(String tableId, Instant time) {
+        add(new StateStoreCommitSummary(DEFAULT_LOG_STREAM, tableId, "test-commit", time));
     }
 
     private void runFinishedAtTime(Instant time) {

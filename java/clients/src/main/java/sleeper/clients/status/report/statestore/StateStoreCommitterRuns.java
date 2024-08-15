@@ -16,6 +16,7 @@
 package sleeper.clients.status.report.statestore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,18 @@ public class StateStoreCommitterRuns {
         Builder builder = new Builder();
         logs.forEach(builder::add);
         return builder.build();
+    }
+
+    public static Map<String, List<StateStoreCommitterRun>> indexRunsByTableId(List<StateStoreCommitterRun> runs) {
+        Map<String, List<StateStoreCommitterRun>> runsByTableId = new HashMap<>();
+        for (StateStoreCommitterRun run : runs) {
+            run.getCommits().stream()
+                    .map(StateStoreCommitSummary::getTableId)
+                    .distinct().forEach(tableId -> runsByTableId
+                            .computeIfAbsent(tableId, id -> new ArrayList<>())
+                            .add(run));
+        }
+        return runsByTableId;
     }
 
     private static class Builder {
