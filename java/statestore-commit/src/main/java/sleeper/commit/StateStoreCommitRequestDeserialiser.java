@@ -33,6 +33,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.statestore.commit.CommitRequestType;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
@@ -103,6 +104,9 @@ public class StateStoreCommitRequestDeserialiser {
                 throw new CommitRequestValidationException("Unrecognised request type");
             }
             switch (type) {
+                case STORED_IN_S3:
+                    return fromDataBucket.read(
+                            context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
                 case COMPACTION_FINISHED:
                     return StateStoreCommitRequest.forCompactionJob(
                             context.deserialize(requestObj, CompactionJobCommitRequest.class));
@@ -115,9 +119,9 @@ public class StateStoreCommitRequestDeserialiser {
                 case SPLIT_PARTITION:
                     return StateStoreCommitRequest.forSplitPartition(
                             context.deserialize(requestObj, SplitPartitionCommitRequest.class));
-                case STORED_IN_S3:
-                    return fromDataBucket.read(
-                            context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
+                case GARBAGE_COLLECTED_FILES:
+                    return StateStoreCommitRequest.forGarbageCollection(
+                            context.deserialize(requestObj, GarbageCollectionCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }

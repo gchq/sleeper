@@ -94,7 +94,7 @@
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.5.1</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
-        <kerby.version>2.0.3</kerby.version>
+        <kerby.version>2.1.0</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
@@ -115,8 +115,8 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.6</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.27.4</aws-java-sdk-v2.version>
-        <aws-crt.version>0.30.7</aws-crt.version>
+        <aws-java-sdk-v2.version>2.27.5</aws-java-sdk-v2.version>
+        <aws-crt.version>0.30.8</aws-crt.version>
         <aws-lambda-java-events.version>3.13.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -134,7 +134,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.2.1-jre</guava.version>
-        <cdk.version>2.151.0</cdk.version>
+        <cdk.version>2.151.1</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.11.0</gson.version>
@@ -166,8 +166,8 @@
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.10.3</junit.version>
-        <junit.platform.version>1.10.3</junit.platform.version>
+        <junit.version>5.11.0</junit.version>
+        <junit.platform.version>1.11.0</junit.platform.version>
         <mockito.version>5.12.0</mockito.version>
         <testcontainers.version>1.20.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
