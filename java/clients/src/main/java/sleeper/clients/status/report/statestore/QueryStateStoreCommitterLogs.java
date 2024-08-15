@@ -46,6 +46,11 @@ public class QueryStateStoreCommitterLogs {
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
+        // Note that the results must fit in a single page of 10,000 log entries, which is the highest limit allowed.
+        // If there are more logs than that, only 10,000 will be returned.
+        // We could set up a way to page through the results, but we'd risk new logs coming in as we page through.
+        // It seems to take about 2 minutes for logs to be available in CloudWatch, so we'd have to wait quite a long
+        // time to be confident that it's settled enough for us to read through everything.
         String queryId = cloudWatch.startQuery(builder -> builder
                 .logGroupName(logGroupName)
                 .startTime(startTime.getEpochSecond())
