@@ -35,7 +35,7 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
@@ -51,7 +51,7 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(2.0);
@@ -69,7 +69,7 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
@@ -87,7 +87,7 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.5);
@@ -101,7 +101,7 @@ public class StateStoreCommitterReportTest {
         committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
@@ -115,11 +115,11 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterReport stats = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
-        assertThat(stats.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
-        assertThat(stats.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class StateStoreCommitterReportTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
 
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
@@ -142,11 +142,16 @@ public class StateStoreCommitterReportTest {
     @Test
     void shouldFindNoLogs() {
         // When
-        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
+        StateStoreCommitterReport report = report();
 
         // Then
         assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
         assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+    }
+
+    private StateStoreCommitterReport report() {
+        return StateStoreCommitterReport.fromRuns(
+                StateStoreCommitterRuns.findRunsByLogStream(logs));
     }
 
     private StateStoreCommitterRunStarted runStartedOnStreamAtTime(String logStream, Instant time) {

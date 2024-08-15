@@ -32,8 +32,7 @@ public class StateStoreCommitterReport {
         averageRequestsPerSecondOverall = computeAverageRequestsPerSecondOverall(runs);
     }
 
-    public static StateStoreCommitterReport from(List<StateStoreCommitterLogEntry> logs) {
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+    public static StateStoreCommitterReport fromRuns(List<StateStoreCommitterRun> runs) {
         return new StateStoreCommitterReport(runs);
     }
 
