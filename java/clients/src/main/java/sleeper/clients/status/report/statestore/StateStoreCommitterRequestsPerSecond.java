@@ -97,7 +97,9 @@ public class StateStoreCommitterRequestsPerSecond {
                 if (firstLogEntry == null) {
                     firstLogEntry = entry;
                 }
-                lastLogEntry = entry;
+                if (lastLogEntry == null || entry.getTimeInCommitter().isAfter(lastLogEntry.getTimeInCommitter())) {
+                    lastLogEntry = entry;
+                }
             }
         }
         if (firstLogEntry == null || lastLogEntry == null) {

@@ -100,6 +100,24 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     @Test
+    void shouldFindTwoRequestsOnSeparateRunsWhenFirstRunFinishesAfterLastRun() {
+        // Given
+        runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
+        runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00.500Z"));
+        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
+        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
+        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
+        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
+
+        // When
+        StateStoreCommitterRequestsPerSecond report = report();
+
+        // Then
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(0.75, 1.0));
+    }
+
+    @Test
     void shouldIncludeRunWithNoFinishTime() {
         // Given
         runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
