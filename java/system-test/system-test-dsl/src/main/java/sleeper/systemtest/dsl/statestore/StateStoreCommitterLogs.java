@@ -22,4 +22,6 @@ public interface StateStoreCommitterLogs {
 
     Map<String, Integer> countNumCommitsByTableId(Set<String> tableIds);
 
+    Map<String, Double> computeOverallCommitsPerSecondByTableId(Set<String> tableIds);
+
 }
