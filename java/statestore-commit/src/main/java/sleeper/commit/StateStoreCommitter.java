@@ -29,6 +29,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -144,6 +145,11 @@ public class StateStoreCommitter {
     void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
+    }
+
+    void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
     }
 
     /**

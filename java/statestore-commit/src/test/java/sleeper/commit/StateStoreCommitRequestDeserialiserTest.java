@@ -32,6 +32,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -191,6 +193,21 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
+    }
+
+    @Test
+    void shouldDeserialiseGarbageCollectionCommitRequest() {
+        // Given
+        createTable("test-table", schemaWithKey("key"));
+        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
+                "test-table", List.of("file1.parquet", "file2.parquet"));
+
+        String jsonString = new GarbageCollectionCommitRequestSerDe().toJson(request);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forGarbageCollection(request))
                 .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
