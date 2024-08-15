@@ -19,10 +19,10 @@ package sleeper.core.statestore.commit;
  * Represents the different types of state store commit requests that can be performed.
  */
 public enum CommitRequestType {
+    STORED_IN_S3,
     COMPACTION_FINISHED,
     INGEST_ADD_FILES,
-    STORED_IN_S3,
     COMPACTION_JOB_ID_ASSIGNMENT,
     SPLIT_PARTITION,
-    FILES_GARBAGE_COLLECTED
+    GARBAGE_COLLECTED_FILES
 }

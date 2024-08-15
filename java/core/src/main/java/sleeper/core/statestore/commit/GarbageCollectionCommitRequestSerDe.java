@@ -63,7 +63,7 @@ public class GarbageCollectionCommitRequestSerDe {
      */
     public GarbageCollectionCommitRequest fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.FILES_GARBAGE_COLLECTED == wrappedRequest.type) {
+        if (CommitRequestType.GARBAGE_COLLECTED_FILES == wrappedRequest.type) {
             return wrappedRequest.request;
         }
         throw new IllegalArgumentException("Unexpected request type");
@@ -78,7 +78,7 @@ public class GarbageCollectionCommitRequestSerDe {
         private final GarbageCollectionCommitRequest request;
 
         WrappedCommitRequest(GarbageCollectionCommitRequest request) {
-            this.type = CommitRequestType.FILES_GARBAGE_COLLECTED;
+            this.type = CommitRequestType.GARBAGE_COLLECTED_FILES;
             this.request = request;
         }
     }

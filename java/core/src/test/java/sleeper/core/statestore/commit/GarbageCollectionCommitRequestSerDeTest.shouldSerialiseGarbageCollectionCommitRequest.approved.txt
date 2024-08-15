@@ -1,5 +1,5 @@
 {
-  "type": "FILES_GARBAGE_COLLECTED",
+  "type": "GARBAGE_COLLECTED_FILES",
   "request": {
     "tableId": "tableId",
     "filenames": [
