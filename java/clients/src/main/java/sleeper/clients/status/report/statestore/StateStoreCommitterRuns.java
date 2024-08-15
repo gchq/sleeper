@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
@@ -68,26 +67,28 @@ public class StateStoreCommitterRuns {
 
     private static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
-        StateStoreCommitterRun.Builder lastRun = null;
+        StateStoreCommitterRun.Builder builder = null;
         for (StateStoreCommitterLogEntry entry : logs) {
             if (entry instanceof StateStoreCommitterRunStarted) {
-                Optional.ofNullable(lastRun)
-                        .ifPresent(builder -> runs.add(builder.build()));
-                lastRun = newRun(entry).start((StateStoreCommitterRunStarted) entry);
+                if (builder != null) {
+                    runs.add(builder.build());
+                }
+                builder = newRun(entry).start((StateStoreCommitterRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
-                lastRun = Optional.ofNullable(lastRun)
-                        .orElseGet(() -> newRun(entry))
-                        .commit((StateStoreCommitSummary) entry);
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
-                runs.add(Optional.ofNullable(lastRun)
-                        .orElseGet(() -> newRun(entry))
-                        .finish((StateStoreCommitterRunFinished) entry)
-                        .build());
-                lastRun = null;
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                runs.add(builder.finish((StateStoreCommitterRunFinished) entry).build());
+                builder = null;
             }
         }
-        if (lastRun != null) {
-            runs.add(lastRun.build());
+        if (builder != null) {
+            runs.add(builder.build());
         }
         return runs;
     }
