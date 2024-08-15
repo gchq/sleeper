@@ -147,9 +147,9 @@ public class StateStoreCommitter {
         stateStore.assignJobIds(request.getAssignJobIdRequests());
     }
 
-    void filesDeleted(GarbageCollectionCommitRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'filesDeleted'");
+    void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
+        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
     }
 
     /**
