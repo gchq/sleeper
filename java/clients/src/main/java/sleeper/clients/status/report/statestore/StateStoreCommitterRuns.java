@@ -76,7 +76,7 @@ public class StateStoreCommitterRuns {
                 lastRunByLogStream.put(entry.getLogStream(),
                         newRun(entry).start((StateStoreCommitterRunStarted) entry));
             } else if (entry instanceof StateStoreCommitSummary) {
-                lastRunOrNew(lastRunByLogStream, entry)
+                lastRunByLogStream.computeIfAbsent(entry.getLogStream(), stream -> newRun(entry))
                         .commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
                 runs.add(Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
@@ -87,10 +87,6 @@ public class StateStoreCommitterRuns {
         }
         lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
         return runs;
-    }
-
-    private static StateStoreCommitterRun.Builder lastRunOrNew(Map<String, StateStoreCommitterRun.Builder> lastRunByLogStream, StateStoreCommitterLogEntry entry) {
-        return lastRunByLogStream.computeIfAbsent(entry.getLogStream(), stream -> newRun(entry));
     }
 
     private static StateStoreCommitterRun.Builder newRun(StateStoreCommitterLogEntry entry) {
