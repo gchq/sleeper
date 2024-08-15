@@ -15,6 +15,7 @@
  */
 package sleeper.clients.status.report.statestore;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -64,6 +65,11 @@ public class StateStoreCommitterRun {
         }
         lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
         return runs;
+    }
+
+    public double computeRequestsPerSecond() {
+        return (double) commits.size() /
+                (Duration.between(startTime, finishTime).toMillis() / 1000.0);
     }
 
     public String getLogStream() {

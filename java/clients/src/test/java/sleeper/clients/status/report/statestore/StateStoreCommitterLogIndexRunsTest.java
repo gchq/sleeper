@@ -33,7 +33,6 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
         StateStoreCommitSummary committed = committedOnStream("test-stream");
         StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(started, committed, finished);
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
