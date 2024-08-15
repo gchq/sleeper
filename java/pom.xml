@@ -94,7 +94,7 @@
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.5.1</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
-        <kerby.version>2.0.3</kerby.version>
+        <kerby.version>2.1.0</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
