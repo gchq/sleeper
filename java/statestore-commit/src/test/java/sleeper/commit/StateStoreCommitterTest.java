@@ -388,6 +388,19 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(3))
                     .isEqualTo(activeAndReadyForGCFiles(List.of(fileAfterCompaction), List.of()));
         }
+
+        @Test
+        void shouldFailWhenFileHasNotBeenDeleted() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
+            GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
+                    "test-table", List.of("file.parquet"));
+
+            // When / Then
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forGarbageCollection(request)))
+                    .isInstanceOf(StateStoreException.class);
+        }
     }
 
     private StateStoreCommitter committer() {
