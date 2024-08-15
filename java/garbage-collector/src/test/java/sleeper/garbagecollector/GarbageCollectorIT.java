@@ -18,6 +18,7 @@ package sleeper.garbagecollector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -309,6 +310,35 @@ public class GarbageCollectorIT {
                     .isEqualTo(readyForGCFilesReport(oldEnoughTime, file1));
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(noFilesReport());
+        }
+    }
+
+    @Nested
+    @DisplayName("Asynchronous commits for deleted files")
+    class AsynchronousCommits {
+
+        private final TableProperties table = createTable();
+        private final StateStore stateStore = stateStore(table);
+
+        @Test
+        @Disabled
+        void shouldSendCommitForTheDeletionOfFilesAsychronously() throws Exception {
+            // Given
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            stateStore.fixFileUpdateTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            Path oldFile = tempDir.resolve("old-file.parquet");
+            Path newFile = tempDir.resolve("new-file.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
+
+            // When
+            collectGarbageAtTime(currentTime);
+
+            // Then
+            assertThat(Files.exists(oldFile)).isFalse();
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of(oldFile.toString())));
         }
     }
 
