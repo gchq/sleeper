@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterRunsTest {
+public class StateStoreCommitterRunsFromEntriesTest {
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
