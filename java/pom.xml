@@ -166,7 +166,7 @@
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.10.3</junit.version>
+        <junit.version>5.11.0</junit.version>
         <junit.platform.version>1.10.3</junit.platform.version>
         <mockito.version>5.12.0</mockito.version>
         <testcontainers.version>1.20.1</testcontainers.version>
