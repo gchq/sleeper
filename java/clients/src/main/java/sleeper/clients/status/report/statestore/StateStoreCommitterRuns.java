@@ -23,27 +23,30 @@ import java.util.Optional;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class StateStoreCommitterRunsBuilder {
-    private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
+public class StateStoreCommitterRuns {
+
+    private StateStoreCommitterRuns() {
+    }
 
     public static List<StateStoreCommitterRun> findRunsByLogStream(List<StateStoreCommitterLogEntry> logs) {
-        StateStoreCommitterRunsBuilder builder = new StateStoreCommitterRunsBuilder();
+        Builder builder = new Builder();
         logs.forEach(builder::add);
-        return builder.buildRuns();
+        return builder.build();
     }
 
-    private StateStoreCommitterRunsBuilder() {
-    }
+    private static class Builder {
+        private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
 
-    private void add(StateStoreCommitterLogEntry entry) {
-        entriesByLogStream.computeIfAbsent(entry.getLogStream(), stream -> new ArrayList<>())
-                .add(entry);
-    }
+        private void add(StateStoreCommitterLogEntry entry) {
+            entriesByLogStream.computeIfAbsent(entry.getLogStream(), stream -> new ArrayList<>())
+                    .add(entry);
+        }
 
-    private List<StateStoreCommitterRun> buildRuns() {
-        return entriesByLogStream.values().stream()
-                .flatMap(entries -> splitIntoRuns(entries).stream())
-                .collect(toUnmodifiableList());
+        private List<StateStoreCommitterRun> build() {
+            return entriesByLogStream.values().stream()
+                    .flatMap(entries -> splitIntoRuns(entries).stream())
+                    .collect(toUnmodifiableList());
+        }
     }
 
     private static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {

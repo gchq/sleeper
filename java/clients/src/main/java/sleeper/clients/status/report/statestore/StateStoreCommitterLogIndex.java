@@ -35,7 +35,7 @@ public class StateStoreCommitterLogIndex {
     }
 
     public static StateStoreCommitterLogIndex from(List<StateStoreCommitterLogEntry> logs) {
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRunsBuilder.findRunsByLogStream(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
         return new StateStoreCommitterLogIndex(runs);
     }
 
