@@ -68,24 +68,27 @@ public class StateStoreCommitterRuns {
 
     private static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
-        Map<String, StateStoreCommitterRun.Builder> lastRunByLogStream = new LinkedHashMap<>();
+        StateStoreCommitterRun.Builder lastRun = null;
         for (StateStoreCommitterLogEntry entry : logs) {
             if (entry instanceof StateStoreCommitterRunStarted) {
-                Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
+                Optional.ofNullable(lastRun)
                         .ifPresent(builder -> runs.add(builder.build()));
-                lastRunByLogStream.put(entry.getLogStream(),
-                        newRun(entry).start((StateStoreCommitterRunStarted) entry));
+                lastRun = newRun(entry).start((StateStoreCommitterRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
-                lastRunByLogStream.computeIfAbsent(entry.getLogStream(), stream -> newRun(entry))
+                lastRun = Optional.ofNullable(lastRun)
+                        .orElseGet(() -> newRun(entry))
                         .commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
-                runs.add(Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
+                runs.add(Optional.ofNullable(lastRun)
                         .orElseGet(() -> newRun(entry))
                         .finish((StateStoreCommitterRunFinished) entry)
                         .build());
+                lastRun = null;
             }
         }
-        lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
+        if (lastRun != null) {
+            runs.add(lastRun.build());
+        }
         return runs;
     }
 
