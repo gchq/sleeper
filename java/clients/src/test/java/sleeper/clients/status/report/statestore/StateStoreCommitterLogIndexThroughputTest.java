@@ -81,17 +81,17 @@ public class StateStoreCommitterLogIndexThroughputTest {
         // Given
         runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
         runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
-        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:02Z"));
-        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:02Z"));
+        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
+        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
+        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(0.75);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.5);
+        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
     }
 
     private StateStoreCommitterRunStarted runStartedOnStreamAtTime(String logStream, Instant time) {
