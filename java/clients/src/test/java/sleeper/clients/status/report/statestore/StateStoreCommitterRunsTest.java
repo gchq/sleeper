@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterLogIndexRunsTest {
+public class StateStoreCommitterRunsTest {
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
@@ -35,10 +35,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(finishedRun(started, finished, committed));
     }
 
@@ -53,10 +53,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunFinished finished2 = runFinishedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(
                         finishedRun(started1, finished1, committed1),
                         finishedRun(started2, finished2, committed2));
@@ -73,10 +73,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunFinished finished2 = runFinishedOnStream("stream-2");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(
                         finishedRun(started1, finished1, committed1),
                         finishedRun(started2, finished2, committed2));
@@ -88,10 +88,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(unfinishedRun(started));
     }
 
@@ -102,10 +102,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitSummary committed = committedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(unfinishedRun(started, committed));
     }
 
@@ -115,10 +115,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitSummary committed = committedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(unfinishedRunUnknownStart(committed));
     }
 
@@ -128,10 +128,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(finishedRunUnknownStart(finished));
     }
 
@@ -142,10 +142,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(finishedRunUnknownStart(finished, committed));
     }
 
@@ -156,10 +156,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(finishedRunUnknownStart(finished), unfinishedRun(started));
     }
 
@@ -170,10 +170,10 @@ public class StateStoreCommitterLogIndexRunsTest {
         StateStoreCommitterRunStarted started2 = runStartedOnStream("test-stream");
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
         // Then
-        assertThat(index.getRuns())
+        assertThat(runs)
                 .containsExactly(unfinishedRun(started1), unfinishedRun(started2));
     }
 

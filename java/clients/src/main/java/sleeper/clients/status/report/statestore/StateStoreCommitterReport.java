@@ -20,27 +20,21 @@ import java.util.List;
 
 import static java.util.stream.Collectors.averagingDouble;
 
-public class StateStoreCommitterLogIndex {
+public class StateStoreCommitterReport {
 
-    private final List<StateStoreCommitterRun> runs;
     private final double averageRequestsPerSecondInRuns;
     private final double averageRequestsPerSecondOverall;
 
-    private StateStoreCommitterLogIndex(List<StateStoreCommitterRun> runs) {
-        this.runs = runs;
+    private StateStoreCommitterReport(List<StateStoreCommitterRun> runs) {
         averageRequestsPerSecondInRuns = runs.stream()
                 .filter(run -> !run.getCommits().isEmpty())
                 .collect(averagingDouble(StateStoreCommitterRun::computeRequestsPerSecond));
         averageRequestsPerSecondOverall = computeAverageRequestsPerSecondOverall(runs);
     }
 
-    public static StateStoreCommitterLogIndex from(List<StateStoreCommitterLogEntry> logs) {
+    public static StateStoreCommitterReport from(List<StateStoreCommitterLogEntry> logs) {
         List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-        return new StateStoreCommitterLogIndex(runs);
-    }
-
-    public List<StateStoreCommitterRun> getRuns() {
-        return runs;
+        return new StateStoreCommitterReport(runs);
     }
 
     public double getAverageRequestsPerSecondInRuns() {

@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StateStoreCommitterLogIndexThroughputTest {
+public class StateStoreCommitterReportTest {
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
@@ -35,11 +35,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
     }
 
     @Test
@@ -51,11 +51,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(2.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(2.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
     }
 
     @Test
@@ -69,11 +69,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
     }
 
     @Test
@@ -87,11 +87,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.5);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.5);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(2.0);
     }
 
     @Test
@@ -101,11 +101,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
     }
 
     @Test
@@ -115,11 +115,11 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport stats = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+        assertThat(stats.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
+        assertThat(stats.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
     }
 
     @Test
@@ -132,21 +132,21 @@ public class StateStoreCommitterLogIndexThroughputTest {
         runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
 
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(1.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(1.0);
     }
 
     @Test
     void shouldFindNoLogs() {
         // When
-        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+        StateStoreCommitterReport report = StateStoreCommitterReport.from(logs);
 
         // Then
-        assertThat(index.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
-        assertThat(index.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
+        assertThat(report.getAverageRequestsPerSecondInRuns()).isEqualTo(0.0);
+        assertThat(report.getAverageRequestsPerSecondOverall()).isEqualTo(0.0);
     }
 
     private StateStoreCommitterRunStarted runStartedOnStreamAtTime(String logStream, Instant time) {
