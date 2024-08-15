@@ -16,7 +16,6 @@
 package sleeper.core.statestore.commit;
 
 import org.approvaltests.Approvals;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -29,10 +28,8 @@ public class GarbageCollectionCommitRequestSerDeTest {
     private GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
 
     @Test
-    @Disabled
     void shouldSerialiseGarbageCollectionCommitRequest() {
         // Given
-
         GarbageCollectionCommitRequest garbageCollectionCommitRequest = new GarbageCollectionCommitRequest("tableId",
                 List.of("file1.parquet", "file2.parquet", "file3.parquet"));
 
@@ -42,7 +39,6 @@ public class GarbageCollectionCommitRequestSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(garbageCollectionCommitRequest);
         Approvals.verify(json);
-
     }
 
     @Test
