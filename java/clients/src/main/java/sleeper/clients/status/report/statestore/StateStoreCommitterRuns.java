@@ -21,7 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class StateStoreCommitterRuns {
@@ -38,11 +40,13 @@ public class StateStoreCommitterRuns {
     public static Map<String, List<StateStoreCommitterRun>> indexRunsByTableId(List<StateStoreCommitterRun> runs) {
         Map<String, List<StateStoreCommitterRun>> runsByTableId = new HashMap<>();
         for (StateStoreCommitterRun run : runs) {
-            run.getCommits().stream()
+            Set<String> tableIds = run.getCommits().stream()
                     .map(StateStoreCommitSummary::getTableId)
-                    .distinct().forEach(tableId -> runsByTableId
-                            .computeIfAbsent(tableId, id -> new ArrayList<>())
-                            .add(run));
+                    .collect(toSet());
+            for (String tableId : tableIds) {
+                runsByTableId.computeIfAbsent(tableId, id -> new ArrayList<>())
+                        .add(run);
+            }
         }
         return runsByTableId;
     }
