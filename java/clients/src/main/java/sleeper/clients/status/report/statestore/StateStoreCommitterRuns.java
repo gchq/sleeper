@@ -34,7 +34,7 @@ public class StateStoreCommitterRuns {
     public static List<StateStoreCommitterRun> findRunsByLogStream(List<StateStoreCommitterLogEntry> logs) {
         BuilderByLogStream builder = new BuilderByLogStream();
         logs.forEach(builder::add);
-        return builder.build();
+        return builder.buildRuns();
     }
 
     public static Map<String, List<StateStoreCommitterRun>> indexRunsByTableId(List<StateStoreCommitterRun> runs) {
@@ -59,7 +59,7 @@ public class StateStoreCommitterRuns {
                     .add(entry);
         }
 
-        private List<StateStoreCommitterRun> build() {
+        private List<StateStoreCommitterRun> buildRuns() {
             return entriesByLogStream.values().stream()
                     .flatMap(entries -> splitIntoRuns(entries).stream())
                     .collect(toUnmodifiableList());
