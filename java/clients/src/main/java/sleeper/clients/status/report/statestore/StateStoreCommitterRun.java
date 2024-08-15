@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 public class StateStoreCommitterRun {
 
@@ -48,22 +47,23 @@ public class StateStoreCommitterRun {
         return new Builder();
     }
 
-    public static Stream<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
+    public static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         Map<String, Builder> lastRunByLogStream = new LinkedHashMap<>();
         for (StateStoreCommitterLogEntry entry : logs) {
+            Builder builder = lastRunByLogStream.computeIfAbsent(entry.getLogStream(),
+                    stream -> builder().logStream(stream).commits(new ArrayList<>()));
             if (entry instanceof StateStoreCommitterRunStarted) {
-                lastRunByLogStream.put(entry.getLogStream(), builder().started((StateStoreCommitterRunStarted) entry));
+                builder.started((StateStoreCommitterRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
-                lastRunByLogStream.get(entry.getLogStream()).commit((StateStoreCommitSummary) entry);
+                builder.commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
-                StateStoreCommitterRun run = lastRunByLogStream.remove(entry.getLogStream())
-                        .finished((StateStoreCommitterRunFinished) entry)
-                        .build();
-                runs.add(run);
+                runs.add(builder.finished((StateStoreCommitterRunFinished) entry).build());
+                lastRunByLogStream.remove(entry.getLogStream());
             }
         }
-        return runs.stream();
+        lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
+        return runs;
     }
 
     public String getLogStream() {
@@ -133,15 +133,15 @@ public class StateStoreCommitterRun {
             return this;
         }
 
-        public Builder started(StateStoreCommitterRunStarted started) {
+        private Builder started(StateStoreCommitterRunStarted started) {
             return logStream(started.getLogStream()).startTime(started.getStartTime()).commits(new ArrayList<>());
         }
 
-        public Builder finished(StateStoreCommitterRunFinished finished) {
+        private Builder finished(StateStoreCommitterRunFinished finished) {
             return finishTime(finished.getFinishTime());
         }
 
-        public Builder commit(StateStoreCommitSummary commit) {
+        private Builder commit(StateStoreCommitSummary commit) {
             commits.add(commit);
             return this;
         }

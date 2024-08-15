@@ -15,15 +15,17 @@
  */
 package sleeper.clients.status.report.statestore;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateStoreCommitterLogIndexTest {
+
+    private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
     @Test
     void shouldReadFinishedRunWithOneCommit() {
@@ -42,15 +44,14 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    void shouldReadOverlappingRunsOnDifferentLogStreams() {
+    void shouldReadMultipleRunsOnSameLogStream() {
         // Given
-        StateStoreCommitterRunStarted started1 = runStartedOnStream("stream-1");
-        StateStoreCommitterRunStarted started2 = runStartedOnStream("stream-2");
-        StateStoreCommitSummary committed2 = committedOnStream("stream-2");
-        StateStoreCommitSummary committed1 = committedOnStream("stream-1");
-        StateStoreCommitterRunFinished finished1 = runFinishedOnStream("stream-1");
-        StateStoreCommitterRunFinished finished2 = runFinishedOnStream("stream-2");
-        List<StateStoreCommitterLogEntry> logs = List.of(started1, started2, committed2, committed1, finished1, finished2);
+        StateStoreCommitterRunStarted started1 = runStartedOnStream("test-stream");
+        StateStoreCommitSummary committed1 = committedOnStream("test-stream");
+        StateStoreCommitterRunFinished finished1 = runFinishedOnStream("test-stream");
+        StateStoreCommitterRunStarted started2 = runStartedOnStream("test-stream");
+        StateStoreCommitSummary committed2 = committedOnStream("test-stream");
+        StateStoreCommitterRunFinished finished2 = runFinishedOnStream("test-stream");
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -63,11 +64,29 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    @Disabled("TODO")
+    void shouldReadOverlappingRunsOnDifferentLogStreams() {
+        // Given
+        StateStoreCommitterRunStarted started1 = runStartedOnStream("stream-1");
+        StateStoreCommitterRunStarted started2 = runStartedOnStream("stream-2");
+        StateStoreCommitSummary committed2 = committedOnStream("stream-2");
+        StateStoreCommitSummary committed1 = committedOnStream("stream-1");
+        StateStoreCommitterRunFinished finished1 = runFinishedOnStream("stream-1");
+        StateStoreCommitterRunFinished finished2 = runFinishedOnStream("stream-2");
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getRuns())
+                .containsExactly(
+                        finishedRun(started1, finished1, committed1),
+                        finishedRun(started2, finished2, committed2));
+    }
+
+    @Test
     void shouldReadUnfinishedRunWithNoCommits() {
         // Given
         StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(started);
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -78,12 +97,10 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReadUnfinishedRunWithOneCommit() {
         // Given
         StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
         StateStoreCommitSummary committed = committedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(started, committed);
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -94,11 +111,9 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReadUnfinishedRunWithUnknownStartTimeAndOneCommit() {
         // Given
         StateStoreCommitSummary committed = committedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(committed);
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -109,11 +124,9 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReadFinishedRunWithUnknownStartTimeAndNoCommits() {
         // Given
         StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(finished);
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -124,12 +137,10 @@ public class StateStoreCommitterLogIndexTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReadFinishedRunWithUnknownStartTimeAndOneCommit() {
         // Given
-        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
         StateStoreCommitSummary committed = committedOnStream("test-stream");
-        List<StateStoreCommitterLogEntry> logs = List.of(finished, committed);
+        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
 
         // When
         StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
@@ -139,16 +150,35 @@ public class StateStoreCommitterLogIndexTest {
                 .containsExactly(finishedRunUnknownStart(finished, committed));
     }
 
+    @Test
+    void shouldReadFinishedThenStartedRunOnSameStream() {
+        // Given
+        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
+        StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
+
+        // When
+        StateStoreCommitterLogIndex index = StateStoreCommitterLogIndex.from(logs);
+
+        // Then
+        assertThat(index.getRuns())
+                .containsExactly(finishedRunUnknownStart(finished), unfinishedRun(started));
+    }
+
     private StateStoreCommitterRunStarted runStartedOnStream(String logStream) {
-        return new StateStoreCommitterRunStarted(logStream, Instant.now());
+        return add(new StateStoreCommitterRunStarted(logStream, Instant.now()));
     }
 
     private StateStoreCommitSummary committedOnStream(String logStream) {
-        return new StateStoreCommitSummary(logStream, "test-table", "test-commit", Instant.now());
+        return add(new StateStoreCommitSummary(logStream, "test-table", "test-commit", Instant.now()));
     }
 
     private StateStoreCommitterRunFinished runFinishedOnStream(String logStream) {
-        return new StateStoreCommitterRunFinished(logStream, Instant.now());
+        return add(new StateStoreCommitterRunFinished(logStream, Instant.now()));
+    }
+
+    private <T extends StateStoreCommitterLogEntry> T add(T log) {
+        logs.add(log);
+        return log;
     }
 
     private StateStoreCommitterRun unfinishedRun(StateStoreCommitterRunStarted started, StateStoreCommitSummary... commits) {

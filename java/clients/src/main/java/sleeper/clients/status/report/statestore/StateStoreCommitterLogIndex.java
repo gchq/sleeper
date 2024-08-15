@@ -50,7 +50,7 @@ public class StateStoreCommitterLogIndex {
 
         private StateStoreCommitterLogIndex build() {
             List<StateStoreCommitterRun> runs = entriesByLogStream.values().stream()
-                    .flatMap(StateStoreCommitterRun::splitIntoRuns)
+                    .flatMap(entries -> StateStoreCommitterRun.splitIntoRuns(entries).stream())
                     .collect(toUnmodifiableList());
             return new StateStoreCommitterLogIndex(runs);
         }
