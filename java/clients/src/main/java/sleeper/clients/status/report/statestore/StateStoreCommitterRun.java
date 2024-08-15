@@ -17,11 +17,8 @@ package sleeper.clients.status.report.statestore;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -42,37 +39,6 @@ public class StateStoreCommitterRun {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
-        List<StateStoreCommitterRun> runs = new ArrayList<>();
-        Map<String, Builder> lastRunByLogStream = new LinkedHashMap<>();
-        for (StateStoreCommitterLogEntry entry : logs) {
-            if (entry instanceof StateStoreCommitterRunStarted) {
-                Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
-                        .ifPresent(builder -> runs.add(builder.build()));
-                lastRunByLogStream.put(entry.getLogStream(),
-                        newRun(entry).start((StateStoreCommitterRunStarted) entry));
-            } else if (entry instanceof StateStoreCommitSummary) {
-                lastRunOrNew(lastRunByLogStream, entry)
-                        .commit((StateStoreCommitSummary) entry);
-            } else if (entry instanceof StateStoreCommitterRunFinished) {
-                runs.add(Optional.ofNullable(lastRunByLogStream.remove(entry.getLogStream()))
-                        .orElseGet(() -> newRun(entry))
-                        .finish((StateStoreCommitterRunFinished) entry)
-                        .build());
-            }
-        }
-        lastRunByLogStream.values().forEach(builder -> runs.add(builder.build()));
-        return runs;
-    }
-
-    private static Builder lastRunOrNew(Map<String, Builder> lastRunByLogStream, StateStoreCommitterLogEntry entry) {
-        return lastRunByLogStream.computeIfAbsent(entry.getLogStream(), stream -> newRun(entry));
-    }
-
-    private static Builder newRun(StateStoreCommitterLogEntry entry) {
-        return builder().logStream(entry.getLogStream()).commits(new ArrayList<>());
     }
 
     public double computeRequestsPerSecond() {
@@ -179,7 +145,7 @@ public class StateStoreCommitterRun {
             return this;
         }
 
-        private Builder commit(StateStoreCommitSummary commit) {
+        Builder commit(StateStoreCommitSummary commit) {
             commits.add(commit);
             return this;
         }

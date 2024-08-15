@@ -16,13 +16,9 @@
 package sleeper.clients.status.report.statestore;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.stream.Collectors.averagingDouble;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class StateStoreCommitterLogIndex {
 
@@ -30,8 +26,8 @@ public class StateStoreCommitterLogIndex {
     private final double averageRequestsPerSecondInRuns;
     private final double averageRequestsPerSecondOverall;
 
-    private StateStoreCommitterLogIndex(Builder builder) {
-        runs = builder.buildRuns();
+    private StateStoreCommitterLogIndex(List<StateStoreCommitterRun> runs) {
+        this.runs = runs;
         averageRequestsPerSecondInRuns = runs.stream()
                 .filter(run -> !run.getCommits().isEmpty())
                 .collect(averagingDouble(StateStoreCommitterRun::computeRequestsPerSecond));
@@ -39,9 +35,8 @@ public class StateStoreCommitterLogIndex {
     }
 
     public static StateStoreCommitterLogIndex from(List<StateStoreCommitterLogEntry> logs) {
-        Builder builder = new Builder();
-        logs.forEach(builder::add);
-        return builder.build();
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRunsBuilder.findRunsByLogStream(logs);
+        return new StateStoreCommitterLogIndex(runs);
     }
 
     public List<StateStoreCommitterRun> getRuns() {
@@ -54,25 +49,6 @@ public class StateStoreCommitterLogIndex {
 
     public double getAverageRequestsPerSecondOverall() {
         return averageRequestsPerSecondOverall;
-    }
-
-    private static class Builder {
-        private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
-
-        private void add(StateStoreCommitterLogEntry entry) {
-            entriesByLogStream.computeIfAbsent(entry.getLogStream(), stream -> new ArrayList<>())
-                    .add(entry);
-        }
-
-        private StateStoreCommitterLogIndex build() {
-            return new StateStoreCommitterLogIndex(this);
-        }
-
-        private List<StateStoreCommitterRun> buildRuns() {
-            return entriesByLogStream.values().stream()
-                    .flatMap(entries -> StateStoreCommitterRun.splitIntoRuns(entries).stream())
-                    .collect(toUnmodifiableList());
-        }
     }
 
     private static double computeAverageRequestsPerSecondOverall(List<StateStoreCommitterRun> runs) {
