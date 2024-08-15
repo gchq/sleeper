@@ -45,13 +45,13 @@ public class WaitForStateStoreCommitLogs {
     }
 
     public static Map<String, Integer> getRemainingCommits(Map<String, Integer> waitForNumCommitsByTableId, StateStoreCommitterLogs logs) {
-        Map<String, Integer> numCommitsByTableId = logs.getNumCommitsByTableId();
-        Map<String, Integer> remainingCommitsByTableId = getRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
+        Map<String, Integer> numCommitsByTableId = logs.countNumCommitsByTableId(waitForNumCommitsByTableId.keySet());
+        Map<String, Integer> remainingCommitsByTableId = countRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
         LOGGER.info("Remaining unapplied commits by table ID: {}", remainingCommitsByTableId);
         return remainingCommitsByTableId;
     }
 
-    private static Map<String, Integer> getRemainingCommitsByTableId(
+    private static Map<String, Integer> countRemainingCommitsByTableId(
             Map<String, Integer> waitForNumCommitsByTableId, Map<String, Integer> numCommitsByTableId) {
         Map<String, Integer> remainingCommitsByTableId = new HashMap<>(waitForNumCommitsByTableId);
         numCommitsByTableId.forEach((tableId, numCommits) -> {

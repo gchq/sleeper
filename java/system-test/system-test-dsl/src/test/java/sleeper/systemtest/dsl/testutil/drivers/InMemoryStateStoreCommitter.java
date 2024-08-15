@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -124,8 +125,15 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public Map<String, Integer> getNumCommitsByTableId() {
-            return numCommitsByTableId;
+        public Map<String, Integer> countNumCommitsByTableId(Set<String> tableIds) {
+            Map<String, Integer> filtered = new HashMap<>();
+            tableIds.forEach(tableId -> {
+                Integer count = numCommitsByTableId.get(tableId);
+                if (count != null) {
+                    filtered.put(tableId, count);
+                }
+            });
+            return filtered;
         }
     }
 

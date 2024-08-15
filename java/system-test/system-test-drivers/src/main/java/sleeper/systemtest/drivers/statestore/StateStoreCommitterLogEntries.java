@@ -21,6 +21,7 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
@@ -34,10 +35,11 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
     }
 
     @Override
-    public Map<String, Integer> getNumCommitsByTableId() {
+    public Map<String, Integer> countNumCommitsByTableId(Set<String> tableIds) {
         return logs.stream()
                 .filter(entry -> entry instanceof StateStoreCommitSummary)
                 .map(entry -> (StateStoreCommitSummary) entry)
+                .filter(commit -> tableIds.contains(commit.getTableId()))
                 .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
     }
 
