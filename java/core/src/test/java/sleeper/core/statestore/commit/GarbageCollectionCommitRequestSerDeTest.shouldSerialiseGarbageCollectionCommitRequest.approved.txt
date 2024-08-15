@@ -1,0 +1,11 @@
+{
+  "type": "GARBAGE_COLLECTED_FILES",
+  "request": {
+    "tableId": "tableId",
+    "filenames": [
+      "file1.parquet",
+      "file2.parquet",
+      "file3.parquet"
+    ]
+  }
+}
