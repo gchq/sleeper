@@ -25,14 +25,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateStoreCommitterReportTest {
 
+    private static final String DEFAULT_LOG_STREAM = "test-stream";
+
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
     @Test
     void shouldFindOneRequestOnOneRunLastingOneSecond() {
         // Given
-        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterReport report = report();
@@ -45,10 +47,10 @@ public class StateStoreCommitterReportTest {
     @Test
     void shouldFindTwoRequestsOnOneRunLastingOneSecond() {
         // Given
-        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00.500Z"));
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:00.500Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterReport report = report();
@@ -97,8 +99,8 @@ public class StateStoreCommitterReportTest {
     @Test
     void shouldIncludeRunWithNoFinishTime() {
         // Given
-        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterReport report = report();
@@ -111,8 +113,8 @@ public class StateStoreCommitterReportTest {
     @Test
     void shouldIgnoreRunWithNoStartTime() {
         // Given
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterReport report = report();
@@ -125,11 +127,11 @@ public class StateStoreCommitterReportTest {
     @Test
     void shouldIgnoreRunWithNoCommits() {
         // Given
-        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:00Z"));
-        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:01Z"));
-        runStartedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:02Z"));
-        committedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
-        runFinishedOnStreamAtTime("test-stream", Instant.parse("2024-08-15T10:40:03Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:02Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
 
         // When
         StateStoreCommitterReport report = report();
@@ -154,20 +156,31 @@ public class StateStoreCommitterReportTest {
                 StateStoreCommitterRuns.findRunsByLogStream(logs));
     }
 
-    private StateStoreCommitterRunStarted runStartedOnStreamAtTime(String logStream, Instant time) {
-        return add(new StateStoreCommitterRunStarted(logStream, time));
+    private void runStartedAtTime(Instant time) {
+        runStartedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
     }
 
-    private StateStoreCommitSummary committedOnStreamAtTime(String logStream, Instant time) {
-        return add(new StateStoreCommitSummary(logStream, "test-table", "test-commit", time));
+    private void runStartedOnStreamAtTime(String logStream, Instant time) {
+        add(new StateStoreCommitterRunStarted(logStream, time));
     }
 
-    private StateStoreCommitterRunFinished runFinishedOnStreamAtTime(String logStream, Instant time) {
-        return add(new StateStoreCommitterRunFinished(logStream, time));
+    private void committedAtTime(Instant time) {
+        committedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
     }
 
-    private <T extends StateStoreCommitterLogEntry> T add(T log) {
+    private void committedOnStreamAtTime(String logStream, Instant time) {
+        add(new StateStoreCommitSummary(logStream, "test-table", "test-commit", time));
+    }
+
+    private void runFinishedAtTime(Instant time) {
+        runFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
+    }
+
+    private void runFinishedOnStreamAtTime(String logStream, Instant time) {
+        add(new StateStoreCommitterRunFinished(logStream, time));
+    }
+
+    private void add(StateStoreCommitterLogEntry log) {
         logs.add(log);
-        return log;
     }
 }
