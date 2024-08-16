@@ -65,11 +65,11 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         List<SQSMessage> messages = event.getRecords();
         PollWithRetries throttlingRetries = PollWithRetries.builder()
                 .pollIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10))
-                .applyMaxPollsOverall()
+                .trackMaxPollsAcrossInvocations()
                 .build();
         for (int i = 0; i < messages.size(); i++) {
             SQSMessage message = messages.get(i);
-            LOGGER.info("Found message: {}", message.getBody());
+            LOGGER.debug("Found message: {}", message.getBody());
             try {
                 DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                     try {

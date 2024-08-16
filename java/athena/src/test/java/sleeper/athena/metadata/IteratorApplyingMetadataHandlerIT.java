@@ -49,7 +49,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitter.SplitPartition;
+import sleeper.splitter.split.SplitPartition;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,7 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
@@ -176,7 +178,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
+        SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Map<String, ValueSet> valueSets = new HashMap<>();
@@ -220,7 +222,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .collect(Collectors.toList()).get(0);
 
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
+        SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
@@ -275,7 +277,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
+        SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
 
         Partition firstHalfOf2018 = stateStore.getLeafPartitions()
@@ -310,6 +312,12 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         assertThat(yearReader.readObject()).isEqualTo(2018);
         assertThat(monthReader.readObject()).isEqualTo(firstHalfOf2018.getRegion().getRange("month").getMax());
         assertThat(dayReader.readObject()).isEqualTo(Integer.MIN_VALUE);
+    }
+
+    private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
+        return new SplitPartition(stateStore, tableProperties,
+                loadSketchesFromFile(tableProperties, new Configuration()),
+                () -> UUID.randomUUID().toString(), null);
     }
 
     private void validateSplit(Set<Split> splits, Integer expectedValue) {

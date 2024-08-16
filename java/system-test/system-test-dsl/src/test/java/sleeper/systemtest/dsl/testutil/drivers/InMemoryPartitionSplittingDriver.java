@@ -21,13 +21,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.splitter.FindPartitionsToSplit.JobSender;
-import sleeper.splitter.SplitPartition;
+import sleeper.splitter.find.FindPartitionsToSplit;
+import sleeper.splitter.find.FindPartitionsToSplit.JobSender;
+import sleeper.splitter.split.SplitPartition;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
-import java.io.IOException;
+import java.util.UUID;
 
 public class InMemoryPartitionSplittingDriver implements PartitionSplittingDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionSplittingDriver.class);
@@ -58,12 +58,8 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
         return job -> {
             TableProperties tableProperties = instance.getTablePropertiesProvider().getById(job.getTableId());
             StateStore stateStore = instance.getStateStoreProvider().getStateStore(tableProperties);
-            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), sketches::load);
-            try {
-                splitPartition.splitPartition(job.getPartition(), job.getFileNames());
-            } catch (IOException | StateStoreException e) {
-                throw new RuntimeException("Failed to split partition", e);
-            }
+            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketches::load, () -> UUID.randomUUID().toString(), null);
+            splitPartition.splitPartition(job.getPartition(), job.getFileNames());
         };
     }
 }

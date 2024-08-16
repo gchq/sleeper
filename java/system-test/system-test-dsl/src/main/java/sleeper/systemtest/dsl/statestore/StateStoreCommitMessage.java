@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.dsl.statestore;
 
-package sleeper.splitter;
+public class StateStoreCommitMessage {
 
-import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileReference;
-
-import java.util.List;
-
-public class FindPartitionToSplitResult {
     private final String tableId;
-    private final Partition partition;
-    private final List<FileReference> relevantFiles;
+    private final String body;
 
-    public FindPartitionToSplitResult(String tableId, Partition partition, List<FileReference> relevantFiles) {
+    private StateStoreCommitMessage(String tableId, String body) {
         this.tableId = tableId;
-        this.partition = partition;
-        this.relevantFiles = relevantFiles;
+        this.body = body;
+    }
+
+    public static StateStoreCommitMessage tableIdAndBody(String tableId, String body) {
+        return new StateStoreCommitMessage(tableId, body);
     }
 
     public String getTableId() {
         return tableId;
     }
 
-    public Partition getPartition() {
-        return partition;
+    public String getBody() {
+        return body;
     }
 
-    public List<FileReference> getRelevantFiles() {
-        return relevantFiles;
-    }
 }

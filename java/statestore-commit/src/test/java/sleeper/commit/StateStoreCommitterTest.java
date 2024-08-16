@@ -34,18 +34,17 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.FilesReportTestHelper;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Duration;
@@ -72,6 +71,8 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
@@ -79,7 +80,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedS
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StateStoreCommitterTest {
-    private static final Instant DEFAULT_FILE_UPDATE_TIME = Instant.parse("2024-06-14T13:33:00Z");
+    private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
@@ -313,44 +314,6 @@ public class StateStoreCommitterTest {
     }
 
     @Nested
-    @DisplayName("Read request from S3")
-    class ReadFromS3 {
-
-        @Test
-        void shouldApplyIngestStreamAddFilesCommitRequestHeldInS3() throws Exception {
-            // Given
-            StateStore stateStore = createTable("test-table");
-            FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                    .tableId("test-table")
-                    .fileReferences(List.of(outputFile))
-                    .build();
-            String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
-            dataBucketObjectByKey.put(s3Key, new IngestAddFilesCommitRequestSerDe().toJson(commitRequest));
-
-            // When
-            committer().apply(StateStoreCommitRequest.storedInS3(new StateStoreCommitRequestInS3(s3Key)));
-
-            // Then
-            assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
-        }
-
-        @Test
-        void shouldRefuseReferenceToS3HeldInS3() throws Exception {
-            // Given we have a request pointing to itself
-            String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
-            StateStoreCommitRequestInS3 request = new StateStoreCommitRequestInS3(s3Key);
-            dataBucketObjectByKey.put(s3Key, new StateStoreCommitRequestInS3SerDe().toJson(request));
-
-            // When / Then
-            StateStoreCommitter committer = committer();
-            assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.storedInS3(request)))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-    }
-
-    @Nested
     @DisplayName("Split a partition to create child partitions")
     class SplitPartition {
 
@@ -394,6 +357,48 @@ public class StateStoreCommitterTest {
 
             // When / Then
             assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forSplitPartition(commitRequest)))
+                    .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Commit when garbage collector deleted files")
+    class CommitGC {
+
+        @Test
+        void shouldApplyDeletedFilesRequest() throws Exception {
+            // Given two files have been replaced by a compaction job
+            StateStore stateStore = createTable("test-table");
+            stateStore.addFiles(List.of(
+                    fileFactory.rootFile("file1.parquet", 100),
+                    fileFactory.rootFile("file2.parquet", 200)));
+            List<String> filenames = List.of("file1.parquet", "file2.parquet");
+            stateStore.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("test-job", "root", filenames)));
+            FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("test-job", "root", filenames, fileAfterCompaction)));
+            // And we have a request to commit that they have been deleted
+            GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest("test-table", filenames);
+
+            // When
+            committer().apply(StateStoreCommitRequest.forGarbageCollection(request));
+
+            // Then
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(3))
+                    .isEqualTo(activeAndReadyForGCFiles(List.of(fileAfterCompaction), List.of()));
+        }
+
+        @Test
+        void shouldFailWhenFileStillHasAReference() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
+            GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
+                    "test-table", List.of("file.parquet"));
+
+            // When / Then
+            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forGarbageCollection(request)))
                     .isInstanceOf(StateStoreException.class);
         }
     }

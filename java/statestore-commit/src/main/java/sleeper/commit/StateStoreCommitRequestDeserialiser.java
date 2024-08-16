@@ -24,6 +24,7 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.commit.StateStoreCommitter.LoadS3ObjectFromDataBucket;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
@@ -32,6 +33,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.statestore.commit.CommitRequestType;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
@@ -46,11 +48,20 @@ public class StateStoreCommitRequestDeserialiser {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitRequestDeserialiser.class);
 
     private final Gson gson;
+    private final Gson gsonFromDataBucket;
+    private final LoadS3ObjectFromDataBucket loadFromDataBucket;
 
-    public StateStoreCommitRequestDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
-        gson = GsonConfig.standardBuilder()
+    public StateStoreCommitRequestDeserialiser(
+            TablePropertiesProvider tablePropertiesProvider, LoadS3ObjectFromDataBucket loadFromDataBucket) {
+        gson = gson(tablePropertiesProvider, this::fromDataBucket);
+        gsonFromDataBucket = gson(tablePropertiesProvider, DeserialiseFromDataBucket.refuseWhileReadingFromBucket());
+        this.loadFromDataBucket = loadFromDataBucket;
+    }
+
+    private static Gson gson(TablePropertiesProvider tablePropertiesProvider, DeserialiseFromDataBucket readFromDataBucket) {
+        return GsonConfig.standardBuilder()
                 .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
-                .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser())
+                .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
                 .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
                 .serializeNulls()
                 .create();
@@ -66,10 +77,21 @@ public class StateStoreCommitRequestDeserialiser {
         return gson.fromJson(jsonString, StateStoreCommitRequest.class);
     }
 
+    private StateStoreCommitRequest fromDataBucket(StateStoreCommitRequestInS3 request) {
+        String json = loadFromDataBucket.loadFromDataBucket(request.getKeyInS3());
+        return gsonFromDataBucket.fromJson(json, StateStoreCommitRequest.class);
+    }
+
     /**
      * Deserialises the commit request by reading the type.
      */
     private static class WrapperDeserialiser implements JsonDeserializer<StateStoreCommitRequest> {
+
+        private final DeserialiseFromDataBucket fromDataBucket;
+
+        private WrapperDeserialiser(DeserialiseFromDataBucket fromDataBucket) {
+            this.fromDataBucket = fromDataBucket;
+        }
 
         @Override
         public StateStoreCommitRequest deserialize(JsonElement json, Type wrapperType, JsonDeserializationContext context) throws JsonParseException {
@@ -82,21 +104,24 @@ public class StateStoreCommitRequestDeserialiser {
                 throw new CommitRequestValidationException("Unrecognised request type");
             }
             switch (type) {
+                case STORED_IN_S3:
+                    return fromDataBucket.read(
+                            context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
                 case COMPACTION_FINISHED:
                     return StateStoreCommitRequest.forCompactionJob(
                             context.deserialize(requestObj, CompactionJobCommitRequest.class));
                 case INGEST_ADD_FILES:
                     return StateStoreCommitRequest.forIngestAddFiles(
                             context.deserialize(requestObj, IngestAddFilesCommitRequest.class));
-                case STORED_IN_S3:
-                    return StateStoreCommitRequest.storedInS3(
-                            context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
                 case COMPACTION_JOB_ID_ASSIGNMENT:
                     return StateStoreCommitRequest.forCompactionJobIdAssignment(
                             context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
                 case SPLIT_PARTITION:
                     return StateStoreCommitRequest.forSplitPartition(
                             context.deserialize(requestObj, SplitPartitionCommitRequest.class));
+                case GARBAGE_COLLECTED_FILES:
+                    return StateStoreCommitRequest.forGarbageCollection(
+                            context.deserialize(requestObj, GarbageCollectionCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }
@@ -136,6 +161,21 @@ public class StateStoreCommitRequestDeserialiser {
             Partition rightChildPartition = partitionJsonSerDe.deserialize(jsonRightPartition, type, context);
 
             return new SplitPartitionCommitRequest(tableId, parentPartition, leftChildPartition, rightChildPartition);
+        }
+    }
+
+    /**
+     * Reads and deserialises a commit request from the data bucket. An alternative implementation will refuse reading
+     * from the bucket because the pointer was already stored in S3.
+     */
+    @FunctionalInterface
+    private interface DeserialiseFromDataBucket {
+        StateStoreCommitRequest read(StateStoreCommitRequestInS3 request);
+
+        static DeserialiseFromDataBucket refuseWhileReadingFromBucket() {
+            return request -> {
+                throw new IllegalArgumentException("Found a request stored in S3 pointing to another S3 object: " + request.getKeyInS3());
+            };
         }
     }
 }

@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter;
+package sleeper.splitter.split;
 
-import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -33,46 +32,39 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.sketches.Sketches;
+import sleeper.splitter.split.FindPartitionSplitPoint.SketchesLoader;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
-import static sleeper.splitter.SplitMultiDimensionalPartitionImpl.loadFromFile;
 
-public class SplitPartitionIT {
-    @TempDir
-    public Path folder;
-
+public class SplitPartitionTest {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
-    private String localDir;
-    private String filePathPrefix;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
-    @BeforeEach
-    void setUp() throws IOException {
-        localDir = createTempDirectory(folder, null).toString();
-        filePathPrefix = createTempDirectory(folder, null).toString();
-    }
+    private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
+    private final List<SplitPartitionCommitRequest> sentAsyncCommits = new ArrayList<>();
 
     @Nested
     @DisplayName("Skip split")
@@ -98,7 +90,7 @@ public class SplitPartitionIT {
                         record.put("key", r);
                         records.add(record);
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -140,7 +132,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -167,11 +159,6 @@ public class SplitPartitionIT {
             for (Partition partition : tree.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
                     List<Record> records = new ArrayList<>();
-                    for (int r = 0; r < 100; r++) {
-                        Record record = new Record();
-                        record.put("key", new byte[]{(byte) r});
-                        records.add(record);
-                    }
                     if (partition.getId().equals("id1")) {
                         int j = 0;
                         for (byte r = (byte) 0;
@@ -194,7 +181,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -243,7 +230,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestFileFromRecords(schema, stateStore, records.stream());
+                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
                 }
             }
 
@@ -266,7 +253,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(100 * i, 100 * (i + 1))
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
@@ -289,7 +276,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             LongStream.range(100L * i, 100L * (i + 1))
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
@@ -312,7 +299,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", String.format("A%s%s", i, r))))));
 
@@ -335,7 +322,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", new byte[]{(byte) r})))));
 
@@ -364,7 +351,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
@@ -391,7 +378,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", 10,
@@ -418,7 +405,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
@@ -445,7 +432,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     // The majority of the values are 10; so min should equal median
                                     .mapToObj(r -> new Record(Map.of(
@@ -474,7 +461,7 @@ public class SplitPartitionIT {
                     .buildList());
 
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) r},
@@ -501,7 +488,7 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestFileFromRecords(schema, stateStore,
+                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) -100},
@@ -519,48 +506,93 @@ public class SplitPartitionIT {
         }
     }
 
-    private static void ingestRecordsFromIterator(
-            Schema schema, StateStore stateStore, String localDir,
-            String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
-        ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
-        IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
-                stateStore, schema,
-                ArrayListRecordBatchFactory.builder()
-                        .localWorkingDirectory(localDir)
-                        .maxNoOfRecordsInMemory(1000000)
-                        .maxNoOfRecordsInLocalStore(100000000)
-                        .parquetConfiguration(parquetConfiguration)
-                        .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
-        new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
-    }
+    @Nested
+    @DisplayName("Commit partition split asynchronously")
+    class AsynchronousCommit {
 
-    private void ingestFileFromRecords(Schema schema, StateStore stateStore, Stream<Record> recordsStream) {
-        try {
-            ingestRecordsFromIterator(schema, stateStore, localDir, filePathPrefix, recordsStream.iterator());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        @Test
+        void shouldCommitPartitionSplitAsynchronously() throws Exception {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildTree();
+            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            String filename = ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    IntStream.rangeClosed(1, 100)
+                            .mapToObj(i -> new Record(Map.of("key", i))));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+            tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
+            tableProperties.set(TABLE_ID, "tableId");
+
+            // When
+            partitionSplitter(stateStore, tableProperties, generateIds("B", "C"))
+                    .splitPartition(tree.getRootPartition(), List.of(filename));
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
+
+            PartitionTree resultant = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", 51)
+                    .buildTree();
+
+            assertThat(sentAsyncCommits).containsExactly(new SplitPartitionCommitRequest(
+                    "tableId",
+                    resultant.getPartition("A"),
+                    resultant.getPartition("B"),
+                    resultant.getPartition("C")));
         }
     }
 
-    private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
+    private String ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
+        Sketches sketches = Sketches.from(schema);
+        AtomicLong recordCount = new AtomicLong();
+
+        recordsStream.forEach(rec -> {
+            sketches.update(schema, rec);
+            recordCount.incrementAndGet();
+        });
+
+        FileReference recordFileReference = FileReferenceFactory.from(stateStore).partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
+        try {
+            stateStore.addFile(recordFileReference);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+
+        fileToSketchMap.put(recordFileReference.getFilename(), sketches);
+        return recordFileReference.getFilename();
+    }
+
+    private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
+    private void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, loadFromFile(schema, new Configuration()), generateIds);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
+    }
+
+    private SplitPartition partitionSplitter(StateStore stateStore, TableProperties tableProperties, Supplier<String> generateIds) {
+        return new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds, sentAsyncCommits::add);
+    }
+
+    public SketchesLoader loadSketchesFromMap() {
+        return (filename) -> fileToSketchMap.get(filename);
     }
 
     private static Supplier<String> generateIds(String... ids) {

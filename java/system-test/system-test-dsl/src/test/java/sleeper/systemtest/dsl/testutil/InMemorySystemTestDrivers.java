@@ -40,6 +40,8 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
@@ -55,6 +57,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
@@ -74,6 +77,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
+    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -104,6 +108,16 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
         return new InMemoryGeneratedIngestSourceFilesDriver(sourceFiles);
+    }
+
+    @Override
+    public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
+        return stateStoreCommitter.withContext(context);
+    }
+
+    @Override
+    public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
+        return stateStoreCommitter.logsDriver();
     }
 
     @Override
@@ -201,6 +215,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports.partitions(context.instance());
     }
 
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new InMemorySnapshotsDriver();
+    }
+
     public InMemoryReports reports() {
         return reports;
     }
@@ -209,9 +228,8 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return data;
     }
 
-    @Override
-    public SnapshotsDriver snapshots() {
-        return new InMemorySnapshotsDriver();
+    public InMemoryStateStoreCommitter stateStoreCommitter() {
+        return stateStoreCommitter;
     }
 
 }
