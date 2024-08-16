@@ -15,9 +15,10 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import java.time.Instant;
+import java.util.Map;
 
-public interface StateStoreCommitterLogsDriver {
+public interface StateStoreCommitterLogs {
 
-    StateStoreCommitterLogs getLogsInPeriod(Instant startTime, Instant endTime);
+    Map<String, Integer> getNumCommitsByTableId();
+
 }
