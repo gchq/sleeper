@@ -15,6 +15,8 @@
  */
 package sleeper.garbagecollector;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,6 +28,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -37,7 +40,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -57,9 +62,9 @@ public class GarbageCollector {
 
     public GarbageCollector(Configuration conf,
             InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
-        this(conf, instanceProperties, stateStoreProvider, request -> {
-        });
+            StateStoreProvider stateStoreProvider,
+            AmazonSQS sqsClient) {
+        this(conf, instanceProperties, stateStoreProvider, sendAsyncCommit(instanceProperties, sqsClient));
     }
 
     public GarbageCollector(Configuration conf,
@@ -199,5 +204,14 @@ public class GarbageCollector {
     @FunctionalInterface
     public interface SendAsyncCommit {
         void sendCommit(GarbageCollectionCommitRequest commitRequest);
+    }
+
+    private static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
+        GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
+        return request -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMessageBody(serDe.toJson(request))
+                .withMessageGroupId(request.getTableId())
+                .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }
 }

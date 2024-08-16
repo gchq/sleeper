@@ -24,6 +24,8 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
     public GarbageCollectorLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
@@ -74,7 +77,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        garbageCollector = new GarbageCollector(conf, instanceProperties, stateStoreProvider);
+        garbageCollector = new GarbageCollector(conf, instanceProperties, stateStoreProvider, sqsClient);
     }
 
     @Override

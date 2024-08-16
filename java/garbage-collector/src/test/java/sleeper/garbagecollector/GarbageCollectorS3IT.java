@@ -25,7 +25,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
@@ -80,13 +79,12 @@ public class GarbageCollectorS3IT {
             .withServices(Service.S3, Service.SQS);
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
-    private static final Schema TEST_SCHEMA = getSchema();
 
+    private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
     private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     private final String testBucket = UUID.randomUUID().toString();
-
     private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
@@ -137,7 +135,6 @@ public class GarbageCollectorS3IT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSendAsyncCommit() throws Exception {
         // Given
         TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
@@ -184,7 +181,7 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return new GarbageCollector(configuration, instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore));
+        return new GarbageCollector(configuration, instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore), sqsClient);
     }
 
     private static Schema getSchema() {
