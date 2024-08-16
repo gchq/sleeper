@@ -20,6 +20,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,13 +45,17 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,6 +65,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
@@ -77,6 +87,8 @@ public class GarbageCollectorS3IT {
     private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     private final String testBucket = UUID.randomUUID().toString();
 
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+
     @BeforeEach
     void setUp() {
         s3Client.createBucket(testBucket);
@@ -91,7 +103,6 @@ public class GarbageCollectorS3IT {
     @Test
     void shouldContinueCollectingFilesIfTryingToDeleteFileThrowsIOException() throws Exception {
         // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -128,7 +139,6 @@ public class GarbageCollectorS3IT {
     @Test
     void shouldSendAsyncCommit() throws Exception {
         // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
         tableProperties.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
@@ -154,10 +164,14 @@ public class GarbageCollectorS3IT {
         assertThat(s3Client.doesObjectExist(testBucket, "new-file.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
+
+        assertThat(receiveGarbageCollectionCommitRequests())
+                .containsExactly(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), List.of(oldFile.getFilename())));
     }
 
     private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.set(DATA_BUCKET, testBucket);
         return instanceProperties;
@@ -178,5 +192,24 @@ public class GarbageCollectorS3IT {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
+    }
+
+    private String createFifoQueueGetUrl() {
+        return sqsClient.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
+    }
+
+    private List<GarbageCollectionCommitRequest> receiveGarbageCollectionCommitRequests() {
+        return receiveCommitMessages().stream()
+                .map(message -> new GarbageCollectionCommitRequestSerDe().fromJson(message.getBody()))
+                .collect(Collectors.toList());
+    }
+
+    private List<Message> receiveCommitMessages() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqsClient.receiveMessage(receiveMessageRequest).getMessages();
     }
 }
