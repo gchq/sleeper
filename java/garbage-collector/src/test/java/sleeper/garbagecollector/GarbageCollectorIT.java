@@ -18,7 +18,6 @@ package sleeper.garbagecollector;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,6 +58,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
@@ -321,13 +321,13 @@ public class GarbageCollectorIT {
         private final StateStore stateStore = stateStore(table);
 
         @Test
-        @Disabled
         void shouldSendCommitForTheDeletionOfFilesAsychronously() throws Exception {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
             Path oldFile = tempDir.resolve("old-file.parquet");
             Path newFile = tempDir.resolve("new-file.parquet");
             createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);

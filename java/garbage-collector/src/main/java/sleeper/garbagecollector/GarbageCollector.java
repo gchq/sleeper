@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 
 /**
@@ -104,12 +105,12 @@ public class GarbageCollector {
             String filename = readyForGC.next();
             batch.add(filename);
             if (batch.size() == garbageCollectorBatchSize) {
-                deleteBatch(batch, stateStore, deleted);
+                deleteBatch(batch, tableProperties, stateStore, deleted);
                 batch.clear();
             }
         }
         if (!batch.isEmpty()) {
-            deleteBatch(batch, stateStore, deleted);
+            deleteBatch(batch, tableProperties, stateStore, deleted);
         }
     }
 
@@ -122,11 +123,17 @@ public class GarbageCollector {
         return readyForGC;
     }
 
-    private void deleteBatch(List<String> batch, StateStore stateStore, TableFilesDeleted deleted) {
+    private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
         List<String> deletedFilenames = deleteFiles(batch, deleted);
+        LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
-            stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
-            LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
+            boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
+            if (asyncCommit) {
+
+            } else {
+                stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
+                LOGGER.info("Applied deletion to state store");
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to update state store for files: {}", deletedFilenames, e);
             deleted.failedStateStoreUpdate(deletedFilenames, e);
