@@ -71,6 +71,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorIT {
     private static final Schema TEST_SCHEMA = getSchema();
@@ -470,7 +471,7 @@ public class GarbageCollectorIT {
     }
 
     private GarbageCollector collector() throws Exception {
-        return new GarbageCollector(new Configuration(), instanceProperties,
+        return new GarbageCollector(deleteFileAndSketches(new Configuration()), instanceProperties,
                 new FixedStateStoreProvider(stateStoreByTableName),
                 sentCommits::add);
     }

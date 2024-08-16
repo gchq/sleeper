@@ -60,21 +60,6 @@ public class GarbageCollector {
     private final StateStoreProvider stateStoreProvider;
     private final SendAsyncCommit sendAsyncCommit;
 
-    public GarbageCollector(Configuration conf,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            AmazonSQS sqsClient) {
-        this(conf, instanceProperties, stateStoreProvider, sendAsyncCommit(instanceProperties, sqsClient));
-    }
-
-    public GarbageCollector(Configuration conf,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            SendAsyncCommit sendAsyncCommit) {
-        this(filename -> deleteFileAndSketches(filename, conf),
-                instanceProperties, stateStoreProvider, sendAsyncCommit);
-    }
-
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
@@ -178,10 +163,12 @@ public class GarbageCollector {
         void deleteFileAndSketches(String filename) throws IOException;
     }
 
-    private static void deleteFileAndSketches(String filename, Configuration conf) throws IOException {
-        deleteFile(filename, conf);
-        String sketchesFile = filename.replace(".parquet", ".sketches");
-        deleteFile(sketchesFile, conf);
+    public static DeleteFile deleteFileAndSketches(Configuration conf) {
+        return filename -> {
+            deleteFile(filename, conf);
+            String sketchesFile = filename.replace(".parquet", ".sketches");
+            deleteFile(sketchesFile, conf);
+        };
     }
 
     private static void deleteFile(String filename, Configuration conf) throws IOException {
@@ -206,7 +193,7 @@ public class GarbageCollector {
         void sendCommit(GarbageCollectionCommitRequest commitRequest);
     }
 
-    private static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
+    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
         GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))

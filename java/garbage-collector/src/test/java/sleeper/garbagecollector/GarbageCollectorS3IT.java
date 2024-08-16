@@ -71,6 +71,8 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
+import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
 
 @Testcontainers
 public class GarbageCollectorS3IT {
@@ -181,7 +183,8 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return new GarbageCollector(configuration, instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore), sqsClient);
+        return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
+                new FixedStateStoreProvider(tableProperties, stateStore), sendAsyncCommit(instanceProperties, sqsClient));
     }
 
     private static Schema getSchema() {

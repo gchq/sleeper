@@ -48,6 +48,8 @@ import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
+import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
 
 /**
  * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
@@ -77,7 +79,9 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        garbageCollector = new GarbageCollector(conf, instanceProperties, stateStoreProvider, sqsClient);
+        garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
+                instanceProperties, stateStoreProvider,
+                sendAsyncCommit(instanceProperties, sqsClient));
     }
 
     @Override
