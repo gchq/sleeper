@@ -12,7 +12,7 @@ updates:
       interval: "daily"
       time: "03:00"
     open-pull-requests-limit: 10
-  - package-ecosystem: "rust"
+  - package-ecosystem: "cargo"
     directory: "/rust"
     schedule:
       interval: daily
