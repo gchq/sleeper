@@ -15,6 +15,10 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -27,6 +31,7 @@ import static java.util.stream.Collectors.toSet;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestStateStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStore.class);
 
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
@@ -44,9 +49,11 @@ public class SystemTestStateStore {
     }
 
     public double commitsPerSecondForTable() {
-        return commitsPerSecondByTableId().getOrDefault(
-                context.instance().getTableProperties().get(TABLE_ID),
-                0.0);
+        TableStatus table = context.instance().getTableStatus();
+        double commitsPerSecond = commitsPerSecondByTableId()
+                .getOrDefault(table.getTableUniqueId(), 0.0);
+        LOGGER.info("Found commits per second for table {}: {}", table, commitsPerSecond);
+        return commitsPerSecond;
     }
 
     public Map<String, Double> commitsPerSecondByTable() {
@@ -55,7 +62,11 @@ public class SystemTestStateStore {
         return instance.streamTableProperties()
                 .collect(toMap(
                         table -> instance.getTestTableName(table),
-                        table -> byTableId.getOrDefault(table.get(TABLE_ID), 0.0)));
+                        table -> {
+                            Double commitsPerSecond = byTableId.getOrDefault(table.get(TABLE_ID), 0.0);
+                            LOGGER.info("Found commits per second for table {}: {}", table.getStatus(), commitsPerSecond);
+                            return commitsPerSecond;
+                        }));
     }
 
     private Map<String, Double> commitsPerSecondByTableId() {
