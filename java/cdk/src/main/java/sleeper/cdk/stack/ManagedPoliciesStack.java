@@ -45,6 +45,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
     private final ManagedPolicy clearInstancePolicy;
+    private final ManagedPolicy editStateStoreCommitterTriggerPolicy;
     private ManagedPolicy purgeQueuesPolicy;
     private ManagedPolicy invokeCompactionPolicy;
     private ManagedPolicy invokeSchedulesPolicy;
@@ -53,19 +54,20 @@ public class ManagedPoliciesStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
 
-        directIngestPolicy = createManagedPolicy("DirectIngestPolicy");
-        ingestByQueuePolicy = createManagedPolicy("IngestByQueuePolicy");
+        directIngestPolicy = createManagedPolicy("DirectIngest");
+        ingestByQueuePolicy = createManagedPolicy("IngestByQueue");
 
-        queryPolicy = createManagedPolicy("QueryPolicy");
-        editTablesPolicy = createManagedPolicy("EditTablesPolicy");
-        reportingPolicy = createManagedPolicy("ReportingPolicy");
-        clearInstancePolicy = createManagedPolicy("ClearInstancePolicy");
+        queryPolicy = createManagedPolicy("Query");
+        editTablesPolicy = createManagedPolicy("EditTables");
+        reportingPolicy = createManagedPolicy("Reporting");
+        clearInstancePolicy = createManagedPolicy("ClearInstance");
+        editStateStoreCommitterTriggerPolicy = createManagedPolicy("EditStateStoreCommitterTrigger");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
             readIngestSourcesPolicy = null;
         } else {
-            readIngestSourcesPolicy = createManagedPolicy("ReadIngestSourcesPolicy");
+            readIngestSourcesPolicy = createManagedPolicy("ReadIngestSources");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
     }
@@ -94,10 +96,14 @@ public class ManagedPoliciesStack extends NestedStack {
         return clearInstancePolicy;
     }
 
+    public ManagedPolicy getEditStateStoreCommitterTriggerPolicyForGrants() {
+        return editStateStoreCommitterTriggerPolicy;
+    }
+
     public ManagedPolicy getPurgeQueuesPolicyForGrants() {
         // Avoid creating empty policy when we're not deploying any queues
         if (purgeQueuesPolicy == null) {
-            purgeQueuesPolicy = createManagedPolicy("PurgeQueuesPolicy");
+            purgeQueuesPolicy = createManagedPolicy("PurgeQueues");
         }
         return purgeQueuesPolicy;
     }
@@ -105,7 +111,7 @@ public class ManagedPoliciesStack extends NestedStack {
     public ManagedPolicy getInvokeCompactionPolicyForGrants() {
         // Avoid creating empty policy when we're not deploying compaction stack
         if (invokeCompactionPolicy == null) {
-            invokeCompactionPolicy = createManagedPolicy("InvokeCompactionPolicy");
+            invokeCompactionPolicy = createManagedPolicy("InvokeCompaction");
         }
         return invokeCompactionPolicy;
     }
@@ -113,7 +119,7 @@ public class ManagedPoliciesStack extends NestedStack {
     public void grantInvokeScheduled(IFunction function) {
         // Avoid creating empty policy when we're not deploying any scheduled rules
         if (invokeSchedulesPolicy == null) {
-            invokeSchedulesPolicy = createManagedPolicy("InvokeSchedulesPolicy");
+            invokeSchedulesPolicy = createManagedPolicy("InvokeSchedules");
         }
         Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
     }
@@ -132,7 +138,7 @@ public class ManagedPoliciesStack extends NestedStack {
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
                 directIngestPolicy, ingestByQueuePolicy, queryPolicy,
-                editTablesPolicy, reportingPolicy, clearInstancePolicy,
+                editTablesPolicy, reportingPolicy, clearInstancePolicy, editStateStoreCommitterTriggerPolicy,
                 purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
                 .filter(policy -> policy != null);
     }

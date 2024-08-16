@@ -183,6 +183,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the log group for the state store committer.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_EVENT_SOURCE_ID = Index.propertyBuilder("sleeper.statestore.committer.event.source.id")
+            .description("The UUID of the event source mapping for the state store committer.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     // Table metrics
     CdkDefinedInstanceProperty TABLE_METRICS_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.table.metrics.lambda.function")

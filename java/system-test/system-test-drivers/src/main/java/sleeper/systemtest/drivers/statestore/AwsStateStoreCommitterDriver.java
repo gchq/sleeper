@@ -21,7 +21,6 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
-import software.amazon.awssdk.services.lambda.model.EventSourceMappingConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingResponse;
 
 import sleeper.core.util.PollWithRetries;
@@ -32,11 +31,12 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_EVENT_SOURCE_ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
@@ -71,19 +71,19 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     @Override
     public void pauseReceivingMessages() {
-        EventSourceMappingConfiguration mapping = findEventSourceMapping();
+        GetEventSourceMappingResponse mapping = getEventSourceMapping();
         LOGGER.info("Disabling event source for state store committer: {}", mapping.functionArn());
         setEventSourceEnabledWaitForState(mapping, false, "Disabled");
     }
 
     @Override
     public void resumeReceivingMessages() {
-        EventSourceMappingConfiguration mapping = findEventSourceMapping();
+        GetEventSourceMappingResponse mapping = getEventSourceMapping();
         LOGGER.info("Enabling event source for state store committer: {}", mapping.functionArn());
         setEventSourceEnabledWaitForState(mapping, true, "Enabled");
     }
 
-    private void setEventSourceEnabledWaitForState(EventSourceMappingConfiguration mapping, boolean enabled, String state) {
+    private void setEventSourceEnabledWaitForState(GetEventSourceMappingResponse mapping, boolean enabled, String state) {
         lambda.updateEventSourceMapping(builder -> builder
                 .uuid(mapping.uuid())
                 .functionName(mapping.functionArn())
@@ -92,27 +92,19 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
         try {
             PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1))
                     .pollUntil("event source has expected state",
-                            () -> eventSourceHasState(mapping.uuid(), state));
+                            () -> {
+                                GetEventSourceMappingResponse response = getEventSourceMapping();
+                                LOGGER.info("Found event source state: {}", response.state());
+                                return Objects.equals(state, response.state());
+                            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
-    private EventSourceMappingConfiguration findEventSourceMapping() {
-        String queueArn = instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_ARN);
-        List<EventSourceMappingConfiguration> mappings = lambda
-                .listEventSourceMappings(builder -> builder.eventSourceArn(queueArn))
-                .eventSourceMappings();
-        if (mappings.size() != 1) {
-            throw new IllegalStateException("Expected 1 mapping for committer queue, found: " + mappings);
-        }
-        return mappings.get(0);
-    }
-
-    private boolean eventSourceHasState(String uuid, String state) {
-        GetEventSourceMappingResponse response = lambda.getEventSourceMapping(builder -> builder.uuid(uuid));
-        LOGGER.info("Found event source state: {}", response.state());
-        return false;
+    private GetEventSourceMappingResponse getEventSourceMapping() {
+        String uuid = instance.getInstanceProperties().get(STATESTORE_COMMITTER_EVENT_SOURCE_ID);
+        return lambda.getEventSourceMapping(builder -> builder.uuid(uuid));
     }
 }
