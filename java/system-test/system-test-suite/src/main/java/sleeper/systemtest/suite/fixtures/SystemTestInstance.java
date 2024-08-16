@@ -23,7 +23,6 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -203,7 +202,9 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildStateStoreCommitterThroughputConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.setList(OPTIONAL_STACKS, List.of());
+
+        // At time of writing, setting an empty list would make it use the default value instead. See issue #3089.
+        properties.set(OPTIONAL_STACKS, "None");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "stateStoreCommitterThroughput");
