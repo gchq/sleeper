@@ -35,6 +35,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
@@ -60,6 +61,7 @@ import static sleeper.configuration.properties.instance.GarbageCollectionPropert
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -79,6 +81,7 @@ public class GarbageCollectorIT {
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final List<GarbageCollectionCommitRequest> sentCommits = new ArrayList<>();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -336,9 +339,64 @@ public class GarbageCollectorIT {
             collectGarbageAtTime(currentTime);
 
             // Then
-            assertThat(Files.exists(oldFile)).isFalse();
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of(oldFile.toString())));
+            assertThat(sentCommits).containsExactly(
+                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile.toString())));
+        }
+
+        @Test
+        void shouldSendOneCommitPerFileBatch() throws Exception {
+            // Given
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            stateStore.fixFileUpdateTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
+            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
+            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
+            Path newFile1 = tempDir.resolve("new-file-1.parquet");
+            Path newFile2 = tempDir.resolve("new-file-2.parquet");
+            Path oldFile3 = tempDir.resolve("old-file-3.parquet");
+            Path newFile3 = tempDir.resolve("new-file-3.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
+            createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
+            createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
+
+            // When
+            collectGarbageAtTime(currentTime);
+
+            // Then
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
+                            List.of(activeReference(newFile1), activeReference(newFile2), activeReference(newFile3)),
+                            List.of(oldFile1.toString(), oldFile2.toString(), oldFile3.toString())));
+            assertThat(sentCommits).containsExactly(
+                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile1.toString(), oldFile2.toString())),
+                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile3.toString())));
+        }
+
+        @Test
+        void shouldNotSendCommitWhenUpdatingStateStoreSynchronously() throws Exception {
+            // Given
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            stateStore.fixFileUpdateTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "false");
+            Path oldFile = tempDir.resolve("old-file.parquet");
+            Path newFile = tempDir.resolve("new-file.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
+
+            // When
+            collectGarbageAtTime(currentTime);
+
+            // Then
+            assertThat(Files.exists(oldFile)).isFalse();
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of()));
+            assertThat(sentCommits).isEmpty();
         }
     }
 
@@ -413,12 +471,14 @@ public class GarbageCollectorIT {
 
     private GarbageCollector collector() throws Exception {
         return new GarbageCollector(new Configuration(), instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName));
+                new FixedStateStoreProvider(stateStoreByTableName),
+                sentCommits::add);
     }
 
     private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
         return new GarbageCollector(deleteFile, instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName));
+                new FixedStateStoreProvider(stateStoreByTableName),
+                sentCommits::add);
     }
 
     private static Schema getSchema() {

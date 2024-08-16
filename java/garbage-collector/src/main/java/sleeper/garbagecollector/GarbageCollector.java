@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -40,6 +41,7 @@ import java.util.List;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Deletes files that are ready for garbage collection and removes them from the Sleeper table. Queries the
@@ -51,20 +53,31 @@ public class GarbageCollector {
     private final DeleteFile deleteFile;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
+    private final SendAsyncCommit sendAsyncCommit;
 
     public GarbageCollector(Configuration conf,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider) {
+        this(conf, instanceProperties, stateStoreProvider, request -> {
+        });
+    }
+
+    public GarbageCollector(Configuration conf,
+            InstanceProperties instanceProperties,
+            StateStoreProvider stateStoreProvider,
+            SendAsyncCommit sendAsyncCommit) {
         this(filename -> deleteFileAndSketches(filename, conf),
-                instanceProperties, stateStoreProvider);
+                instanceProperties, stateStoreProvider, sendAsyncCommit);
     }
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
+            StateStoreProvider stateStoreProvider,
+            SendAsyncCommit sendAsyncCommit) {
         this.deleteFile = deleteFile;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
+        this.sendAsyncCommit = sendAsyncCommit;
     }
 
     public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
@@ -129,7 +142,7 @@ public class GarbageCollector {
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
             if (asyncCommit) {
-
+                sendAsyncCommit.sendCommit(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), deletedFilenames));
             } else {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
                 LOGGER.info("Applied deletion to state store");
@@ -178,5 +191,13 @@ public class GarbageCollector {
             throw new IOException("File could not be deleted: " + filename);
         }
         LOGGER.info("Deleted file {}", filename);
+    }
+
+    /**
+     * Sends state store updates to the state store committer.
+     */
+    @FunctionalInterface
+    public interface SendAsyncCommit {
+        void sendCommit(GarbageCollectionCommitRequest commitRequest);
     }
 }
