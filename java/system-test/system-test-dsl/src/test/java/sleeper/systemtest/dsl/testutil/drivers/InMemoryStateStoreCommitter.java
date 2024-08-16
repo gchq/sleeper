@@ -82,6 +82,7 @@ public class InMemoryStateStoreCommitter {
     public class Driver implements StateStoreCommitterDriver {
         private final SystemTestInstanceContext instance;
         private final StateStoreCommitter committer;
+        private boolean committerPaused = false;
 
         private Driver(SystemTestContext context) {
             instance = context.instance();
@@ -95,7 +96,7 @@ public class InMemoryStateStoreCommitter {
         @Override
         public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
             messages.forEach(queue::add);
-            if (isRunCommitterOnSend()) {
+            if (!committerPaused && isRunCommitterOnSend()) {
                 runCommitter();
             }
         }
@@ -119,6 +120,17 @@ public class InMemoryStateStoreCommitter {
             return runCommitterOnSendByTableId.getOrDefault(
                     instance.getTableStatus().getTableUniqueId(),
                     true);
+        }
+
+        @Override
+        public void pauseReceivingMessages() {
+            committerPaused = true;
+        }
+
+        @Override
+        public void resumeReceivingMessages() {
+            committerPaused = false;
+            runCommitter();
         }
     }
 

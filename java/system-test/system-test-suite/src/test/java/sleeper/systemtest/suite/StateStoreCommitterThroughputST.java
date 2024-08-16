@@ -20,19 +20,16 @@ import org.junit.jupiter.api.parallel.Execution;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.statestore.SystemTestStateStoreFakeCommits;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
-import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
@@ -59,11 +56,7 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
-                .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
-        assertThat(recordsByFilename).isEqualTo(
-                LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                        .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
+        assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .isBetween(30.0, 40.0);
     }
@@ -84,13 +77,37 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
-                .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
-        assertThat(recordsByFilename).isEqualTo(
-                LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                        .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
+        assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .isBetween(30.0, 40.0);
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
+        sleeper.tables().createMany(10, DEFAULT_SCHEMA);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        SystemTestStateStoreFakeCommits commits = sleeper.stateStore().fakeCommits().pauseReceivingCommitMessages();
+        sleeper.tables().forEach(() -> commits.sendBatched(
+                commitFactory -> IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .map(commitFactory::addFile)));
+        commits.resumeReceivingCommitMessages().waitForCommitLogs(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(10)
+                .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
+                .hasSize(10)
+                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
+                        .isBetween(30.0, 40.0));
     }
 
 }

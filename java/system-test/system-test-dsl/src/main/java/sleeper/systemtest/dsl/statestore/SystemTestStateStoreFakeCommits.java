@@ -59,6 +59,16 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
+    public SystemTestStateStoreFakeCommits pauseReceivingCommitMessages() {
+        driver.pauseReceivingMessages();
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits resumeReceivingCommitMessages() {
+        driver.resumeReceivingMessages();
+        return this;
+    }
+
     private void send(Stream<StateStoreCommitMessage> messages) {
         driver.sendCommitMessages(messages
                 .peek(message -> waitForNumCommitsByTableId.compute(

@@ -114,7 +114,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs());
+        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs(), clients.getLambda());
     }
 
     @Override
