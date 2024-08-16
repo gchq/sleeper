@@ -68,4 +68,29 @@ public class StateStoreCommitterThroughputST {
                 .isBetween(30.0, 40.0);
     }
 
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits()
+                .sendBatched(commitFactory -> IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .map(commitFactory::addFileWithJob))
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
+                .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
+        assertThat(recordsByFilename).isEqualTo(
+                LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                        .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .isBetween(30.0, 40.0);
+    }
+
 }

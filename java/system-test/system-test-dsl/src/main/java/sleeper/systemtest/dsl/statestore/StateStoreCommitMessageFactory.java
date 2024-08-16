@@ -16,10 +16,14 @@
 package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 public class StateStoreCommitMessageFactory {
 
@@ -44,12 +48,29 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitMessage addFiles(List<FileReference> files) {
+        return ingest(builder -> builder.fileReferences(files));
+    }
+
+    public StateStoreCommitMessage addFileWithJob(FileReference file) {
+        String jobId = UUID.randomUUID().toString();
+        IngestJob job = IngestJob.builder()
+                .id(jobId)
+                .tableId(tableId)
+                .files(List.of("test-file-" + jobId + ".parquet"))
+                .build();
+        return ingest(builder -> builder
+                .fileReferences(List.of(file))
+                .ingestJob(job)
+                .taskId(jobId)
+                .jobRunId(jobId)
+                .writtenTime(Instant.now()));
+    }
+
+    private StateStoreCommitMessage ingest(Consumer<IngestAddFilesCommitRequest.Builder> config) {
+        IngestAddFilesCommitRequest.Builder builder = IngestAddFilesCommitRequest.builder().tableId(tableId);
+        config.accept(builder);
         return StateStoreCommitMessage.tableIdAndBody(tableId,
-                new IngestAddFilesCommitRequestSerDe().toJson(
-                        IngestAddFilesCommitRequest.builder()
-                                .tableId(tableId)
-                                .fileReferences(files)
-                                .build()));
+                new IngestAddFilesCommitRequestSerDe().toJson(builder.build()));
     }
 
 }
