@@ -13,6 +13,8 @@
 
 #include <iostream>
 
+namespace gpu_compact::cudf_compact {
+
 template<typename UnaryFunction>
 inline __device__ auto make_counting_transform_iterator(cudf::size_type start, UnaryFunction f)
 {
@@ -197,3 +199,5 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
 
     return ranges;
 }
+
+}// namespace gpu_compact::cudf_compact

@@ -59,7 +59,7 @@ macro(gpu_compact_setup_options)
     option(gpu_compact_ENABLE_CPPCHECK "Enable cpp-check analysis" OFF)
     option(gpu_compact_ENABLE_PCH "Enable precompiled headers" OFF)
     option(gpu_compact_ENABLE_CACHE "Enable ccache" ON)
-    option(gpu_compact_ENABLE_IWYU "Enable include-what-you-use" ON)
+    option(gpu_compact_ENABLE_IWYU "Enable include-what-you-use" OFF)
   endif()
 
   if(NOT PROJECT_IS_TOP_LEVEL)

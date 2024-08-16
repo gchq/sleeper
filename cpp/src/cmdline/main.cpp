@@ -29,8 +29,6 @@ using gpu_compact::cudf_compact::CompactionResult;
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
 
-static const std::regex URL_CHECK(R"((file|s3)://(/?(-.)?([^\s/?.#-]+.?)+(/[^\s]*)?))");
-
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, const char **argv)
 {
@@ -75,23 +73,24 @@ int main(int argc, const char **argv)
           ->expected(1, -1);
         CLI11_PARSE(app, argc, argv);// NOLINT
 
-        // auto urlCheck = [](auto &s) noexcept {
-        //     if (!std::regex_match(s, URL_CHECK)) {
-        //         s = "file://" + s;
-        //         if (!std::regex_match(s, URL_CHECK)) {
-        //             SPDLOG_ERROR("{} is not a valid URL", s);
-        //             return false;
-        //         }
-        //     }
-        //     return true;
-        // };
+        auto urlCheck = [](auto &s) noexcept {
+            if (!std::regex_match(s, gpu_compact::cudf_compact::URL_CHECK)) {
+                s = "file://" + s;
+                if (!std::regex_match(s, gpu_compact::cudf_compact::URL_CHECK)) {
+                    SPDLOG_ERROR("{} is not a valid URL", s);
+                    return false;
+                }
+            }
+            return true;
+        };
 
         // Check to see if input urls are valid
         // for (auto &f : inputFiles) {
         //     if (!urlCheck(f)) { return EXIT_FAILURE; }
         // }
-        // // Check output URL
-        // if (!urlCheck(outputFile)) { return EXIT_FAILURE; }
+
+        // Check output URL
+        if (!urlCheck(outputFile)) { return EXIT_FAILURE; }
 
         // Check lengths of vectors
         if (rowKeys.size() != regionMaxs.size()) {

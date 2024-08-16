@@ -14,8 +14,7 @@
 #include <tuple>
 #include <vector>
 
-using scalar_ptr = std::shared_ptr<cudf::scalar>;
-using scalar_pair = std::tuple<std::string, scalar_ptr, std::string, scalar_ptr>;
+namespace gpu_compact::cudf_compact {
 
 std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
   cudf::size_type sort_col,
@@ -23,3 +22,5 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
   parquet::format::ConvertedType::type conv_type,
   size_t chunk_read_limit,
   std::vector<std::vector<parquet::format::ColumnIndex>> const &indexes_per_file);
+
+} // namespace gpu_compact::cudf_compact

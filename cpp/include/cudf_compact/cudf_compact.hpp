@@ -13,64 +13,19 @@
 #include <rmm/mr/device/pool_memory_resource.hpp>
 #include <spdlog/spdlog.h>
 
+#include "cudf_compact/common_types.hpp"
+#include "cudf_compact/cudf_utils.hpp"
 #include "cudf_compact/parquet_types.h"
 
 #include <algorithm>// std::ranges::equal
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <locale>
 #include <memory>
-#include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
-#include <variant>
-#include <vector>
 
 namespace gpu_compact::cudf_compact {
-
-using scalar_ptr = std::shared_ptr<cudf::scalar>;
-using scalar_pair = std::tuple<std::string, scalar_ptr, std::string, scalar_ptr>;
-
-using PartitionBound = std::variant<int32_t, int64_t, std::string, std::vector<uint8_t>, std::monostate>;
-
-struct ColRange
-{
-  public:
-    PartitionBound lower;
-    bool lower_inclusive;
-    PartitionBound upper;
-    bool upper_inclusive;
-};// struct ColRange
-
-struct CompactionResult
-{
-  public:
-    std::size_t rows_read;
-    std::size_t rows_written;
-};// struct CompactionResult
-
-struct CompactionInput
-{
-  public:
-    std::vector<std::string> inputFiles;
-    std::string outputFile;
-    std::vector<std::string> rowKeyCols;
-    std::vector<std::string> sortKeyCols;
-    std::size_t maxRowGroupSize;
-    std::size_t maxPageSize;
-    std::string compression;
-    std::string writerVersion;
-    std::size_t columnTruncateLength;
-    std::size_t statsTruncateLength;
-    bool dictEncRowKeys;
-    bool dictEncSortKeys;
-    bool dictEncValues;
-    std::unordered_map<std::string, ColRange> region;
-};// struct CompactionInput
-
 
 CompactionResult merge_sorted_files(CompactionInput const &inputData);
 
@@ -112,7 +67,7 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
   cudf::io::sink_info const &sink,
   cudf::io::table_input_metadata &&tim) noexcept
 {
-    using namespace std::literals;
+    using namespace std::literals;// for string_view
     // TODO: sanity check the input details here! static_casts from max row group sizes, etc.
     return cudf::io::chunked_parquet_writer_options::builder(sink)
       .metadata(std::move(tim))
@@ -130,7 +85,7 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
 inline std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
   cudf::io::table_input_metadata &&tim)
 {
-    cudf::io::sink_info destination{ details.outputFile };
+    cudf::io::sink_info destination = make_sink_info(details.outputFile);
     auto wopts = write_opts(details, destination, std::move(tim));
     return std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build());
 }
