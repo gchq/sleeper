@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.statestore;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
@@ -25,14 +24,11 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 
-import java.util.List;
-import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
@@ -84,30 +80,6 @@ public class SystemTestStateStoreFakeCommitsTest {
         // When / Then
         assertThatCode(() -> commitsDsl.waitForCommitLogs(PollWithRetries.noRetries()))
                 .doesNotThrowAnyException();
-    }
-
-    @Test
-    void shouldAssertOnCommitsPerSecond(SleeperSystemTest sleeper) {
-        // Given
-        committer.setFakeCommitsPerSecond(sleeper, 10.0);
-
-        // When / Then
-        assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isEqualTo(10.0);
-    }
-
-    @Test
-    @Disabled("TODO")
-    void shouldAssertOnCommitsPerSecondForMultipleTables(SleeperSystemTest sleeper) {
-        // Given
-        sleeper.connectToInstanceNoTables(MAIN);
-        sleeper.tables().create(List.of("A", "B"), DEFAULT_SCHEMA);
-        committer.setFakeCommitsPerSecond(sleeper.table("A"), 10.0);
-        committer.setFakeCommitsPerSecond(sleeper.table("B"), 20.0);
-
-        // When / Then
-        assertThat(sleeper.stateStore().commitsPerSecondByTable())
-                .isEqualTo(Map.of("A", 10.0, "B", 20.0));
     }
 
 }
