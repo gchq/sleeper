@@ -71,7 +71,6 @@ public class GarbageCollectorS3IT {
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
     private static final Schema TEST_SCHEMA = getSchema();
-    private static final String TEST_TABLE_NAME = "test-table";
 
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
