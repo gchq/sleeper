@@ -34,6 +34,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
+    private static final int PAGE_LIMIT = 10_000;
 
     private final InstanceProperties instanceProperties;
     private final CloudWatchLogsClient cloudWatch;
@@ -46,23 +47,31 @@ public class QueryStateStoreCommitterLogs {
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
-        // Note that the results must fit in a single page of 10,000 log entries, which is the highest limit allowed.
-        // If there are more logs than that, only 10,000 will be returned.
-        // We could set up a way to page through the results, but we'd risk new logs coming in as we page through.
-        // It seems to take about 2 minutes for logs to be available in CloudWatch, so we'd have to wait quite a long
-        // time to be confident that it's settled enough for us to read through everything.
+        GetQueryResultsResponse response = getSinglePageInPeriod(logGroupName, startTime, endTime);
+        if (response.results().size() < PAGE_LIMIT) {
+            return response.results().stream()
+                    .map(ReadStateStoreCommitterLogs::read)
+                    .collect(toUnmodifiableList());
+        } else {
+            // TODO read rest of logs
+            return response.results().stream()
+                    .map(ReadStateStoreCommitterLogs::read)
+                    .collect(toUnmodifiableList());
+        }
+    }
+
+    private GetQueryResultsResponse getSinglePageInPeriod(String logGroupName, Instant startTime, Instant endTime) {
+        // Note that 10,000 log entries is the highest limit allowed.
         String queryId = cloudWatch.startQuery(builder -> builder
                 .logGroupName(logGroupName)
                 .startTime(startTime.getEpochSecond())
                 .endTime(endTime.getEpochSecond())
-                .limit(10000)
+                .limit(PAGE_LIMIT)
                 .queryString("fields @timestamp, @message, @logStream " +
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
-        return waitForQuery(queryId).results().stream()
-                .map(ReadStateStoreCommitterLogs::read)
-                .collect(toUnmodifiableList());
+        return waitForQuery(queryId);
     }
 
     private GetQueryResultsResponse waitForQuery(String queryId) {
