@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -34,21 +34,19 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
 @SystemTest
 @Slow
+@Execution(SAME_THREAD)
 public class StateStoreCommitterThroughputST {
 
-    @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
-    }
-
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJob(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
         // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
