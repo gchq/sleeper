@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.statestore;
+package sleeper.clients.status.report.statestore;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEntry {
+public class StateStoreCommitterRunStarted implements StateStoreCommitterLogEntry {
     private final String logStream;
-    private final Instant finishTime;
+    private final Instant startTime;
 
-    public StateStoreCommitterRunFinished(String logStream, Instant finishTime) {
+    public StateStoreCommitterRunStarted(String logStream, Instant startTime) {
         this.logStream = logStream;
-        this.finishTime = finishTime;
+        this.startTime = startTime;
     }
 
     @Override
@@ -32,18 +32,18 @@ public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEnt
         return logStream;
     }
 
-    public Instant getFinishTime() {
-        return finishTime;
+    public Instant getStartTime() {
+        return startTime;
     }
 
     @Override
     public Instant getTimeInCommitter() {
-        return finishTime;
+        return startTime;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logStream, finishTime);
+        return Objects.hash(logStream, startTime);
     }
 
     @Override
@@ -51,15 +51,15 @@ public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEnt
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof StateStoreCommitterRunFinished)) {
+        if (!(obj instanceof StateStoreCommitterRunStarted)) {
             return false;
         }
-        StateStoreCommitterRunFinished other = (StateStoreCommitterRunFinished) obj;
-        return Objects.equals(logStream, other.logStream) && Objects.equals(finishTime, other.finishTime);
+        StateStoreCommitterRunStarted other = (StateStoreCommitterRunStarted) obj;
+        return Objects.equals(logStream, other.logStream) && Objects.equals(startTime, other.startTime);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitterRunFinished{logStream=" + logStream + ", finishTime=" + finishTime + "}";
+        return "StateStoreCommitterRunStarted{logStream=" + logStream + ", startTime=" + startTime + "}";
     }
 }

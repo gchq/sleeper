@@ -18,21 +18,13 @@ package sleeper.systemtest.drivers.statestore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
-import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse;
-import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 
-import sleeper.core.util.PollWithRetries;
+import sleeper.clients.status.report.statestore.QueryStateStoreCommitterLogs;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogEntry;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Set;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 
 public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
@@ -46,46 +38,8 @@ public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogs
     }
 
     @Override
-    public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
-        String logGroupName = instance.getInstanceProperties().get(STATESTORE_COMMITTER_LOG_GROUP);
-        LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
-        String queryId = cloudWatch.startQuery(builder -> builder
-                .logGroupName(logGroupName)
-                .startTime(startTime.getEpochSecond())
-                .endTime(endTime.getEpochSecond())
-                .limit(10000)
-                .queryString("fields @timestamp, @message, @logStream " +
-                        "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
-                        "| sort @timestamp asc"))
-                .queryId();
-        return waitForQuery(queryId).results().stream()
-                .map(ReadStateStoreCommitterLogs::read)
-                .collect(toUnmodifiableList());
+    public StateStoreCommitterLogs getLogsInPeriod(Instant startTime, Instant endTime) {
+        QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instance.getInstanceProperties(), cloudWatch);
+        return new StateStoreCommitterLogEntries(queryLogs.getLogsInPeriod(startTime, endTime));
     }
-
-    private GetQueryResultsResponse waitForQuery(String queryId) {
-        try {
-            return PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1))
-                    .queryUntil("query is completed",
-                            () -> cloudWatch.getQueryResults(builder -> builder.queryId(queryId)),
-                            results -> isQueryCompleted(results));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static boolean isQueryCompleted(GetQueryResultsResponse response) {
-        LOGGER.info("Logs query response status {}, statistics: {}",
-                response.statusAsString(), response.statistics());
-        QueryStatus status = response.status();
-        if (status == QueryStatus.COMPLETE) {
-            return true;
-        } else if (Set.of(QueryStatus.SCHEDULED, QueryStatus.RUNNING).contains(status)) {
-            return false;
-        } else {
-            throw new RuntimeException("Logs query failed with status " + response.statusAsString());
-        }
-    }
-
 }
