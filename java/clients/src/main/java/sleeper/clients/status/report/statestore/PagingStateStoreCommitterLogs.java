@@ -15,30 +15,69 @@
  */
 package sleeper.clients.status.report.statestore;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class PagingStateStoreCommitterLogs {
 
     private final long limit;
+    private final Duration pagingAge;
     private final GetLogs getLogs;
+    private final Supplier<Instant> timeSupplier;
+    private final Waiter waiter;
 
-    private PagingStateStoreCommitterLogs(long limit, GetLogs getLogs) {
-        this.getLogs = getLogs;
+    public PagingStateStoreCommitterLogs(long limit, Duration pagingAge, GetLogs getLogs, Supplier<Instant> timeSupplier, Waiter waiter) {
         this.limit = limit;
+        this.pagingAge = pagingAge;
+        this.getLogs = getLogs;
+        this.timeSupplier = timeSupplier;
+        this.waiter = waiter;
     }
 
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
         List<StateStoreCommitterLogEntry> logs = getLogs.getLogsInPeriod(startTime, endTime);
-        return logs;
+        if (logs.size() == limit) {
+            timeSupplier.get();
+            return pageThroughRemainingLogs(logs, endTime)
+                    .flatMap(List::stream)
+                    .collect(toUnmodifiableList());
+        } else {
+            return logs;
+        }
     }
 
-    public static PagingStateStoreCommitterLogs pageAfterLimit(long limit, GetLogs getLogs) {
-        return new PagingStateStoreCommitterLogs(limit, getLogs);
+    private Stream<List<StateStoreCommitterLogEntry>> pageThroughRemainingLogs(List<StateStoreCommitterLogEntry> logs, Instant endTime) {
+        Instant nextQueryStartTime = logs.get(logs.size() - 1).getTimeInCommitter();
+        List<StateStoreCommitterLogEntry> logsSoFar = logsBeforeLastEntry(logs, nextQueryStartTime);
+        List<StateStoreCommitterLogEntry> remainingLogs = getLogs.getLogsInPeriod(nextQueryStartTime, endTime);
+        if (remainingLogs.size() == limit) {
+            return Stream.concat(Stream.of(logsSoFar), pageThroughRemainingLogs(remainingLogs, endTime));
+        } else {
+            return Stream.of(logsSoFar, remainingLogs);
+        }
+    }
+
+    private static List<StateStoreCommitterLogEntry> logsBeforeLastEntry(List<StateStoreCommitterLogEntry> logs, Instant lastEntryTime) {
+        for (int i = logs.size() - 2; i >= 0; i--) {
+            Instant entryTime = logs.get(i).getTimeInCommitter();
+            if (entryTime.isBefore(lastEntryTime)) {
+                return logs.subList(0, i + 1);
+            }
+        }
+        throw new IllegalStateException("Found page with logs all at the same time, cannot split by period. All logs were at time: " + lastEntryTime);
     }
 
     public interface GetLogs {
         List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime);
+    }
+
+    public interface Waiter {
+        void waitFor(Duration duration);
     }
 
 }
