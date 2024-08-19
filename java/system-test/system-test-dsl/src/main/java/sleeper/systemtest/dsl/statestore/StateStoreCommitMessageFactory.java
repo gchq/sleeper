@@ -33,20 +33,6 @@ public class StateStoreCommitMessageFactory {
         this.tableId = tableId;
     }
 
-    public StateStoreCommitMessage addPartitionFile(String partitionId, String filename, long records) {
-        return addFiles(List.of(FileReference.builder()
-                .partitionId(partitionId)
-                .filename(filename)
-                .numberOfRecords(records)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
-                .build()));
-    }
-
-    public StateStoreCommitMessage addFile(FileReference file) {
-        return addFiles(List.of(file));
-    }
-
     public StateStoreCommitMessage addFiles(List<FileReference> files) {
         return ingest(builder -> builder.fileReferences(files));
     }

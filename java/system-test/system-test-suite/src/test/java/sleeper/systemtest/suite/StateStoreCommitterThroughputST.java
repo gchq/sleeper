@@ -23,7 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.statestore.SystemTestStateStoreFakeCommits;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -50,9 +50,9 @@ public class StateStoreCommitterThroughputST {
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
-                .sendBatched(commitFactory -> IntStream.rangeClosed(1, 1000)
+                .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(commitFactory::addFile))
+                        .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
@@ -71,9 +71,9 @@ public class StateStoreCommitterThroughputST {
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
-                .sendBatched(commitFactory -> IntStream.rangeClosed(1, 1000)
+                .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(commitFactory::addFileWithJob))
+                        .map(StateStoreCommitMessage::addFileWithJob))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
@@ -92,13 +92,13 @@ public class StateStoreCommitterThroughputST {
 
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        SystemTestStateStoreFakeCommits commits = sleeper.stateStore().fakeCommits().pauseReceivingCommitMessages();
-        sleeper.tables().forEach(() -> commits.sendBatched(
-                commitFactory -> IntStream.rangeClosed(1, 1000)
+        sleeper.stateStore().fakeCommits()
+                .pauseReceivingCommitMessages()
+                .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(commitFactory::addFile)));
-        commits.resumeReceivingCommitMessages().waitForCommitLogs(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                        .map(StateStoreCommitMessage::addFile))
+                .resumeReceivingCommitMessages().waitForCommitLogs(
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())

@@ -46,7 +46,7 @@ public class SystemTestStateStoreFakeCommitsTest {
     void shouldSendOneFileCommit(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
-                .send(factory -> factory.addPartitionFile("root", "file.parquet", 100))
+                .send(StateStoreCommitMessage.addPartitionFile("root", "file.parquet", 100))
                 .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
@@ -61,8 +61,8 @@ public class SystemTestStateStoreFakeCommitsTest {
     void shouldSendManyFileCommits(SleeperSystemTest sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
-                .sendBatched(factory -> LongStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> factory.addPartitionFile("root", "file-" + i + ".parquet", i)))
+                .sendBatched(LongStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> StateStoreCommitMessage.addPartitionFile("root", "file-" + i + ".parquet", i)))
                 .waitForCommitLogs(PollWithRetries.noRetries());
 
         // Then
@@ -74,7 +74,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         // Given
         committer.setRunCommitterOnSend(sleeper, false);
         SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
-        commitsDsl.send(factory -> factory.addPartitionFile("root", "file.parquet", 100));
+        commitsDsl.send(StateStoreCommitMessage.addPartitionFile("root", "file.parquet", 100));
         committer.addFakeCommits(sleeper, 1);
 
         // When / Then
