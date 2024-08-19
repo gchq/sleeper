@@ -25,14 +25,17 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class PageThroughLogs<T extends LogEntry> {
+    // Note that 10,000 log entries is the highest limit allowed by CloudWatch logs.
+    public static final int PAGE_LIMIT = 10_000;
+    public static final Duration PAGE_MIN_AGE = Duration.ofMinutes(5);
 
-    private final long limit;
+    private final int limit;
     private final Duration pagingAge;
     private final GetLogs<T> getLogs;
     private final Supplier<Instant> timeSupplier;
     private final Waiter waiter;
 
-    public PageThroughLogs(long limit, Duration pagingAge, GetLogs<T> getLogs, Supplier<Instant> timeSupplier, Waiter waiter) {
+    public PageThroughLogs(int limit, Duration pagingAge, GetLogs<T> getLogs, Supplier<Instant> timeSupplier, Waiter waiter) {
         this.limit = limit;
         this.pagingAge = pagingAge;
         this.getLogs = getLogs;
@@ -40,8 +43,13 @@ public class PageThroughLogs<T extends LogEntry> {
         this.waiter = waiter;
     }
 
-    public List<T> getLogsInPeriod(Instant startTime, Instant endTime) {
-        List<T> logs = getLogs.getLogsInPeriod(startTime, endTime);
+    public static <T extends LogEntry> PageThroughLogs<T> from(GetLogs<T> getLogs) {
+        return new PageThroughLogs<>(PAGE_LIMIT, PAGE_MIN_AGE, getLogs,
+                Instant::now, duration -> Thread.sleep(duration.toMillis()));
+    }
+
+    public List<T> getLogsInPeriod(Instant startTime, Instant endTime) throws InterruptedException {
+        List<T> logs = getLogsInPeriodWithLimit(startTime, endTime);
         if (logs.size() == limit) {
             return pageThroughRemainingLogs(startTime, endTime, logs)
                     .flatMap(List::stream)
@@ -51,7 +59,11 @@ public class PageThroughLogs<T extends LogEntry> {
         }
     }
 
-    private Stream<List<T>> pageThroughRemainingLogs(Instant startTime, Instant endTime, List<T> logs) {
+    private List<T> getLogsInPeriodWithLimit(Instant startTime, Instant endTime) {
+        return getLogs.getLogsInPeriodWithLimit(startTime, endTime, limit);
+    }
+
+    private Stream<List<T>> pageThroughRemainingLogs(Instant startTime, Instant endTime, List<T> logs) throws InterruptedException {
         Instant timeNow = timeSupplier.get();
         Instant maxPagingTime = timeNow.minus(pagingAge);
         int lastEntryIndex = logs.size() - 1;
@@ -61,14 +73,14 @@ public class PageThroughLogs<T extends LogEntry> {
             waiter.waitFor(Duration.between(timeNow, lastEntryTime.plus(pagingAge)));
             lastEntryIndex = findLastLogMeetingPagingAge(logs, maxPagingTime);
             if (lastEntryIndex == -1) { // No logs are old enough to retain, so refresh whole page
-                return pageThroughRemainingLogs(startTime, endTime, getLogs.getLogsInPeriod(startTime, endTime));
-            } else { // Avoid refreshing logs that are already old enough
+                return pageThroughRemainingLogs(startTime, endTime, getLogsInPeriodWithLimit(startTime, endTime));
+            } else { // Avoid refreshing logs that were already old enough
                 lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
             }
         }
 
         List<T> logsSoFar = logsBeforeLastEntry(logs, lastEntryIndex, lastEntryTime);
-        List<T> remainingLogs = getLogs.getLogsInPeriod(lastEntryTime, endTime);
+        List<T> remainingLogs = getLogsInPeriodWithLimit(lastEntryTime, endTime);
         if (remainingLogs.size() == limit) {
             return Stream.concat(Stream.of(logsSoFar), pageThroughRemainingLogs(lastEntryTime, endTime, remainingLogs));
         } else {
@@ -101,11 +113,11 @@ public class PageThroughLogs<T extends LogEntry> {
     }
 
     public interface GetLogs<T extends LogEntry> {
-        List<T> getLogsInPeriod(Instant startTime, Instant endTime);
+        List<T> getLogsInPeriodWithLimit(Instant startTime, Instant endTime, int limit);
     }
 
     public interface Waiter {
-        void waitFor(Duration duration);
+        void waitFor(Duration duration) throws InterruptedException;
     }
 
 }

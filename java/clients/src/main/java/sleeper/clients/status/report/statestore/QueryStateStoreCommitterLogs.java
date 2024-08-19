@@ -34,7 +34,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
-    private static final int PAGE_LIMIT = 10_000;
 
     private final InstanceProperties instanceProperties;
     private final CloudWatchLogsClient cloudWatch;
@@ -44,32 +43,28 @@ public class QueryStateStoreCommitterLogs {
         this.cloudWatch = cloudWatch;
     }
 
-    public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
+    public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) throws InterruptedException {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
-        List<StateStoreCommitterLogEntry> logs = getSinglePageInPeriod(logGroupName, startTime, endTime)
-                .results().stream()
-                .map(ReadStateStoreCommitterLogs::read)
-                .collect(toUnmodifiableList());
-        if (logs.size() < PAGE_LIMIT) {
-            return logs;
-        } else {
-            return logs;
-        }
+        return PageThroughLogs.from(this::getSinglePageInPeriodWithLimit)
+                .getLogsInPeriod(startTime, endTime);
     }
 
-    private GetQueryResultsResponse getSinglePageInPeriod(String logGroupName, Instant startTime, Instant endTime) {
-        // Note that 10,000 log entries is the highest limit allowed.
+    private List<StateStoreCommitterLogEntry> getSinglePageInPeriodWithLimit(Instant startTime, Instant endTime, int limit) {
+        String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         String queryId = cloudWatch.startQuery(builder -> builder
                 .logGroupName(logGroupName)
                 .startTime(startTime.getEpochSecond())
                 .endTime(endTime.getEpochSecond())
-                .limit(PAGE_LIMIT)
+                .limit(limit)
                 .queryString("fields @timestamp, @message, @logStream " +
                         "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
-        return waitForQuery(queryId);
+        return waitForQuery(queryId)
+                .results().stream()
+                .map(ReadStateStoreCommitterLogs::read)
+                .collect(toUnmodifiableList());
     }
 
     private GetQueryResultsResponse waitForQuery(String queryId) {

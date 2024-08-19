@@ -43,7 +43,7 @@ public class PageThroughLogsTest {
     class PageByTimestamp {
 
         @Test
-        void shouldReturnFirstPageWhenFewerRecordsThanLimit() {
+        void shouldReturnFirstPageWhenFewerRecordsThanLimit() throws Exception {
             // Given
             addLogs(entryAt(Instant.parse("2024-08-19T09:01:00Z")));
 
@@ -59,7 +59,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldNotReturnMoreThanLimitWithoutPaging() {
+        void shouldNotReturnMoreThanLimitWithoutPaging() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -67,10 +67,10 @@ public class PageThroughLogsTest {
                     entryAt(Instant.parse("2024-08-19T09:03:00Z")));
 
             // When
-            List<StateStoreCommitterLogEntry> found = getLogsWithLimit(2)
-                    .getLogsInPeriod(
+            List<StateStoreCommitterLogEntry> found = getLogs()
+                    .getLogsInPeriodWithLimit(
                             Instant.parse("2024-08-19T09:00:00Z"),
-                            Instant.parse("2024-08-19T10:00:00Z"));
+                            Instant.parse("2024-08-19T10:00:00Z"), 2);
 
             // Then
             assertThat(found).containsExactly(
@@ -79,7 +79,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldReturnMoreRecordsThanLimitWhenOneMorePageAvailable() {
+        void shouldReturnMoreRecordsThanLimitWhenOneMorePageAvailable() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -99,7 +99,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreAtSameTimeAsStartOfSecondPage() {
+        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreAtSameTimeAsStartOfSecondPage() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -127,7 +127,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreAtSameTime() {
+        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreAtSameTime() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -179,7 +179,7 @@ public class PageThroughLogsTest {
     class MinimumPagingAge {
 
         @Test
-        void shouldWaitUntilRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPaging() {
+        void shouldWaitUntilRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPaging() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -215,7 +215,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldWaitUntilSomeRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPaging() {
+        void shouldWaitUntilSomeRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPaging() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -254,7 +254,7 @@ public class PageThroughLogsTest {
     class SecondBySecond {
 
         @Test
-        void shouldTruncateToSecondWhenQueryingWithoutPaging() {
+        void shouldTruncateToSecondWhenQueryingWithoutPaging() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:00:59.999Z")),
@@ -264,10 +264,11 @@ public class PageThroughLogsTest {
                     entryAt(Instant.parse("2024-08-19T09:03:01.000Z")));
 
             // When
-            List<StateStoreCommitterLogEntry> found = getLogsWithLimit(5)
-                    .getLogsInPeriod(
+            List<StateStoreCommitterLogEntry> found = getLogs()
+                    .getLogsInPeriodWithLimit(
                             Instant.parse("2024-08-19T09:01:00.750Z"),
-                            Instant.parse("2024-08-19T09:03:00.250Z"));
+                            Instant.parse("2024-08-19T09:03:00.250Z"),
+                            10);
 
             // Then
             assertThat(found).containsExactly(
@@ -277,7 +278,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreInSameSecond() {
+        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreInSameSecond() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -308,7 +309,7 @@ public class PageThroughLogsTest {
         }
 
         @Test
-        void shouldWaitUntilSomeRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPagingWhenEntriesInSameSecond() {
+        void shouldWaitUntilSomeRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPagingWhenEntriesInSameSecond() throws Exception {
             // Given
             addLogs(
                     entryAt(Instant.parse("2024-08-19T09:01:00Z")),
@@ -349,18 +350,18 @@ public class PageThroughLogsTest {
         logs.addAll(List.of(entries));
     }
 
-    private PageThroughLogs<StateStoreCommitterLogEntry> pageAfterLimit(long limit) {
-        return new PageThroughLogs<>(limit, Duration.ZERO, getLogsWithLimit(limit), () -> Instant.MAX,
+    private PageThroughLogs<StateStoreCommitterLogEntry> pageAfterLimit(int limit) {
+        return new PageThroughLogs<>(limit, Duration.ZERO, getLogs(), () -> Instant.MAX,
                 waitDuration -> new IllegalStateException("Unexpected wait of duration: " + waitDuration));
     }
 
     private PageThroughLogs<StateStoreCommitterLogEntry> pageAfterLimitAndAgeAtTimes(
-            long limit, Duration pagingAge, Iterator<Instant> queryTimes) {
-        return new PageThroughLogs<>(limit, pagingAge, getLogsWithLimit(limit), queryTimes::next, foundWaits::add);
+            int limit, Duration pagingAge, Iterator<Instant> queryTimes) {
+        return new PageThroughLogs<>(limit, pagingAge, getLogs(), queryTimes::next, foundWaits::add);
     }
 
-    private GetLogs<StateStoreCommitterLogEntry> getLogsWithLimit(long limit) {
-        return (rawStart, rawEnd) -> {
+    private GetLogs<StateStoreCommitterLogEntry> getLogs() {
+        return (rawStart, rawEnd, limit) -> {
             Instant start = rawStart.truncatedTo(ChronoUnit.SECONDS);
             Instant end = rawEnd.truncatedTo(ChronoUnit.SECONDS);
             List<StateStoreCommitterLogEntry> page = logs.stream()
