@@ -65,7 +65,7 @@ public class StateStoreCommitMessage {
     }
 
     public interface Commit {
-        StateStoreCommitMessage build(StateStoreCommitMessageFactory factory);
+        StateStoreCommitMessage createMessage(StateStoreCommitMessageFactory factory);
     }
 
 }

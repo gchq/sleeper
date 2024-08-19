@@ -48,7 +48,7 @@ public class SystemTestStateStoreFakeCommits {
 
     public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
         StateStoreCommitMessageFactory factory = messageFactory();
-        send(commits.map(commit -> commit.build(factory)));
+        send(commits.map(commit -> commit.createMessage(factory)));
         return this;
     }
 
@@ -57,12 +57,12 @@ public class SystemTestStateStoreFakeCommits {
                 .map(table -> table.get(TABLE_ID))
                 .map(StateStoreCommitMessageFactory::new)
                 .collect(toUnmodifiableList());
-        send(commits.flatMap(commit -> factories.stream().map(factory -> commit.build(factory))));
+        send(commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory))));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits send(StateStoreCommitMessage.Commit commit) {
-        send(Stream.of(commit.build(messageFactory())));
+        send(Stream.of(commit.createMessage(messageFactory())));
         return this;
     }
 
