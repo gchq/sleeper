@@ -58,7 +58,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(45.0, 60.0);
+                .isBetween(70.0, 90.0);
     }
 
     @Test
