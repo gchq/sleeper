@@ -15,6 +15,11 @@
  */
 package sleeper.clients.status.report.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.util.LoggedDuration;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -25,6 +30,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class PageThroughLogs<T extends LogEntry> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(PageThroughLogs.class);
+
     // Note that 10,000 log entries is the highest limit allowed by CloudWatch logs.
     public static final int PAGE_LIMIT = 10_000;
     public static final Duration PAGE_MIN_AGE = Duration.ofMinutes(5);
@@ -70,9 +77,12 @@ public class PageThroughLogs<T extends LogEntry> {
         Instant lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
         // Apply minimum age for paging, to avoid the case where new records are ingested for a page we've already read
         if (lastEntryTime.isAfter(maxPagingTime)) {
-            waiter.waitFor(Duration.between(timeNow, lastEntryTime.plus(pagingAge)));
+            Duration waitDuration = Duration.between(timeNow, lastEntryTime.plus(pagingAge));
+            LOGGER.info("Waiting {} for logs to settle", LoggedDuration.withFullOutput(waitDuration));
+            waiter.waitFor(waitDuration);
             lastEntryIndex = findLastLogMeetingPagingAge(logs, maxPagingTime);
             if (lastEntryIndex == -1) { // No logs are old enough to retain, so refresh whole page
+                LOGGER.info("Refreshing logs starting at {}", startTime);
                 return pageThroughRemainingLogs(startTime, endTime, getLogsInPeriodWithLimit(startTime, endTime));
             } else { // Avoid refreshing logs that were already old enough
                 lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
@@ -80,6 +90,8 @@ public class PageThroughLogs<T extends LogEntry> {
         }
 
         List<T> logsSoFar = logsBeforeLastEntry(logs, lastEntryIndex, lastEntryTime);
+        LOGGER.info("Found {} of {} log messages old enough for paging, querying for more starting at {}",
+                logsSoFar.size(), logs.size(), lastEntryTime);
         List<T> remainingLogs = getLogsInPeriodWithLimit(lastEntryTime, endTime);
         if (remainingLogs.size() == limit) {
             return Stream.concat(Stream.of(logsSoFar), pageThroughRemainingLogs(lastEntryTime, endTime, remainingLogs));
