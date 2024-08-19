@@ -82,7 +82,7 @@ public class PageThroughLogs<T extends LogEntry> {
             waiter.waitFor(waitDuration);
             lastEntryIndex = findLastLogMeetingPagingAge(logs, maxPagingTime);
             if (lastEntryIndex == -1) { // No logs are old enough to retain, so refresh whole page
-                LOGGER.info("Refreshing logs starting at {}", startTime);
+                LOGGER.info("Refreshing logs starting from time {}", startTime);
                 return pageThroughRemainingLogs(startTime, endTime, getLogsInPeriodWithLimit(startTime, endTime));
             } else { // Avoid refreshing logs that were already old enough
                 lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
@@ -90,7 +90,7 @@ public class PageThroughLogs<T extends LogEntry> {
         }
 
         List<T> logsSoFar = logsBeforeLastEntry(logs, lastEntryIndex, lastEntryTime);
-        LOGGER.info("Found {} of {} log messages old enough for paging, querying for more starting at {}",
+        LOGGER.info("Found {} log messages old enough for paging out of {} returned, querying again starting from time {}",
                 logsSoFar.size(), logs.size(), lastEntryTime);
         List<T> remainingLogs = getLogsInPeriodWithLimit(lastEntryTime, endTime);
         if (remainingLogs.size() == limit) {
