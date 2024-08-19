@@ -23,6 +23,7 @@ import sleeper.clients.status.report.statestore.PageThroughLogs.GetLogs;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -115,6 +116,14 @@ public class PageThroughLogsTest {
             // Then
             assertThat(found).isEqualTo(logs);
             assertThat(foundWaits).isEmpty();
+            assertThat(foundPages).containsExactly(
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))));
         }
 
         @Test
@@ -135,6 +144,17 @@ public class PageThroughLogsTest {
             // Then
             assertThat(found).isEqualTo(logs);
             assertThat(foundWaits).isEmpty();
+            assertThat(foundPages).containsExactly(
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))));
         }
 
         @Test
@@ -229,6 +249,102 @@ public class PageThroughLogsTest {
         }
     }
 
+    @Nested
+    @DisplayName("Query second by second")
+    class SecondBySecond {
+
+        @Test
+        void shouldTruncateToSecondWhenQueryingWithoutPaging() {
+            // Given
+            addLogs(
+                    entryAt(Instant.parse("2024-08-19T09:00:59.999Z")),
+                    entryAt(Instant.parse("2024-08-19T09:01:00.500Z")),
+                    entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:00.500Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:01.000Z")));
+
+            // When
+            List<StateStoreCommitterLogEntry> found = getLogsWithLimit(5)
+                    .getLogsInPeriod(
+                            Instant.parse("2024-08-19T09:01:00.750Z"),
+                            Instant.parse("2024-08-19T09:03:00.250Z"));
+
+            // Then
+            assertThat(found).containsExactly(
+                    entryAt(Instant.parse("2024-08-19T09:01:00.500Z")),
+                    entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:00.500Z")));
+        }
+
+        @Test
+        void shouldReturnMoreRecordsThanLimitWhenEntriesAtEndOfFirstPageAreInSameSecond() {
+            // Given
+            addLogs(
+                    entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:02:00.001Z")),
+                    entryAt(Instant.parse("2024-08-19T09:02:00.999Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:00Z")));
+
+            // When
+            List<StateStoreCommitterLogEntry> found = pageAfterLimit(3)
+                    .getLogsInPeriod(
+                            Instant.parse("2024-08-19T09:00:00Z"),
+                            Instant.parse("2024-08-19T10:00:00Z"));
+
+            // Then
+            assertThat(found).isEqualTo(logs);
+            assertThat(foundWaits).isEmpty();
+            assertThat(foundPages).containsExactly(
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00.001Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00.999Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:02:00.001Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00.999Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:03:00Z"))));
+        }
+
+        @Test
+        void shouldWaitUntilSomeRecordsFoundSoFarMeetMinimumAgeBeforeCheckingAgainAndPagingWhenEntriesInSameSecond() {
+            // Given
+            addLogs(
+                    entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:00.001Z")),
+                    entryAt(Instant.parse("2024-08-19T09:03:00.999Z")),
+                    entryAt(Instant.parse("2024-08-19T09:04:00Z")),
+                    entryAt(Instant.parse("2024-08-19T09:05:00Z")));
+            Iterator<Instant> checkAge = checkAgeAtTimes(
+                    Instant.parse("2024-08-19T09:08:00Z"));
+
+            // When
+            List<StateStoreCommitterLogEntry> found = pageAfterLimitAndAgeAtTimes(5, Duration.ofMinutes(5), checkAge)
+                    .getLogsInPeriod(
+                            Instant.parse("2024-08-19T09:00:00Z"),
+                            Instant.parse("2024-08-19T10:00:00Z"));
+
+            // Then
+            assertThat(found).isEqualTo(logs);
+            assertThat(checkAge).isExhausted();
+            assertThat(foundWaits).containsExactly(Duration.ofMinutes(1));
+            assertThat(foundPages).containsExactly(
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:01:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:02:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00.001Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00.999Z")),
+                            entryAt(Instant.parse("2024-08-19T09:04:00Z"))),
+                    List.of(
+                            entryAt(Instant.parse("2024-08-19T09:03:00.001Z")),
+                            entryAt(Instant.parse("2024-08-19T09:03:00.999Z")),
+                            entryAt(Instant.parse("2024-08-19T09:04:00Z")),
+                            entryAt(Instant.parse("2024-08-19T09:05:00Z"))));
+        }
+    }
+
     private void addLogs(StateStoreCommitterLogEntry... entries) {
         logs.addAll(List.of(entries));
     }
@@ -244,10 +360,15 @@ public class PageThroughLogsTest {
     }
 
     private GetLogs<StateStoreCommitterLogEntry> getLogsWithLimit(long limit) {
-        return (start, end) -> {
+        return (rawStart, rawEnd) -> {
+            Instant start = rawStart.truncatedTo(ChronoUnit.SECONDS);
+            Instant end = rawEnd.truncatedTo(ChronoUnit.SECONDS);
             List<StateStoreCommitterLogEntry> page = logs.stream()
-                    .filter(entry -> entry.getTimestamp().equals(start) || entry.getTimestamp().isAfter(start))
-                    .filter(entry -> entry.getTimestamp().equals(end) || entry.getTimestamp().isBefore(end))
+                    .filter(entry -> {
+                        Instant timestamp = entry.getTimestamp().truncatedTo(ChronoUnit.SECONDS);
+                        return (timestamp.equals(start) || timestamp.isAfter(start))
+                                && (timestamp.equals(end) || timestamp.isBefore(end));
+                    })
                     .limit(limit)
                     .collect(toUnmodifiableList());
             foundPages.add(page);

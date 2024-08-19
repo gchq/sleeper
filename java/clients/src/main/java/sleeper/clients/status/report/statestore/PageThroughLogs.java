@@ -17,6 +17,7 @@ package sleeper.clients.status.report.statestore;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -54,7 +55,7 @@ public class PageThroughLogs<T extends LogEntry> {
         Instant timeNow = timeSupplier.get();
         Instant maxPagingTime = timeNow.minus(pagingAge);
         int lastEntryIndex = logs.size() - 1;
-        Instant lastEntryTime = logs.get(lastEntryIndex).getTimestamp();
+        Instant lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
         // Apply minimum age for paging, to avoid the case where new records are ingested for a page we've already read
         if (lastEntryTime.isAfter(maxPagingTime)) {
             waiter.waitFor(Duration.between(timeNow, lastEntryTime.plus(pagingAge)));
@@ -62,7 +63,7 @@ public class PageThroughLogs<T extends LogEntry> {
             if (lastEntryIndex == -1) { // No logs are old enough to retain, so refresh whole page
                 return pageThroughRemainingLogs(startTime, endTime, getLogs.getLogsInPeriod(startTime, endTime));
             } else { // Avoid refreshing logs that are already old enough
-                lastEntryTime = logs.get(lastEntryIndex).getTimestamp();
+                lastEntryTime = getTruncatedTimestamp(logs.get(lastEntryIndex));
             }
         }
 
@@ -87,12 +88,16 @@ public class PageThroughLogs<T extends LogEntry> {
 
     private int findLastLogMeetingPagingAge(List<T> logs, Instant minPagingTime) {
         for (int i = logs.size() - 2; i >= 0; i--) {
-            Instant entryTime = logs.get(i).getTimestamp();
+            Instant entryTime = getTruncatedTimestamp(logs.get(i));
             if (entryTime.compareTo(minPagingTime) <= 0) {
                 return i;
             }
         }
         return -1;
+    }
+
+    private Instant getTruncatedTimestamp(T log) {
+        return log.getTimestamp().truncatedTo(ChronoUnit.SECONDS);
     }
 
     public interface GetLogs<T extends LogEntry> {
