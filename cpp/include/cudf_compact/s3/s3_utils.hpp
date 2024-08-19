@@ -11,7 +11,7 @@
 namespace gpu_compact::cudf_compact::s3
 {
 
-inline const std::regex URL_CHECK(R"((s3):///?[-.]?([^\s?.#-]+?)/([^\s]+))");
+inline const std::regex URL_CHECK(R"((s3):///?[-.]?([^\s?#-]+?)/([^\s]+))");
 
 void initialiseAWS();
 

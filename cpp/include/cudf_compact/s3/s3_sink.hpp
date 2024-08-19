@@ -44,6 +44,8 @@ struct S3Sink final : public cudf::io::data_sink
       std::string_view s3path,
       std::size_t const uploadPartSize = DEFAULT_UPLOAD_SIZE);
 
+    virtual ~S3Sink() noexcept override;
+
     void host_write(void const *data, std::size_t size) override;
 
     [[nodiscard]] constexpr bool supports_device_write() const override {

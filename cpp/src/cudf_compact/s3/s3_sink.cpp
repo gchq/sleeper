@@ -1,5 +1,9 @@
+#include <aws/s3/model/CreateMultipartUploadRequest.h>
+#include <spdlog/spdlog.h>
+
 #include "cudf_compact/s3/s3_sink.hpp"
 #include "cudf_compact/s3/s3_utils.hpp"
+
 
 #include <exception>
 
@@ -30,7 +34,15 @@ namespace gpu_compact::cudf_compact::s3
 // [[nodiscard]] static std::ofstream makeOutputFile(std::filesystem::path const &p);
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 S3Sink::S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client, std::string_view s3path, std::size_t const uploadPartSize)
-  : client(s3client), bucket(getBucket(s3path)), key(getKey(s3path)), uploadSize(uploadPartSize) {}
+  : client(s3client), bucket(getBucket(s3path)), key(getKey(s3path)), uploadSize(uploadPartSize) {
+    SPDLOG_INFO("Creating an S3Sink to {}/{}", bucket, key);
+    auto request = Aws::S3::Model::CreateMultipartUploadRequest().WithBucket(bucket).WithKey(key);
+    auto result = client->CreateMultipartUpload(request);
+}
+
+S3Sink::~S3Sink() noexcept {
+    SPDLOG_INFO("Destroying an S3Sink to {}/{}", bucket, key);
+}
 
 void S3Sink::host_write(void const *data, std::size_t size) {}
 

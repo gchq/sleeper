@@ -85,8 +85,8 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
 inline std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
   cudf::io::table_input_metadata &&tim,
   std::shared_ptr<Aws::S3::S3Client> &s3client) {
-    cudf::io::sink_info destination = make_sink_info(details.outputFile, s3client);
-    auto wopts = write_opts(details, destination, std::move(tim));
+    static SinkInfoDetails destination = make_sink_info(details.outputFile, s3client);
+    auto wopts = write_opts(details, destination.info, std::move(tim));
     return std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build());
 }
 
