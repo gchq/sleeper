@@ -44,7 +44,7 @@ public class ReadStateStoreCommitterLogs {
         }
     }
 
-    private static StateStoreCommitterLogEntry readMessage(String logStream, String message) {
+    private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
             return null;
@@ -54,28 +54,32 @@ public class ReadStateStoreCommitterLogs {
         // We determine which type of message was found based on which capturing group is set.
         String startTime = matcher.group(CapturingGroups.START_TIME);
         if (startTime != null) {
-            return new StateStoreCommitterRunStarted(logStream, Instant.parse(startTime));
+            return new StateStoreCommitterRunStarted(logStream, timestamp, Instant.parse(startTime));
         }
         String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
         if (finishTime != null) {
-            return new StateStoreCommitterRunFinished(logStream, Instant.parse(finishTime));
+            return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
         }
         String tableId = matcher.group(CapturingGroups.TABLE_ID);
         if (tableId != null) {
             String type = matcher.group(CapturingGroups.TYPE);
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
-            return new StateStoreCommitSummary(logStream, tableId, type, Instant.parse(commitTime));
+            return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
         }
         return null;
     }
 
     public static StateStoreCommitterLogEntry read(List<ResultField> entry) {
         String logStream = null;
+        String timestamp = null;
         String message = null;
         for (ResultField field : entry) {
             switch (field.field()) {
                 case "@logStream":
                     logStream = field.value();
+                    break;
+                case "@timestamp":
+                    timestamp = field.value();
                     break;
                 case "@message":
                     message = field.value();
@@ -86,6 +90,7 @@ public class ReadStateStoreCommitterLogs {
         }
         return readMessage(
                 Objects.requireNonNull(logStream, "Log stream not found"),
+                Instant.ofEpochMilli(Long.parseLong(timestamp)),
                 Objects.requireNonNull(message, "Log message not found"));
     }
 }

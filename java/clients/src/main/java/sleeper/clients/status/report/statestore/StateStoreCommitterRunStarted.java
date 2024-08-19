@@ -20,16 +20,23 @@ import java.util.Objects;
 
 public class StateStoreCommitterRunStarted implements StateStoreCommitterLogEntry {
     private final String logStream;
+    private final Instant timestamp;
     private final Instant startTime;
 
-    public StateStoreCommitterRunStarted(String logStream, Instant startTime) {
+    public StateStoreCommitterRunStarted(String logStream, Instant timestamp, Instant startTime) {
         this.logStream = logStream;
+        this.timestamp = timestamp;
         this.startTime = startTime;
     }
 
     @Override
     public String getLogStream() {
         return logStream;
+    }
+
+    @Override
+    public Instant getTimestamp() {
+        return timestamp;
     }
 
     public Instant getStartTime() {
@@ -43,7 +50,7 @@ public class StateStoreCommitterRunStarted implements StateStoreCommitterLogEntr
 
     @Override
     public int hashCode() {
-        return Objects.hash(logStream, startTime);
+        return Objects.hash(logStream, timestamp, startTime);
     }
 
     @Override
@@ -55,11 +62,11 @@ public class StateStoreCommitterRunStarted implements StateStoreCommitterLogEntr
             return false;
         }
         StateStoreCommitterRunStarted other = (StateStoreCommitterRunStarted) obj;
-        return Objects.equals(logStream, other.logStream) && Objects.equals(startTime, other.startTime);
+        return Objects.equals(logStream, other.logStream) && Objects.equals(timestamp, other.timestamp) && Objects.equals(startTime, other.startTime);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitterRunStarted{logStream=" + logStream + ", startTime=" + startTime + "}";
+        return "StateStoreCommitterRunStarted{logStream=" + logStream + ", timestamp=" + timestamp + ", startTime=" + startTime + "}";
     }
 }

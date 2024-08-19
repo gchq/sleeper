@@ -75,14 +75,14 @@ public class StateStoreCommitterLogEntriesTest {
     }
 
     StateStoreCommitSummary commitToTable(String tableId) {
-        return new StateStoreCommitSummary("test-stream", tableId, "test-commit", Instant.now());
+        return new StateStoreCommitSummary("test-stream", Instant.now(), tableId, "test-commit", Instant.now());
     }
 
     StateStoreCommitSummary commitToTableAtTime(String tableId, Instant time) {
-        return new StateStoreCommitSummary("test-stream", tableId, "test-commit", time);
+        return new StateStoreCommitSummary("test-stream", Instant.MIN, tableId, "test-commit", time);
     }
 
     StateStoreCommitterRunStarted runStartedAtTime(Instant time) {
-        return new StateStoreCommitterRunStarted("test-stream", time);
+        return new StateStoreCommitterRunStarted("test-stream", Instant.MIN, time);
     }
 }
