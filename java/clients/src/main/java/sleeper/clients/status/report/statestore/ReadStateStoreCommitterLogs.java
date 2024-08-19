@@ -18,6 +18,9 @@ package sleeper.clients.status.report.statestore;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -27,6 +30,8 @@ public class ReadStateStoreCommitterLogs {
 
     private ReadStateStoreCommitterLogs() {
     }
+
+    public static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS");
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "Lambda started at ([^\\s]+)|" + // Lambda started message type
@@ -90,7 +95,7 @@ public class ReadStateStoreCommitterLogs {
         }
         return readMessage(
                 Objects.requireNonNull(logStream, "Log stream not found"),
-                Instant.ofEpochMilli(Long.parseLong(timestamp)),
+                LocalDateTime.parse(timestamp, TIMESTAMP_FORMATTER).toInstant(ZoneOffset.UTC),
                 Objects.requireNonNull(message, "Log message not found"));
     }
 }

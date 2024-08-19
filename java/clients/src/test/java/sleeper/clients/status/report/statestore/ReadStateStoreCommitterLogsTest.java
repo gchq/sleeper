@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,6 +104,22 @@ public class ReadStateStoreCommitterLogsTest {
                 .isEqualTo(new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
+    @Test
+    void shouldReadTimestampFromString() {
+        // Given
+        String message = "[main] committer.lambda.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        List<ResultField> entry = List.of(
+                messageField(message),
+                timestampField("2024-08-13 12:12:30.123"),
+                logStreamField("test-stream"));
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
+                new StateStoreCommitterRunStarted("test-stream",
+                        Instant.parse("2024-08-13T12:12:30.123Z"),
+                        Instant.parse("2024-08-13T12:12:00Z")));
+    }
+
     private List<ResultField> logEntry(String logStream, Instant timestamp, String message) {
         return List.of(
                 logStreamField(logStream),
@@ -113,8 +131,14 @@ public class ReadStateStoreCommitterLogsTest {
         return ResultField.builder().field("@logStream").value(logStream).build();
     }
 
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER = ReadStateStoreCommitterLogs.TIMESTAMP_FORMATTER.withZone(ZoneOffset.UTC);
+
     private ResultField timestampField(Instant timestamp) {
-        return ResultField.builder().field("@timestamp").value("" + timestamp.toEpochMilli()).build();
+        return timestampField(TIMESTAMP_FORMATTER.format(timestamp));
+    }
+
+    private ResultField timestampField(String timestamp) {
+        return ResultField.builder().field("@timestamp").value(timestamp).build();
     }
 
     private ResultField messageField(String message) {
