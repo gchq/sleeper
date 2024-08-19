@@ -10,14 +10,15 @@
 #include <memory>
 #include <string_view>
 
-namespace gpu_compact::cudf_compact::s3 {
+namespace gpu_compact::cudf_compact::s3
+{
 
 inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 300 * 1'048'576;
 
-struct S3Sink final /*: public cudf::io::data_sink*/
+struct S3Sink final : public cudf::io::data_sink
 {
   private:
-    // std::shared_ptr<Aws::S3::S3Client> client;
+    std::shared_ptr<Aws::S3::S3Client> client;
     Aws::String bucket;
     Aws::String key;
     // Aws::String uploadId;
@@ -39,32 +40,30 @@ struct S3Sink final /*: public cudf::io::data_sink*/
     // [[nodiscard]] static std::ofstream makeOutputFile(std::filesystem::path const &p);
 
   public:
-    S3Sink(/*std::shared_ptr<Aws::S3::S3Client> s3client,*/
+    S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client,
       std::string_view s3path,
       std::size_t const uploadPartSize = DEFAULT_UPLOAD_SIZE);
 
-    // void host_write(void const *data, std::size_t size) override;
+    void host_write(void const *data, std::size_t size) override;
 
-    // [[nodiscard]] constexpr bool supports_device_write() const override {
-    //     return false;
-    // }
+    [[nodiscard]] constexpr bool supports_device_write() const override {
+        return false;
+    }
 
-    // [[nodiscard]] constexpr bool is_device_write_preferred(std::size_t) const override {
-    //     return false;
-    // }
+    [[nodiscard]] constexpr bool is_device_write_preferred(std::size_t) const override {
+        return false;
+    }
 
-    // [[noreturn]] void device_write(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
+    [[noreturn]] void device_write(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
 
-    // [[noreturn]] std::future<void>
-    //   device_write_async(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
+    [[noreturn]] std::future<void>
+      device_write_async(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
 
-    // void flush() override;
+    void flush() override;
 
-    // void finish();
+    void finish();
 
-    // std::size_t bytes_written() noexcept override {
-    //     return bytesWritten;
-    // }
+    std::size_t bytes_written() noexcept override;
 };
 
 }// namespace gpu_compact::cudf_compact::s3

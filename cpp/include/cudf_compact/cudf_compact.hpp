@@ -1,5 +1,7 @@
 #pragma once
 
+#include <aws/core/Aws.h>
+#include <aws/s3/S3Client.h>
 #include <cudf/ast/expressions.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
@@ -25,21 +27,20 @@
 #include <type_traits>
 #include <utility>
 
-namespace gpu_compact::cudf_compact {
+namespace gpu_compact::cudf_compact
+{
 
 CompactionResult merge_sorted_files(CompactionInput const &inputData);
 
 template<typename CharT>
-[[nodiscard]] bool iequals(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) noexcept
-{
+[[nodiscard]] bool iequals(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) noexcept {
     static auto defLocale = std::locale();
     return std::ranges::equal(
       lhs, rhs, [&](auto a, auto b) { return std::tolower(a, defLocale) == std::tolower(b, defLocale); });
 }
 
 // move most of below code to a CPP file
-inline cudf::io::compression_type toCudfCompression(std::string_view compression) noexcept
-{
+inline cudf::io::compression_type toCudfCompression(std::string_view compression) noexcept {
     using namespace std::literals;
     if (iequals(compression, "uncompressed"sv)) {
         return cudf::io::compression_type::NONE;
@@ -65,8 +66,7 @@ inline cudf::io::compression_type toCudfCompression(std::string_view compression
 
 inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInput const &details,
   cudf::io::sink_info const &sink,
-  cudf::io::table_input_metadata &&tim) noexcept
-{
+  cudf::io::table_input_metadata &&tim) noexcept {
     using namespace std::literals;// for string_view
     // TODO: sanity check the input details here! static_casts from max row group sizes, etc.
     return cudf::io::chunked_parquet_writer_options::builder(sink)
@@ -83,39 +83,35 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
 }
 
 inline std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
-  cudf::io::table_input_metadata &&tim)
-{
-    cudf::io::sink_info destination = make_sink_info(details.outputFile);
+  cudf::io::table_input_metadata &&tim,
+  std::shared_ptr<Aws::S3::S3Client> &s3client) {
+    cudf::io::sink_info destination = make_sink_info(details.outputFile, s3client);
     auto wopts = write_opts(details, destination, std::move(tim));
     return std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build());
 }
 
 struct literal_converter
 {
-    template<typename T> static constexpr bool is_supported() noexcept
-    {
+    template<typename T> static constexpr bool is_supported() noexcept {
         return std::is_same_v<T, cudf::string_view> || (cudf::is_fixed_width<T>() && !cudf::is_fixed_point<T>());
     }
 
     template<typename T, std::enable_if_t<is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()(cudf::scalar &_value)
-    {
+    cudf::ast::literal operator()(cudf::scalar &_value) {
         using scalar_type = cudf::scalar_type_t<T>;
         auto &low_literal_value = static_cast<scalar_type &>(_value);
         return cudf::ast::literal(low_literal_value);
     }
 
     template<typename T, std::enable_if_t<!is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value)
-    {
+    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value) {
         CUDF_FAIL("Unsupported type for literal");
     }
 };
 
 // make pooled memory resource and return a shared pointer to it. the shared resource must stay
 // in scope for as long as it is needed by the underlying cudf library.
-[[nodiscard]] inline auto make_pooled_mr()
-{
+[[nodiscard]] inline auto make_pooled_mr() {
     auto cuda_mr = std::make_shared<rmm::mr::cuda_memory_resource>();
     auto mr =
       rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, rmm::percent_of_free_device_memory(80));
@@ -123,8 +119,7 @@ struct literal_converter
     return mr;
 }
 
-[[nodiscard]] inline std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept
-{
+[[nodiscard]] inline std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept {
     return std::chrono::steady_clock::now();
 }
 

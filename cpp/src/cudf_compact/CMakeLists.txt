@@ -27,6 +27,11 @@ target_include_directories(cudf_compact ${WARNING_GUARD} PUBLIC $<BUILD_INTERFAC
                                                                 $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 target_compile_features(cudf_compact PUBLIC cxx_std_20 cuda_std_20)
 set_target_properties(cudf_compact PROPERTIES CUDA_ARCHITECTURES "75")
+target_link_options(
+  cudf_compact
+  BEFORE
+  INTERFACE
+  "LINKER:--copy-dt-needed-entries")
 
 set_source_files_properties(
   ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all")

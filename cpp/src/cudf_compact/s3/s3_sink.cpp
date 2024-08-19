@@ -1,8 +1,10 @@
 #include "cudf_compact/s3/s3_sink.hpp"
 #include "cudf_compact/s3/s3_utils.hpp"
 
-namespace gpu_compact::cudf_compact::s3 {
+#include <exception>
 
+namespace gpu_compact::cudf_compact::s3
+{
 
 // struct S3Sink final : public cudf::io::data_sink
 // {
@@ -14,7 +16,6 @@ namespace gpu_compact::cudf_compact::s3 {
 // Aws::Vector<Aws::S3::Model::CompletedPart> completedParts;
 // Aws::Vector<std::thread> uploadingThreads;
 // ::size_t uploadSize;
-::size_t bytesWritten;
 // ::size_t currentPartNo;
 // ::size_t fileBytesWritten;
 // std::filesystem::path currentFileName;
@@ -27,27 +28,27 @@ namespace gpu_compact::cudf_compact::s3 {
 // void uploadPart(std::filesystem::path const &p);
 
 // [[nodiscard]] static std::ofstream makeOutputFile(std::filesystem::path const &p);
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+S3Sink::S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client, std::string_view s3path, std::size_t const uploadPartSize)
+  : client(s3client), bucket(getBucket(s3path)), key(getKey(s3path)), uploadSize(uploadPartSize) {}
 
-S3Sink::S3Sink(/*std::shared_ptr<Aws::S3::S3Client> s3client,*/ std::string_view s3path,
-  std::size_t const uploadPartSize)
-  : /*client(s3client),*/ bucket(getBucket(s3path)), key(getKey(s3path)), uploadSize(uploadPartSize) {}
+void S3Sink::host_write(void const *data, std::size_t size) {}
 
-//     void host_write(void const *data, std::size_t size) override;
+[[noreturn]] void S3Sink::device_write(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) {
+    throw std::runtime_error("device_write is not supported on S3Sink");
+}
 
-//     [[nodiscard]] constexpr bool supports_device_write() const override { return false; }
+[[noreturn]] std::future<void>
+  S3Sink::device_write_async(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) {
+    throw std::runtime_error("device_write is not supported on S3Sink");
+}
 
-//     [[nodiscard]] constexpr bool is_device_write_preferred(std::size_t) const override { return false; }
+void S3Sink::flush() {}
 
-//     [[noreturn]] void device_write(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
+void S3Sink::finish() {}
 
-//     [[noreturn]] std::future<void>
-//       device_write_async(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
-
-//     void flush() override;
-
-//     void finish();
-
-//     std::size_t bytes_written() noexcept override { return bytesWritten; }
-// };
+std::size_t S3Sink::bytes_written() noexcept {
+    return bytesWritten;
+}
 
 }// namespace gpu_compact::cudf_compact::s3

@@ -18,6 +18,7 @@
 #include "cudf_compact/metadata.hpp"
 #include "cudf_compact/parquet_types.h"
 #include "cudf_compact/ranges.hpp"
+#include "cudf_compact/s3/s3_utils.hpp"
 
 #include <algorithm>// std::reduce
 #include <cstddef>
@@ -30,11 +31,11 @@
 #include <vector>
 
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-namespace gpu_compact::cudf_compact {
+namespace gpu_compact::cudf_compact
+{
 
 cudf::io::table_with_metadata
-  table_for_range(CompactionInput const &details, scalar_ptr const &low, scalar_ptr const &high)
-{
+  table_for_range(CompactionInput const &details, scalar_ptr const &low, scalar_ptr const &high) {
     // TODO replace with logic to find number for row key+sort key columns
     cudf::size_type const range_col = 0;
 
@@ -74,8 +75,8 @@ cudf::io::table_with_metadata
 std::size_t write_range_low_mem(CompactionInput const &details,
   scalar_ptr const &low,
   scalar_ptr const &high,
-  std::unique_ptr<cudf::io::parquet_chunked_writer> &writer)
-{
+  std::unique_ptr<cudf::io::parquet_chunked_writer> &writer,
+  std::shared_ptr<Aws::S3::S3Client> &s3client) {
     auto table = table_for_range(details, low, high);
     if (table.tbl.get() == nullptr) return 0;
 
@@ -83,7 +84,7 @@ std::size_t write_range_low_mem(CompactionInput const &details,
         // now open output file
         if (writer.get() == nullptr) {
             auto tim = cudf::io::table_input_metadata{ table.metadata };
-            writer = make_writer(details, std::move(tim));
+            writer = make_writer(details, std::move(tim), s3client);
         }
 
         SPDLOG_INFO("Writing chunk {:d}", table.tbl->num_rows());
@@ -100,8 +101,7 @@ int walk_schema(parquet::format::FileMetaData const &fmd,
   std::vector<col_schema> &flat_schema,
   int idx,
   int max_def_level,
-  int max_rep_level)
-{
+  int max_rep_level) {
     if (idx >= 0 && idx < static_cast<int>(fmd.schema.size())) {
         parquet::format::SchemaElement const &se = fmd.schema[idx];
         if (se.repetition_type == parquet::format::FieldRepetitionType::OPTIONAL) {
@@ -133,8 +133,7 @@ std::optional<size_t> page_size(col_schema const &schema,
   parquet::format::ColumnIndex const &colidx,
   int pg_idx,
   int num_pages,
-  int num_rows_in_chunk)
-{
+  int num_rows_in_chunk) {
     auto const pg_start_row = offidx.page_locations[pg_idx].first_row_index;
     auto const pg_end_row =
       pg_idx == (num_pages - 1) ? num_rows_in_chunk : offidx.page_locations[pg_idx + 1].first_row_index;
@@ -207,8 +206,8 @@ std::optional<size_t> page_size(col_schema const &schema,
     }
 }
 
-CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &details)
-{
+CompactionResult mergeSortedS3Files(CompactionInput const &details) {
+    auto s3client = gpu_compact::cudf_compact::s3::makeClient();
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges
     cudf::size_type const range_col = { 0 };
@@ -326,7 +325,7 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &deta
         scalar_pair &curr = ranges.front();
         SPDLOG_INFO("attempt range {} , {}", std::get<0>(curr), std::get<2>(curr));
         try {
-            count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer);
+            count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer, s3client);
             ranges.pop_front();
         } catch (std::exception const &e) {
             SPDLOG_ERROR("processing range failed {}", e.what());
@@ -342,6 +341,13 @@ CompactionResult merge_sorted_files([[maybe_unused]] CompactionInput const &deta
     using fseconds = std::chrono::duration<double, std::chrono::seconds::period>;
     SPDLOG_INFO("total time {} seconds", std::chrono::duration_cast<fseconds>(tend - tstart).count());
     return { count, count };
+}
+
+CompactionResult merge_sorted_files(CompactionInput const &details) {
+    gpu_compact::cudf_compact::s3::initialiseAWS();
+    auto result = mergeSortedS3Files(details);
+    gpu_compact::cudf_compact::s3::shutdownAWS();
+    return result;
 }
 
 }// namespace gpu_compact::cudf_compact

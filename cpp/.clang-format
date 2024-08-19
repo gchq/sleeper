@@ -22,7 +22,7 @@ BraceWrapping:
   AfterControlStatement: false
   AfterEnum: false
   AfterFunction: false
-  AfterNamespace: false
+  AfterNamespace: true
   AfterObjCDeclaration: false
   AfterStruct: true
   AfterUnion: false

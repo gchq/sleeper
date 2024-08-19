@@ -1,14 +1,23 @@
 #pragma once
 
 #include <aws/core/Aws.h>
+#include <aws/s3/S3Client.h>
 
 #include <concepts>
+#include <memory>
 #include <regex>
 #include <string_view>
 
-namespace gpu_compact::cudf_compact::s3 {
+namespace gpu_compact::cudf_compact::s3
+{
 
 inline const std::regex URL_CHECK(R"((s3):///?[-.]?([^\s?.#-]+?)/([^\s]+))");
+
+void initialiseAWS();
+
+void shutdownAWS() noexcept;
+
+std::shared_ptr<Aws::S3::S3Client> makeClient();
 
 Aws::String get_part(std::string_view const s, std::smatch::size_type group);
 
