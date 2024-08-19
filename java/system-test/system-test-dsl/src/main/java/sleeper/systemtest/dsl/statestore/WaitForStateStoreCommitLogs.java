@@ -39,7 +39,7 @@ public class WaitForStateStoreCommitLogs {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         Instant startTime = getRunsAfterTime.minus(QUERY_RUNS_TIME_SLACK);
         return poll.queryUntil("all state store commits are applied", () -> {
-            Instant endTime = Instant.now().plus(QUERY_RUNS_TIME_SLACK);
+            Instant endTime = Instant.now().plus(Duration.ofMinutes(10));
             return driver.getLogsInPeriod(startTime, endTime);
         }, logs -> getRemainingCommits(waitForNumCommitsByTableId, logs).isEmpty());
     }
