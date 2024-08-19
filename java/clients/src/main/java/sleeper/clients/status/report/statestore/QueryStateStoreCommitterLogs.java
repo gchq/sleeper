@@ -47,16 +47,14 @@ public class QueryStateStoreCommitterLogs {
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
-        GetQueryResultsResponse response = getSinglePageInPeriod(logGroupName, startTime, endTime);
-        if (response.results().size() < PAGE_LIMIT) {
-            return response.results().stream()
-                    .map(ReadStateStoreCommitterLogs::read)
-                    .collect(toUnmodifiableList());
+        List<StateStoreCommitterLogEntry> logs = getSinglePageInPeriod(logGroupName, startTime, endTime)
+                .results().stream()
+                .map(ReadStateStoreCommitterLogs::read)
+                .collect(toUnmodifiableList());
+        if (logs.size() < PAGE_LIMIT) {
+            return logs;
         } else {
-            // TODO read rest of logs
-            return response.results().stream()
-                    .map(ReadStateStoreCommitterLogs::read)
-                    .collect(toUnmodifiableList());
+            return logs;
         }
     }
 
