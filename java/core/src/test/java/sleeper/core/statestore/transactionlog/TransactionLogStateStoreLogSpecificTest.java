@@ -16,6 +16,8 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -48,219 +50,229 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         store.initialise(partitions.buildList());
     }
 
-    @Test
-    void shouldAddTransactionWhenAnotherProcessAddedATransaction() throws Exception {
-        // Given
-        PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-        otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
-                afterRootSplit.getPartition("root"),
-                afterRootSplit.getPartition("L"), afterRootSplit.getPartition("R"));
+    @Nested
+    @DisplayName("Retry adding transactions")
+    class RetryAddTransaction {
 
-        // When
-        PartitionTree afterLeftSplit = partitions.splitToNewChildren("L", "LL", "LR", "f").buildTree();
-        store.atomicallyUpdatePartitionAndCreateNewOnes(
-                afterLeftSplit.getPartition("L"),
-                afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"));
+        @Test
+        void shouldAddTransactionWhenAnotherProcessAddedATransaction() throws Exception {
+            // Given
+            PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
+            otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
+                    afterRootSplit.getPartition("root"),
+                    afterRootSplit.getPartition("L"), afterRootSplit.getPartition("R"));
 
-        // Then
-        assertThat(new PartitionTree(store.getAllPartitions()))
-                .isEqualTo(afterLeftSplit);
-        assertThat(retryWaits).isEmpty();
+            // When
+            PartitionTree afterLeftSplit = partitions.splitToNewChildren("L", "LL", "LR", "f").buildTree();
+            store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    afterLeftSplit.getPartition("L"),
+                    afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"));
+
+            // Then
+            assertThat(new PartitionTree(store.getAllPartitions()))
+                    .isEqualTo(afterLeftSplit);
+            assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldRetryAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
+            // Given
+            FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+            FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+            FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
+            store.addFile(file1);
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                otherProcess().addFile(file2);
+            });
+
+            // When
+            store.addFile(file3);
+
+            // Then
+            assertThat(store.getFileReferences())
+                    .containsExactly(file1, file2, file3);
+            assertThat(retryWaits).hasSize(1);
+        }
+
+        @Test
+        void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() throws Exception {
+            // Given we cause a transaction conflict by adding another file during an update
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                store.addFile(otherProcessFile);
+            });
+
+            // When
+            store.addFile(file);
+
+            // Then
+            assertThat(store.getFileReferences())
+                    .containsExactly(file, otherProcessFile);
+            assertThat(retryWaits).hasSize(1);
+        }
+
+        @Test
+        void shouldFailAfterTooManyConflictsAddingTransaction() throws Exception {
+            // Given we only allow one attempt adding a transaction
+            store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
+            // And we cause a transaction conflict by adding another file during an update
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                store.addFile(otherProcessFile);
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
+            assertThat(store.getFileReferences())
+                    .containsExactly(otherProcessFile);
+            assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldFailIfNoAttemptsConfigured() throws Exception {
+            // Given
+            store = stateStore(builder -> builder.maxAddTransactionAttempts(0));
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(StateStoreException.class)
+                    .cause().isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("No attempts made");
+            assertThat(store.getFileReferences())
+                    .isEmpty();
+            assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldFailIfReadingTransactionsFails() throws Exception {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            RuntimeException failure = new RuntimeException("Unexpected failure");
+            filesLogStore.atStartOfNextReadTransactions(() -> {
+                throw failure;
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(StateStoreException.class)
+                    .cause().isSameAs(failure);
+            assertThat(store.getFileReferences())
+                    .isEmpty();
+            assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldFailOnUnexpectedFailureAddingTransaction() throws Exception {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            RuntimeException failure = new RuntimeException("Unexpected failure");
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                throw failure;
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> store.addFile(file))
+                    .isInstanceOf(StateStoreException.class)
+                    .cause().isSameAs(failure);
+            assertThat(store.getFileReferences())
+                    .isEmpty();
+            assertThat(retryWaits).isEmpty();
+        }
     }
 
-    @Test
-    void shouldRetryAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
-        // Given
-        FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
-        FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
-        FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
-        store.addFile(file1);
-        filesLogStore.atStartOfNextAddTransaction(() -> {
-            otherProcess().addFile(file2);
-        });
+    @Nested
+    @DisplayName("Ignore empty transactions")
+    class IgnoreEmptyTransactions {
 
-        // When
-        store.addFile(file3);
+        @Test
+        void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-        // Then
-        assertThat(store.getFileReferences())
-                .containsExactly(file1, file2, file3);
-        assertThat(retryWaits).hasSize(1);
-    }
+            // When
+            SplitFileReferences.from(store).split();
 
-    @Test
-    void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() throws Exception {
-        // Given we cause a transaction conflict by adding another file during an update
-        FileReference file = fileFactory().rootFile("file.parquet", 100);
-        FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
-        filesLogStore.atStartOfNextAddTransaction(() -> {
-            store.addFile(otherProcessFile);
-        });
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-        // When
-        store.addFile(file);
+        @Test
+        void shouldNotAddSplitFileTransactionWithNoRequestsDirectly() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-        // Then
-        assertThat(store.getFileReferences())
-                .containsExactly(file, otherProcessFile);
-        assertThat(retryWaits).hasSize(1);
-    }
+            // When
+            store.splitFileReferences(List.of());
 
-    @Test
-    void shouldFailAfterTooManyConflictsAddingTransaction() throws Exception {
-        // Given we only allow one attempt adding a transaction
-        store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
-        // And we cause a transaction conflict by adding another file during an update
-        FileReference file = fileFactory().rootFile("file.parquet", 100);
-        FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
-        filesLogStore.atStartOfNextAddTransaction(() -> {
-            store.addFile(otherProcessFile);
-        });
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-        // When / Then
-        assertThatThrownBy(() -> store.addFile(file))
-                .isInstanceOf(StateStoreException.class)
-                .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
-        assertThat(store.getFileReferences())
-                .containsExactly(otherProcessFile);
-        assertThat(retryWaits).isEmpty();
-    }
+        @Test
+        void shouldNotAddNoFiles() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-    @Test
-    void shouldFailIfNoAttemptsConfigured() throws Exception {
-        // Given
-        store = stateStore(builder -> builder.maxAddTransactionAttempts(0));
-        FileReference file = fileFactory().rootFile("file.parquet", 100);
+            // When
+            store.addFiles(List.of());
 
-        // When / Then
-        assertThatThrownBy(() -> store.addFile(file))
-                .isInstanceOf(StateStoreException.class)
-                .cause().isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No attempts made");
-        assertThat(store.getFileReferences())
-                .isEmpty();
-        assertThat(retryWaits).isEmpty();
-    }
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-    @Test
-    void shouldFailIfReadingTransactionsFails() throws Exception {
-        // Given
-        FileReference file = fileFactory().rootFile("file.parquet", 100);
-        RuntimeException failure = new RuntimeException("Unexpected failure");
-        filesLogStore.atStartOfNextReadTransactions(() -> {
-            throw failure;
-        });
+        @Test
+        void shouldNotAddNoFilesWithReferences() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-        // When / Then
-        assertThatThrownBy(() -> store.addFile(file))
-                .isInstanceOf(StateStoreException.class)
-                .cause().isSameAs(failure);
-        assertThat(store.getFileReferences())
-                .isEmpty();
-        assertThat(retryWaits).isEmpty();
-    }
+            // When
+            store.addFilesWithReferences(List.of());
 
-    @Test
-    void shouldFailOnUnexpectedFailureAddingTransaction() throws Exception {
-        // Given
-        FileReference file = fileFactory().rootFile("file.parquet", 100);
-        RuntimeException failure = new RuntimeException("Unexpected failure");
-        filesLogStore.atStartOfNextAddTransaction(() -> {
-            throw failure;
-        });
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-        // When / Then
-        assertThatThrownBy(() -> store.addFile(file))
-                .isInstanceOf(StateStoreException.class)
-                .cause().isSameAs(failure);
-        assertThat(store.getFileReferences())
-                .isEmpty();
-        assertThat(retryWaits).isEmpty();
-    }
+        @Test
+        void shouldNotAssignJobIdsWithNoRequests() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-    @Test
-    void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+            // When
+            store.assignJobIds(List.of());
 
-        // When
-        SplitFileReferences.from(store).split();
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
+        @Test
+        void shouldNotAssignJobIdsWithNoFiles() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-    @Test
-    void shouldNotAddSplitFileTransactionWithNoRequestsDirectly() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+            // When
+            store.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
+                    "test-job", "test-partition", List.of())));
 
-        // When
-        store.splitFileReferences(List.of());
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
 
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
+        @Test
+        void shouldNotDeleteNoGCFiles() throws Exception {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
-    @Test
-    void shouldNotAddNoFiles() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+            // When
+            store.deleteGarbageCollectedFileReferenceCounts(List.of());
 
-        // When
-        store.addFiles(List.of());
-
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
-
-    @Test
-    void shouldNotAddNoFilesWithReferences() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
-
-        // When
-        store.addFilesWithReferences(List.of());
-
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
-
-    @Test
-    void shouldNotAssignJobIdsWithNoRequests() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
-
-        // When
-        store.assignJobIds(List.of());
-
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
-
-    @Test
-    void shouldNotAssignJobIdsWithNoFiles() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
-
-        // When
-        store.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
-                "test-job", "test-partition", List.of())));
-
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
-    }
-
-    @Test
-    void shouldNotDeleteNoGCFiles() throws Exception {
-        // Given
-        long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
-
-        // When
-        store.deleteGarbageCollectedFileReferenceCounts(List.of());
-
-        // Then
-        assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
     }
 
     private StateStore otherProcess() {
