@@ -28,6 +28,7 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 
 /**
  * Creates a client to access the state store for a Sleeper table. The client may not be thread safe, as it may cache
@@ -38,18 +39,18 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration configuration;
-    private final boolean singleCommitter;
+    private final boolean committerProcess;
 
     public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
         this(instanceProperties, s3, dynamoDB, configuration, false);
     }
 
-    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean singleCommitter) {
+    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.configuration = configuration;
-        this.singleCommitter = singleCommitter;
+        this.committerProcess = committerProcess;
     }
 
     /**
@@ -62,7 +63,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  configuration      the Hadoop configuration
      * @return                    the factory
      */
-    public static StateStoreFactory forSingleCommitter(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
         return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
     }
 
@@ -83,14 +84,22 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
             return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)
-                    .updateLogBeforeAddTransaction(!singleCommitter)
+                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
                     .build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
             return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
-                    .updateLogBeforeAddTransaction(!singleCommitter)
+                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
                     .build();
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
+    }
+
+    private boolean isUpdateLogBeforeAddTransaction(TableProperties tableProperties) {
+        if (committerProcess) {
+            return tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT);
+        } else {
+            return true;
+        }
     }
 }

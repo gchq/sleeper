@@ -1258,3 +1258,11 @@ sleeper.default.ingest.job.files.commit.async=true
 # If true, bulk import will add files via requests sent to the state store committer lambda
 # asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
 sleeper.default.bulk.import.job.files.commit.async=true
+
+# When using the transaction log state store, this sets whether to update from the transaction log
+# before adding a transaction in the asynchronous state store committer.
+# If asynchronous commits are used for all or almost all state store updates, this can be false to
+# avoid the extra queries.
+# If the state store is commonly updated directly outside of the asynchronous committer, this can be
+# true to avoid conflicts and retries.
+sleeper.default.statestore.committer.update.every.commit=false

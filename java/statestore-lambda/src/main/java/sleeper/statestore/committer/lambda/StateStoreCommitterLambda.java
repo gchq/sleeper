@@ -106,7 +106,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreFactory stateStoreFactory = StateStoreFactory.forSingleCommitter(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         return new StateStoreCommitter(
                 tablePropertiesProvider,
