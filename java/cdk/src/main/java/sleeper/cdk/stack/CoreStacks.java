@@ -114,6 +114,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteReadyForGCFiles(grantee);
         dataStack.grantReadDelete(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
     public void grantCreateCompactionJobs(IGrantable grantee) {
@@ -140,6 +141,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWritePartitions(grantee);
         dataStack.grantRead(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
