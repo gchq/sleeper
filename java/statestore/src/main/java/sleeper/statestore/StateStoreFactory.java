@@ -38,12 +38,32 @@ public class StateStoreFactory {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration configuration;
+    private final boolean singleCommitter;
 
     public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        this(instanceProperties, s3, dynamoDB, configuration, false);
+    }
+
+    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean singleCommitter) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.configuration = configuration;
+        this.singleCommitter = singleCommitter;
+    }
+
+    /**
+     * Creates a factory for state stores which will be updated by a single process. Used in the state store committer,
+     * to avoid the need to check constantly for new transactions in the transaction log implementation.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  s3                 the S3 client
+     * @param  dynamoDB           the DynamoDB client
+     * @param  configuration      the Hadoop configuration
+     * @return                    the factory
+     */
+    public static StateStoreFactory forSingleCommitter(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
     }
 
     /**
@@ -61,10 +81,14 @@ public class StateStoreFactory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, configuration);
+            return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)
+                    .updateLogBeforeAddTransaction(!singleCommitter)
+                    .build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
-            return DynamoDBTransactionLogStateStoreNoSnapshots.create(instanceProperties, tableProperties, dynamoDB, s3);
+            return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
+                    .updateLogBeforeAddTransaction(!singleCommitter)
+                    .build();
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }
