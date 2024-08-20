@@ -96,7 +96,11 @@ public class LoggedDuration {
 
     private String getLongString() {
         String output = "";
-        long seconds = duration.getSeconds();
+        boolean negative = duration.getSeconds() < 0;
+        if (negative) {
+            output += "-";
+        }
+        long seconds = Math.abs(duration.getSeconds());
         if (seconds >= 3600) {
             output += (seconds / 3600) + " hour" + ((seconds / 3600) > 1 ? "s " : " ");
             seconds %= 3600;
@@ -105,14 +109,23 @@ public class LoggedDuration {
             output += (seconds / 60) + " minute" + ((seconds / 60) > 1 ? "s " : " ");
             seconds %= 60;
         }
-        output += FORMATTER.format(seconds + (double) duration.getNano() / 1_000_000_000) + " second"
-                + (seconds > 1 || seconds == 0 ? "s" : "");
+        double fraction = duration.getNano() / 1_000_000_000.0;
+        if (negative) {
+            fraction = -fraction;
+        }
+        double secondsWithFraction = seconds + fraction;
+        output += FORMATTER.format(secondsWithFraction) + " second"
+                + (secondsWithFraction == 1 ? "" : "s");
         return output;
     }
 
     private String getShortString() {
         String output = "";
-        long seconds = duration.getSeconds();
+        boolean negative = duration.getSeconds() < 0;
+        if (negative) {
+            output += "-";
+        }
+        long seconds = Math.abs(duration.getSeconds());
         if (seconds >= 3600) {
             output += (seconds / 3600) + "h ";
             seconds %= 3600;
@@ -121,7 +134,11 @@ public class LoggedDuration {
             output += (seconds / 60) + "m ";
             seconds %= 60;
         }
-        output += FORMATTER.format(seconds + (double) duration.getNano() / 1_000_000_000) + "s";
+        double fraction = duration.getNano() / 1_000_000_000.0;
+        if (negative) {
+            fraction = -fraction;
+        }
+        output += FORMATTER.format(seconds + fraction) + "s";
         return output;
     }
 }
