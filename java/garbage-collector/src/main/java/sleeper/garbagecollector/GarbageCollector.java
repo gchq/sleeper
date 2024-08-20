@@ -15,6 +15,8 @@
  */
 package sleeper.garbagecollector;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -25,6 +27,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -36,9 +40,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Deletes files that are ready for garbage collection and removes them from the Sleeper table. Queries the
@@ -50,20 +58,16 @@ public class GarbageCollector {
     private final DeleteFile deleteFile;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-
-    public GarbageCollector(Configuration conf,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
-        this(filename -> deleteFileAndSketches(filename, conf),
-                instanceProperties, stateStoreProvider);
-    }
+    private final SendAsyncCommit sendAsyncCommit;
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider) {
+            StateStoreProvider stateStoreProvider,
+            SendAsyncCommit sendAsyncCommit) {
         this.deleteFile = deleteFile;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
+        this.sendAsyncCommit = sendAsyncCommit;
     }
 
     public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
@@ -104,12 +108,12 @@ public class GarbageCollector {
             String filename = readyForGC.next();
             batch.add(filename);
             if (batch.size() == garbageCollectorBatchSize) {
-                deleteBatch(batch, stateStore, deleted);
+                deleteBatch(batch, tableProperties, stateStore, deleted);
                 batch.clear();
             }
         }
         if (!batch.isEmpty()) {
-            deleteBatch(batch, stateStore, deleted);
+            deleteBatch(batch, tableProperties, stateStore, deleted);
         }
     }
 
@@ -122,11 +126,17 @@ public class GarbageCollector {
         return readyForGC;
     }
 
-    private void deleteBatch(List<String> batch, StateStore stateStore, TableFilesDeleted deleted) {
+    private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
         List<String> deletedFilenames = deleteFiles(batch, deleted);
+        LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
-            stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
-            LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
+            boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
+            if (asyncCommit) {
+                sendAsyncCommit.sendCommit(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), deletedFilenames));
+            } else {
+                stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
+                LOGGER.info("Applied deletion to state store");
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to update state store for files: {}", deletedFilenames, e);
             deleted.failedStateStoreUpdate(deletedFilenames, e);
@@ -153,10 +163,12 @@ public class GarbageCollector {
         void deleteFileAndSketches(String filename) throws IOException;
     }
 
-    private static void deleteFileAndSketches(String filename, Configuration conf) throws IOException {
-        deleteFile(filename, conf);
-        String sketchesFile = filename.replace(".parquet", ".sketches");
-        deleteFile(sketchesFile, conf);
+    public static DeleteFile deleteFileAndSketches(Configuration conf) {
+        return filename -> {
+            deleteFile(filename, conf);
+            String sketchesFile = filename.replace(".parquet", ".sketches");
+            deleteFile(sketchesFile, conf);
+        };
     }
 
     private static void deleteFile(String filename, Configuration conf) throws IOException {
@@ -171,5 +183,22 @@ public class GarbageCollector {
             throw new IOException("File could not be deleted: " + filename);
         }
         LOGGER.info("Deleted file {}", filename);
+    }
+
+    /**
+     * Sends state store updates to the state store committer.
+     */
+    @FunctionalInterface
+    public interface SendAsyncCommit {
+        void sendCommit(GarbageCollectionCommitRequest commitRequest);
+    }
+
+    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
+        GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
+        return request -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withMessageBody(serDe.toJson(request))
+                .withMessageGroupId(request.getTableId())
+                .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }
 }
