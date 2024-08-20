@@ -218,5 +218,18 @@ public class LoggedDurationTest {
             // Then
             assertThat(output).isEqualTo("-12h 34m 56.789s");
         }
+
+        @Test
+        void shouldOutputDurationWithOnlyHours() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T07:00:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T19:00:00Z");
+
+            // When
+            String output = LoggedDuration.withShortOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("12h 0s");
+        }
     }
 }
