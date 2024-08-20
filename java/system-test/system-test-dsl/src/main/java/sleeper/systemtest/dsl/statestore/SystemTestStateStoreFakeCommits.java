@@ -55,7 +55,6 @@ public class SystemTestStateStoreFakeCommits {
 
     public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
         waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
-        waitForNumCommitsByTableId.clear();
         return this;
     }
 
