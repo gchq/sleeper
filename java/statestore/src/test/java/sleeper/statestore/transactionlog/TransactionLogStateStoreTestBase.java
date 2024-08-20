@@ -69,10 +69,7 @@ public class TransactionLogStateStoreTestBase {
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
-        StateStore stateStore = stateStoreBuilder(tableProperties).build();
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
+        return stateStore(stateStoreBuilder(tableProperties));
     }
 
     protected StateStore stateStore(TransactionLogStateStore.Builder builder) {
