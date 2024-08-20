@@ -60,7 +60,8 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * This will detect depending on the Sleeper table, whether that table's state store is updated by a single process
      * asynchronously, or whether updates are made directly by multiple processes. This will configure the state store
      * client appropriately if only a single process updates that state store, and will assume that this is that
-     * process.
+     * process. The current process should handle almost all updates to that state store across the whole Sleeper
+     * instance.
      *
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3                 the S3 client
