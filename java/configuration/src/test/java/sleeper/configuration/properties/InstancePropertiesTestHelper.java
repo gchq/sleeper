@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
@@ -111,9 +112,10 @@ public class InstancePropertiesTestHelper {
         instanceProperties.setNumber(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 1);
 
         instanceProperties.set(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, "false");
+        instanceProperties.set(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT, "false");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
 
         // Ingest
-        instanceProperties.set(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, Integer.MAX_VALUE);
         instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 128);
         instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);

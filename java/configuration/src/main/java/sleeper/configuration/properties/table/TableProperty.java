@@ -69,6 +69,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -206,6 +207,12 @@ public interface TableProperty extends SleeperProperty {
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.gc.commit.async")
+            .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT)
+            .description("If true, deletion of files will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the garbage collector lambda will apply synchronously.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
