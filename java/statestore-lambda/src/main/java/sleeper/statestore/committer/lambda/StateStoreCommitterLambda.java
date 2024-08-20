@@ -39,6 +39,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
@@ -105,7 +106,8 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        StateStoreFactory stateStoreFactory = StateStoreFactory.forSingleCommitter(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         return new StateStoreCommitter(
                 tablePropertiesProvider,
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
