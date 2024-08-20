@@ -29,8 +29,7 @@ std::shared_ptr<Aws::S3::S3Client> makeClient() {
 }
 
 Aws::String get_part(std::string_view s, std::smatch::size_type const group) {
-    if (std::match_results<std::string_view::const_iterator> mr;
-        std::regex_match(s.cbegin(), s.cend(), mr, URL_CHECK)) {
+    if (std::match_results<std::string_view::const_iterator> mr; std::regex_match(s.cbegin(), s.cend(), mr, S3_CHECK)) {
         if (mr.size() < 4) {
             throw std::logic_error("S3 URL regex failed to find 4 match groups!");
         } else {

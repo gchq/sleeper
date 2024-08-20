@@ -328,7 +328,7 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
             count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer, s3client);
             ranges.pop_front();
         } catch (std::exception const &e) {
-            SPDLOG_ERROR("processing range failed {}", e.what());
+            SPDLOG_ERROR("processing range {}, {} failed {}", std::get<0>(curr), std::get<2>(curr), e.what());
             throw;
         }
     }

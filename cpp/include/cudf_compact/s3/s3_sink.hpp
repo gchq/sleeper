@@ -21,12 +21,12 @@ struct S3Sink final : public cudf::io::data_sink
     std::shared_ptr<Aws::S3::S3Client> client;
     Aws::String bucket;
     Aws::String key;
-    // Aws::String uploadId;
-    // Aws::Vector<Aws::S3::Model::CompletedPart> completedParts;
+    Aws::String uploadId;
+    Aws::Vector<Aws::String> eTags;
     // Aws::Vector<std::thread> uploadingThreads;
-    std::size_t uploadSize;
+    std::size_t uploadSize = 0;
     std::size_t bytesWritten;
-    // ::size_t currentPartNo;
+    int partNo;
     // ::size_t fileBytesWritten;
     // std::filesystem::path currentFileName;
     // std::ofstream output;

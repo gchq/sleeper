@@ -30,8 +30,7 @@ using gpu_compact::cudf_compact::CompactionResult;
 #include <internal_use_only/config.hpp>
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
-int main(int argc, const char **argv)
-{
+int main(int argc, const char **argv) {
     configure_logging();
     configure_locale(std::cout);
     try {
@@ -126,7 +125,5 @@ int main(int argc, const char **argv)
         auto [rowsRead, rowsWritten] = gpu_compact::cudf_compact::merge_sorted_files(details);
 
         SPDLOG_INFO("Compaction finished, rows read = {:Ld}, rows written = {:Ld}", rowsRead, rowsWritten);
-    } catch (std::exception const &e) {
-        spdlog::error("Unhandled exception in main: {}", e.what());
-    }
+    } catch (std::exception const &e) { SPDLOG_ERROR("Unhandled exception in main: {}", e.what()); }
 }
