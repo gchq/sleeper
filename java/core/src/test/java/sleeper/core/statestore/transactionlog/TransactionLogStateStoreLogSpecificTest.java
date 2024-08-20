@@ -95,6 +95,25 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
+        void shouldRetryAddTransactionWhenSetNotToReadFirstAndAnotherProcessAddedATransaction() throws Exception {
+            // Given
+            FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+            FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+            FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
+            store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
+            store.addFile(file1);
+            otherProcess().addFile(file2);
+
+            // When
+            store.addFile(file3);
+
+            // Then
+            assertThat(store.getFileReferences())
+                    .containsExactly(file1, file2, file3);
+            assertThat(retryWaits).hasSize(1);
+        }
+
+        @Test
         void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() throws Exception {
             // Given we cause a transaction conflict by adding another file during an update
             FileReference file = fileFactory().rootFile("file.parquet", 100);
