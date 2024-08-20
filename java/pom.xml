@@ -115,7 +115,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.7</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.27.7</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.27.8</aws-java-sdk-v2.version>
         <aws-crt.version>0.30.8</aws-crt.version>
         <aws-lambda-java-events.version>3.13.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -134,7 +134,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.3.0-jre</guava.version>
-        <cdk.version>2.152.0</cdk.version>
+        <cdk.version>2.153.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.11.0</gson.version>

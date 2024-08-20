@@ -54,6 +54,11 @@ public interface GarbageCollectionProperty {
                     "basis.")
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.default.gc.commit.async")
+            .description("If true, deletion of files will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the garbage collector lambda will apply synchronously.")
+            .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
