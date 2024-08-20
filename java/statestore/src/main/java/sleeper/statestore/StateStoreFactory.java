@@ -56,6 +56,11 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     /**
      * Creates a factory for state stores which will be updated by a single process. Used in the state store committer,
      * to avoid the need to check constantly for new transactions in the transaction log implementation.
+     * <p>
+     * This will detect depending on the Sleeper table, whether that table's state store is updated by a single process
+     * asynchronously, or whether updates are made directly by multiple processes. This will configure the state store
+     * client appropriately if only a single process updates that state store, and will assume that this is that
+     * process.
      *
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3                 the S3 client
