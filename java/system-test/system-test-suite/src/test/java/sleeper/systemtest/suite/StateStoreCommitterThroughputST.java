@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -83,6 +84,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
+    @Disabled("Fails due to lack of paging over too many logs, will address in stacked issue")
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
