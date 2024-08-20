@@ -21,20 +21,21 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.util.LoggedDuration;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
 public class StateStoreFilesArrowFormatTest {
-
-    private final BufferAllocator allocator = new RootAllocator();
 
     @Test
     void shouldWriteOneFileWithNoReferences() throws Exception {
@@ -151,12 +152,52 @@ public class StateStoreFilesArrowFormatTest {
         assertThat(read(bytes)).isEmpty();
     }
 
+    @Test
+    void shouldWriteManyFiles() throws Exception {
+        // Given
+        Instant startTime = Instant.now();
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        List<AllReferencesToAFile> files = IntStream.rangeClosed(1, 10_000)
+                .mapToObj(partitionNumber -> partitionNumber)
+                .flatMap(partitionNumber -> IntStream.rangeClosed(1, 100)
+                        .mapToObj(fileNumber -> FileReference.builder()
+                                .filename("partition-" + partitionNumber + "/file-" + fileNumber + ".parquet")
+                                .partitionId("partition-" + partitionNumber)
+                                .numberOfRecords((long) fileNumber)
+                                .countApproximate(false)
+                                .onlyContainsDataForThisPartition(true)
+                                .build()))
+                .map(fileReference -> AllReferencesToAFile.fileWithOneReference(fileReference, updateTime))
+                .collect(toUnmodifiableList());
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
+
+        // When
+        Instant beforeWrite = Instant.now();
+        write(files, bytes);
+
+        // Then
+        Instant beforeRead = Instant.now();
+        List<AllReferencesToAFile> found = read(bytes);
+        Instant beforeAssert = Instant.now();
+        assertThat(found).isEqualTo(files);
+        Instant endTime = Instant.now();
+        System.out.printf("Started at %s%n", startTime);
+        System.out.printf("Generated at %s, took %s%n", beforeWrite, LoggedDuration.withFullOutput(startTime, beforeWrite));
+        System.out.printf("Wrote %s bytes at %s, took %s%n", bytes.size(), beforeRead, LoggedDuration.withFullOutput(beforeWrite, beforeRead));
+        System.out.printf("Read at %s, took %s%n", beforeAssert, LoggedDuration.withFullOutput(beforeRead, beforeAssert));
+        System.out.printf("Asserted at %s, took %s%n", endTime, LoggedDuration.withFullOutput(beforeAssert, endTime));
+    }
+
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
-        StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
+        try (BufferAllocator allocator = new RootAllocator()) {
+            StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
+        }
     }
 
     private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
-        return StateStoreFilesArrowFormat.read(allocator,
-                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+        try (BufferAllocator allocator = new RootAllocator()) {
+            return StateStoreFilesArrowFormat.read(allocator,
+                    Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+        }
     }
 }
