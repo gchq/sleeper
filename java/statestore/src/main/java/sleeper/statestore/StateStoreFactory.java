@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
  * Creates a client to access the state store for a Sleeper table. The client may not be thread safe, as it may cache
  * the state.
  */
-public class StateStoreFactory {
+public class StateStoreFactory implements StateStoreProvider.Factory {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
@@ -72,6 +72,7 @@ public class StateStoreFactory {
      * @param  tableProperties the Sleeper table properties
      * @return                 the state store
      */
+    @Override
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
