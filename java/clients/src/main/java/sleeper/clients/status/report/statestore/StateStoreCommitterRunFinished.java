@@ -20,16 +20,23 @@ import java.util.Objects;
 
 public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEntry {
     private final String logStream;
+    private final Instant timestamp;
     private final Instant finishTime;
 
-    public StateStoreCommitterRunFinished(String logStream, Instant finishTime) {
+    public StateStoreCommitterRunFinished(String logStream, Instant timestamp, Instant finishTime) {
         this.logStream = logStream;
+        this.timestamp = timestamp;
         this.finishTime = finishTime;
     }
 
     @Override
     public String getLogStream() {
         return logStream;
+    }
+
+    @Override
+    public Instant getTimestamp() {
+        return timestamp;
     }
 
     public Instant getFinishTime() {
@@ -43,7 +50,7 @@ public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEnt
 
     @Override
     public int hashCode() {
-        return Objects.hash(logStream, finishTime);
+        return Objects.hash(logStream, timestamp, finishTime);
     }
 
     @Override
@@ -55,11 +62,11 @@ public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEnt
             return false;
         }
         StateStoreCommitterRunFinished other = (StateStoreCommitterRunFinished) obj;
-        return Objects.equals(logStream, other.logStream) && Objects.equals(finishTime, other.finishTime);
+        return Objects.equals(logStream, other.logStream) && Objects.equals(timestamp, other.timestamp) && Objects.equals(finishTime, other.finishTime);
     }
 
     @Override
     public String toString() {
-        return "StateStoreCommitterRunFinished{logStream=" + logStream + ", finishTime=" + finishTime + "}";
+        return "StateStoreCommitterRunFinished{logStream=" + logStream + ", timestamp=" + timestamp + ", finishTime=" + finishTime + "}";
     }
 }

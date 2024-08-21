@@ -178,15 +178,15 @@ public class StateStoreCommitterRunsFromEntriesTest {
     }
 
     private StateStoreCommitterRunStarted runStartedOnStream(String logStream) {
-        return add(new StateStoreCommitterRunStarted(logStream, Instant.now()));
+        return add(new StateStoreCommitterRunStarted(logStream, Instant.now(), Instant.now()));
     }
 
     private StateStoreCommitSummary committedOnStream(String logStream) {
-        return add(new StateStoreCommitSummary(logStream, "test-table", "test-commit", Instant.now()));
+        return add(new StateStoreCommitSummary(logStream, Instant.now(), "test-table", "test-commit", Instant.now()));
     }
 
     private StateStoreCommitterRunFinished runFinishedOnStream(String logStream) {
-        return add(new StateStoreCommitterRunFinished(logStream, Instant.now()));
+        return add(new StateStoreCommitterRunFinished(logStream, Instant.now(), Instant.now()));
     }
 
     private <T extends StateStoreCommitterLogEntry> T add(T log) {

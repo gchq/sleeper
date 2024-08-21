@@ -40,6 +40,11 @@ public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogs
     @Override
     public StateStoreCommitterLogs getLogsInPeriod(Instant startTime, Instant endTime) {
         QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instance.getInstanceProperties(), cloudWatch);
-        return new StateStoreCommitterLogEntries(queryLogs.getLogsInPeriod(startTime, endTime));
+        try {
+            return new StateStoreCommitterLogEntries(queryLogs.getLogsInPeriod(startTime, endTime));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -20,10 +20,13 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestStateStoreFakeCommits {
 
@@ -43,13 +46,23 @@ public class SystemTestStateStoreFakeCommits {
         getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
-    public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
-        send(buildCommits.apply(messageFactory()));
+    public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
+        StateStoreCommitMessageFactory factory = messageFactory();
+        send(commits.map(commit -> commit.createMessage(factory)));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
-        send(Stream.of(buildCommit.apply(messageFactory())));
+    public SystemTestStateStoreFakeCommits sendBatchedForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
+                .map(table -> table.get(TABLE_ID))
+                .map(StateStoreCommitMessageFactory::new)
+                .collect(toUnmodifiableList());
+        send(commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory))));
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits send(StateStoreCommitMessage.Commit commit) {
+        send(Stream.of(commit.createMessage(messageFactory())));
         return this;
     }
 
