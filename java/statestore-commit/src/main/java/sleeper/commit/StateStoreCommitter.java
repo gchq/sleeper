@@ -31,12 +31,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.exception.FileAlreadyExistsException;
-import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
@@ -100,27 +94,21 @@ public class StateStoreCommitter {
 
     void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
         CompactionJob job = request.getJob();
+        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(),
-                    stateStoreProvider.getByTableId(job.getTableId()));
-            compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
-                    .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.debug("Successfully committed compaction job {}", job.getId());
-        } catch (ReplaceRequestsFailedException e) {
-            Exception failure = e.getFailures().get(0);
-            if (failure instanceof FileNotFoundException
-                    | failure instanceof FileReferenceNotFoundException
-                    | failure instanceof FileReferenceNotAssignedToJobException
-                    | failure instanceof NewReferenceSameAsOldReferenceException
-                    | failure instanceof FileAlreadyExistsException) {
-                compactionJobStatusStore.jobFailed(compactionJobFailed(job,
-                        new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
-                        .failure(e.getFailures().get(0))
-                        .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            } else {
-                throw e;
-            }
+            CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
+        } catch (Exception e) {
+            compactionJobStatusStore.jobFailed(compactionJobFailed(job,
+                    new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
+                    .failure(e)
+                    .taskId(request.getTaskId())
+                    .jobRunId(request.getJobRunId())
+                    .build());
+            throw e;
         }
+        compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
+                .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
+        LOGGER.debug("Successfully committed compaction job {}", job.getId());
     }
 
     void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {
