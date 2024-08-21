@@ -40,6 +40,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     public TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
+                .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
                 .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
                 .timeBetweenTransactionChecks(builder.timeBetweenTransactionChecks)
@@ -79,6 +80,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private long minTransactionsAheadToLoadSnapshot = DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+        private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
         private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
@@ -132,6 +134,39 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
             this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        /**
+         * The minimum number of transactions ahead that a snapshot must be before we should load it. If a snapshot
+         * exists that is fewer than this many transactions ahead of the local state, we will read the transactions from
+         * the log instead of loading the snapshot.
+         *
+         * @param  minTransactionsAheadToLoadSnapshot the minimum number of transactions ahead to load a snapshot
+         * @return                                    the builder
+         */
+        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
+            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
+            return this;
+        }
+
+        /**
+         * Whether to update from the transaction log before adding a transaction. If more than one process is likely to
+         * update the state store at the same time, this may be beneficial. If all or most transactions are added by a
+         * single process, it may be better to avoid updating before every transaction to achieve higher throughput in
+         * that process.
+         * <p>
+         * If another process has added a transaction when a process attempts to add a new one, it will update from the
+         * transaction log and retry. Setting this to true avoids that retry, whereas setting this to false avoids the
+         * need to update from the log for every new transaction.
+         * <p>
+         * Defaults to true.
+         *
+         * @param  updateLogBeforeAddTransaction whether to bring the local state up to date before adding a transaction
+         * @return                               the builder
+         */
+        public Builder updateLogBeforeAddTransaction(boolean updateLogBeforeAddTransaction) {
+            this.updateLogBeforeAddTransaction = updateLogBeforeAddTransaction;
             return this;
         }
 
@@ -225,19 +260,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder partitionsStateUpdateClock(Supplier<Instant> partitionsStateUpdateClock) {
             this.partitionsStateUpdateClock = partitionsStateUpdateClock;
-            return this;
-        }
-
-        /**
-         * The minimum number of transactions ahead that a snapshot must be before we should load it. If a snapshot
-         * exists that is fewer than this many transactions ahead of the local state, we will read the transactions from
-         * the log instead of loading the snapshot.
-         *
-         * @param  minTransactionsAheadToLoadSnapshot the minimum number of transactions ahead to load a snapshot
-         * @return                                    the builder
-         */
-        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
-            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 

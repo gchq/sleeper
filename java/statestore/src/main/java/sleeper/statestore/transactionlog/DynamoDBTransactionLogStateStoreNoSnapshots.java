@@ -44,21 +44,6 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
     }
 
     /**
-     * Creates the state store for the given Sleeper table.
-     *
-     * @param  instanceProperties the Sleeper instance properties
-     * @param  tableProperties    the Sleeper table properties
-     * @param  dynamoDB           the client for interacting with DynamoDB
-     * @param  s3                 the client for interacting with S3
-     * @return                    the state store
-     */
-    public static TransactionLogStateStore create(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, AmazonS3 s3) {
-        return builderFrom(instanceProperties, tableProperties, dynamoDB, s3).build();
-    }
-
-    /**
      * Creates a builder for the state store for the given Sleeper table.
      *
      * @param  instanceProperties the Sleeper instance properties

@@ -282,6 +282,16 @@ public interface DefaultProperty {
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.default.statestore.committer.update.every.commit")
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a transaction in the asynchronous state store committer.\n" +
+                    "If asynchronous commits are used for all or almost all state store updates, this can be false " +
+                    "to avoid the extra queries.\n" +
+                    "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
+                    "be true to avoid conflicts and retries.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

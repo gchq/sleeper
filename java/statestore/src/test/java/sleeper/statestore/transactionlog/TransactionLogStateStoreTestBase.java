@@ -69,10 +69,7 @@ public class TransactionLogStateStoreTestBase {
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
-        stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
-        stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
-        return stateStore;
+        return stateStore(stateStoreBuilder(tableProperties));
     }
 
     protected StateStore stateStore(TransactionLogStateStore.Builder builder) {

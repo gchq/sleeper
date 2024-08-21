@@ -42,6 +42,7 @@ class TransactionLogHead<T> {
 
     private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
+    private final boolean updateLogBeforeAddTransaction;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
@@ -56,18 +57,19 @@ class TransactionLogHead<T> {
     private Instant nextTransactionCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
-        this.sleeperTable = builder.sleeperTable;
-        this.logStore = builder.logStore;
-        this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
-        this.retryBackoff = builder.retryBackoff;
-        this.transactionType = builder.transactionType;
-        this.snapshotLoader = builder.snapshotLoader;
-        this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
-        this.timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
-        this.stateUpdateClock = builder.stateUpdateClock;
-        this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
-        this.state = builder.state;
-        this.lastTransactionNumber = builder.lastTransactionNumber;
+        sleeperTable = builder.sleeperTable;
+        logStore = builder.logStore;
+        updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
+        maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
+        retryBackoff = builder.retryBackoff;
+        transactionType = builder.transactionType;
+        snapshotLoader = builder.snapshotLoader;
+        timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
+        timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
+        stateUpdateClock = builder.stateUpdateClock;
+        minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
+        state = builder.state;
+        lastTransactionNumber = builder.lastTransactionNumber;
     }
 
     static Builder<?> builder() {
@@ -92,7 +94,9 @@ class TransactionLogHead<T> {
                 Thread.currentThread().interrupt();
                 throw new StateStoreException("Interrupted while waiting to retry", e);
             }
-            forceUpdate();
+            if (updateLogBeforeAddTransaction || attempt > 1) {
+                forceUpdate();
+            }
             transaction.validate(state);
             long transactionNumber = lastTransactionNumber + 1;
             try {
@@ -228,6 +232,7 @@ class TransactionLogHead<T> {
     static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;
+        private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
@@ -249,6 +254,11 @@ class TransactionLogHead<T> {
 
         public Builder<T> logStore(TransactionLogStore logStore) {
             this.logStore = logStore;
+            return this;
+        }
+
+        public Builder<T> updateLogBeforeAddTransaction(boolean updateLogBeforeAddTransaction) {
+            this.updateLogBeforeAddTransaction = updateLogBeforeAddTransaction;
             return this;
         }
 

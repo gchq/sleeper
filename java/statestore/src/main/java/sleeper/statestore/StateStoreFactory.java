@@ -28,22 +28,49 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 
 /**
  * Creates a client to access the state store for a Sleeper table. The client may not be thread safe, as it may cache
  * the state.
  */
-public class StateStoreFactory {
+public class StateStoreFactory implements StateStoreProvider.Factory {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final Configuration configuration;
+    private final boolean committerProcess;
 
     public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        this(instanceProperties, s3, dynamoDB, configuration, false);
+    }
+
+    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.configuration = configuration;
+        this.committerProcess = committerProcess;
+    }
+
+    /**
+     * Creates a factory for state stores which will be updated by a single process. Used in the state store committer,
+     * to avoid the need to check constantly for new transactions in the transaction log implementation.
+     * <p>
+     * This will detect depending on the Sleeper table, whether that table's state store is updated by a single process
+     * asynchronously, or whether updates are made directly by multiple processes. This will configure the state store
+     * client appropriately if only a single process updates that state store, and will assume that this is that
+     * process. The current process should handle almost all updates to that state store across the whole Sleeper
+     * instance.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  s3                 the S3 client
+     * @param  dynamoDB           the DynamoDB client
+     * @param  configuration      the Hadoop configuration
+     * @return                    the factory
+     */
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
     }
 
     /**
@@ -52,6 +79,7 @@ public class StateStoreFactory {
      * @param  tableProperties the Sleeper table properties
      * @return                 the state store
      */
+    @Override
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
@@ -61,11 +89,23 @@ public class StateStoreFactory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return DynamoDBTransactionLogStateStore.create(instanceProperties, tableProperties, dynamoDB, s3, configuration);
+            return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)
+                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
+                    .build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
-            return DynamoDBTransactionLogStateStoreNoSnapshots.create(instanceProperties, tableProperties, dynamoDB, s3);
+            return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
+                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
+                    .build();
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
+    }
+
+    private boolean isUpdateLogBeforeAddTransaction(TableProperties tableProperties) {
+        if (committerProcess) {
+            return tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT);
+        } else {
+            return true;
+        }
     }
 }

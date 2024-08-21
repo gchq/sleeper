@@ -63,6 +63,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
@@ -288,6 +289,15 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
+            .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a transaction in the asynchronous state store committer.\n" +
+                    "If asynchronous commits are used for all or almost all state store updates, this can be false " +
+                    "to avoid the extra queries.\n" +
+                    "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
+                    "be true to avoid conflicts and retries.")
+            .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
             .description("The number of attempts to make when applying a transaction to the state store.")
