@@ -18,7 +18,7 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -47,7 +47,7 @@ public interface DefaultProperty {
             .description("The compression codec to use in the Parquet files.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .defaultValue("zstd")
-            .validationPredicate(Utils::isValidCompressionCodec)
+            .validationPredicate(CompressionCodec::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = Index.propertyBuilder("sleeper.default.parquet.dictionary.encoding.rowkey.fields")
             .description("Whether dictionary encoding should be used for row key columns in the Parquet files.")
