@@ -90,7 +90,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QU
  */
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
-public interface TableProperty extends SleeperProperty {
+public interface TableProperty extends SleeperProperty, TablePropertyDefaultValue {
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)

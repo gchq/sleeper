@@ -19,9 +19,11 @@ package sleeper.configuration.properties.table;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -29,6 +31,7 @@ class TablePropertyImpl implements TableProperty {
 
     private final String propertyName;
     private final String defaultValue;
+    private final TablePropertyDefaultValue getDefaultValue;
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
     private final String description;
@@ -40,6 +43,7 @@ class TablePropertyImpl implements TableProperty {
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
+        getDefaultValue = Optional.ofNullable(builder.getDefaultValue).orElseGet(TablePropertyDefaultValue::none);
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
@@ -75,6 +79,11 @@ class TablePropertyImpl implements TableProperty {
     @Override
     public SleeperProperty getDefaultProperty() {
         return defaultProperty;
+    }
+
+    @Override
+    public String getDefaultValue(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return getDefaultValue.getDefaultValue(instanceProperties, tableProperties);
     }
 
     @Override
@@ -114,6 +123,7 @@ class TablePropertyImpl implements TableProperty {
     static final class Builder {
         private String propertyName;
         private String defaultValue;
+        private TablePropertyDefaultValue getDefaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
         private String description;
@@ -133,7 +143,7 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder defaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
-            return this;
+            return getDefaultValue(TablePropertyDefaultValue.fixed(defaultValue));
         }
 
         public Builder validationPredicate(Predicate<String> validationPredicate) {
@@ -144,7 +154,16 @@ class TablePropertyImpl implements TableProperty {
         public Builder defaultProperty(SleeperProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
             this.defaultValue = defaultProperty.getDefaultValue();
-            return validationPredicate(defaultProperty.validationPredicate());
+            return getDefaultValue(TablePropertyDefaultValue.defaultProperty(defaultProperty))
+                    .validationPredicate(defaultProperty.validationPredicate());
+        }
+
+        public Builder getDefaultValue(TablePropertyDefaultValue getDefaultValue) {
+            if (this.getDefaultValue != null) {
+                throw new IllegalArgumentException("Set default twice for property " + propertyName);
+            }
+            this.getDefaultValue = getDefaultValue;
+            return this;
         }
 
         public Builder description(String description) {

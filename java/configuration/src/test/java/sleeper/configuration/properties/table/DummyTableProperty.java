@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class DummyTableProperty implements TableProperty {
@@ -58,5 +59,11 @@ public class DummyTableProperty implements TableProperty {
     @Override
     public SleeperProperty getDefaultProperty() {
         return defaultProperty;
+    }
+
+    @Override
+    public String getDefaultValue(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return TablePropertyDefaultValue.defaultProperty(defaultProperty)
+                .getDefaultValue(instanceProperties, tableProperties);
     }
 }

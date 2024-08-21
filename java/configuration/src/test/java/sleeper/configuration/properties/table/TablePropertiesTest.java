@@ -86,8 +86,7 @@ class TablePropertiesTest {
 
         // Then
         assertThatThrownBy(() -> tableProperties.get(defaultingProperty))
-                .hasMessage("Unable to process SleeperProperty, should have either been null, an " +
-                        "instance property or a table property");
+                .hasMessageStartingWith("Unexpected default property type: ");
     }
 
     @Test
