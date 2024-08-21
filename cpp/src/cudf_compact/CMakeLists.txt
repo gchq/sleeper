@@ -5,6 +5,7 @@ add_library(
   cudf_compact.cpp
   cudf_utils.cpp
   filters.cpp
+  format_helper.cpp
   parquet_types.cpp
   ranges.cu
   s3/s3_sink.cpp
@@ -13,6 +14,7 @@ add_library(
   ../../include/cudf_compact/cudf_compact.hpp
   ../../include/cudf_compact/cudf_utils.hpp
   ../../include/cudf_compact/filters.hpp
+  ../../include/cudf_compact/format_helper.hpp
   ../../include/cudf_compact/metadata.hpp
   ../../include/cudf_compact/parquet_types.h
   ../../include/cudf_compact/ranges.hpp

@@ -1,10 +1,4 @@
-add_executable(
-  main
-  main.cpp
-  locale_set.cpp
-  ../../include/cmdline/locale_set.hpp
-  configure_logging.cpp
-  ../../include/cmdline/configure_logging.hpp)
+add_executable(main main.cpp configure_logging.cpp ../../include/cmdline/configure_logging.hpp)
 target_link_system_libraries(
   main
   PRIVATE

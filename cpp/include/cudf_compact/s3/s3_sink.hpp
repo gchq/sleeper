@@ -8,12 +8,13 @@
 #include <cstddef>
 #include <future>
 #include <memory>
+#include <sstream>
 #include <string_view>
 
 namespace gpu_compact::cudf_compact::s3
 {
 
-inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 300 * 1'048'576;
+inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 200 * 1'048'576;
 
 struct S3Sink final : public cudf::io::data_sink
 {
@@ -23,21 +24,12 @@ struct S3Sink final : public cudf::io::data_sink
     Aws::String key;
     Aws::String uploadId;
     Aws::Vector<Aws::String> eTags;
-    // Aws::Vector<std::thread> uploadingThreads;
     std::size_t uploadSize = 0;
     std::size_t bytesWritten;
     int partNo;
-    // ::size_t fileBytesWritten;
-    // std::filesystem::path currentFileName;
-    // std::ofstream output;
+    std::stringstream buffer;
 
-    // void checkUpload();
-
-    // void checkMUPInitialised();
-
-    // void uploadPart(std::filesystem::path const &p);
-
-    // [[nodiscard]] static std::ofstream makeOutputFile(std::filesystem::path const &p);
+    void uploadBuffer();
 
   public:
     S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client,

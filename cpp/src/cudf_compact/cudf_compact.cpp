@@ -15,6 +15,7 @@
 
 #include "cudf_compact/common_types.hpp"
 #include "cudf_compact/filters.hpp"
+#include "cudf_compact/format_helper.hpp"
 #include "cudf_compact/metadata.hpp"
 #include "cudf_compact/parquet_types.h"
 #include "cudf_compact/ranges.hpp"
@@ -52,12 +53,13 @@ cudf::io::table_with_metadata
     try {
         auto builder = cudf::io::parquet_reader_options::builder(si).filter(expr_3);
         auto table_with_metadata = cudf::io::read_parquet(builder.build());
-        SPDLOG_INFO("read {:d} rows", table_with_metadata.tbl->num_rows());
+        SPDLOG_INFO(ff("read {:Ld} rows", table_with_metadata.tbl->num_rows()));
         auto result = std::move(table_with_metadata.tbl);
 
         result = filter_table_by_range(result->view(), range_col, low, high);
 
-        if (result->num_rows() == 0) return { nullptr, {} };
+        if (result->num_rows() == 0)
+            return { nullptr, {} };
 
         // sort by sort_cols. if a timestamp column was provided, then sort that column descending.
         std::vector<cudf::size_type> sort_cols{ 0 };
@@ -67,7 +69,7 @@ cudf::io::table_with_metadata
 
         return { std::move(result), std::move(table_with_metadata.metadata) };
     } catch (std::bad_alloc const &e) {
-        SPDLOG_ERROR("Caught error {}", e.what());
+        SPDLOG_ERROR(ff("Caught error {}", e.what()));
         return { nullptr, {} };
     }
 }
@@ -78,7 +80,8 @@ std::size_t write_range_low_mem(CompactionInput const &details,
   std::unique_ptr<cudf::io::parquet_chunked_writer> &writer,
   std::shared_ptr<Aws::S3::S3Client> &s3client) {
     auto table = table_for_range(details, low, high);
-    if (table.tbl.get() == nullptr) return 0;
+    if (table.tbl.get() == nullptr)
+        return 0;
 
     try {
         // now open output file
@@ -87,10 +90,10 @@ std::size_t write_range_low_mem(CompactionInput const &details,
             writer = make_writer(details, std::move(tim), s3client);
         }
 
-        SPDLOG_INFO("Writing chunk {:d}", table.tbl->num_rows());
+        SPDLOG_INFO(ff("Writing chunk {:Ld}", table.tbl->num_rows()));
         writer->write(table.tbl->view());
     } catch (std::exception const &e) {
-        SPDLOG_ERROR("Writing threw exception {}", e.what());
+        SPDLOG_ERROR(ff("Writing threw exception {}", e.what()));
         throw;
     }
 
@@ -116,7 +119,9 @@ int walk_schema(parquet::format::FileMetaData const &fmd,
             for (int i = 0; i < se.num_children; i++) {
                 int const idx_old = idx;
                 idx = walk_schema(fmd, flat_schema, idx, max_def_level, max_rep_level);
-                if (idx <= idx_old) { break; }// Error
+                if (idx <= idx_old) {
+                    break;
+                }// Error
             }
         } else {
             flat_schema.push_back({ se, max_def_level, max_rep_level });
@@ -145,7 +150,9 @@ std::optional<size_t> page_size(col_schema const &schema,
     std::optional<int> num_nulls;// for byte_array, we only need space for non-nulls
 
     // check for num_nulls from colidx
-    if (colidx.__isset.null_counts) { num_nulls = colidx.null_counts[pg_idx]; }
+    if (colidx.__isset.null_counts) {
+        num_nulls = colidx.null_counts[pg_idx];
+    }
 
     if (colidx.__isset.definition_level_histograms) {
         auto hist = &colidx.definition_level_histograms[pg_idx * (schema.max_def + 1)];
@@ -163,7 +170,9 @@ std::optional<size_t> page_size(col_schema const &schema,
 
         // didn't get null info from the column index :(
         if (not num_nulls.has_value()) {
-            if (schema.max_def == 0) { num_nulls = 0; }
+            if (schema.max_def == 0) {
+                num_nulls = 0;
+            }
         }
     }
     // if the rep level histogram is present, we can get the total number of values from that
@@ -175,12 +184,16 @@ std::optional<size_t> page_size(col_schema const &schema,
     }
 
     // not enough sizing info
-    if (not num_nulls.has_value() or not num_values.has_value()) { return std::nullopt; }
+    if (not num_nulls.has_value() or not num_values.has_value()) {
+        return std::nullopt;
+    }
 
     // for strings return unencoded_byte_array_data_bytes + num_vals * sizeof(int)
     if (schema.se.type == parquet::format::Type::BYTE_ARRAY) {
         size_t res = 0;
-        if (offidx.__isset.unencoded_byte_array_data_bytes) { res = offidx.unencoded_byte_array_data_bytes[pg_idx]; }
+        if (offidx.__isset.unencoded_byte_array_data_bytes) {
+            res = offidx.unencoded_byte_array_data_bytes[pg_idx];
+        }
         res += (num_values.value() - num_nulls.value()) * sizeof(int);
         return res;
     }
@@ -261,7 +274,7 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
                       static_cast<int>(num_pages),
                       static_cast<int>(row_grp.num_rows));
                     if (not page_sz.has_value()) {
-                        SPDLOG_CRITICAL("no sizing info");
+                        SPDLOG_CRITICAL(ff("no sizing info"));
                         throw std::runtime_error("no sizing info");
                     }
 
@@ -323,12 +336,12 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
     std::size_t count = 0;
     while (!ranges.empty()) {
         scalar_pair &curr = ranges.front();
-        SPDLOG_INFO("attempt range {} , {}", std::get<0>(curr), std::get<2>(curr));
+        SPDLOG_INFO(ff("attempt range {} , {}", std::get<0>(curr), std::get<2>(curr)));
         try {
             count += write_range_low_mem(details, std::get<1>(curr), std::get<3>(curr), writer, s3client);
             ranges.pop_front();
         } catch (std::exception const &e) {
-            SPDLOG_ERROR("processing range {}, {} failed {}", std::get<0>(curr), std::get<2>(curr), e.what());
+            SPDLOG_ERROR(ff("processing range {}, {} failed {}", std::get<0>(curr), std::get<2>(curr), e.what()));
             throw;
         }
     }
@@ -337,9 +350,10 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
 
     auto tend = timestamp();
 
-    SPDLOG_INFO("total num rows read {:d}", count);
+    SPDLOG_INFO(ff("total num rows read {:Ld}", count));
+    finalise_writer();
     using fseconds = std::chrono::duration<double, std::chrono::seconds::period>;
-    SPDLOG_INFO("total time {} seconds", std::chrono::duration_cast<fseconds>(tend - tstart).count());
+    SPDLOG_INFO(ff("total time {:L} seconds", std::chrono::duration_cast<fseconds>(tend - tstart).count()));
     return { count, count };
 }
 

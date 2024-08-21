@@ -17,6 +17,7 @@
 
 #include "cudf_compact/common_types.hpp"
 #include "cudf_compact/cudf_utils.hpp"
+#include "cudf_compact/format_helper.hpp"
 #include "cudf_compact/parquet_types.h"
 
 #include <algorithm>// std::ranges::equal
@@ -59,7 +60,7 @@ inline cudf::io::compression_type toCudfCompression(std::string_view compression
     } else if (iequals(compression, "snappy"sv)) {
         return cudf::io::compression_type::NONE;
     } else {
-        SPDLOG_WARN("unrecognised compression type {}, using ZSTD");
+        SPDLOG_WARN(ff("unrecognised compression type {}, using ZSTD"));
         return cudf::io::compression_type::ZSTD;
     }
 }
@@ -82,12 +83,18 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
                            : cudf::io::dictionary_policy::NEVER);
 }
 
+static SinkInfoDetails destination;
+
 inline std::unique_ptr<cudf::io::parquet_chunked_writer> make_writer(CompactionInput const &details,
   cudf::io::table_input_metadata &&tim,
   std::shared_ptr<Aws::S3::S3Client> &s3client) {
-    static SinkInfoDetails destination = make_sink_info(details.outputFile, s3client);
+    destination = make_sink_info(details.outputFile, s3client);
     auto wopts = write_opts(details, destination.info, std::move(tim));
     return std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build());
+}
+
+inline void finalise_writer() {
+    destination.sink.reset();
 }
 
 struct literal_converter

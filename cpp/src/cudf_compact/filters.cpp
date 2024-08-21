@@ -5,16 +5,16 @@
 #include <cudf/stream_compaction.hpp>
 #include <cudf/transform.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
-#include <fmt/core.h>
 #include <spdlog/spdlog.h>
+
+#include "cudf_compact/format_helper.hpp"
 
 #include <exception>
 
 std::unique_ptr<cudf::table> filter_table_by_range(cudf::table_view const &input,
   cudf::size_type sort_col_id,
   std::shared_ptr<cudf::scalar> const &low,
-  std::shared_ptr<cudf::scalar> const &high)
-{
+  std::shared_ptr<cudf::scalar> const &high) {
     auto filter_col = cudf::ast::column_reference(sort_col_id);
     auto lo_lit = cudf::type_dispatcher(low->type(), literal_converter{}, *low);
     auto hi_lit = cudf::type_dispatcher(high->type(), literal_converter{}, *high);
@@ -33,9 +33,9 @@ std::unique_ptr<cudf::table> filter_table_by_range(cudf::table_view const &input
 
 std::string to_string(std::string val,
   parquet::format::Type::type col_type,
-  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
-{
-    if (val == "-inf" || val == "inf") return val;
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type) {
+    if (val == "-inf" || val == "inf")
+        return val;
     switch (col_type) {
     case parquet::format::Type::INT32: {
         int32_t const *ptr = reinterpret_cast<int32_t const *>(val.data());
@@ -50,15 +50,14 @@ std::string to_string(std::string val,
     case parquet::format::Type::BYTE_ARRAY:
         return val;
     default:
-        SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
+        SPDLOG_CRITICAL(ff("unknown/unsupported type {}", col_type));
+        throw std::runtime_error(ff("unknown/unsupported type {}", col_type));
     }
 }
 
 std::shared_ptr<cudf::scalar> to_scalar(std::string val,
   parquet::format::Type::type col_type,
-  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
-{
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type) {
     switch (col_type) {
     case parquet::format::Type::INT32: {
         int32_t const *ptr = reinterpret_cast<int32_t const *>(val.data());
@@ -73,15 +72,14 @@ std::shared_ptr<cudf::scalar> to_scalar(std::string val,
     case parquet::format::Type::BYTE_ARRAY:
         return std::make_shared<cudf::string_scalar>(val);
     default:
-        SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
+        SPDLOG_CRITICAL(ff("unknown/unsupported type {}", col_type));
+        throw std::runtime_error(ff("unknown/unsupported type {}", col_type));
     }
 }
 
 // TODO: support more types
 std::shared_ptr<cudf::scalar> min_for_type(parquet::format::Type::type col_type,
-  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
-{
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type) {
     using parquet::format::Type;
     switch (col_type) {
     case Type::INT32:
@@ -91,14 +89,13 @@ std::shared_ptr<cudf::scalar> min_for_type(parquet::format::Type::type col_type,
     case Type::BYTE_ARRAY:
         return std::make_shared<cudf::string_scalar>("");
     default:
-        SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
+        SPDLOG_CRITICAL(ff("unknown/unsupported type {}", col_type));
+        throw std::runtime_error(ff("unknown/unsupported type {}", col_type));
     }
 }
 
 std::shared_ptr<cudf::scalar> max_for_type(parquet::format::Type::type col_type,
-  [[maybe_unused]] parquet::format::ConvertedType::type conv_type)
-{
+  [[maybe_unused]] parquet::format::ConvertedType::type conv_type) {
     using parquet::format::Type;
     switch (col_type) {
     case Type::INT32:
@@ -108,7 +105,7 @@ std::shared_ptr<cudf::scalar> max_for_type(parquet::format::Type::type col_type,
     case Type::BYTE_ARRAY:
         return std::make_shared<cudf::string_scalar>("\xff\xff\xff\xff");
     default:
-        SPDLOG_CRITICAL("unknown/unsupported type {}", col_type);
-        throw std::runtime_error(fmt::format("unknown/unsupported type {}", col_type));
+        SPDLOG_CRITICAL(ff("unknown/unsupported type {}", col_type));
+        throw std::runtime_error(ff("unknown/unsupported type {}", col_type));
     }
 }

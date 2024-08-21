@@ -4,8 +4,9 @@
 #include <aws/core/client/AWSError.h>
 #include <aws/core/utils/Outcome.h>
 #include <aws/s3/S3Client.h>
-#include <fmt/core.h>
 #include <spdlog/spdlog.h>
+
+#include "cudf_compact/format_helper.hpp"
 
 #include <concepts>
 #include <exception>
@@ -40,9 +41,9 @@ template<typename T, typename E> inline T const &unwrap(Aws::Utils::Outcome<T, E
         return outcome.GetResult();
     } else {
         E error = outcome.GetError();
-        SPDLOG_ERROR(
-          "Error unwrapping a {}, threw {}: {}", typeid(outcome).name(), error.GetExceptionName(), error.GetMessage());
-        throw std::runtime_error(fmt::format("{}: {}", error.GetExceptionName(), error.GetMessage()));
+        SPDLOG_ERROR(ff(
+          "Error unwrapping a {}, threw {}: {}", typeid(outcome).name(), error.GetExceptionName(), error.GetMessage()));
+        throw std::runtime_error(ff("{}: {}", error.GetExceptionName(), error.GetMessage()));
     }
 }
 

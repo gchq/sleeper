@@ -1,6 +1,6 @@
 #include "configure_logging.hpp"
 #include "cudf_compact/cudf_compact.hpp"
-#include "locale_set.hpp"
+#include "cudf_compact/format_helper.hpp"
 
 #ifdef SPDLOG_ACTIVE_LEVEL
 #undef SPDLOG_ACTIVE_LEVEL
@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-
 using gpu_compact::cudf_compact::PartitionBound;
 using gpu_compact::cudf_compact::ColRange;
 using gpu_compact::cudf_compact::CompactionInput;
@@ -32,7 +31,6 @@ using gpu_compact::cudf_compact::CompactionResult;
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, const char **argv) {
     configure_logging();
-    configure_locale(std::cout);
     try {
         // NOLINTNEXTLINE
         CLI::App app{ fmt::format("{} version {} git SHA {}",
@@ -76,7 +74,7 @@ int main(int argc, const char **argv) {
             if (!std::regex_match(s, gpu_compact::cudf_compact::URL_CHECK)) {
                 s = "file://" + s;
                 if (!std::regex_match(s, gpu_compact::cudf_compact::URL_CHECK)) {
-                    SPDLOG_ERROR("{} is not a valid URL", s);
+                    SPDLOG_ERROR(ff("{} is not a valid URL", s));
                     return false;
                 }
             }
@@ -89,15 +87,17 @@ int main(int argc, const char **argv) {
         // }
 
         // Check output URL
-        if (!urlCheck(outputFile)) { return EXIT_FAILURE; }
+        if (!urlCheck(outputFile)) {
+            return EXIT_FAILURE;
+        }
 
         // Check lengths of vectors
         if (rowKeys.size() != regionMaxs.size()) {
-            SPDLOG_ERROR("Must have same number of region maximums as row keys");
+            SPDLOG_ERROR(ff("Must have same number of region maximums as row keys"));
             return EXIT_FAILURE;
         }
         if (rowKeys.size() != regionMins.size()) {
-            SPDLOG_ERROR("Must have same number of region minimums as row keys");
+            SPDLOG_ERROR(ff("Must have same number of region minimums as row keys"));
             return EXIT_FAILURE;
         }
         std::unordered_map<std::string, ColRange> region;
@@ -124,6 +124,6 @@ int main(int argc, const char **argv) {
 
         auto [rowsRead, rowsWritten] = gpu_compact::cudf_compact::merge_sorted_files(details);
 
-        SPDLOG_INFO("Compaction finished, rows read = {:Ld}, rows written = {:Ld}", rowsRead, rowsWritten);
-    } catch (std::exception const &e) { SPDLOG_ERROR("Unhandled exception in main: {}", e.what()); }
+        SPDLOG_INFO(ff("Compaction finished, rows read = {:Ld}, rows written = {:Ld}", rowsRead, rowsWritten));
+    } catch (std::exception const &e) { SPDLOG_ERROR(ff("Unhandled exception in main: {}", e.what())); }
 }

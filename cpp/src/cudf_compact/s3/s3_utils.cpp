@@ -10,7 +10,7 @@ namespace gpu_compact::cudf_compact::s3
 Aws::SDKOptions const &getOptions() noexcept {
     static Aws::SDKOptions options = []() noexcept {
         Aws::SDKOptions v;
-        v.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Info;
+        v.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
         return v;
     }();
     return options;
@@ -25,7 +25,7 @@ void shutdownAWS() noexcept {
 }
 
 std::shared_ptr<Aws::S3::S3Client> makeClient() {
-    return Aws::MakeShared<Aws::S3::S3Client>("global");
+    return Aws::MakeShared<Aws::S3::S3Client>("");
 }
 
 Aws::String get_part(std::string_view s, std::smatch::size_type const group) {
@@ -39,6 +39,5 @@ Aws::String get_part(std::string_view s, std::smatch::size_type const group) {
         throw std::runtime_error(fmt::format("{} is not a valid S3 URL", s));
     }
 }
-
 
 }// namespace gpu_compact::cudf_compact::s3
