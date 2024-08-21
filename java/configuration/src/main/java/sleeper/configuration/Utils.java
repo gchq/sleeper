@@ -86,10 +86,6 @@ public class Utils {
         return "true".equalsIgnoreCase(string) || "false".equalsIgnoreCase(string);
     }
 
-    public static boolean isNullOrTrueOrFalse(String string) {
-        return string == null || isTrueOrFalse(string);
-    }
-
     public static boolean isValidLambdaTimeout(String timeout) {
         return parseAndCheckInteger(timeout, num -> num <= 900 && num > 0);
     }

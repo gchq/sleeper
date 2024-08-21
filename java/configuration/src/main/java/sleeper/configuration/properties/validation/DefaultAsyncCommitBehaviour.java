@@ -17,6 +17,13 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.table.TablePropertyDefaultValue;
+
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+
 public enum DefaultAsyncCommitBehaviour {
     DISABLED,
     PER_IMPLEMENTATION,
@@ -24,5 +31,31 @@ public enum DefaultAsyncCommitBehaviour {
 
     public static boolean isValid(String behaviour) {
         return EnumUtils.isValidEnumIgnoreCase(DefaultAsyncCommitBehaviour.class, behaviour);
+    }
+
+    public static TablePropertyDefaultValue defaultAsyncCommitEnabled() {
+        return (instanceProperties, tableProperties) -> {
+            DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
+            switch (behaviour) {
+                case DISABLED:
+                    return "false";
+                case ALL_IMPLEMENTATIONS:
+                    return "true";
+                case PER_IMPLEMENTATION:
+                default:
+                    String classname = tableProperties.get(STATESTORE_CLASSNAME);
+                    return "" + classname.contains("TransactionLog");
+            }
+        };
+    }
+
+    public static TablePropertyDefaultValue defaultAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
+        return (instanceProperties, tableProperties) -> {
+            if (tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED)) {
+                return instanceProperties.get(defaultUpdateEnabledProperty);
+            } else {
+                return "false";
+            }
+        };
     }
 }

@@ -22,6 +22,7 @@ import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.validation.CompressionCodec;
+import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 
@@ -297,7 +298,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
                     "This is separate from the properties that determine which state store updates will be done as " +
                     "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
                     "enabled.")
-            .validationPredicate(Utils::isNullOrTrueOrFalse)
+            .validationPredicate(Utils::isTrueOrFalse)
+            .getDefaultValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
             .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
             .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
@@ -545,7 +547,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
                     "is large.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
     TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.job.files.commit.async")
-            .defaultProperty(DEFAULT_INGEST_FILES_COMMIT_ASYNC)
+            .getDefaultValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitForUpdate(DEFAULT_INGEST_FILES_COMMIT_ASYNC))
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, ingest tasks will commit new files synchronously.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
