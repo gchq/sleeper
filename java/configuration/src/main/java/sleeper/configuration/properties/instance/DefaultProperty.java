@@ -267,12 +267,12 @@ public interface DefaultProperty {
                     "This is separate from the properties that determine which state store updates will be done as " +
                     "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
                     "enabled for a given state store.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class) + "\n" +
-                    "With disabled, asynchronous commits will never be used unless overridden in table properties.\n" +
-                    "With per_implementation, asynchronous commits will be used for all state store implementations " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DefaultAsyncCommitBehaviour.class) + "\n" +
+                    "With `disabled`, asynchronous commits will never be used unless overridden in table properties.\n" +
+                    "With `per_implementation`, asynchronous commits will be used for all state store implementations " +
                     "that are known to benefit from it, unless overridden in table properties.\n" +
-                    "With all_implementations, asynchronous commits will be used for all state stores unless " +
-                    "overridden in table properties.\n")
+                    "With `all_implementations`, asynchronous commits will be used for all state stores unless " +
+                    "overridden in table properties.")
             .defaultValue(DefaultAsyncCommitBehaviour.PER_IMPLEMENTATION.toString())
             .validationPredicate(DefaultAsyncCommitBehaviour::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
