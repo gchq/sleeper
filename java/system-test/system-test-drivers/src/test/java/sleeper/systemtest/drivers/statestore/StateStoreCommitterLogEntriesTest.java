@@ -70,6 +70,7 @@ public class StateStoreCommitterLogEntriesTest {
                 runStartedAtTime(Instant.parse("2024-08-15T16:17:00Z")),
                 commitToTableAtTime("test-table", Instant.parse("2024-08-15T16:17:01Z"))));
 
+        // When / Then
         assertThat(logs.computeOverallCommitsPerSecondByTableId(Set.of("test-table")))
                 .isEqualTo(Map.of("test-table", 1.0));
     }
