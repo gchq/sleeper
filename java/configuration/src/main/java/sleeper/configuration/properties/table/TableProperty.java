@@ -290,6 +290,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
+            .description("Overrides whether or not to apply state store updates asynchronously via the state store " +
+                    "committer. Usually this is decided based on the state store implementation used by the Sleeper " +
+                    "table, but other default behaviour can be set for the Sleeper instance.\n" +
+                    "This is separate from the properties that determine which state store updates will be done as " +
+                    "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
+                    "enabled.")
+            .validationPredicate(Utils::isNullOrTrueOrFalse)
+            .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
             .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
             .description("When using the transaction log state store, this sets whether to update from the " +
