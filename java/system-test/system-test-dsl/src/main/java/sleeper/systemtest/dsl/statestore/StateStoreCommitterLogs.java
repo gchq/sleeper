@@ -16,9 +16,12 @@
 package sleeper.systemtest.dsl.statestore;
 
 import java.util.Map;
+import java.util.Set;
 
 public interface StateStoreCommitterLogs {
 
-    Map<String, Integer> getNumCommitsByTableId();
+    Map<String, Integer> countNumCommitsByTableId(Set<String> tableIds);
+
+    Map<String, Double> computeOverallCommitsPerSecondByTableId(Set<String> tableIds);
 
 }

@@ -74,6 +74,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cpt-pll", SystemTestInstance::buildCompactionInParallelConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
+    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("commitr", SystemTestInstance::buildStateStoreCommitterThroughputConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
@@ -194,6 +195,20 @@ public class SystemTestInstance {
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "compactionInParallel");
         tags.put("Description", "Sleeper Maven system test compaction in parallel");
+        properties.setTags(tags);
+        return configuration;
+    }
+
+    private static DeployInstanceConfiguration buildStateStoreCommitterThroughputConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
+        InstanceProperties properties = configuration.getInstanceProperties();
+
+        // At time of writing, setting an empty list would make it use the default value instead. See issue #3089.
+        properties.set(OPTIONAL_STACKS, "None");
+
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "stateStoreCommitterThroughput");
+        tags.put("Description", "Sleeper Maven system test state store committer throughput");
         properties.setTags(tags);
         return configuration;
     }

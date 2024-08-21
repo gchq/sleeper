@@ -17,13 +17,18 @@ package sleeper.systemtest.drivers.statestore;
 
 import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
 import sleeper.clients.status.report.statestore.StateStoreCommitterLogEntry;
+import sleeper.clients.status.report.statestore.StateStoreCommitterRequestsPerSecond;
+import sleeper.clients.status.report.statestore.StateStoreCommitterRun;
+import sleeper.clients.status.report.statestore.StateStoreCommitterRuns;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toMap;
 
 public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
 
@@ -34,11 +39,23 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
     }
 
     @Override
-    public Map<String, Integer> getNumCommitsByTableId() {
+    public Map<String, Integer> countNumCommitsByTableId(Set<String> tableIds) {
         return logs.stream()
                 .filter(entry -> entry instanceof StateStoreCommitSummary)
                 .map(entry -> (StateStoreCommitSummary) entry)
+                .filter(commit -> tableIds.contains(commit.getTableId()))
                 .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
+    }
+
+    @Override
+    public Map<String, Double> computeOverallCommitsPerSecondByTableId(Set<String> tableIds) {
+        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+        Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
+        return tableIds.stream()
+                .collect(toMap(id -> id, tableId -> {
+                    List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
+                    return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondOverall(tableRuns);
+                }));
     }
 
 }

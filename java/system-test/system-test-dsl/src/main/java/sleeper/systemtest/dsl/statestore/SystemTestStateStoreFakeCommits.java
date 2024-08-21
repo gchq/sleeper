@@ -17,7 +17,6 @@ package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
@@ -34,11 +33,13 @@ public class SystemTestStateStoreFakeCommits {
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
     private final Instant getRunsAfterTime;
 
-    public SystemTestStateStoreFakeCommits(SystemTestContext context) {
+    public SystemTestStateStoreFakeCommits(
+            SystemTestContext context,
+            StateStoreCommitterDriver driver,
+            StateStoreCommitterLogsDriver logsDriver) {
+        this.driver = driver;
         instance = context.instance();
-        SystemTestDrivers adminDrivers = context.instance().adminDrivers();
-        driver = adminDrivers.stateStoreCommitter(context);
-        waiter = new WaitForStateStoreCommitLogs(adminDrivers.stateStoreCommitterLogs(context));
+        waiter = new WaitForStateStoreCommitLogs(logsDriver);
         getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
@@ -54,7 +55,16 @@ public class SystemTestStateStoreFakeCommits {
 
     public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
         waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
-        waitForNumCommitsByTableId.clear();
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits pauseReceivingCommitMessages() {
+        driver.pauseReceivingMessages();
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits resumeReceivingCommitMessages() {
+        driver.resumeReceivingMessages();
         return this;
     }
 
