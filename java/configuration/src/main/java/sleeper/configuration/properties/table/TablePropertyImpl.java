@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
@@ -165,9 +166,13 @@ class TablePropertyImpl implements TableProperty {
         }
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
+            return defaultPropertyWithBehaviour(defaultProperty, TablePropertyDefaultValue::defaultProperty);
+        }
+
+        public <T extends SleeperProperty> Builder defaultPropertyWithBehaviour(T defaultProperty, Function<T, TablePropertyDefaultValue> behaviour) {
             this.defaultProperty = defaultProperty;
             this.defaultValue = defaultProperty.getDefaultValue();
-            return getDefaultValue(TablePropertyDefaultValue.defaultProperty(defaultProperty))
+            return getDefaultValue(behaviour.apply(defaultProperty))
                     .validationPredicate(defaultProperty.validationPredicate());
         }
 
