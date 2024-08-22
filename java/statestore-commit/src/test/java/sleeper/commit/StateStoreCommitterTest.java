@@ -40,6 +40,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
@@ -119,18 +120,22 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldStoreCompactionFailedWhenInputFileDoesNotExist() throws Exception {
+        void shouldFailWhenInputFileDoesNotExist() throws Exception {
             // Given
             StateStore stateStore = createTable("test-table");
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
             CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
             stateStore.clearFileData();
 
             // When
-            committerWithTimes(List.of(failedTime)).apply(StateStoreCommitRequest.forCompactionJob(request));
+            StateStoreCommitter committer = committerWithTimes(List.of(failedTime));
+            assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.forCompactionJob(request)))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
 
             // Then
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -140,26 +145,29 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
-                                            new ProcessRunTime(summary.getFinishTime(), failedTime),
-                                            List.of("File not found: input.parquet")))
+                                            new ProcessRunTime(finishTime, failedTime),
+                                            List.of("1 replace file reference requests failed to update the state store", "File not found: input.parquet")))
                                     .build()));
         }
 
         @Test
-        void shouldFailForRetryWhenStateStoreThrowsUnexpectedRuntimeException() throws Exception {
+        void shouldFailWhenStateStoreThrowsUnexpectedRuntimeException() throws Exception {
             // Given
             StateStore stateStore = mock(StateStore.class);
             createTable("test-table", stateStore);
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
+            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
             CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
             RuntimeException failure = new RuntimeException("Unexpected failure");
             doThrow(failure).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     CompactionJobCommitter.replaceFileReferencesRequest(request.getJob(), request.getRecordsWritten())));
 
             // When
-            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJob(request)))
+            StateStoreCommitter committer = committerWithTimes(List.of(failedTime));
+            assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.forCompactionJob(request)))
                     .isSameAs(failure);
 
             // Then
@@ -167,18 +175,23 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .statusUpdate(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFailedStatus(
+                                            new ProcessRunTime(finishTime, failedTime),
+                                            List.of("Unexpected failure")))
                                     .build()));
         }
 
         @Test
-        void shouldFailForRetryWhenStateStoreThrowsUnexpectedStateStoreException() throws Exception {
+        void shouldFailWhenStateStoreThrowsUnexpectedStateStoreException() throws Exception {
             // Given
             StateStore stateStore = mock(StateStore.class);
             createTable("test-table", stateStore);
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
+            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
             CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
             ReplaceFileReferencesRequest expectedRequest = CompactionJobCommitter.replaceFileReferencesRequest(request.getJob(), request.getRecordsWritten());
             RuntimeException cause = new RuntimeException("Unexpected failure");
@@ -186,7 +199,8 @@ public class StateStoreCommitterTest {
             doThrow(failure).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(expectedRequest));
 
             // When
-            assertThatThrownBy(() -> committer().apply(StateStoreCommitRequest.forCompactionJob(request)))
+            StateStoreCommitter committer = committerWithTimes(List.of(failedTime));
+            assertThatThrownBy(() -> committer.apply(StateStoreCommitRequest.forCompactionJob(request)))
                     .isSameAs(failure);
 
             // Then
@@ -194,7 +208,10 @@ public class StateStoreCommitterTest {
                     jobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .statusUpdate(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFailedStatus(
+                                            new ProcessRunTime(finishTime, failedTime),
+                                            List.of("1 replace file reference requests failed to update the state store", "Unexpected failure")))
                                     .build()));
         }
     }
