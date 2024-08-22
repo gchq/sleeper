@@ -18,7 +18,7 @@ env:
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
   SSCACHE_DIR: $PROJECT_ROOT
-  SSCACHE_CACHE_SIZE="2G"
+  SSCACHE_CACHE_SIZE: "2G"
 
 jobs:
   build:
