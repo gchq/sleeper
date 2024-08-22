@@ -20,7 +20,6 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,34 +41,42 @@ public class PartitionFactory {
     }
 
     /**
-     * Starts a partition covering a range over a single row key field. May only be used for a schema with one row key.
-     * Will default to a leaf partition, where the parent partition ID must be set on the builder.
+     * Creates a new root partition, covering all values for all row keys. This will initially be a leaf partition, but
+     * it can be split into child partitions.
+     *
+     * @param  id unique identifier for the new partition
+     * @return    builder for the new root partition
+     */
+    public Partition rootFirst(String id) {
+        return PartitionsFromSplitPoints
+                .createRootPartitionThatIsLeaf(schema, rangeFactory)
+                .id(id)
+                .build();
+    }
+
+    /**
+     * Created a leaf partition detached from any parent, covering a range over a single row key field. May only be used
+     * for a schema with one row key. Must be joined to create a valid partition tree.
      *
      * @param  id  unique identifier for the new partition
      * @param  min minimum value for the range, inclusive
      * @param  max maximum value for the range, exclusive
-     * @return     a builder for the new partition
+     * @return     the new partition
      */
-    public Partition.Builder partition(String id, Object min, Object max) {
-        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
+    public Partition detachedLeaf(String id, Object min, Object max) {
+        return detachedLeaf(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
     }
 
     /**
-     * Starts a partition covering a region. Will default to a leaf partition, where the parent partition ID must be set
-     * on the builder.
+     * Created a leaf partition detached from any parent, covering a region. Must be joined to create a valid partition
+     * tree.
      *
      * @param  id     unique identifier for the new partition
      * @param  region the region the new partition will cover
-     * @return        a builder for the new partition
+     * @return        the new partition
      */
-    public Partition.Builder partition(String id, Region region) {
-        return Partition.builder()
-                .region(region)
-                .id(id)
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1);
+    public Partition detachedLeaf(String id, Region region) {
+        return partitionBuilder(id, region).build();
     }
 
     /**
@@ -83,60 +90,55 @@ public class PartitionFactory {
      * @param  splitPoint value to split on
      * @return            result of the split, including the new state of the parent and the new child partitions
      */
-    public PartitionSplitResult split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
+    public PartitionRelation split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
         Field splitField = schema.getRowKeyFields().get(dimension);
         Region parentRegion = parent.getRegion();
         Range parentRange = parentRegion.getRange(splitField.getName());
         Range leftRange = rangeFactory.createRange(splitField, parentRange.getMin(), splitPoint);
         Range rightRange = rangeFactory.createRange(splitField, splitPoint, parentRange.getMax());
-        Partition.Builder leftPartition = partition(leftId, parentRegion.copyWithRange(leftRange));
-        Partition.Builder rightPartition = partition(rightId, parentRegion.copyWithRange(rightRange));
-        leftPartition.parentPartitionId(parent.getId());
-        rightPartition.parentPartitionId(parent.getId());
-        Partition.Builder updatedParent = parent.toBuilder()
+        Partition leftPartition = partitionBuilder(leftId, parentRegion.copyWithRange(leftRange))
+                .parentPartitionId(parent.getId()).build();
+        Partition rightPartition = partitionBuilder(rightId, parentRegion.copyWithRange(rightRange))
+                .parentPartitionId(parent.getId()).build();
+        Partition updatedParent = parent.toBuilder()
                 .leafPartition(false)
                 .dimension(dimension)
-                .childPartitionIds(List.of(leftId, rightId));
-        return PartitionSplitResult.builder()
-                .parent(updatedParent)
-                .children(List.of(leftPartition, rightPartition))
+                .childPartitionIds(List.of(leftId, rightId))
+                .build();
+        return PartitionRelation.builder()
+                .parent(updatedParent).leftChild(leftPartition).rightChild(rightPartition)
                 .build();
     }
 
     /**
      * Joins two partitions to produce a new parent partition.
      *
-     * @param  parentId unique identifier for the new partition
-     * @param  left     builder for the left partition, covering values lower than the split point
-     * @param  right    builder for the right partition, covering values higher than the split point
-     * @return          builder for the new parent partition
+     * @param  parentId  unique identifier for the new partition
+     * @param  left      the left partition, covering values lower than the split point
+     * @param  right     the right partition, covering values higher than the split point
+     * @param  dimension index in the schema of the row key we're joining on
+     * @return           result of the join, including the new state of the parent and child partitions
      */
-    public Partition.Builder parentJoining(String parentId, Partition.Builder left, Partition.Builder right) {
-        return parent(Arrays.asList(left, right), parentId, parentRegion(left.getRegion(), right.getRegion()));
+    public PartitionRelation join(String parentId, Partition left, Partition right, int dimension) {
+        return PartitionRelation.builder()
+                .parent(partitionBuilder(parentId, parentRegion(left.getRegion(), right.getRegion()))
+                        .childPartitionIds(List.of(left.getId(), right.getId()))
+                        .leafPartition(false)
+                        .dimension(dimension)
+                        .build())
+                .leftChild(left.toBuilder().parentPartitionId(parentId).build())
+                .rightChild(right.toBuilder().parentPartitionId(parentId).build())
+                .build();
     }
 
-    /**
-     * Creates a new root partition, covering all values for all row keys. This will initially be a leaf partition, but
-     * it can be split into child partitions.
-     *
-     * @param  id unique identifier for the new partition
-     * @return    builder for the new root partition
-     */
-    public Partition.Builder rootFirst(String id) {
-        return PartitionsFromSplitPoints
-                .createRootPartitionThatIsLeaf(schema, rangeFactory)
-                .id(id);
-    }
-
-    private Partition.Builder parent(List<Partition.Builder> children, String id, Region region) {
-        Partition.Builder parent = partition(id, region)
-                .childPartitionIds(children.stream()
-                        .map(Partition.Builder::getId)
-                        .collect(Collectors.toList()))
-                .leafPartition(false)
-                .dimension(0);
-        children.forEach(child -> child.parentPartitionId(id));
-        return parent;
+    private Partition.Builder partitionBuilder(String id, Region region) {
+        return Partition.builder()
+                .region(region)
+                .id(id)
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1);
     }
 
     private Region parentRegion(Region left, Region right) {

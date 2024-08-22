@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.strategy.CompactionStrategy;
+import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.CompactionProperty;
@@ -35,9 +36,11 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +56,6 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
@@ -114,39 +116,55 @@ public class CreateCompactionJobs {
     }
 
     public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.info("Performing pre-splits on files in {}", table.getStatus());
         StateStore stateStore = stateStoreProvider.getStateStore(table);
+        LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
+        Instant preSplitStartTime = Instant.now();
         SplitFileReferences.from(stateStore).split();
-        createJobsForTable(table, stateStore);
+        LOGGER.info("Pre-split files in partitions, took {}", LoggedDuration.withShortOutput(preSplitStartTime, Instant.now()));
+        Instant finishTime = createJobsForTable(table, stateStore);
+        LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private void createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
+        Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
-        LOGGER.debug("Creating jobs for table {}", table);
+        LOGGER.info("Creating jobs for table {}", table);
 
+        Instant loadPartitionStartTime = Instant.now();
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
         // NB We retrieve the information about all the active file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
+        Instant loadFilesStartTime = Instant.now();
         List<FileReference> fileReferences = stateStore.getFileReferences();
 
+        Instant compactionStrategyCreationStartTime = Instant.now();
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
 
+        Instant indexCreationStartTime = Instant.now();
+        CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, allPartitions);
+
+        Instant jobCreationStartTime = Instant.now();
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(
-                instanceProperties, tableProperties, jobFactory, fileReferences, allPartitions);
+                instanceProperties, tableProperties, jobFactory, index);
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
+        Instant leftoverJobCreationStartTime = Instant.now();
         if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
             createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
         }
+
+        Instant limitJobsStartTime = Instant.now();
         int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
         if (compactionJobs.size() > creationLimit) {
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
         }
+
+        Instant sendJobsStartTime = Instant.now();
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
@@ -155,8 +173,20 @@ public class CreateCompactionJobs {
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(assignJobIdsToFiles, tableProperties.get(TABLE_ID), batch);
+            batchCreateJobs(assignJobIdsToFiles, table, batch);
         }
+        Instant finishTime = Instant.now();
+
+        LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
+        LOGGER.info("Loading partitions from state store took {}", LoggedDuration.withShortOutput(loadPartitionStartTime, loadFilesStartTime));
+        LOGGER.info("Loading file references from state store took {}", LoggedDuration.withShortOutput(loadFilesStartTime, compactionStrategyCreationStartTime));
+        LOGGER.info("Creating compaction strategy took {}", LoggedDuration.withShortOutput(compactionStrategyCreationStartTime, indexCreationStartTime));
+        LOGGER.info("Creating compaction strategy index took {}", LoggedDuration.withShortOutput(indexCreationStartTime, jobCreationStartTime));
+        LOGGER.info("Creating compaction jobs using strategy took {}", LoggedDuration.withShortOutput(jobCreationStartTime, leftoverJobCreationStartTime));
+        LOGGER.info("Creating jobs from leftover files partitions took {}", LoggedDuration.withShortOutput(leftoverJobCreationStartTime, limitJobsStartTime));
+        LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, sendJobsStartTime));
+        LOGGER.info("Sending compaction jobs took {}", LoggedDuration.withShortOutput(sendJobsStartTime, finishTime));
+        return finishTime;
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
@@ -175,7 +205,7 @@ public class CreateCompactionJobs {
         return outList;
     }
 
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, String tableId, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
         for (CompactionJob compactionJob : compactionJobs) {
             // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
             // task trying to record that the job was started.
@@ -187,10 +217,10 @@ public class CreateCompactionJobs {
             jobSender.send(compactionJob);
         }
         // Update the statuses of these files to record that a compaction job is in progress
-        LOGGER.debug("Updating status of files in StateStore");
+        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()), tableId);
+                .collect(Collectors.toList()), table.getTableUniqueId());
     }
 
     private void createJobsFromLeftoverFiles(

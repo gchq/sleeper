@@ -1,6 +1,6 @@
 {
   "name": "Sleeper dev container",
-  "image": "ghcr.io/gchq/sleeper-builder:develop",
+  "image": "ghcr.io/gchq/sleeper-builder:latest",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
@@ -18,17 +18,17 @@
   "mounts": [
     {
       "source": "${localEnv:HOME}/.aws",
-      "target": "/root/.aws",
+      "target": "/home/sleeper/.aws",
       "type": "bind"
     },
     {
       "source": "${localEnv:HOME}/.m2",
-      "target": "/root/.m2",
+      "target": "/home/sleeper/.m2",
       "type": "bind"
     },
     {
       "source": "${localEnv:HOME}/.ssh",
-      "target": "/root/.ssh",
+      "target": "/home/sleeper/.ssh",
       "type": "bind"
     },
     {
@@ -40,14 +40,9 @@
   "containerEnv": {
     "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
-    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}",
-    "AWS_PROFILE": "${localEnv:AWS_PROFILE}",
-    "AWS_REGION": "${localEnv:AWS_REGION}",
-    "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
-    "ID": "${localEnv:ID}",
-    "INSTANCE_ID": "${localEnv:INSTANCE_ID}",
-    "VPC": "${localEnv:VPC}",
-    "SUBNET": "${localEnv:SUBNET}"
+    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}"
   },
-  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 > /tmp/container.id"
+  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 | echo \"HOSTNAME=$(cat -)\" >> /home/sleeper/.bashrc",
+  "remoteUser": "sleeper",
+  "updateRemoteUserUID": true
 }

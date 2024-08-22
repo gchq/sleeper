@@ -23,5 +23,5 @@
 MAILTO=""
 SHELL=/usr/bin/bash
 PATH=$PATH:/usr/bin:/home/ubuntu/.local/bin
-0 3 * * TUE,THU,SAT,SUN docker system prune -af && sleeper cli upgrade develop && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "/sleeper-builder/<settings-json-file-in-builder>" "functional" &> /tmp/sleeperFunctionalTests.log
-0 3 * * MON,WED,FRI docker system prune -af && sleeper cli upgrade develop && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "/sleeper-builder/<settings-json-file-in-builder>" "performance" &> /tmp/sleeperPerformanceTests.log
+0 3 * * TUE,THU,SAT,SUN docker system prune -af && sleeper cli upgrade && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "/sleeper-builder/<settings-json-file-in-builder>" "functional" &> /tmp/sleeperFunctionalTests.log
+0 3 * * MON,WED,FRI docker system prune -af && sleeper cli upgrade && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "/sleeper-builder/<settings-json-file-in-builder>" "performance" &> /tmp/sleeperPerformanceTests.log

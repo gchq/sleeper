@@ -37,7 +37,9 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
         GarbageCollector collector = new GarbageCollector(
                 data::deleteFile,
                 instance.getInstanceProperties(),
-                instance.getStateStoreProvider());
+                instance.getStateStoreProvider(),
+                request -> {
+                });
         collector.run(instance.streamTableProperties().collect(toUnmodifiableList()));
     }
 

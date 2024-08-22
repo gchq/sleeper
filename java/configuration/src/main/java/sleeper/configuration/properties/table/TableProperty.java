@@ -63,12 +63,14 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -79,6 +81,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 
@@ -137,6 +140,12 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
             .description("Partitions in this table with more than the following number of records in will be split.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT)
+            .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the partition splitting lambda will apply splits synchronously.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
@@ -199,6 +208,12 @@ public interface TableProperty extends SleeperProperty {
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.gc.commit.async")
+            .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT)
+            .description("If true, deletion of files will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the garbage collector lambda will apply synchronously.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
@@ -274,6 +289,15 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
+            .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a transaction in the asynchronous state store committer.\n" +
+                    "If asynchronous commits are used for all or almost all state store updates, this can be false " +
+                    "to avoid the extra queries.\n" +
+                    "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
+                    "be true to avoid conflicts and retries.")
+            .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
             .description("The number of attempts to make when applying a transaction to the state store.")

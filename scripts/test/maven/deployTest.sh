@@ -37,7 +37,7 @@ START_TIME=$(record_time)
 
 pushd "$MAVEN_DIR"
 
-mvn verify -PsystemTest \
+mvn verify -PsystemTest -DskipRust=true \
   -Dsleeper.system.test.short.id="$SHORT_ID" \
   -Dsleeper.system.test.vpc.id="$VPC" \
   -Dsleeper.system.test.subnet.ids="$SUBNETS" \

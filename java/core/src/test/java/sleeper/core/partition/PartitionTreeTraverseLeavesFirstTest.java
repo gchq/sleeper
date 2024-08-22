@@ -21,8 +21,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,15 +31,15 @@ public class PartitionTreeTraverseLeavesFirstTest {
             .rowKeyFields(new Field("key", new StringType()))
             .build();
 
-    public static PartitionsBuilder createPartitionsBuilder() {
-        return new PartitionsBuilder(SCHEMA);
+    public static PartitionsBuilderSplitsFirst leavesWithSplits(List<String> ids, List<Object> splits) {
+        return PartitionsBuilderSplitsFirst.leavesWithSplits(SCHEMA, ids, splits);
     }
 
     @Test
     public void shouldTraversePartitionsByTreeLeavesFirst() {
         // Given
-        PartitionTree partitions = createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B", "C"), Arrays.asList("aaa", "bbb"))
+        PartitionTree partitions = leavesWithSplits(
+                List.of("A", "B", "C"), List.of("aaa", "bbb"))
                 .parentJoining("D", "A", "B")
                 .parentJoining("root", "D", "C")
                 .buildTree();
@@ -53,8 +52,8 @@ public class PartitionTreeTraverseLeavesFirstTest {
     @Test
     public void shouldPutMinAndMaxSideOfPartitionSplitInOrderWhenIdsAreNotInAlphabeticalOrder() {
         // Given
-        PartitionTree partitions = createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("some-leaf", "other-leaf"), Collections.singletonList("aaa"))
+        PartitionTree partitions = leavesWithSplits(
+                List.of("some-leaf", "other-leaf"), List.of("aaa"))
                 .parentJoining("root", "some-leaf", "other-leaf")
                 .buildTree();
 
@@ -66,10 +65,9 @@ public class PartitionTreeTraverseLeavesFirstTest {
     @Test
     public void shouldPutNestedLeavesInOrderOfPartitionSplitSideWhenParentIdsAreNotInAlphabeticalOrder() {
         // Given
-        PartitionTree partitions = createPartitionsBuilder()
-                .leavesWithSplits(
-                        Arrays.asList("some-leaf", "other-leaf", "third-leaf", "fourth-leaf"),
-                        Arrays.asList("aaa", "bbb", "ccc"))
+        PartitionTree partitions = leavesWithSplits(
+                List.of("some-leaf", "other-leaf", "third-leaf", "fourth-leaf"),
+                List.of("aaa", "bbb", "ccc"))
                 .parentJoining("some-middle", "some-leaf", "other-leaf")
                 .parentJoining("other-middle", "third-leaf", "fourth-leaf")
                 .parentJoining("root", "some-middle", "other-middle")

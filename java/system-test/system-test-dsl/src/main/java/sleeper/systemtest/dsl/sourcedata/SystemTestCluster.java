@@ -16,7 +16,12 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -24,6 +29,7 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -32,8 +38,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class SystemTestCluster {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestCluster.class);
 
     private final DeployedSystemTestResources context;
+    private final SystemTestInstanceContext instance;
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
@@ -45,8 +53,9 @@ public class SystemTestCluster {
 
     public SystemTestCluster(
             SystemTestContext context, SystemTestDrivers baseDrivers) {
-        SystemTestDrivers instanceAdminDrivers = context.instance().adminDrivers();
         this.context = context.systemTest();
+        instance = context.instance();
+        SystemTestDrivers instanceAdminDrivers = instance.adminDrivers();
         driver = baseDrivers.dataGenerationTasks(context);
         ingestByQueue = instanceAdminDrivers.ingestByQueue(context);
         sourceFiles = baseDrivers.generatedSourceFiles(context.parameters(), context.systemTest());
@@ -60,11 +69,11 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster generateData() {
-        return generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+    public SystemTestCluster runDataGenerationTasks() {
+        return runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCluster generateData(PollWithRetries poll) {
+    public SystemTestCluster runDataGenerationTasks(PollWithRetries poll) {
         driver.runDataGenerationTasks(poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
@@ -102,6 +111,35 @@ public class SystemTestCluster {
             jobIds.addAll(lastGeneratedFiles.getJobIdsFromIndividualFiles());
         }
         return jobIds;
+    }
+
+    public void waitForTotalFileReferences(int expectedFileReferences) {
+        waitForTotalFileReferences(expectedFileReferences,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
+    }
+
+    public void waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
+        try {
+            poll.pollUntil("file references are added", () -> {
+                List<FileReference> fileReferences = loadFileReferences();
+                LOGGER.info("Found {} file references, waiting for expected {}", fileReferences.size(), expectedFileReferences);
+                if (fileReferences.size() > expectedFileReferences) {
+                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, overshot and found " + fileReferences.size());
+                }
+                return fileReferences.size() == expectedFileReferences;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<FileReference> loadFileReferences() {
+        try {
+            return instance.getStateStore().getFileReferences();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<String> findIngestJobIdsInSourceBucket() {

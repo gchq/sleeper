@@ -82,19 +82,19 @@
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
-        <snappy.version>1.1.10.5</snappy.version>
+        <snappy.version>1.1.10.6</snappy.version>
         <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
         <aircompressor.version>0.27</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>4.27.2</protobuf.version>
+        <protobuf.version>4.27.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
-        <avro.version>1.11.3</avro.version>
+        <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.5.1</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
-        <kerby.version>2.0.3</kerby.version>
+        <kerby.version>2.1.0</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
@@ -105,7 +105,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
-        <kotlin.version>2.0.0</kotlin.version>
+        <kotlin.version>2.0.10</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
@@ -113,18 +113,18 @@
         <okio.version>3.9.0</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.6</logback.version>
+        <logback.version>1.5.7</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.26.26</aws-java-sdk-v2.version>
-        <aws-crt.version>0.30.4</aws-crt.version>
+        <aws-java-sdk-v2.version>2.27.10</aws-java-sdk-v2.version>
+        <aws-crt.version>0.30.8</aws-crt.version>
         <aws-lambda-java-events.version>3.13.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.15.0</commons-lang3.version>
+        <commons-lang3.version>3.16.0</commons-lang3.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
-        <commons-compress.version>1.26.2</commons-compress.version>
+        <commons-compress.version>1.27.1</commons-compress.version>
         <commons-text.version>1.12.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
@@ -133,13 +133,13 @@
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.2.1-jre</guava.version>
-        <cdk.version>2.150.0</cdk.version>
+        <guava.version>33.3.0-jre</guava.version>
+        <cdk.version>2.154.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.11.0</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
-        <slf4j.version>2.0.13</slf4j.version>
+        <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.7</java-websocket.version>
         <arrow.version>11.0.0</arrow.version>
@@ -151,7 +151,7 @@
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
         <trino.assertj.version>3.18.1</trino.assertj.version>
         <!-- Build module uses Jersey for communicating with GitHub API -->
-        <jersey.version>2.43</jersey.version>
+        <jersey.version>2.44</jersey.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.1.112.Final</netty.version>
         <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
@@ -166,13 +166,13 @@
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.10.3</junit.version>
-        <junit.platform.version>1.10.3</junit.platform.version>
+        <junit.version>5.11.0</junit.version>
+        <junit.platform.version>1.11.0</junit.platform.version>
         <mockito.version>5.12.0</mockito.version>
-        <testcontainers.version>1.20.0</testcontainers.version>
+        <testcontainers.version>1.20.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.3.0</approvaltests.version>
+        <approvaltests.version>24.4.0</approvaltests.version>
         <jsonunit.version>3.4.1</jsonunit.version>
         <checkstyle.version>10.17.0</checkstyle.version>
         <sleeper.system.test.short.id/>
@@ -186,7 +186,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.4.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
-        <surefire.plugin.version>3.3.1</surefire.plugin.version>
+        <surefire.plugin.version>3.4.0</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
@@ -199,8 +199,8 @@
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>10.0.3</dependency-check.plugin.version>
-        <site.plugin.version>3.12.1</site.plugin.version>
-        <exec.plugin.version>3.3.0</exec.plugin.version>
+        <site.plugin.version>3.20.0</site.plugin.version>
+        <exec.plugin.version>3.4.1</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
@@ -1180,7 +1180,6 @@
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
                         </systemProperties>
-                        <excludedGroups>SystemTest</excludedGroups>
                     </configuration>
                     <executions>
                         <execution>
@@ -1299,7 +1298,6 @@
                             <includes>
                                 <include>QuickSystemTestSuite</include>
                             </includes>
-                            <excludedGroups>none</excludedGroups>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>

@@ -22,9 +22,20 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.IngestJob;
@@ -33,14 +44,23 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class StateStoreCommitRequestDeserialiserTest {
-    StateStoreCommitRequestDeserialiser commitRequestSerDe = new StateStoreCommitRequestDeserialiser();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final List<TableProperties> tables = new ArrayList<>();
+    private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
 
     @Test
     void shouldDeserialiseCompactionJobCommitRequest() {
@@ -60,8 +80,9 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new CompactionJobCommitRequestSerDe().toJson(compactionJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest));
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -86,8 +107,9 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest));
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
@@ -121,8 +143,9 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table-id");
     }
 
     @Test
@@ -147,20 +170,83 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = new IngestAddFilesCommitRequestSerDe().toJson(ingestJobCommitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest));
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(ingestJobCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
+    }
+
+    @Test
+    void shouldDeserialiseSplitPartitionCommitRequest() {
+        // Given
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", "aaa")
+                .buildTree();
+        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(
+                "test-table", partitionTree.getRootPartition(),
+                partitionTree.getPartition("left"), partitionTree.getPartition("right"));
+        createTable("test-table", schema);
+
+        String jsonString = new SplitPartitionCommitRequestSerDe(schema).toJson(splitPartitionCommitRequest);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
+    }
+
+    @Test
+    void shouldDeserialiseGarbageCollectionCommitRequest() {
+        // Given
+        createTable("test-table", schemaWithKey("key"));
+        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
+                "test-table", List.of("file1.parquet", "file2.parquet"));
+
+        String jsonString = new GarbageCollectionCommitRequestSerDe().toJson(request);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forGarbageCollection(request))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 
     @Test
     void shouldDeserialiseCommitRequestInS3() {
         // Given
+        FileReference file = FileReference.builder()
+                .filename("file.parquet")
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        IngestAddFilesCommitRequest requestInBucket = IngestAddFilesCommitRequest.builder()
+                .tableId("test-table")
+                .fileReferences(List.of(file))
+                .build();
         String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        dataBucketObjectByKey.put(s3Key, new IngestAddFilesCommitRequestSerDe().toJson(requestInBucket));
         StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
         String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
 
         // When / Then
-        assertThat(commitRequestSerDe.fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.storedInS3(commitRequest));
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forIngestAddFiles(requestInBucket))
+                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
+    }
+
+    @Test
+    void shouldRefuseReferenceToS3HeldInS3() throws Exception {
+        // Given we have a request pointing to itself
+        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
+        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
+        dataBucketObjectByKey.put(s3Key, new StateStoreCommitRequestInS3SerDe().toJson(commitRequest));
+        String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
+
+        // When / Then
+        StateStoreCommitRequestDeserialiser deserialiser = deserialiser();
+        assertThatThrownBy(() -> deserialiser.fromJson(jsonString))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -169,7 +255,17 @@ public class StateStoreCommitRequestDeserialiserTest {
         String jsonString = "{\"type\":\"invalid-type\", \"request\":{}}";
 
         // When / Then
-        assertThatThrownBy(() -> commitRequestSerDe.fromJson(jsonString))
+        assertThatThrownBy(() -> deserialiser().fromJson(jsonString))
                 .isInstanceOf(CommitRequestValidationException.class);
+    }
+
+    private void createTable(String tableId, Schema schema) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_ID, tableId);
+        tables.add(tableProperties);
+    }
+
+    private StateStoreCommitRequestDeserialiser deserialiser() {
+        return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables), dataBucketObjectByKey::get);
     }
 }

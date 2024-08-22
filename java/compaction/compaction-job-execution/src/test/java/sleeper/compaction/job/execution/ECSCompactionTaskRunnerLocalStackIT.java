@@ -109,6 +109,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -141,46 +142,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
-
-    private InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "");
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        instanceProperties.setNumber(COMPACTION_TASK_WAIT_TIME_IN_SECONDS, 0);
-        instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
-        instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
-        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.saveToS3(s3);
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
-
-        return instanceProperties;
-    }
-
-    private static Schema createSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-    }
-
-    private TableProperties createTable() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        tablePropertiesStore.save(tableProperties);
-        try {
-            stateStoreProvider.getStateStore(tableProperties).initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
-        return tableProperties;
-    }
-
-    private StateStore getStateStore() {
-        return stateStoreProvider.getStateStore(tableProperties);
-    }
 
     @AfterEach
     void tearDown() {
@@ -400,6 +361,47 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(onJob(job, fileReference));
+    }
+
+    private InstanceProperties createInstance() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.setNumber(COMPACTION_TASK_WAIT_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.saveToS3(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+
+        return instanceProperties;
+    }
+
+    private static Schema createSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
+
+    private TableProperties createTable() {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        tablePropertiesStore.save(tableProperties);
+        try {
+            stateStoreProvider.getStateStore(tableProperties).initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return tableProperties;
+    }
+
+    private StateStore getStateStore() {
+        return stateStoreProvider.getStateStore(tableProperties);
     }
 
     private String getMessageGroupId(Message message) {

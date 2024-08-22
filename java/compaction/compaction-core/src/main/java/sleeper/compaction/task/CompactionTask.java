@@ -94,7 +94,7 @@ public class CompactionTask {
         this.waitForFiles = waitForFiles;
     }
 
-    public void run() throws IOException {
+    public void run() throws IOException, InterruptedException {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -108,7 +108,7 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
+    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
         Instant lastActiveTime = startTime;
         Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
@@ -138,12 +138,16 @@ public class CompactionTask {
                 String jobRunId = jobRunIdSupplier.get();
                 Instant jobStartTime = timeSupplier.get();
                 try {
+                    propertiesReloader.reloadIfNeeded();
                     waitForFiles.wait(job);
                     RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
+                } catch (InterruptedException e) {
+                    LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
+                    throw e;
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
@@ -160,7 +164,6 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {
-            propertiesReloader.reloadIfNeeded();
             CompactionRunner compactor = this.selector.chooseCompactor(job);
             RecordsProcessed recordsProcessed = compactor.compact(job);
             Instant jobFinishTime = timeSupplier.get();

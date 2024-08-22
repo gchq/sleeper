@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionECSLaunchType;
+import sleeper.configuration.properties.validation.CompactionMethod;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
             .description("The delay in seconds until a failed compaction job becomes visible on the compaction job " +
                     "queue and can be processed again.")
-            .defaultValue("0")
+            .defaultValue("60")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
             .description("The time in seconds for a compaction task to wait for a compaction job to appear on the " +
@@ -262,7 +263,8 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
             .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
                     "experimental.")
-            .defaultValue("JAVA")
+            .defaultValue(CompactionMethod.JAVA.toString())
+            .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

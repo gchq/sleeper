@@ -18,7 +18,6 @@ package sleeper.core.statestore.commit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.util.GsonConfig;
 
 /**
@@ -29,8 +28,7 @@ public class StateStoreCommitRequestInS3SerDe {
     private final Gson gsonPrettyPrint;
 
     public StateStoreCommitRequestInS3SerDe() {
-        GsonBuilder builder = GsonConfig.standardBuilder()
-                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
+        GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }

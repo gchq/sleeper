@@ -61,10 +61,24 @@ public interface PartitionSplittingProperty {
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty SPLIT_PARTITIONS_RESERVED_CONCURRENCY = Index.propertyBuilder("sleeper.partition.splitting.reserved.concurrency")
+            .description("The number of lambda instances to reserve from your AWS account's quota for splitting " +
+                    "partitions. Note that this will not provision instances until they are needed. Each " +
+                    "time partition splitting runs, a separate lambda invocation will be made for each partition " +
+                    "that needs to be split. If the reserved concurrency is less than the number of partitions that " +
+                    "need to be split across all Sleeper tables in the instance, these invocations may queue up.")
+            .defaultValue("10")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.default.partition.splitting.threshold")
             .description("This is the default value of the partition splitting threshold. Partitions with more than the following " +
                     "number of records in will be split. This value can be overridden on a per-table basis.")
             .defaultValue("1000000000")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.default.partition.splitting.commit.async")
+            .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
+                    "store committer lambda. If false, the partition splitting lambda will apply splits synchronously.")
+            .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

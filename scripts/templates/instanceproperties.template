@@ -774,9 +774,20 @@ sleeper.partition.splitting.memory=2048
 # The timeout in seconds for the lambda function used to split partitions.
 sleeper.partition.splitting.timeout.seconds=900
 
+# The number of lambda instances to reserve from your AWS account's quota for splitting partitions.
+# Note that this will not provision instances until they are needed. Each time partition splitting
+# runs, a separate lambda invocation will be made for each partition that needs to be split. If the
+# reserved concurrency is less than the number of partitions that need to be split across all Sleeper
+# tables in the instance, these invocations may queue up.
+sleeper.partition.splitting.reserved.concurrency=10
+
 # This is the default value of the partition splitting threshold. Partitions with more than the
 # following number of records in will be split. This value can be overridden on a per-table basis.
 sleeper.default.partition.splitting.threshold=1000000000
+
+# If true, partition splits will be applied via asynchronous requests sent to the state store
+# committer lambda. If false, the partition splitting lambda will apply splits synchronously.
+sleeper.default.partition.splitting.commit.async=true
 
 
 ## The following properties relate to garbage collection.
@@ -803,6 +814,10 @@ sleeper.gc.batch.size=2000
 # can be overridden on a per-table basis.
 sleeper.default.gc.delay.minutes=15
 
+# If true, deletion of files will be applied via asynchronous requests sent to the state store
+# committer lambda. If false, the garbage collector lambda will apply synchronously.
+sleeper.default.gc.commit.async=true
+
 
 ## The following properties relate to compactions.
 
@@ -825,7 +840,7 @@ sleeper.compaction.keepalive.period.seconds=300
 
 # The delay in seconds until a failed compaction job becomes visible on the compaction job queue and
 # can be processed again.
-sleeper.compaction.job.failed.visibility.timeout.seconds=0
+sleeper.compaction.job.failed.visibility.timeout.seconds=60
 
 # The time in seconds for a compaction task to wait for a compaction job to appear on the SQS queue
 # (must be <= 20).
@@ -1243,3 +1258,11 @@ sleeper.default.ingest.job.files.commit.async=true
 # If true, bulk import will add files via requests sent to the state store committer lambda
 # asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
 sleeper.default.bulk.import.job.files.commit.async=true
+
+# When using the transaction log state store, this sets whether to update from the transaction log
+# before adding a transaction in the asynchronous state store committer.
+# If asynchronous commits are used for all or almost all state store updates, this can be false to
+# avoid the extra queries.
+# If the state store is commonly updated directly outside of the asynchronous committer, this can be
+# true to avoid conflicts and retries.
+sleeper.default.statestore.committer.update.every.commit=false

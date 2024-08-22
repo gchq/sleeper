@@ -1,0 +1,57 @@
+{
+  "type": "SPLIT_PARTITION",
+  "request": {
+    "tableId": "test-table",
+    "parentPartition": {
+      "partitionId": "root",
+      "isLeafPartition": false,
+      "parentPartitionId": null,
+      "childPartitionIds": [
+        "left",
+        "right"
+      ],
+      "region": {
+        "key": {
+          "min": "",
+          "minInclusive": true,
+          "max": null,
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": 0
+    },
+    "leftChild": {
+      "partitionId": "left",
+      "isLeafPartition": true,
+      "parentPartitionId": "root",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "",
+          "minInclusive": true,
+          "max": "YWFh",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    },
+    "rightChild": {
+      "partitionId": "right",
+      "isLeafPartition": true,
+      "parentPartitionId": "root",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "YWFh",
+          "minInclusive": true,
+          "max": null,
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    }
+  }
+}

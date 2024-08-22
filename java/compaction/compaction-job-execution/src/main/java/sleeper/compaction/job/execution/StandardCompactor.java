@@ -76,7 +76,7 @@ public class StandardCompactor implements CompactionRunner {
         this.configuration = configuration;
     }
 
-    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorCreationException, StateStoreException, InterruptedException {
+    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorCreationException, StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
         Schema schema = tableProperties.getSchema();
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
