@@ -6,9 +6,6 @@ on:
       - "2864-incremental-build-caching-for-rust-code"
   schedule: # Planned execution once per day
     - cron: "0 2 * * *"
-  pull_request:
-    paths:
-      - "java/**"
 
 env:
   SCCACHE_GHA_ENABLED: "true"
