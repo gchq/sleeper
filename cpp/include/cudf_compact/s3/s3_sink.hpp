@@ -16,7 +16,7 @@
 namespace gpu_compact::cudf_compact::s3
 {
 
-inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 256 * 1'048'576;
+inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 50 * 1'048'576;
 
 struct S3Sink final : public cudf::io::data_sink
 {

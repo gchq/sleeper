@@ -10,11 +10,9 @@
 #include "cudf_compact/s3/s3_utils.hpp"
 
 #include <algorithm>
-#include <chrono>//remove after test
 #include <exception>
 #include <functional>
 #include <ios>
-#include <thread>//sleep, remove after test
 
 namespace gpu_compact::cudf_compact::s3
 {
@@ -41,7 +39,6 @@ void S3Sink::uploadBuffer() {
             Aws::S3::Model::UploadPartOutcome const &response,
             std::shared_ptr<const Aws::Client::AsyncCallerContext> const &) {
               SPDLOG_DEBUG(ff("Part number {:Ld} waiting 5 seconds..."));
-              // std::this_thread::sleep_for(std::chrono::seconds(5));
               auto const result = unwrap(response);
               {
                   std::lock_guard<std::mutex> guard{ tagsLock };
@@ -54,7 +51,6 @@ void S3Sink::uploadBuffer() {
               SPDLOG_INFO(ff("Finished uploading part number {:Ld}", startedPartNo));
           });
         partNo++;
-        // std::this_thread::sleep_for(std::chrono::seconds(5));
     }// endif
 }
 
@@ -95,7 +91,6 @@ void S3Sink::flush() {}
 void S3Sink::finish() {
     SPDLOG_INFO(ff("Finishing multipart load"));
     uploadBuffer();
-    // std::this_thread::sleep_for(std::chrono::seconds(5));
     SPDLOG_INFO(ff("Awaiting completion of uploads..."));
     std::size_t count;
     while ((count = activeUploadCount.load()) != 0) {
