@@ -10,7 +10,7 @@ namespace gpu_compact::cudf_compact::s3
 Aws::SDKOptions const &getOptions() noexcept {
     static Aws::SDKOptions options = []() noexcept {
         Aws::SDKOptions v;
-        v.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Debug;
+        v.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Info;
         return v;
     }();
     return options;

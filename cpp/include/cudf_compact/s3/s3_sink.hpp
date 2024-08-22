@@ -2,19 +2,21 @@
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
+#include <aws/s3/model/CompletedPart.h>
 #include <cudf/io/data_sink.hpp>
 #include <rmm/cuda_stream_view.hpp>
 
+#include <atomic>
 #include <cstddef>
 #include <future>
 #include <memory>
-#include <sstream>
+#include <mutex>
 #include <string_view>
 
 namespace gpu_compact::cudf_compact::s3
 {
 
-inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 200 * 1'048'576;
+inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 256 * 1'048'576;
 
 struct S3Sink final : public cudf::io::data_sink
 {
@@ -23,13 +25,16 @@ struct S3Sink final : public cudf::io::data_sink
     Aws::String bucket;
     Aws::String key;
     Aws::String uploadId;
-    Aws::Vector<Aws::String> eTags;
+    Aws::Vector<Aws::S3::Model::CompletedPart> eTags;
+    std::atomic_size_t activeUploadCount;
+    std::mutex tagsLock;
     std::size_t uploadSize = 0;
     std::size_t bytesWritten;
     int partNo;
-    std::stringstream buffer;
+    Aws::StringStream buffer;
 
     void uploadBuffer();
+    void finish();
 
   public:
     S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client,
@@ -54,8 +59,6 @@ struct S3Sink final : public cudf::io::data_sink
       device_write_async(void const *gpu_data, std::size_t size, rmm::cuda_stream_view stream) override;
 
     void flush() override;
-
-    void finish();
 
     std::size_t bytes_written() noexcept override;
 };

@@ -3,15 +3,18 @@
 #include <aws/s3/model/CompletedPart.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
-#include <aws/s3/model/UploadPartResult.h>
 #include <spdlog/spdlog.h>
 
 #include "cudf_compact/format_helper.hpp"
 #include "cudf_compact/s3/s3_sink.hpp"
 #include "cudf_compact/s3/s3_utils.hpp"
 
+#include <algorithm>
+#include <chrono>//remove after test
 #include <exception>
-#include <memory>
+#include <functional>
+#include <ios>
+#include <thread>//sleep, remove after test
 
 namespace gpu_compact::cudf_compact::s3
 {
@@ -24,26 +27,41 @@ Aws::String createUploadRequest(Aws::S3::S3Client &client, Aws::String const &bu
 
 void S3Sink::uploadBuffer() {
     if (buffer.view().size() > 0) {
-        SPDLOG_INFO(
-          ff("Buffer of {:Ld} bytes reached upload threshold of {:Ld} bytes", buffer.view().size(), uploadSize));
+        SPDLOG_INFO(ff("Uploading {:Ld} bytes in part number {:Ld}", buffer.view().size(), partNo));
         auto const stream = Aws::MakeShared<Aws::StringStream>("");
-        *stream << buffer.view();
-        std::stringstream().swap(buffer);
+        stream->swap(buffer);
         auto request =
           Aws::S3::Model::UploadPartRequest().WithBucket(bucket).WithKey(key).WithUploadId(uploadId).WithPartNumber(
             partNo);
         request.SetBody(stream);
-        Aws::S3::Model::UploadPartResult result = unwrap(client->UploadPart(request));
-        eTags.push_back(std::move(result.GetETag()));
+        activeUploadCount++;
+        client->UploadPartAsync(request,
+          [this, startedPartNo = partNo](Aws::S3::S3Client const *,
+            Aws::S3::Model::UploadPartRequest const &,
+            Aws::S3::Model::UploadPartOutcome const &response,
+            std::shared_ptr<const Aws::Client::AsyncCallerContext> const &) {
+              SPDLOG_DEBUG(ff("Part number {:Ld} waiting 5 seconds..."));
+              // std::this_thread::sleep_for(std::chrono::seconds(5));
+              auto const result = unwrap(response);
+              {
+                  std::lock_guard<std::mutex> guard{ tagsLock };
+                  eTags.push_back(std::move(Aws::S3::Model::CompletedPart()
+                                              .WithPartNumber(startedPartNo)
+                                              .WithETag(std::move(result.GetETag()))));
+              }
+              activeUploadCount--;
+              activeUploadCount.notify_all();
+              SPDLOG_INFO(ff("Finished uploading part number {:Ld}", startedPartNo));
+          });
         partNo++;
-        SPDLOG_INFO(ff("Upload complete"));
-    }
+        // std::this_thread::sleep_for(std::chrono::seconds(5));
+    }// endif
 }
 
 S3Sink::S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client, std::string_view s3path, std::size_t const uploadPartSize)
   : client(s3client), bucket(getBucket(s3path)), key(getKey(s3path)),
-    uploadId(createUploadRequest(*s3client, bucket, key)), eTags(), uploadSize(uploadPartSize), bytesWritten(0),
-    partNo(1) {
+    uploadId(createUploadRequest(*s3client, bucket, key)), eTags(), activeUploadCount(0), tagsLock(),
+    uploadSize(uploadPartSize), bytesWritten(0), partNo(1) {
     SPDLOG_INFO(ff("Creating an S3Sink to {}/{}", bucket, key));
 }
 
@@ -57,6 +75,8 @@ S3Sink::~S3Sink() noexcept {
 void S3Sink::host_write(void const *data, std::size_t size) {
     buffer.write(reinterpret_cast<char const *>(data), static_cast<std::streamsize>(size));
     if (buffer.view().size() > uploadSize) {
+        SPDLOG_INFO(
+          ff("Upload buffer of {:Ld} bytes exceeded upload size of {:Ld} bytes", buffer.view().size(), uploadSize));
         uploadBuffer();
     }
     bytesWritten += size;
@@ -73,11 +93,23 @@ void S3Sink::host_write(void const *data, std::size_t size) {
 void S3Sink::flush() {}
 
 void S3Sink::finish() {
+    SPDLOG_INFO(ff("Finishing multipart load"));
     uploadBuffer();
-    SPDLOG_INFO(ff("Completing multipart upload to {}/{}", bucket, key));
+    // std::this_thread::sleep_for(std::chrono::seconds(5));
+    SPDLOG_INFO(ff("Awaiting completion of uploads..."));
+    std::size_t count;
+    while ((count = activeUploadCount.load()) != 0) {
+        SPDLOG_INFO(ff("Awaiting {:Ld} pending uploads", count));
+        activeUploadCount.wait(count);
+    }
+    SPDLOG_INFO(ff("Completing multipart upload"));
     auto parts = Aws::S3::Model::CompletedMultipartUpload();
-    for (int uploadPartNo = 1; auto const &tag : eTags) {
-        parts.AddParts(Aws::S3::Model::CompletedPart().WithETag(tag).WithPartNumber(uploadPartNo++));
+    {
+        std::lock_guard<std::mutex> guard{ tagsLock };
+        std::sort(eTags.begin(), eTags.end(), [cmp = std::less{}](auto const &a, auto const &b) constexpr noexcept {
+            return cmp(a.GetPartNumber(), b.GetPartNumber());
+        });
+        parts.SetParts(eTags);
     }
     auto const request = Aws::S3::Model::CompleteMultipartUploadRequest()
                            .WithBucket(bucket)
@@ -85,6 +117,7 @@ void S3Sink::finish() {
                            .WithUploadId(uploadId)
                            .WithMultipartUpload(parts);
     auto const result = unwrap(client->CompleteMultipartUpload(request));
+    SPDLOG_INFO(ff("Multipart upload completed"));
 }
 
 std::size_t S3Sink::bytes_written() noexcept {
