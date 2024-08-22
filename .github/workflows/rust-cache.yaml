@@ -28,7 +28,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Set folder location
-        run: echo "SSCACHE_DIR=${{ runner.temp }}/sccache" >> "$GITHUB_ENV"
+        run: echo "SCCACHE_DIR=${{ runner.temp }}/sccache" >> "$GITHUB_ENV"
       - name: Restore Rust
         uses: actions/cache/restore@v3
         id: restore-cache
