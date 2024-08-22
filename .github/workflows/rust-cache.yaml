@@ -1,4 +1,4 @@
-name: Rust Incremental Build
+name: Rust Nightly
 on:
   workflow_dispatch: # Allow manual running to refresh/check cache
   schedule: # Planned execution once per day
