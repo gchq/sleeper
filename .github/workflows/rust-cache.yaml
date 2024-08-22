@@ -25,5 +25,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@1.79.0
       - uses: mozilla-actions/sccache-action@v0.0.5
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Restore Rust
+        uses: actions/cache/restore@v3
+        id: restore-cache
+        with:
+          path: ${{ runner.temp }}/target/debug
+          key: ${{ runner.os }}-rust-${{ steps.date.outputs.date }}
+          fail-on-cache-miss: ${{ inputs.failOnCacheMiss }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+      - name: Cache Rust
+        uses: actions/cache/save@v3
+        if: ${{ always() }}
+        with:
+          path: ${{ runner.temp }}/target/debug
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+
