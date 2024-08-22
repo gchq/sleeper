@@ -1,11 +1,11 @@
 name: Rust Incremental Build
 on:
   workflow_dispatch: # Allow manual running to refresh/check cache
-  push:
-    branches:
-      - "2864-incremental-build-caching-for-rust-code"
   schedule: # Planned execution once per day
     - cron: "0 2 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/rust-cache.yaml'
 
 env:
   SCCACHE_GHA_ENABLED: "true"
