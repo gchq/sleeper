@@ -44,11 +44,8 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
-    private final ManagedPolicy clearInstancePolicy;
-    private final ManagedPolicy editStateStoreCommitterTriggerPolicy;
-    private ManagedPolicy purgeQueuesPolicy;
+    private final ManagedPolicy instanceAdminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
-    private ManagedPolicy invokeSchedulesPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -60,8 +57,7 @@ public class ManagedPoliciesStack extends NestedStack {
         queryPolicy = createManagedPolicy("Query");
         editTablesPolicy = createManagedPolicy("EditTables");
         reportingPolicy = createManagedPolicy("Reporting");
-        clearInstancePolicy = createManagedPolicy("ClearInstance");
-        editStateStoreCommitterTriggerPolicy = createManagedPolicy("EditStateStoreCommitterTrigger");
+        instanceAdminPolicy = createManagedPolicy("InstanceAdmin");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -93,19 +89,15 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public ManagedPolicy getClearInstancePolicyForGrants() {
-        return clearInstancePolicy;
+        return instanceAdminPolicy;
     }
 
     public ManagedPolicy getEditStateStoreCommitterTriggerPolicyForGrants() {
-        return editStateStoreCommitterTriggerPolicy;
+        return instanceAdminPolicy;
     }
 
     public ManagedPolicy getPurgeQueuesPolicyForGrants() {
-        // Avoid creating empty policy when we're not deploying any queues
-        if (purgeQueuesPolicy == null) {
-            purgeQueuesPolicy = createManagedPolicy("PurgeQueues");
-        }
-        return purgeQueuesPolicy;
+        return instanceAdminPolicy;
     }
 
     public ManagedPolicy getInvokeCompactionPolicyForGrants() {
@@ -117,16 +109,12 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public void grantInvokeScheduled(IFunction function) {
-        // Avoid creating empty policy when we're not deploying any scheduled rules
-        if (invokeSchedulesPolicy == null) {
-            invokeSchedulesPolicy = createManagedPolicy("InvokeSchedules");
-        }
-        Utils.grantInvokeOnPolicy(function, invokeSchedulesPolicy);
+        Utils.grantInvokeOnPolicy(function, instanceAdminPolicy);
     }
 
     public void grantInvokeScheduled(IFunction function, IQueue invokeQueue) {
         grantInvokeScheduled(function);
-        invokeQueue.grantSendMessages(invokeSchedulesPolicy);
+        invokeQueue.grantSendMessages(instanceAdminPolicy);
     }
 
     public void grantReadIngestSources(IRole role) {
@@ -138,8 +126,8 @@ public class ManagedPoliciesStack extends NestedStack {
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
                 directIngestPolicy, ingestByQueuePolicy, queryPolicy,
-                editTablesPolicy, reportingPolicy, clearInstancePolicy, editStateStoreCommitterTriggerPolicy,
-                purgeQueuesPolicy, invokeCompactionPolicy, invokeSchedulesPolicy)
+                editTablesPolicy, reportingPolicy, instanceAdminPolicy,
+                invokeCompactionPolicy)
                 .filter(policy -> policy != null);
     }
 
