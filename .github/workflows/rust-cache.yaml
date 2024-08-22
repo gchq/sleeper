@@ -24,4 +24,4 @@ jobs:
         run: cargo install cross
       - name: Build Rust
         working-directory: ./rust
-        run: cross build --target x86_64-unknown-linux-gnu
+        run: SCCACHE_LOG=trace cross build --target x86_64-unknown-linux-gnu --verbose
