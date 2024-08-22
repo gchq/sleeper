@@ -9,6 +9,10 @@ on:
         required: false
         type: boolean
 
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  SSCACHE_CACHE_SIZE: "2G"
+
 jobs:
   build:
     runs-on: ubuntu-latest
