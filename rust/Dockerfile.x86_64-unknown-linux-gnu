@@ -1,0 +1,10 @@
+FROM ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge
+ARG DEBIAN_FRONTEND=noninteractive
+
+# COPY sccache-source.sh /sccache.sh
+# RUN /sccache.sh x86_64-unknown-linux-gnu
+
+COPY sccache-prebuilt.sh /sccache.sh
+RUN /sccache.sh x86_64-unknown-linux-musl
+
+ENV RUSTC_WRAPPER="/usr/bin/sccache"

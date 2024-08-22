@@ -11,11 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+[build.env]
+passthrough = [
+    "SCCACHE_ERROR_LOG",
+    "SCCACHE_LOG",
+    "SCCACHE_DIR",
+    "SSCACHE_CACHE_SIZE",
+    "SCCACHE_GHA_ENABLED",
+    "ACTIONS_CACHE_URL",
+    "ACTIONS_RUNTIME_TOKEN",
+]
+
 [target.aarch64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:edge"
+dockerfile = "Dockerfile.aarch64-unknown-linux-gnu"
 
 [target.x86_64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
+dockerfile = "Dockerfile.x86_64-unknown-linux-gnu"
 
 [build]
 pre-build = ["apt-get update && apt-get --assume-yes install libssl-dev"]
