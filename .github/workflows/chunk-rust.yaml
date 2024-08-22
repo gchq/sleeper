@@ -1,0 +1,20 @@
+name: Build Rust Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-rust.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/compaction/pom.xml'
+      - 'java/compaction/compaction-rust/**'
+      - 'rust/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: rust
+      skipRust: false
