@@ -322,7 +322,7 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
 
     // chunk-size is in GB
     // TODO read from config/options
-    size_t const chunk_size = 500 * 1024ul * 1024ul;
+    size_t const chunk_size = 700 * 1024ul * 1024ul;
     // calculate input ranges
     auto ranges = getRanges(pages, range_col, col_type, conv_type, chunk_size, indexes_per_file);
 

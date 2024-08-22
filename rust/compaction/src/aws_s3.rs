@@ -41,7 +41,7 @@ use object_store::{
 };
 use url::Url;
 
-pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
+pub const MULTIPART_BUF_SIZE: usize = 50 * 1024 * 1024;
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
