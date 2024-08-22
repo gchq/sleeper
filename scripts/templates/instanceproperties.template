@@ -840,7 +840,7 @@ sleeper.compaction.keepalive.period.seconds=300
 
 # The delay in seconds until a failed compaction job becomes visible on the compaction job queue and
 # can be processed again.
-sleeper.compaction.job.failed.visibility.timeout.seconds=0
+sleeper.compaction.job.failed.visibility.timeout.seconds=60
 
 # The time in seconds for a compaction task to wait for a compaction job to appear on the SQS queue
 # (must be <= 20).

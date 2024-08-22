@@ -58,7 +58,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
             .description("The delay in seconds until a failed compaction job becomes visible on the compaction job " +
                     "queue and can be processed again.")
-            .defaultValue("0")
+            .defaultValue("60")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
             .description("The time in seconds for a compaction task to wait for a compaction job to appear on the " +
