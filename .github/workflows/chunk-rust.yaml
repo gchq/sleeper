@@ -7,10 +7,18 @@ on:
       - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
+      - 'rust/**'
       - 'java/pom.xml'
       - 'java/compaction/pom.xml'
       - 'java/compaction/compaction-rust/**'
-      - 'rust/**'
+      - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-core/**'
+      - 'java/common/common-job/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
 
 jobs:
   chunk-workflow:
