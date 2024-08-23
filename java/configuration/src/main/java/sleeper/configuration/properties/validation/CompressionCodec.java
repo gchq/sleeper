@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
+package sleeper.configuration.properties.validation;
+
+import org.apache.commons.lang3.EnumUtils;
 
 public enum CompressionCodec {
     UNCOMPRESSED,
@@ -22,5 +24,9 @@ public enum CompressionCodec {
     LZO,
     BROTLI,
     LZ4,
-    ZSTD
+    ZSTD;
+
+    public static boolean isValid(String codec) {
+        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
+    }
 }

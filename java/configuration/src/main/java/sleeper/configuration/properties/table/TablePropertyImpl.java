@@ -19,31 +19,36 @@ package sleeper.configuration.properties.table;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
 
     private final String propertyName;
-    private final String defaultValue;
-    private final Predicate<String> validationPredicate;
-    private final SleeperProperty defaultProperty;
     private final String description;
     private final PropertyGroup propertyGroup;
+    private final TablePropertyDefaultValue getDefaultValue;
+    private final String defaultValue;
+    private final SleeperProperty defaultProperty;
+    private final Predicate<String> validationPredicate;
     private final boolean editable;
     private final boolean includedInTemplate;
     private final boolean setBySleeper;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
-        defaultValue = builder.defaultValue;
-        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
-        defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
+        getDefaultValue = Optional.ofNullable(builder.getDefaultValue).orElseGet(TablePropertyDefaultValue::none);
+        defaultValue = builder.defaultValue;
+        defaultProperty = builder.defaultProperty;
+        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
         setBySleeper = builder.setBySleeper;
@@ -58,23 +63,8 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public Predicate<String> validationPredicate() {
-        return validationPredicate;
-    }
-
-    @Override
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    @Override
     public String getPropertyName() {
         return propertyName;
-    }
-
-    @Override
-    public SleeperProperty getDefaultProperty() {
-        return defaultProperty;
     }
 
     @Override
@@ -85,6 +75,26 @@ class TablePropertyImpl implements TableProperty {
     @Override
     public PropertyGroup getPropertyGroup() {
         return propertyGroup;
+    }
+
+    @Override
+    public String getDefaultValue(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return getDefaultValue.getDefaultValue(instanceProperties, tableProperties);
+    }
+
+    @Override
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
+    public Predicate<String> validationPredicate() {
+        return validationPredicate;
     }
 
     @Override
@@ -113,11 +123,12 @@ class TablePropertyImpl implements TableProperty {
 
     static final class Builder {
         private String propertyName;
-        private String defaultValue;
-        private Predicate<String> validationPredicate = s -> true;
-        private SleeperProperty defaultProperty;
         private String description;
         private PropertyGroup propertyGroup;
+        private TablePropertyDefaultValue getDefaultValue;
+        private String defaultValue;
+        private SleeperProperty defaultProperty;
+        private Predicate<String> validationPredicate = s -> true;
         private Consumer<TableProperty> addToIndex;
         private boolean editable = true;
         private boolean includedInTemplate = true;
@@ -131,24 +142,42 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder propertyGroup(PropertyGroup propertyGroup) {
+            this.propertyGroup = propertyGroup;
+            return this;
+        }
+
+        public Builder getDefaultValue(TablePropertyDefaultValue getDefaultValue) {
+            if (this.getDefaultValue != null) {
+                throw new IllegalArgumentException("Set default twice for property " + propertyName);
+            }
+            this.getDefaultValue = getDefaultValue;
+            return this;
+        }
+
         public Builder defaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
-            return this;
+            return getDefaultValue(TablePropertyDefaultValue.fixed(defaultValue));
+        }
+
+        public Builder defaultProperty(SleeperProperty defaultProperty) {
+            return defaultPropertyWithBehaviour(defaultProperty, TablePropertyDefaultValue::defaultProperty);
+        }
+
+        public <T extends SleeperProperty> Builder defaultPropertyWithBehaviour(T defaultProperty, Function<T, TablePropertyDefaultValue> behaviour) {
+            this.defaultProperty = defaultProperty;
+            this.defaultValue = defaultProperty.getDefaultValue();
+            return getDefaultValue(behaviour.apply(defaultProperty))
+                    .validationPredicate(defaultProperty.validationPredicate());
         }
 
         public Builder validationPredicate(Predicate<String> validationPredicate) {
             this.validationPredicate = validationPredicate;
-            return this;
-        }
-
-        public Builder defaultProperty(SleeperProperty defaultProperty) {
-            this.defaultProperty = defaultProperty;
-            this.defaultValue = defaultProperty.getDefaultValue();
-            return validationPredicate(defaultProperty.validationPredicate());
-        }
-
-        public Builder description(String description) {
-            this.description = description;
             return this;
         }
 
@@ -164,11 +193,6 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder setBySleeper(boolean setBySleeper) {
             this.setBySleeper = setBySleeper;
-            return this;
-        }
-
-        public Builder propertyGroup(PropertyGroup propertyGroup) {
-            this.propertyGroup = propertyGroup;
             return this;
         }
 
