@@ -34,17 +34,17 @@ RESULTS_BUCKET=$3
 TEST_SUITE_NAME=$4
 shift 3
 if [ "$TEST_SUITE_NAME" == "performance" ]; then
-  TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite)
+  TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
   shift
 elif [ "$TEST_SUITE_NAME" == "functional" ]; then
-  TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite)
+  TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
   shift
 elif [ "$1" == "--main" ]; then
   TEST_SUITE_PARAMS=("$2")
   TEST_SUITE_NAME=custom
   shift 2
 else
-  TEST_SUITE_PARAMS=()
+  TEST_SUITE_PARAMS=("$@")
   TEST_SUITE_NAME=custom
 fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
@@ -98,7 +98,7 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}" "$@"
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
 runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@"
 
 echo "[$(time_str)] Uploading test output"
