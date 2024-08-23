@@ -75,11 +75,6 @@ public interface PartitionSplittingProperty {
                     "number of records in will be split. This value can be overridden on a per-table basis.")
             .defaultValue("1000000000")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
-    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.default.partition.splitting.commit.async")
-            .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
-                    "store committer lambda. If false, the partition splitting lambda will apply splits synchronously.")
-            .defaultValue("true")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

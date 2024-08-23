@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,9 +91,13 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public String get(T property) {
-        String value = properties.getProperty(property.getPropertyName(), property.getDefaultValue());
-        if ("".equals(value)) {
-            return property.getDefaultValue();
+        return getOrDefault(property, property::getDefaultValue);
+    }
+
+    protected String getOrDefault(T property, Supplier<String> getDefault) {
+        String value = properties.getProperty(property.getPropertyName());
+        if (value == null || "".equals(value)) {
+            return getDefault.get();
         }
         return value;
     }
