@@ -70,6 +70,9 @@ runMavenSystemTests() {
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
+    pushd "$MAVEN_DIR"
+    mvn clean
+    popd
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
