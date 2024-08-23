@@ -97,20 +97,14 @@ class TransactionLogHead<T> {
             if (updateLogBeforeAddTransaction || attempt > 1) {
                 forceUpdate();
             }
-            transaction.validate(state);
-            long transactionNumber = lastTransactionNumber + 1;
             try {
-                logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
+                attemptAddTransaction(updateTime, transaction);
             } catch (DuplicateTransactionNumberException e) {
                 LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
                         attempt, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
                 continue;
-            } catch (RuntimeException e) {
-                throw new StateStoreException("Failed adding transaction", e);
             }
-            transaction.apply(state, updateTime);
-            lastTransactionNumber = transactionNumber;
             failure = null;
             LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
                     transaction.getClass().getSimpleName(), sleeperTable, attempt,
@@ -122,6 +116,18 @@ class TransactionLogHead<T> {
                     maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
             throw new StateStoreException("Failed adding transaction", failure);
         }
+    }
+
+    private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
+        transaction.validate(state);
+        long transactionNumber = lastTransactionNumber + 1;
+        try {
+            logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed adding transaction", e);
+        }
+        transaction.apply(state, updateTime);
+        lastTransactionNumber = transactionNumber;
     }
 
     /**
