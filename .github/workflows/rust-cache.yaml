@@ -22,6 +22,9 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.5
       - name: Install cargo cross
         run: cargo install cross
-      - name: Build Rust
+      - name: Build x86_64
         working-directory: ./rust
-        run: SCCACHE_LOG=trace cross build --target x86_64-unknown-linux-gnu --verbose
+        run: SCCACHE_LOG=trace cross build --release --target x86_64-unknown-linux-gnu --verbose
+      - name: Build aarch64
+        working-directory: ./rust
+        run: SCCACHE_LOG=trace cross build --release --target aarch64-unknown-linux-gnu --verbose
