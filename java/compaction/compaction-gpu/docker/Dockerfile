@@ -32,7 +32,7 @@ RUN wget -O "llvm.sh" "https://apt.llvm.org/llvm.sh" && chmod u+x llvm.sh && ./l
 # The above line will run an apt update so now we install Java
 RUN apt-get install -y java-17-amazon-corretto-jdk make cmake-format gcc-13 g++-13 clang-format-18 \
     clang-tidy-18 clang-tools-18 maven ccache cppcheck doxygen iwyu \
-    build-essential pkg-config
+    build-essential pkg-config git
 
 # Drop to normal user
 USER $USERNAME 
