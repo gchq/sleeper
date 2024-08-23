@@ -99,23 +99,19 @@ class TransactionLogHead<T> {
             }
             try {
                 attemptAddTransaction(updateTime, transaction);
+                LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
+                        transaction.getClass().getSimpleName(), sleeperTable, attempt,
+                        LoggedDuration.withShortOutput(startTime, Instant.now()));
+                return;
             } catch (DuplicateTransactionNumberException e) {
                 LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
                         attempt, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
-                continue;
             }
-            failure = null;
-            LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
-                    transaction.getClass().getSimpleName(), sleeperTable, attempt,
-                    LoggedDuration.withShortOutput(startTime, Instant.now()));
-            break;
         }
-        if (failure != null) {
-            LOGGER.error("Failed adding transaction with {} attempts, took {}",
-                    maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
-            throw new StateStoreException("Failed adding transaction", failure);
-        }
+        LOGGER.error("Failed adding transaction with {} attempts, took {}",
+                maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
+        throw new StateStoreException("Failed adding transaction", failure);
     }
 
     private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
