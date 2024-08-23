@@ -49,10 +49,12 @@ else
 fi
 SECONDARY_SUITE_NAME=dynamo-state-store
 SECONDARY_SUITE_PARAMS=(-Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@")
+
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
 echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
 echo "SECONDARY_SUITE_NAME=$SECONDARY_SUITE_NAME"
 echo "SECONDARY_SUITE_PARAMS=(${SECONDARY_SUITE_PARAMS[*]})"
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
