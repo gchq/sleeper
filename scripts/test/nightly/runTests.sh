@@ -47,9 +47,10 @@ else
   MAIN_SUITE_PARAMS=("$@")
   TEST_SUITE_NAME=custom
 fi
+DYNAMO_SUITE_PARAMS=("$@")
 echo "TEST_SUITE_NAME=$TEST_SUITE_NAME"
 echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
-echo "DYNAMO_SUITE_PARAMS=($*)"
+echo "DYNAMO_SUITE_PARAMS=(${DYNAMO_SUITE_PARAMS[*]})"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
@@ -105,7 +106,7 @@ runMavenSystemTests() {
 }
 
 runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
-runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@"
+runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "${DYNAMO_SUITE_PARAMS[@]}"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
