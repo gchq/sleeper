@@ -31,32 +31,34 @@ fi
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-TEST_SUITE_NAME=$4
+MAIN_SUITE_NAME=$4
 shift 3
-if [ "$TEST_SUITE_NAME" == "performance" ]; then
+if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   shift
   MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
-elif [ "$TEST_SUITE_NAME" == "functional" ]; then
+elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
   MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
 elif [ "$1" == "--main" ]; then
+  MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$2")
-  TEST_SUITE_NAME=custom
   shift 2
 else
+  MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$@")
-  TEST_SUITE_NAME=custom
 fi
-DYNAMO_SUITE_PARAMS=("$@")
-echo "TEST_SUITE_NAME=$TEST_SUITE_NAME"
+SECONDARY_SUITE_NAME=dynamo-state-store
+SECONDARY_SUITE_PARAMS=(-Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@")
+echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
 echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
-echo "DYNAMO_SUITE_PARAMS=(${DYNAMO_SUITE_PARAMS[*]})"
+echo "SECONDARY_SUITE_NAME=$SECONDARY_SUITE_NAME"
+echo "SECONDARY_SUITE_PARAMS=(${SECONDARY_SUITE_PARAMS[*]})"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
-OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
+OUTPUT_DIR="/tmp/sleeper/${MAIN_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
@@ -105,8 +107,8 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
-runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "${DYNAMO_SUITE_PARAMS[@]}"
+runMavenSystemTests "mvn-$START_TIME_SHORT" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+runMavenSystemTests "dyn-$START_TIME_SHORT" $SECONDARY_SUITE_NAME "${SECONDARY_SUITE_PARAMS[@]}"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
