@@ -34,11 +34,11 @@ RESULTS_BUCKET=$3
 TEST_SUITE_NAME=$4
 shift 3
 if [ "$TEST_SUITE_NAME" == "performance" ]; then
+  shift
   MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
-  shift
 elif [ "$TEST_SUITE_NAME" == "functional" ]; then
-  MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
   shift
+  MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_PARAMS=("$2")
   TEST_SUITE_NAME=custom
@@ -47,6 +47,9 @@ else
   MAIN_SUITE_PARAMS=("$@")
   TEST_SUITE_NAME=custom
 fi
+echo "TEST_SUITE_NAME=$TEST_SUITE_NAME"
+echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
+echo "DYNAMO_SUITE_PARAMS=($*)"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
