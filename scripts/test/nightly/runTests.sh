@@ -31,16 +31,15 @@ fi
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-if [ "$4" == "performance" ]; then
+TEST_SUITE_NAME=${4:-unset}
+shift 3
+if [ "$TEST_SUITE_NAME" == "performance" ]; then
   TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite)
-  TEST_SUITE_NAME="performance"
-elif [ "$4" == "functional" ]; then
+elif [ "$TEST_SUITE_NAME" == "functional" ]; then
   TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite)
-  TEST_SUITE_NAME="functional"
 else
-  echo "Invalid test type: $4"
-  echo "Valid test types are: performance, functional"
-  exit 1
+  TEST_SUITE_NAME=custom
+  TEST_SUITE_PARAMS=()
 fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
@@ -93,8 +92,8 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
-runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}" "$@"
+runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
