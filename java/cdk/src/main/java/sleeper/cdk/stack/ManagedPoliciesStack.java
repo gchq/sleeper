@@ -44,8 +44,8 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
-    private final ManagedPolicy triggersPolicy;
     private final ManagedPolicy clearInstancePolicy;
+    private final ManagedPolicy adminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -58,8 +58,8 @@ public class ManagedPoliciesStack extends NestedStack {
         queryPolicy = createManagedPolicy("Query");
         editTablesPolicy = createManagedPolicy("EditTables");
         reportingPolicy = createManagedPolicy("Reporting");
-        triggersPolicy = createManagedPolicy("Triggers");
         clearInstancePolicy = createManagedPolicy("ClearInstance");
+        adminPolicy = createManagedPolicy("Admin");
 
         List<IBucket> sourceBuckets = addIngestSourceBucketReferences(this, instanceProperties);
         if (sourceBuckets.isEmpty()) { // CDK doesn't allow a managed policy without any grants
@@ -95,11 +95,11 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public ManagedPolicy getEditStateStoreCommitterTriggerPolicyForGrants() {
-        return triggersPolicy;
+        return adminPolicy;
     }
 
     public ManagedPolicy getPurgeQueuesPolicyForGrants() {
-        return clearInstancePolicy;
+        return adminPolicy;
     }
 
     public ManagedPolicy getInvokeCompactionPolicyForGrants() {
@@ -111,12 +111,12 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public void grantInvokeScheduled(IFunction function) {
-        Utils.grantInvokeOnPolicy(function, triggersPolicy);
+        Utils.grantInvokeOnPolicy(function, adminPolicy);
     }
 
     public void grantInvokeScheduled(IFunction function, IQueue invokeQueue) {
         grantInvokeScheduled(function);
-        invokeQueue.grantSendMessages(triggersPolicy);
+        invokeQueue.grantSendMessages(adminPolicy);
     }
 
     public void grantReadIngestSources(IRole role) {
@@ -128,7 +128,7 @@ public class ManagedPoliciesStack extends NestedStack {
     Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
                 directIngestPolicy, ingestByQueuePolicy, queryPolicy,
-                editTablesPolicy, reportingPolicy, triggersPolicy, clearInstancePolicy,
+                editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
                 invokeCompactionPolicy)
                 .filter(policy -> policy != null);
     }
