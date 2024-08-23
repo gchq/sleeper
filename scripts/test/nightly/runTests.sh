@@ -31,15 +31,21 @@ fi
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-TEST_SUITE_NAME=${4:-unset}
+TEST_SUITE_NAME=$4
 shift 3
 if [ "$TEST_SUITE_NAME" == "performance" ]; then
   TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite)
+  shift
 elif [ "$TEST_SUITE_NAME" == "functional" ]; then
   TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite)
-else
+  shift
+elif [ "$1" == "--main" ]; then
+  TEST_SUITE_PARAMS=("$2")
   TEST_SUITE_NAME=custom
+  shift 2
+else
   TEST_SUITE_PARAMS=()
+  TEST_SUITE_NAME=custom
 fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
