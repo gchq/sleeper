@@ -174,7 +174,7 @@
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.4.0</approvaltests.version>
         <jsonunit.version>3.4.1</jsonunit.version>
-        <checkstyle.version>10.17.0</checkstyle.version>
+        <checkstyle.version>10.18.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
