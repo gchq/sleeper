@@ -22,8 +22,8 @@ MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <vpc> <csv-list-of-subnets> <results-bucket> <test-type>"
+if [ "$#" -lt 3 ]; then
+  echo "Usage: $0 <vpc> <csv-list-of-subnets> <results-bucket> <optional-test-type> <optional-maven-parameters>"
   echo "Valid test types are: performance, functional"
   exit 1
 fi
@@ -31,23 +31,36 @@ fi
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-if [ "$4" == "performance" ]; then
-  TEST_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite)
-  TEST_SUITE_NAME="performance"
-elif [ "$4" == "functional" ]; then
-  TEST_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite)
-  TEST_SUITE_NAME="functional"
+MAIN_SUITE_NAME=$4
+shift 3
+if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+  shift
+  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
+elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
+  shift
+  MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
+elif [ "$1" == "--main" ]; then
+  MAIN_SUITE_NAME=custom
+  MAIN_SUITE_PARAMS=("$2")
+  shift 2
 else
-  echo "Invalid test type: $4"
-  echo "Valid test types are: performance, functional"
-  exit 1
+  MAIN_SUITE_NAME=custom
+  MAIN_SUITE_PARAMS=("$@")
 fi
+SECONDARY_SUITE_NAME=dynamo-state-store
+SECONDARY_SUITE_PARAMS=(-Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@")
+
+echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
+echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
+echo "SECONDARY_SUITE_NAME=$SECONDARY_SUITE_NAME"
+echo "SECONDARY_SUITE_PARAMS=(${SECONDARY_SUITE_PARAMS[*]})"
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
-OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
+OUTPUT_DIR="/tmp/sleeper/${MAIN_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
@@ -65,6 +78,9 @@ runMavenSystemTests() {
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
+    pushd "$MAVEN_DIR"
+    mvn clean
+    popd
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -93,8 +109,8 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME "${TEST_SUITE_PARAMS[@]}"
-runMavenSystemTests "dyn-$START_TIME_SHORT" dynamo-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
+runMavenSystemTests "mvn-$START_TIME_SHORT" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+runMavenSystemTests "dyn-$START_TIME_SHORT" $SECONDARY_SUITE_NAME "${SECONDARY_SUITE_PARAMS[@]}"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
