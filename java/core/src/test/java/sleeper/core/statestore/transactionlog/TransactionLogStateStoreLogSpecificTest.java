@@ -30,6 +30,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -110,6 +111,32 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Then
             assertThat(store.getFileReferences())
                     .containsExactly(file1, file2, file3);
+            assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldRetryAddTransactionTwiceWhenSetNotToReadFirstAndTwoOtherProcessesAddedTransactions() throws Exception {
+            // Given
+            FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+            FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+            FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
+            FileReference file4 = fileFactory().rootFile("file4.parquet", 400);
+            store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
+            store.addFile(file1);
+            // File 2 will conflict with the first add transaction call
+            otherProcess().addFile(file2);
+            // File 3 will conflict with the second add transaction call
+            filesLogStore.atStartOfNextAddTransactions(List.of(
+                    ThrowingRunnable.DO_NOTHING, () -> {
+                        otherProcess().addFile(file3);
+                    }));
+
+            // When
+            store.addFile(file4);
+
+            // Then
+            assertThat(store.getFileReferences())
+                    .containsExactly(file1, file2, file3, file4);
             assertThat(retryWaits).hasSize(1);
         }
 

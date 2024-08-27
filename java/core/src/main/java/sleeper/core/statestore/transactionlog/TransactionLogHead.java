@@ -88,15 +88,7 @@ class TransactionLogHead<T> {
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            try {
-                retryBackoff.waitBeforeAttempt(attempt);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new StateStoreException("Interrupted while waiting to retry", e);
-            }
-            if (updateLogBeforeAddTransaction || attempt > 1) {
-                forceUpdate();
-            }
+            prepareAddTransactionAttempt(attempt);
             try {
                 attemptAddTransaction(updateTime, transaction);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
@@ -112,6 +104,25 @@ class TransactionLogHead<T> {
         LOGGER.error("Failed adding transaction with {} attempts, took {}",
                 maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
         throw new StateStoreException("Failed adding transaction", failure);
+    }
+
+    private void prepareAddTransactionAttempt(int attempt) throws StateStoreException {
+        if (updateLogBeforeAddTransaction) {
+            forceUpdate();
+            waitBeforeAttempt(attempt);
+        } else if (attempt > 1) {
+            forceUpdate();
+            waitBeforeAttempt(attempt - 1);
+        }
+    }
+
+    private void waitBeforeAttempt(int attempt) throws StateStoreException {
+        try {
+            retryBackoff.waitBeforeAttempt(attempt);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new StateStoreException("Interrupted while waiting to retry", e);
+        }
     }
 
     private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
