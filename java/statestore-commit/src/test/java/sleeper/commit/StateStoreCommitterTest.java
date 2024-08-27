@@ -24,7 +24,6 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
@@ -88,7 +87,6 @@ public class StateStoreCommitterTest {
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
-    private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
 
     @Nested
     @DisplayName("Commit a compaction job")
@@ -429,7 +427,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(new FixedTablePropertiesProvider(List.of()), compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, dataBucketObjectByKey::get, timeSupplier);
+        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, timeSupplier);
     }
 
     private StateStore createTable(String tableId) {

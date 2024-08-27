@@ -162,11 +162,10 @@ public class StateStoreCommitterThroughputIT {
 
     private StateStoreCommitter committer() {
         TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
-        return new StateStoreCommitter(tablePropertiesProvider,
+        return new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 stateStoreProvider().byTableId(tablePropertiesProvider),
-                key -> s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
                 Instant::now);
     }
 

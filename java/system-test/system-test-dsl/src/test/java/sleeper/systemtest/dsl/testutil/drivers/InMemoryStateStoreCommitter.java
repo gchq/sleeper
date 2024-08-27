@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.commit.StateStoreCommitRequest;
+import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
@@ -81,16 +82,18 @@ public class InMemoryStateStoreCommitter {
 
     public class Driver implements StateStoreCommitterDriver {
         private final SystemTestInstanceContext instance;
+        private final StateStoreCommitRequestDeserialiser deserialiser;
         private final StateStoreCommitter committer;
         private boolean committerPaused = false;
 
         private Driver(SystemTestContext context) {
             instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
-            committer = new StateStoreCommitter(tablePropertiesProvider,
+            deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, InMemoryStateStoreCommitter::failToLoadS3Object);
+            committer = new StateStoreCommitter(
                     compaction.jobStore(), ingest.jobStore(),
                     instance.getStateStoreProvider().byTableId(tablePropertiesProvider),
-                    InMemoryStateStoreCommitter::failToLoadS3Object, Instant::now);
+                    Instant::now);
         }
 
         @Override
@@ -104,9 +107,10 @@ public class InMemoryStateStoreCommitter {
         private void runCommitter() {
             for (StateStoreCommitMessage message = queue.poll(); message != null; message = queue.poll()) {
                 try {
-                    StateStoreCommitRequest appliedRequest = committer.applyFromJson(message.getBody());
+                    StateStoreCommitRequest request = deserialiser.fromJson(message.getBody());
+                    committer.apply(request);
                     numCommitsByTableId.compute(
-                            appliedRequest.getTableId(),
+                            request.getTableId(),
                             (id, count) -> count == null ? 1 : count + 1);
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);

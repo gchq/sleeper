@@ -29,6 +29,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.commit.StateStoreCommitRequest;
+import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.commit.StateStoreCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -56,7 +58,28 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
-    private final StateStoreCommitter committer = connectToAws();
+    private final StateStoreCommitRequestDeserialiser deserialiser;
+    private final StateStoreCommitter committer;
+
+    public StateStoreCommitterLambda() {
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
+        deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
+        committer = new StateStoreCommitter(
+                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                stateStoreProvider.byTableId(tablePropertiesProvider),
+                Instant::now);
+    }
 
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
@@ -72,9 +95,10 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
             SQSMessage message = messages.get(i);
             LOGGER.debug("Found message: {}", message.getBody());
             try {
+                StateStoreCommitRequest request = deserialiser.fromJson(message.getBody());
                 DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                     try {
-                        committer.applyFromJson(message.getBody());
+                        committer.apply(request);
                     } catch (StateStoreException e) {
                         throw new RuntimeException(e);
                     }
@@ -94,26 +118,5 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
-    }
-
-    private static StateStoreCommitter connectToAws() {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
-        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
-        return new StateStoreCommitter(
-                tablePropertiesProvider,
-                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider),
-                key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
-                Instant::now);
     }
 }
