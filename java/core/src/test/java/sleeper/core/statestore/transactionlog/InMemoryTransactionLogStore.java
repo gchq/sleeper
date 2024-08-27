@@ -93,7 +93,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
      * @param action the operation to occur before the next time transactions are read
      */
     public void atStartOfNextReadTransactions(ThrowingRunnable action) {
-        startOfAdd.onNext(action);
+        startOfRead.onNext(action);
     }
 
     public long getLastTransactionNumber() {
