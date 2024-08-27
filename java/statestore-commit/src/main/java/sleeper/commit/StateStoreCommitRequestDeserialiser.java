@@ -24,7 +24,6 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.commit.StateStoreCommitter.LoadS3ObjectFromDataBucket;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
@@ -177,5 +176,18 @@ public class StateStoreCommitRequestDeserialiser {
                 throw new IllegalArgumentException("Found a request stored in S3 pointing to another S3 object: " + request.getKeyInS3());
             };
         }
+    }
+
+    /**
+     * Loads S3 objects from the data bucket.
+     */
+    public interface LoadS3ObjectFromDataBucket {
+        /**
+         * Loads the content of an S3 object.
+         *
+         * @param  key the key in the data bucket
+         * @return     the content
+         */
+        String loadFromDataBucket(String key);
     }
 }

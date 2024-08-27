@@ -122,17 +122,4 @@ public class StateStoreCommitter {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
     }
-
-    /**
-     * Loads S3 objects from the data bucket.
-     */
-    public interface LoadS3ObjectFromDataBucket {
-        /**
-         * Loads the content of an S3 object.
-         *
-         * @param  key the key in the data bucket
-         * @return     the content
-         */
-        String loadFromDataBucket(String key);
-    }
 }
