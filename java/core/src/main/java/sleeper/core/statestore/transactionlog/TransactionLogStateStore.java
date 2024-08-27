@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -37,7 +38,10 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     public static final Duration DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS = Duration.ofMinutes(1);
     public static final Duration DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS = Duration.ZERO;
 
-    public TransactionLogStateStore(Builder builder) {
+    private final TransactionLogFileReferenceStore files;
+    private final TransactionLogPartitionStore partitions;
+
+    private TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
@@ -63,8 +67,24 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     private TransactionLogStateStore(Schema schema, TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
-        super(new TransactionLogFileReferenceStore(filesHead),
+        this(new TransactionLogFileReferenceStore(filesHead),
                 new TransactionLogPartitionStore(schema, partitionsHead));
+    }
+
+    private TransactionLogStateStore(TransactionLogFileReferenceStore files, TransactionLogPartitionStore partitions) {
+        super(files, partitions);
+        this.files = files;
+        this.partitions = partitions;
+    }
+
+    /**
+     * Updates the local state from the transaction logs.
+     *
+     * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
+     */
+    public void updateFromLogs() throws StateStoreException {
+        files.updateFromLog();
+        partitions.updateFromLog();
     }
 
     public static Builder builder() {
