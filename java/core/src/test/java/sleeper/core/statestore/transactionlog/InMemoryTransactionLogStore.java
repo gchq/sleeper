@@ -31,6 +31,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private List<TransactionLogEntry> transactions = new ArrayList<>();
     private TriggerActions startOfAdd = new TriggerActions();
     private TriggerActions startOfRead = new TriggerActions();
+    private boolean runningTrigger = false;
 
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
@@ -138,7 +139,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     /**
      * Tracks actions that will be done when some trigger is met.
      */
-    private static class TriggerActions {
+    private class TriggerActions {
 
         private final Queue<Runnable> queue = new LinkedList<>();
 
@@ -156,9 +157,14 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         }
 
         void run() {
+            if (runningTrigger) {
+                return;
+            }
             Runnable runnable = queue.poll();
             if (runnable != null) {
+                runningTrigger = true;
                 runnable.run();
+                runningTrigger = false;
             }
         }
     }
