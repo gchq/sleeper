@@ -19,7 +19,7 @@ package sleeper.core;
  * Fixes versions of images for TestContainers.
  */
 public final class CommonTestConstants {
-    public static final String DYNAMODB_LOCAL_CONTAINER = "amazon/dynamodb-local:1.21.0";
+    public static final String DYNAMODB_LOCAL_CONTAINER = "amazon/dynamodb-local:2.5.2";
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:1.4.0";
 
     private CommonTestConstants() {
