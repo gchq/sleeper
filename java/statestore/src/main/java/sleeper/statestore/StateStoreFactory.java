@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -89,19 +90,29 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
-            return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)
-                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
-                    .build();
+            return forCommitterProcess(committerProcess, tableProperties,
+                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)).build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
-            return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
-                    .updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(tableProperties))
-                    .build();
+            return forCommitterProcess(committerProcess, tableProperties,
+                    DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)).build();
         }
         throw new RuntimeException("Unknown StateStore class: " + stateStoreClassName);
     }
 
-    private boolean isUpdateLogBeforeAddTransaction(TableProperties tableProperties) {
+    /**
+     * Applies configuration to transaction log state store based on whether or not this is a committer process.
+     *
+     * @param  committerProcess true if the current process is the single process responsible for applying updates
+     * @param  tableProperties  the table properties
+     * @param  builder          the builder
+     * @return                  the builder with configuration applied
+     */
+    public static TransactionLogStateStore.Builder forCommitterProcess(boolean committerProcess, TableProperties tableProperties, TransactionLogStateStore.Builder builder) {
+        return builder.updateLogBeforeAddTransaction(isUpdateLogBeforeAddTransaction(committerProcess, tableProperties));
+    }
+
+    private static boolean isUpdateLogBeforeAddTransaction(boolean committerProcess, TableProperties tableProperties) {
         if (committerProcess) {
             return tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT);
         } else {

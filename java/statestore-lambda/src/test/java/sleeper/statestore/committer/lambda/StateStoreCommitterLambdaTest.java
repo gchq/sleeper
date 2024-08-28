@@ -34,14 +34,19 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.FilesReportTestHelper;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +55,8 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreTestHelper.inMemoryTransactionLogStateStoreBuilder;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class StateStoreCommitterLambdaTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
@@ -58,12 +64,14 @@ public class StateStoreCommitterLambdaTest {
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = inMemoryStateStoreWithPartitions(partitions.getAllPartitions());
+    private final List<Duration> retryWaits = new ArrayList<>();
+    private final InMemoryTransactionLogStore filesLog = new InMemoryTransactionLogStore();
+    private final InMemoryTransactionLogStore partitionsLog = new InMemoryTransactionLogStore();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
 
     @BeforeEach
-    void setUp() {
-        stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
+    void setUp() throws StateStoreException {
+        stateStore().initialise(partitions.getAllPartitions());
     }
 
     @Test
@@ -78,8 +86,9 @@ public class StateStoreCommitterLambdaTest {
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
-        assertThat(stateStore.getFileReferences())
+        assertThat(stateStore().getFileReferences())
                 .containsExactly(file);
+        assertThat(retryWaits).isEmpty();
     }
 
     @Test
@@ -102,8 +111,19 @@ public class StateStoreCommitterLambdaTest {
         assertThat(response.getBatchItemFailures())
                 .extracting(BatchItemFailure::getItemIdentifier)
                 .containsExactly("message-2", "message-4");
-        assertThat(stateStore.getFileReferences())
+        assertThat(stateStore().getFileReferences())
                 .containsExactly(file1, file2);
+        assertThat(retryWaits).isEmpty();
+    }
+
+    private StateStore stateStore() {
+        StateStore stateStore = StateStoreFactory.forCommitterProcess(true, tableProperties,
+                inMemoryTransactionLogStateStoreBuilder(tableProperties.getStatus(), schema, recordWaits(retryWaits)))
+                .filesLogStore(filesLog)
+                .partitionsLogStore(partitionsLog)
+                .build();
+        stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
+        return stateStore;
     }
 
     private StateStoreCommitterLambda lambda() {
@@ -120,7 +140,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStoreCommitter committer() {
         return new StateStoreCommitter(CompactionJobStatusStore.NONE, IngestJobStatusStore.NONE,
-                Map.of(tableProperties.get(TABLE_ID), stateStore)::get,
+                Map.of(tableProperties.get(TABLE_ID), stateStore())::get,
                 Instant::now);
     }
 
