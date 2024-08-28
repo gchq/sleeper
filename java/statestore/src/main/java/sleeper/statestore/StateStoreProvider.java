@@ -15,9 +15,6 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
 import org.jboss.threads.ArrayQueue;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -43,11 +40,6 @@ public class StateStoreProvider {
     private final Factory stateStoreFactory;
     private final Map<String, StateStore> tableIdToStateStoreCache;
     private final Queue<String> tableIds;
-
-    public StateStoreProvider(
-            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
-    }
 
     public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);

@@ -78,6 +78,7 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -134,7 +135,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, configuration);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();

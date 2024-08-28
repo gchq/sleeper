@@ -34,6 +34,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 public class InstanceIngestSession implements AutoCloseable {
@@ -95,7 +96,7 @@ public class InstanceIngestSession implements AutoCloseable {
     }
 
     public StateStoreProvider createStateStoreProvider() {
-        return new StateStoreProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
     }
 
     @Override

@@ -52,6 +52,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -88,7 +89,7 @@ public class CreateCompactionJobsIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB,
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB,
             HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = createAndInitialiseStateStore(tableProperties);

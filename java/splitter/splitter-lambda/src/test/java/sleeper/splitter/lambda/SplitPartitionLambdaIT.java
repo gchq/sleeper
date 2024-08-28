@@ -55,6 +55,7 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -199,7 +200,7 @@ public class SplitPartitionLambdaIT {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return new StateStoreProvider(instanceProperties, s3, dynamoDB, conf);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf);
     }
 
     private SplitPartitionLambda lambdaWithNewPartitionIds(String... ids) {

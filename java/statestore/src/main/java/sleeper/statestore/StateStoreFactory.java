@@ -75,6 +75,20 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     }
 
     /**
+     * Creates a state store provider backed by an instance of this class to populate its cache.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  s3Client           the S3 client
+     * @param  dynamoDBClient     the DynamoDB client
+     * @param  configuration      the Hadoop configuration
+     * @return                    the state store provider
+     */
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+        return new StateStoreProvider(instanceProperties,
+                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
+    }
+
+    /**
      * Creates a client to access a state store.
      *
      * @param  tableProperties the Sleeper table properties

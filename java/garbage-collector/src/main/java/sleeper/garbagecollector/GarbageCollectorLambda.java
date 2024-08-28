@@ -38,6 +38,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -78,7 +79,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
                 instanceProperties, stateStoreProvider,
                 sendAsyncCommit(instanceProperties, sqsClient));

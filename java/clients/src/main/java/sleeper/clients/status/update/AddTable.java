@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class AddTable {
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
-        this.stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDB, configuration);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, configuration);
     }
 
     public void run() throws IOException {

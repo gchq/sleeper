@@ -38,6 +38,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.find.FindPartitionsToSplit;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -70,7 +71,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient,
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);

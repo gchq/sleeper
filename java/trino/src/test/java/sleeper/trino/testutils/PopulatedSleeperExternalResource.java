@@ -43,6 +43,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -142,8 +143,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
-        return stateStoreProvider.getStateStore(getTableProperties(tableName));
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration);
+        return stateStoreFactory.getStateStore(getTableProperties(tableName));
     }
 
     @Override
@@ -172,7 +173,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 stateStore.initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());

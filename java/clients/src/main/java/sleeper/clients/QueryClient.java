@@ -42,6 +42,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -70,7 +71,7 @@ public class QueryClient extends QueryCommandLineClient {
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
                 new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf));
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,

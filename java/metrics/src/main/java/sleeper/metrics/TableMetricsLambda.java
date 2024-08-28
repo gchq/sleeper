@@ -43,6 +43,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -70,7 +71,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties.loadFromS3(s3Client, configBucketName);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient,
+        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }

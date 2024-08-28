@@ -33,6 +33,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
@@ -62,7 +63,7 @@ public class IngestRandomDataToDocker {
     private void run() throws IOException {
         SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
         systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3,
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3,
                 dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()

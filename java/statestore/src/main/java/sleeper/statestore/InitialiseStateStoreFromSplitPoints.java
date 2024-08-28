@@ -101,7 +101,7 @@ public class InitialiseStateStoreFromSplitPoints {
             }
 
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
 
             new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
         } finally {
