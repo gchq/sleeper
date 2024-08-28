@@ -107,7 +107,7 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitterLambda lambda() {
-        return new StateStoreCommitterLambda(deserialiser(), committer(), PollWithRetries.immediateRetries(10));
+        return new StateStoreCommitterLambda(deserialiser(), committer(), PollWithRetries.noRetries());
     }
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
