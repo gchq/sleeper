@@ -20,13 +20,13 @@ import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFa
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -41,7 +41,9 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 
@@ -49,7 +51,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -179,7 +180,6 @@ public class StateStoreCommitterLambdaTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSucceedFirstAddTransactionWhenItConflictsAndLambdaIsSetToUpdateOnEveryBatch() throws Exception {
         // Given
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT, "false");
@@ -219,9 +219,11 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitterLambda lambda() {
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore());
         return new StateStoreCommitterLambda(
-                new FixedTablePropertiesProvider(tableProperties),
-                deserialiser(), committer(), PollWithRetries.noRetries());
+                tablePropertiesProvider, stateStoreProvider,
+                deserialiser(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());
     }
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
@@ -232,9 +234,9 @@ public class StateStoreCommitterLambdaTest {
                 });
     }
 
-    private StateStoreCommitter committer() {
+    private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return new StateStoreCommitter(CompactionJobStatusStore.NONE, IngestJobStatusStore.NONE,
-                Map.of(tableProperties.get(TABLE_ID), stateStore())::get,
+                stateStoreProvider.byTableId(tablePropertiesProvider),
                 Instant::now);
     }
 

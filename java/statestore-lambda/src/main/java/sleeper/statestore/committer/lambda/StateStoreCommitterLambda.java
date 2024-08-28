@@ -31,8 +31,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
@@ -52,6 +55,7 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
 /**
  * A lambda that allows for asynchronous commits to a state store.
@@ -60,6 +64,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final StateStoreCommitRequestDeserialiser deserialiser;
     private final StateStoreCommitter committer;
     private final PollWithRetries throttlingRetriesConfig;
@@ -75,7 +80,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
+        stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
         committer = new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
@@ -87,10 +92,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
     public StateStoreCommitterLambda(
             TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestDeserialiser deserialiser,
             StateStoreCommitter committer,
             PollWithRetries throttlingRetriesConfig) {
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.deserialiser = deserialiser;
         this.committer = committer;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
@@ -105,6 +112,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 .trackMaxRetriesAcrossInvocations()
                 .build();
         List<Request> requests = readRequests(event);
+        updateBeforeBatch(requests);
         for (int i = 0; i < requests.size(); i++) {
             Request request = requests.get(i);
             try {
@@ -137,6 +145,29 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return new Request(message, deserialiser.fromJson(message.getBody()));
     }
 
+    private void updateBeforeBatch(List<Request> requests) {
+        requests.stream()
+                .map(Request::getTableId).distinct()
+                .forEach(this::updateBeforeBatchForTable);
+    }
+
+    private void updateBeforeBatchForTable(String tableId) {
+        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+        if (!tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)) {
+            return;
+        }
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        if (!(stateStore instanceof TransactionLogStateStore)) {
+            return;
+        }
+        TransactionLogStateStore state = (TransactionLogStateStore) stateStore;
+        try {
+            state.updateFromLogs();
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed updating state store at start of batch", e);
+        }
+    }
+
     private class Request {
         private SQSMessage message;
         private StateStoreCommitRequest request;
@@ -144,6 +175,10 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         private Request(SQSMessage message, StateStoreCommitRequest request) {
             this.message = message;
             this.request = request;
+        }
+
+        String getTableId() {
+            return request.getTableId();
         }
 
         String getMessageId() {
