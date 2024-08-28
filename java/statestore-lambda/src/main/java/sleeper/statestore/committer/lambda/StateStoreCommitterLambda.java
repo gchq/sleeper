@@ -168,6 +168,9 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         }
     }
 
+    /**
+     * Holds a state store commit request linked to the SQS message it was read from.
+     */
     private class Request {
         private SQSMessage message;
         private StateStoreCommitRequest request;
