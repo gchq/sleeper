@@ -60,6 +60,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
     private final StateStoreCommitRequestDeserialiser deserialiser;
     private final StateStoreCommitter committer;
+    private final PollWithRetries throttlingRetriesConfig;
 
     public StateStoreCommitterLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -79,6 +80,13 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 stateStoreProvider.byTableId(tablePropertiesProvider),
                 Instant::now);
+        throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
+    }
+
+    public StateStoreCommitterLambda(StateStoreCommitRequestDeserialiser deserialiser, StateStoreCommitter committer, PollWithRetries throttlingRetriesConfig) {
+        this.deserialiser = deserialiser;
+        this.committer = committer;
+        this.throttlingRetriesConfig = throttlingRetriesConfig;
     }
 
     @Override
@@ -87,8 +95,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<SQSMessage> messages = event.getRecords();
-        PollWithRetries throttlingRetries = PollWithRetries.builder()
-                .pollIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10))
+        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
                 .trackMaxPollsAcrossInvocations()
                 .build();
         for (int i = 0; i < messages.size(); i++) {
