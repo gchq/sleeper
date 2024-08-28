@@ -70,7 +70,7 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
         StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
         // If transaction log DynamoDB table is scaling up, wait with retries limited over all assignment wait attempts for this job
         PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
-                .trackMaxPollsAcrossInvocations()
+                .trackMaxRetriesAcrossInvocations()
                 .build();
         for (int attempt = 1; attempt <= jobAssignmentWaitAttempts; attempt++) {
             jobAssignmentWaitBackoff.waitBeforeAttempt(attempt);
