@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.configuration.statestore;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
