@@ -29,7 +29,7 @@ public class StateStoreWaitForFilesTestHelper {
     }
 
     public static StateStoreWaitForFiles waitWithRetries(int retries, StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
-        return new StateStoreWaitForFiles(retries, backoffNoJitter(), PollWithRetries.noRetries(), stateStoreProvider.byTableId(tablePropertiesProvider));
+        return new StateStoreWaitForFiles(retries, backoffNoJitter(), PollWithRetries.noRetries(), tablePropertiesProvider, stateStoreProvider);
     }
 
     private static ExponentialBackoffWithJitter backoffNoJitter() {

@@ -30,6 +30,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -149,7 +150,7 @@ public class CompactionTaskTestBase {
     private WaitForFileAssignment waitForFileAssignment() {
         return new StateStoreWaitForFiles(1,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE), JOB_ASSIGNMENT_THROTTLING_RETRIES,
-                stateStoreByTableId::get);
+                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId));
     }
 
     private Supplier<String> jobRunIdsInSequence() {

@@ -102,7 +102,7 @@ public class ECSCompactionTaskRunner {
             DefaultSelector compactionSelector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider, objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(stateStoreProvider.byTableId(tablePropertiesProvider));
+            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);

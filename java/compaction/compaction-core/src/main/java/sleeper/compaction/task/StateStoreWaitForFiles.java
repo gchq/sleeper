@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
@@ -48,18 +50,19 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     private final PollWithRetries throttlingRetriesConfig;
     private final GetStateStoreByTableId stateStoreProvider;
 
-    public StateStoreWaitForFiles(GetStateStoreByTableId stateStoreProvider) {
+    public StateStoreWaitForFiles(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                JOB_ASSIGNMENT_THROTTLING_RETRIES, stateStoreProvider);
+                JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider);
     }
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
-            PollWithRetries throttlingRetriesConfig, GetStateStoreByTableId stateStoreProvider) {
+            PollWithRetries throttlingRetriesConfig,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
-        this.stateStoreProvider = stateStoreProvider;
+        this.stateStoreProvider = stateStoreProvider.byTableId(tablePropertiesProvider);
     }
 
     @Override
