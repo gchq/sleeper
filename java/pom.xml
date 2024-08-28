@@ -86,7 +86,7 @@
         <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
         <aircompressor.version>0.27</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>4.27.3</protobuf.version>
+        <protobuf.version>4.27.4</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.40</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
@@ -117,7 +117,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.7</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.27.13</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.27.14</aws-java-sdk-v2.version>
         <aws-crt.version>0.30.9</aws-crt.version>
         <aws-lambda-java-events.version>3.13.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -153,7 +153,7 @@
         <!-- Trino's AssertJ plugin is not compatible with the latest version -->
         <trino.assertj.version>3.18.1</trino.assertj.version>
         <!-- Build module uses Jersey for communicating with GitHub API -->
-        <jersey.version>2.44</jersey.version>
+        <jersey.version>2.45</jersey.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.1.112.Final</netty.version>
         <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
@@ -170,7 +170,7 @@
         <!-- Testing -->
         <junit.version>5.11.0</junit.version>
         <junit.platform.version>1.11.0</junit.platform.version>
-        <mockito.version>5.12.0</mockito.version>
+        <mockito.version>5.13.0</mockito.version>
         <testcontainers.version>1.20.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
@@ -188,7 +188,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
-        <surefire.plugin.version>3.4.0</surefire.plugin.version>
+        <surefire.plugin.version>3.5.0</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
