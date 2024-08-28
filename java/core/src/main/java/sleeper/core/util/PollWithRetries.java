@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Polls a function until some condition is met or a maximum number of polls is reached. Waits for a constant interval
+ * Polls a function until some condition is met or a maximum number of retries is reached. Waits for a constant interval
  * between polls.
  */
 public class PollWithRetries {
@@ -53,7 +53,7 @@ public class PollWithRetries {
      * Creates an instance of this class.
      *
      * @param  pollInterval time to wait in between polls
-     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of polls
+     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of retries
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
@@ -87,13 +87,13 @@ public class PollWithRetries {
     }
 
     /**
-     * Starts polling until an exit condition is met or the maximum polls has been reached.
+     * Starts polling until an exit condition is met or the maximum retries has been reached.
      *
      * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
      *                              to find _"
      * @param  checkFinished        the exit condition
      * @throws InterruptedException if the thread was interrupted while waiting
-     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws TimedOutException    if the maximum number of retries is reached
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
@@ -135,7 +135,7 @@ public class PollWithRetries {
      * @param  condition            the exit condition to check against each query result
      * @return                      the last query result
      * @throws InterruptedException if the thread was interrupted while waiting
-     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws TimedOutException    if the maximum number of retries is reached
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException, TimedOutException, CheckFailedException {
@@ -220,10 +220,10 @@ public class PollWithRetries {
         }
 
         /**
-         * Sets the interval between polls and maximum number, based on a timeout period.
+         * Sets the interval between polls and maximum retries, based on a timeout period.
          *
          * @param  pollInterval the interval
-         * @param  timeout      the timeout period, used to compute the maximum number of polls
+         * @param  timeout      the timeout period, used to compute the maximum number of retries
          * @return              the builder
          */
         public Builder pollIntervalAndTimeout(Duration pollInterval, Duration timeout) {
@@ -234,8 +234,8 @@ public class PollWithRetries {
         }
 
         /**
-         * Sets a tracker to restrict the maximum number of polls. This is restricted across all future calls to poll a
-         * method via this object. Without this, the default is to apply the maximum number of polls within each
+         * Sets a tracker to restrict the maximum number of retries. This is restricted across all future calls to poll
+         * a method via this object. Without this, the default is to apply the maximum number of retries within each
          * individual call to poll a method.
          *
          * @return the builder
