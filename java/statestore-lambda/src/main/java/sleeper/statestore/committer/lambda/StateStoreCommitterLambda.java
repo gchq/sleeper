@@ -49,6 +49,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
@@ -100,36 +101,61 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
-        List<SQSMessage> messages = event.getRecords();
         PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
                 .trackMaxRetriesAcrossInvocations()
                 .build();
-        for (int i = 0; i < messages.size(); i++) {
-            SQSMessage message = messages.get(i);
-            LOGGER.debug("Found message: {}", message.getBody());
+        List<Request> requests = readRequests(event);
+        for (int i = 0; i < requests.size(); i++) {
+            Request request = requests.get(i);
             try {
-                StateStoreCommitRequest request = deserialiser.fromJson(message.getBody());
-                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
-                    try {
-                        committer.apply(request);
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> request.applyWithCommitter());
             } catch (InterruptedException e) {
                 LOGGER.error("Interrupted applying commit request", e);
-                messages.subList(i, messages.size())
-                        .forEach(failedMessage -> batchItemFailures.add(new BatchItemFailure(failedMessage.getMessageId())));
+                requests.subList(i, requests.size())
+                        .forEach(failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
                 Thread.currentThread().interrupt();
                 break;
             } catch (RuntimeException e) {
                 LOGGER.error("Failed commit request", e);
-                batchItemFailures.add(new BatchItemFailure(message.getMessageId()));
+                batchItemFailures.add(new BatchItemFailure(request.getMessageId()));
             }
         }
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
+    }
+
+    private List<Request> readRequests(SQSEvent event) {
+        return event.getRecords().stream()
+                .map(this::readRequest)
+                .collect(toUnmodifiableList());
+    }
+
+    private Request readRequest(SQSMessage message) {
+        LOGGER.debug("Found message: {}", message.getBody());
+        return new Request(message, deserialiser.fromJson(message.getBody()));
+    }
+
+    private class Request {
+        private SQSMessage message;
+        private StateStoreCommitRequest request;
+
+        private Request(SQSMessage message, StateStoreCommitRequest request) {
+            this.message = message;
+            this.request = request;
+        }
+
+        String getMessageId() {
+            return message.getMessageId();
+        }
+
+        void applyWithCommitter() {
+            try {
+                committer.apply(request);
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
