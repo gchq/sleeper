@@ -72,7 +72,7 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldFailIfMaxPollsReached() {
+        void shouldFailIfMaxRetriesReached() {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxRetries(1));
             Iterator<Boolean> iterator = List.of(false, false).iterator();
@@ -86,7 +86,7 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldResetPollCountBetweenPollUntilCalls() throws Exception {
+        void shouldResetRetryCountBetweenPollUntilCalls() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100).maxRetries(1));
             Iterator<Boolean> iterator1 = List.of(false, true).iterator();
@@ -241,7 +241,7 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldResetPollAttemptsInCopy() throws Exception {
+        void shouldResetRetriesInCopy() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
                     .maxRetries(1).trackMaxRetriesAcrossInvocations());
@@ -260,7 +260,7 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldNotResetOriginalPollAttemptsWhenResetInCopy() throws Exception {
+        void shouldNotResetOriginalRetriesWhenResetInCopy() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
                     .maxRetries(1).trackMaxRetriesAcrossInvocations());
@@ -278,7 +278,7 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldRetainOriginalPollAttemptsTrackerInCopy() throws Exception {
+        void shouldRetainOriginalRetriesTrackerInCopy() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
                     .maxRetries(2).trackMaxRetriesAcrossInvocations());
