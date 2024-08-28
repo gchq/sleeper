@@ -58,6 +58,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLambda.class);
 
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreCommitRequestDeserialiser deserialiser;
     private final StateStoreCommitter committer;
     private final PollWithRetries throttlingRetriesConfig;
@@ -71,7 +72,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
@@ -83,7 +84,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }
 
-    public StateStoreCommitterLambda(StateStoreCommitRequestDeserialiser deserialiser, StateStoreCommitter committer, PollWithRetries throttlingRetriesConfig) {
+    public StateStoreCommitterLambda(
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreCommitRequestDeserialiser deserialiser,
+            StateStoreCommitter committer,
+            PollWithRetries throttlingRetriesConfig) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.deserialiser = deserialiser;
         this.committer = committer;
         this.throttlingRetriesConfig = throttlingRetriesConfig;

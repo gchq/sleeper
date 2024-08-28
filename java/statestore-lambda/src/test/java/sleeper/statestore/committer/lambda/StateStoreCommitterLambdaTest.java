@@ -127,6 +127,7 @@ public class StateStoreCommitterLambdaTest {
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "false");
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
+        FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
         stateStore().addFile(file1);
         AtomicInteger addTransactionCalls = new AtomicInteger();
         AtomicInteger readTransactionCalls = new AtomicInteger();
@@ -135,15 +136,16 @@ public class StateStoreCommitterLambdaTest {
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
-                addFilesMessage("test-message", file2)),
+                addFilesMessage("file-2-message", file2),
+                addFilesMessage("file-3-message", file3)),
                 null);
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
-        assertThat(addTransactionCalls.get()).isEqualTo(2);
+        assertThat(addTransactionCalls.get()).isEqualTo(3);
         assertThat(readTransactionCalls.get()).isEqualTo(1);
         assertThat(stateStore().getFileReferences())
-                .containsExactly(file1, file2);
+                .containsExactly(file1, file2, file3);
         assertThat(retryWaits).isEmpty();
     }
 
@@ -154,6 +156,7 @@ public class StateStoreCommitterLambdaTest {
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "false");
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
+        FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
         stateStore().addFile(file1);
         AtomicInteger addTransactionCalls = new AtomicInteger();
         AtomicInteger readTransactionCalls = new AtomicInteger();
@@ -162,15 +165,16 @@ public class StateStoreCommitterLambdaTest {
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
-                addFilesMessage("test-message", file2)),
+                addFilesMessage("file-2-message", file2),
+                addFilesMessage("file-3-message", file3)),
                 null);
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
-        assertThat(addTransactionCalls.get()).isEqualTo(1);
-        assertThat(readTransactionCalls.get()).isEqualTo(1);
+        assertThat(addTransactionCalls.get()).isEqualTo(2);
+        assertThat(readTransactionCalls.get()).isEqualTo(2);
         assertThat(stateStore().getFileReferences())
-                .containsExactly(file1, file2);
+                .containsExactly(file1, file2, file3);
         assertThat(retryWaits).isEmpty();
     }
 
@@ -182,6 +186,7 @@ public class StateStoreCommitterLambdaTest {
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "true");
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
+        FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
         stateStore().addFile(file1);
         AtomicInteger addTransactionCalls = new AtomicInteger();
         AtomicInteger readTransactionCalls = new AtomicInteger();
@@ -190,15 +195,16 @@ public class StateStoreCommitterLambdaTest {
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
-                addFilesMessage("test-message", file2)),
+                addFilesMessage("file-2-message", file2),
+                addFilesMessage("file-3-message", file3)),
                 null);
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
-        assertThat(addTransactionCalls.get()).isEqualTo(1);
+        assertThat(addTransactionCalls.get()).isEqualTo(2);
         assertThat(readTransactionCalls.get()).isEqualTo(1);
         assertThat(stateStore().getFileReferences())
-                .containsExactly(file1, file2);
+                .containsExactly(file1, file2, file3);
         assertThat(retryWaits).isEmpty();
     }
 
@@ -213,7 +219,9 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitterLambda lambda() {
-        return new StateStoreCommitterLambda(deserialiser(), committer(), PollWithRetries.noRetries());
+        return new StateStoreCommitterLambda(
+                new FixedTablePropertiesProvider(tableProperties),
+                deserialiser(), committer(), PollWithRetries.noRetries());
     }
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
