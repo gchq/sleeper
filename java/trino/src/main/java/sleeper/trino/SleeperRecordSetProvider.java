@@ -39,7 +39,6 @@ import static java.util.Objects.requireNonNull;
 /**
  * Provides a record set to scan a split and return its records. A split is defined in {@link SleeperSplit}.
  */
-@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method getRecordSet, seemingly mistaking a param tag for a continuation of the summary fragment.
 public class SleeperRecordSetProvider implements ConnectorRecordSetProvider {
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
 
