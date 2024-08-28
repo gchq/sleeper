@@ -31,31 +31,26 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
-import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
+import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
 /**
  * A lambda that allows for asynchronous commits to a state store.
@@ -108,92 +103,25 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
-        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
-                .trackMaxRetriesAcrossInvocations()
-                .build();
-        List<Request> requests = readRequests(event);
-        updateBeforeBatch(requests);
-        for (int i = 0; i < requests.size(); i++) {
-            Request request = requests.get(i);
-            try {
-                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> request.applyWithCommitter());
-            } catch (InterruptedException e) {
-                LOGGER.error("Interrupted applying commit request", e);
-                requests.subList(i, requests.size())
-                        .forEach(failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
-                Thread.currentThread().interrupt();
-                break;
-            } catch (RuntimeException e) {
-                LOGGER.error("Failed commit request", e);
-                batchItemFailures.add(new BatchItemFailure(request.getMessageId()));
-            }
-        }
+        List<RequestHandle> requests = getRequestHandlesWithFailureTracking(event,
+                failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
+        committer.applyBatch(throttlingRetriesConfig, requests);
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
     }
 
-    private List<Request> readRequests(SQSEvent event) {
+    private List<RequestHandle> getRequestHandlesWithFailureTracking(SQSEvent event, Consumer<SQSMessage> onFail) {
         return event.getRecords().stream()
-                .map(this::readRequest)
+                .map(message -> readRequest(message, onFail))
                 .collect(toUnmodifiableList());
     }
 
-    private Request readRequest(SQSMessage message) {
+    private RequestHandle readRequest(SQSMessage message, Consumer<SQSMessage> onFail) {
         LOGGER.debug("Found message: {}", message.getBody());
-        return new Request(message, deserialiser.fromJson(message.getBody()));
-    }
-
-    private void updateBeforeBatch(List<Request> requests) {
-        requests.stream()
-                .map(Request::getTableId).distinct()
-                .forEach(this::updateBeforeBatchForTable);
-    }
-
-    private void updateBeforeBatchForTable(String tableId) {
-        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-        if (!tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)) {
-            return;
-        }
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        if (!(stateStore instanceof TransactionLogStateStore)) {
-            return;
-        }
-        TransactionLogStateStore state = (TransactionLogStateStore) stateStore;
-        try {
-            state.updateFromLogs();
-        } catch (StateStoreException e) {
-            throw new RuntimeException("Failed updating state store at start of batch", e);
-        }
-    }
-
-    /**
-     * Holds a state store commit request linked to the SQS message it was read from.
-     */
-    private class Request {
-        private SQSMessage message;
-        private StateStoreCommitRequest request;
-
-        private Request(SQSMessage message, StateStoreCommitRequest request) {
-            this.message = message;
-            this.request = request;
-        }
-
-        String getTableId() {
-            return request.getTableId();
-        }
-
-        String getMessageId() {
-            return message.getMessageId();
-        }
-
-        void applyWithCommitter() {
-            try {
-                committer.apply(request);
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return new RequestHandle(
+                deserialiser.fromJson(message.getBody()),
+                () -> onFail.accept(message));
     }
 }

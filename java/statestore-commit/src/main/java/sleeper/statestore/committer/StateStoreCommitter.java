@@ -32,6 +32,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.util.PollWithRetries;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
@@ -43,6 +46,7 @@ import java.util.function.Supplier;
 
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
 /**
  * Applies a state store commit request.
@@ -72,16 +76,57 @@ public class StateStoreCommitter {
     /**
      * Applies a batch of state store commit requests.
      *
-     * @param batch the commit requests
+     * @param throttlingRetriesConfig settings for retries due to DynamoDB API throttling
+     * @param requests                the commit requests
      */
-    public void applyBatch(List<RequestHandle> batch) {
-        for (RequestHandle handle : batch) {
+    public void applyBatch(PollWithRetries throttlingRetriesConfig, List<RequestHandle> requests) {
+        updateBeforeBatch(requests);
+        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
+                .trackMaxRetriesAcrossInvocations()
+                .build();
+        for (int i = 0; i < requests.size(); i++) {
+            RequestHandle handle = requests.get(i);
             try {
-                apply(handle.request());
-            } catch (StateStoreException | RuntimeException e) {
+                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
+                    try {
+                        apply(handle.request());
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (InterruptedException e) {
+                LOGGER.error("Interrupted applying commit request", e);
+                requests.subList(i, requests.size())
+                        .forEach(RequestHandle::failed);
+                Thread.currentThread().interrupt();
+                break;
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed commit request", e);
                 handle.failed();
             }
+        }
+    }
+
+    private void updateBeforeBatch(List<RequestHandle> requests) {
+        requests.stream()
+                .map(handle -> handle.request().getTableId()).distinct()
+                .forEach(this::updateBeforeBatchForTable);
+    }
+
+    private void updateBeforeBatchForTable(String tableId) {
+        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+        if (!tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)) {
+            return;
+        }
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        if (!(stateStore instanceof TransactionLogStateStore)) {
+            return;
+        }
+        TransactionLogStateStore state = (TransactionLogStateStore) stateStore;
+        try {
+            state.updateFromLogs();
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed updating state store at start of batch", e);
         }
     }
 
@@ -149,10 +194,24 @@ public class StateStoreCommitter {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    public interface RequestHandle {
+    /**
+     * Wraps a commit request to track callbacks as a request handle.
+     */
+    public static class RequestHandle {
+        private StateStoreCommitRequest request;
+        private Runnable onFail;
 
-        StateStoreCommitRequest request();
+        public RequestHandle(StateStoreCommitRequest request, Runnable onFail) {
+            this.request = request;
+            this.onFail = onFail;
+        }
 
-        void failed();
+        public StateStoreCommitRequest request() {
+            return request;
+        }
+
+        public void failed() {
+            onFail.run();
+        }
     }
 }

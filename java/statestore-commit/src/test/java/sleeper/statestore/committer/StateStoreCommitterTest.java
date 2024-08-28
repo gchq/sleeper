@@ -47,9 +47,11 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -97,7 +99,7 @@ public class StateStoreCommitterTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
-    private final List<FakeMessage> failedMessages = new ArrayList<>();
+    private final List<StateStoreCommitRequest> failedRequests = new ArrayList<>();
 
     @Nested
     @DisplayName("Commit a compaction job")
@@ -438,18 +440,18 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTable("test-table");
             FileReference file = fileFactory.rootFile("test.parquet", 123L);
-            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                    .tableId("test-table")
-                    .fileReferences(List.of(file))
-                    .build();
-            FakeMessage message = new FakeMessage(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+            StateStoreCommitRequest commitRequest = StateStoreCommitRequest.forIngestAddFiles(
+                    IngestAddFilesCommitRequest.builder()
+                            .tableId("test-table")
+                            .fileReferences(List.of(file))
+                            .build());
 
             // When
-            committer().applyBatch(List.of(message));
+            committer().applyBatch(PollWithRetries.noRetries(), List.of(message(commitRequest)));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file);
-            assertThat(failedMessages).isEmpty();
+            assertThat(failedRequests).isEmpty();
         }
 
         @Test
@@ -459,18 +461,18 @@ public class StateStoreCommitterTest {
             FileReference file = fileFactory.rootFile("test.parquet", 123L);
             stateStore.addFile(file);
             FileReference duplicate = fileFactory.rootFile("test.parquet", 123L);
-            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                    .tableId("test-table")
-                    .fileReferences(List.of(duplicate))
-                    .build();
-            FakeMessage message = new FakeMessage(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+            StateStoreCommitRequest commitRequest = StateStoreCommitRequest.forIngestAddFiles(
+                    IngestAddFilesCommitRequest.builder()
+                            .tableId("test-table")
+                            .fileReferences(List.of(duplicate))
+                            .build());
 
             // When
-            committer().applyBatch(List.of(message));
+            committer().applyBatch(PollWithRetries.noRetries(), List.of(message(commitRequest)));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file);
-            assertThat(failedMessages).containsExactly(message);
+            assertThat(failedRequests).containsExactly(commitRequest);
         }
     }
 
@@ -528,24 +530,7 @@ public class StateStoreCommitterTest {
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }
 
-    /**
-     * Wraps a commit request to track callbacks as a request handle.
-     */
-    private class FakeMessage implements StateStoreCommitter.RequestHandle {
-        private final StateStoreCommitRequest request;
-
-        FakeMessage(StateStoreCommitRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public StateStoreCommitRequest request() {
-            return request;
-        }
-
-        @Override
-        public void failed() {
-            failedMessages.add(this);
-        }
+    private RequestHandle message(StateStoreCommitRequest request) {
+        return new RequestHandle(request, () -> failedRequests.add(request));
     }
 }
