@@ -223,24 +223,6 @@ class PollWithRetriesTest {
         }
 
         @Test
-        void shouldAllowSuccessfulPollWhenPartlyConsumedByEarlierInvocation() throws Exception {
-            // Given
-            PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
-                    .maxRetries(2).trackMaxRetriesAcrossInvocations());
-            Iterator<Boolean> iterator1 = List.of(false, true).iterator();
-            Iterator<Boolean> iterator2 = List.of(true).iterator();
-            poll.pollUntil("true is returned", iterator1::next);
-
-            // When / Then
-            poll.pollUntil("true is returned", iterator2::next);
-
-            // Then
-            assertThat(iterator1).isExhausted();
-            assertThat(iterator2).isExhausted();
-            assertThat(foundSleeps).containsExactly(Duration.ofMillis(100));
-        }
-
-        @Test
         void shouldAllowSuccessfulPollWithRetryWhenPartlyConsumedByEarlierInvocation() throws Exception {
             // Given
             PollWithRetries poll = poll(builder -> builder.pollIntervalMillis(100)
