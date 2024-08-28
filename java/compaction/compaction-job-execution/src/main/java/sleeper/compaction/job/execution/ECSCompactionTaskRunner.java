@@ -144,7 +144,7 @@ public class ECSCompactionTaskRunner {
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
-                tablePropertiesProvider, stateStoreProvider.byTableId(tablePropertiesProvider), jobStatusStore,
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 sendToSqs(instanceProperties, sqsClient));
     }
 

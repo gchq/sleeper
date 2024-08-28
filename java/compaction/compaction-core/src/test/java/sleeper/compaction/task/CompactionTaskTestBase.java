@@ -138,8 +138,8 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
-                new FixedTablePropertiesProvider(tables), stateStoreByTableId::get, jobStore, commitRequestsOnQueue::add,
-                timeSupplier);
+                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId),
+                jobStore, commitRequestsOnQueue::add, timeSupplier);
         CompactionAlgorithmSelector selector = job -> compactor;
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,

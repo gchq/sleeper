@@ -24,7 +24,7 @@ import sleeper.compaction.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.GetStateStoreByTableId;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
@@ -37,19 +37,19 @@ public class CompactionJobCommitterOrSendToLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobCommitterOrSendToLambda.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final GetStateStoreByTableId stateStoreProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore statusStore;
     private final CommitQueueSender jobCommitQueueSender;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobCommitterOrSendToLambda(
-            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender) {
         this(tablePropertiesProvider, stateStoreProvider, statusStore, jobCommitQueueSender, Instant::now);
     }
 
     public CompactionJobCommitterOrSendToLambda(
-            TablePropertiesProvider tablePropertiesProvider, GetStateStoreByTableId stateStoreProvider,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -71,7 +71,9 @@ public class CompactionJobCommitterOrSendToLambda {
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            CompactionJobCommitter.updateStateStoreSuccess(job, finishedEvent.getSummary().getRecordsWritten(), stateStoreProvider.getByTableId(job.getTableId()));
+            CompactionJobCommitter.updateStateStoreSuccess(job,
+                    finishedEvent.getSummary().getRecordsWritten(),
+                    stateStoreProvider.getStateStore(tableProperties));
             statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job, timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
