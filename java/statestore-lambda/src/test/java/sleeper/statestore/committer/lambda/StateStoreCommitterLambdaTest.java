@@ -16,6 +16,7 @@
 package sleeper.statestore.committer.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,8 +82,32 @@ public class StateStoreCommitterLambdaTest {
                 .containsExactly(file);
     }
 
+    @Test
+    void shouldFailSomeCommitsInBatch() throws Exception {
+        // Given
+        FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
+        FileReference duplicate1 = fileFactory.rootFile("file-1.parquet", 200);
+        FileReference file2 = fileFactory.rootFile("file-2.parquet", 300);
+        FileReference duplicate2 = fileFactory.rootFile("file-2.parquet", 400);
+
+        // When
+        SQSBatchResponse response = lambda().handleRequest(event(
+                addFilesMessage("message-1", file1),
+                addFilesMessage("message-2", duplicate1),
+                addFilesMessage("message-3", file2),
+                addFilesMessage("message-4", duplicate2)),
+                null);
+
+        // Then
+        assertThat(response.getBatchItemFailures())
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .containsExactly("message-2", "message-4");
+        assertThat(stateStore.getFileReferences())
+                .containsExactly(file1, file2);
+    }
+
     private StateStoreCommitterLambda lambda() {
-        return new StateStoreCommitterLambda(deserialiser(), committer(), PollWithRetries.noRetries());
+        return new StateStoreCommitterLambda(deserialiser(), committer(), PollWithRetries.immediateRetries(10));
     }
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
