@@ -461,11 +461,7 @@ public class StateStoreCommitterTest {
             FileReference file = fileFactory.rootFile("test.parquet", 123L);
             stateStore.addFile(file);
             FileReference duplicate = fileFactory.rootFile("test.parquet", 123L);
-            StateStoreCommitRequest commitRequest = StateStoreCommitRequest.forIngestAddFiles(
-                    IngestAddFilesCommitRequest.builder()
-                            .tableId("test-table")
-                            .fileReferences(List.of(duplicate))
-                            .build());
+            StateStoreCommitRequest commitRequest = addFilesRequest("test-table", duplicate);
 
             // When
             committer().applyBatch(PollWithRetries.noRetries(), List.of(message(commitRequest)));
@@ -473,6 +469,28 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file);
             assertThat(failedRequests).containsExactly(commitRequest);
+        }
+
+        @Test
+        void shouldFailSomeCommitsInBatch() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
+            FileReference duplicate1 = fileFactory.rootFile("file-1.parquet", 200);
+            FileReference file2 = fileFactory.rootFile("file-2.parquet", 300);
+            FileReference duplicate2 = fileFactory.rootFile("file-2.parquet", 400);
+            StateStoreCommitRequest commitRequest1 = addFilesRequest("test-table", file1);
+            StateStoreCommitRequest commitRequest2 = addFilesRequest("test-table", duplicate1);
+            StateStoreCommitRequest commitRequest3 = addFilesRequest("test-table", file2);
+            StateStoreCommitRequest commitRequest4 = addFilesRequest("test-table", duplicate2);
+
+            // When
+            committer().applyBatch(PollWithRetries.noRetries(), List.of(
+                    message(commitRequest1), message(commitRequest2), message(commitRequest3), message(commitRequest4)));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file1, file2);
+            assertThat(failedRequests).containsExactly(commitRequest2, commitRequest4);
         }
     }
 
@@ -499,10 +517,18 @@ public class StateStoreCommitterTest {
     }
 
     private void createTable(String tableId, StateStore stateStore) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        TableProperties tableProperties = createTableProperties();
         tableProperties.set(TABLE_ID, tableId);
+        createTable(tableProperties, stateStore);
+    }
+
+    private void createTable(TableProperties tableProperties, StateStore stateStore) {
         tables.add(tableProperties);
-        stateStoreByTableId.put(tableId, stateStore);
+        stateStoreByTableId.put(tableProperties.get(TABLE_ID), stateStore);
+    }
+
+    private TableProperties createTableProperties() {
+        return createTestTableProperties(instanceProperties, schema);
     }
 
     private StateStore stateStore(String tableId) {
@@ -532,5 +558,13 @@ public class StateStoreCommitterTest {
 
     private RequestHandle message(StateStoreCommitRequest request) {
         return new RequestHandle(request, () -> failedRequests.add(request));
+    }
+
+    private StateStoreCommitRequest addFilesRequest(String tableId, FileReference... files) {
+        IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
+                .tableId(tableId)
+                .fileReferences(List.of(files))
+                .build();
+        return StateStoreCommitRequest.forIngestAddFiles(request);
     }
 }
