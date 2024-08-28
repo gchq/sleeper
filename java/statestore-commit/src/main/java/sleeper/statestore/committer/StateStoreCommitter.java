@@ -70,6 +70,22 @@ public class StateStoreCommitter {
     }
 
     /**
+     * Applies a batch of state store commit requests.
+     *
+     * @param batch the commit requests
+     */
+    public void applyBatch(List<RequestHandle> batch) {
+        for (RequestHandle handle : batch) {
+            try {
+                apply(handle.request());
+            } catch (StateStoreException | RuntimeException e) {
+                LOGGER.error("Failed commit request", e);
+                handle.failed();
+            }
+        }
+    }
+
+    /**
      * Applies a state store commit request.
      *
      * @param request the commit request
@@ -131,5 +147,12 @@ public class StateStoreCommitter {
     private StateStore stateStore(String tableId) {
         TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
         return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    public interface RequestHandle {
+
+        StateStoreCommitRequest request();
+
+        void failed();
     }
 }

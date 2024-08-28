@@ -97,6 +97,7 @@ public class StateStoreCommitterTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
+    private final List<FakeMessage> failedMessages = new ArrayList<>();
 
     @Nested
     @DisplayName("Commit a compaction job")
@@ -428,6 +429,51 @@ public class StateStoreCommitterTest {
         }
     }
 
+    @Nested
+    @DisplayName("Apply batches of requests")
+    class BatchRequests {
+
+        @Test
+        void shouldApplyRequestAsBatch() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference file = fileFactory.rootFile("test.parquet", 123L);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .tableId("test-table")
+                    .fileReferences(List.of(file))
+                    .build();
+            FakeMessage message = new FakeMessage(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+
+            // When
+            committer().applyBatch(List.of(message));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file);
+            assertThat(failedMessages).isEmpty();
+        }
+
+        @Test
+        void shouldTrackFailedRequest() throws Exception {
+            // Given
+            StateStore stateStore = createTable("test-table");
+            FileReference file = fileFactory.rootFile("test.parquet", 123L);
+            stateStore.addFile(file);
+            FileReference duplicate = fileFactory.rootFile("test.parquet", 123L);
+            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
+                    .tableId("test-table")
+                    .fileReferences(List.of(duplicate))
+                    .build();
+            FakeMessage message = new FakeMessage(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+
+            // When
+            committer().applyBatch(List.of(message));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file);
+            assertThat(failedMessages).containsExactly(message);
+        }
+    }
+
     private StateStoreCommitter committer() {
         return committerWithTimes(Instant::now);
     }
@@ -480,5 +526,26 @@ public class StateStoreCommitterTest {
         compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
+    }
+
+    /**
+     * Wraps a commit request to track callbacks as a request handle.
+     */
+    private class FakeMessage implements StateStoreCommitter.RequestHandle {
+        private final StateStoreCommitRequest request;
+
+        FakeMessage(StateStoreCommitRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        public StateStoreCommitRequest request() {
+            return request;
+        }
+
+        @Override
+        public void failed() {
+            failedMessages.add(this);
+        }
     }
 }
