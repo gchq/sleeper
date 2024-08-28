@@ -24,6 +24,10 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.process.ProcessRunTime;
@@ -49,6 +53,7 @@ import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +72,9 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStart
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -86,6 +94,8 @@ public class StateStoreCommitterTest {
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
     private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
 
     @Nested
@@ -427,7 +437,10 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore, stateStoreByTableId::get, timeSupplier);
+        return new StateStoreCommitter(compactionJobStatusStore, ingestJobStatusStore,
+                new FixedTablePropertiesProvider(tables),
+                FixedStateStoreProvider.byTableId(stateStoreByTableId),
+                timeSupplier);
     }
 
     private StateStore createTable(String tableId) {
@@ -438,6 +451,9 @@ public class StateStoreCommitterTest {
     }
 
     private void createTable(String tableId, StateStore stateStore) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_ID, tableId);
+        tables.add(tableProperties);
         stateStoreByTableId.put(tableId, stateStore);
     }
 

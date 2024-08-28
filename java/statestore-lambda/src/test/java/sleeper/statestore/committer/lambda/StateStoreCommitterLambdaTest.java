@@ -236,7 +236,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return new StateStoreCommitter(CompactionJobStatusStore.NONE, IngestJobStatusStore.NONE,
-                stateStoreProvider.byTableId(tablePropertiesProvider),
+                tablePropertiesProvider, stateStoreProvider,
                 Instant::now);
     }
 

@@ -22,6 +22,7 @@ import sleeper.core.table.TableStatus;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -48,6 +49,16 @@ public class FixedStateStoreProvider extends StateStoreProvider {
                 throw new IllegalArgumentException("Table not found: " + tableName);
             }
             return stateStoreByTableName.get(tableName);
+        });
+    }
+
+    public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
+        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+            String tableId = tableProperties.get(TABLE_ID);
+            if (!stateStoreByTableId.containsKey(tableId)) {
+                throw new IllegalArgumentException("Table not found by ID: " + tableId);
+            }
+            return stateStoreByTableId.get(tableId);
         });
     }
 }

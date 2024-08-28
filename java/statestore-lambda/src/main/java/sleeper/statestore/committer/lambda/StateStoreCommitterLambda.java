@@ -85,7 +85,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         committer = new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider),
+                tablePropertiesProvider, stateStoreProvider,
                 Instant::now);
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }

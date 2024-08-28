@@ -23,9 +23,11 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
-import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
@@ -50,16 +52,19 @@ public class StateStoreCommitter {
 
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
-    private final GetStateStoreByTableId stateStoreProvider;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
-            GetStateStoreByTableId stateStoreProvider,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             Supplier<Instant> timeSupplier) {
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
     }
@@ -77,7 +82,7 @@ public class StateStoreCommitter {
 
     void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
         CompactionJob job = request.getJob();
-        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
+        StateStore stateStore = stateStore(job.getTableId());
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
         } catch (Exception e) {
@@ -95,7 +100,7 @@ public class StateStoreCommitter {
     }
 
     void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        StateStore stateStore = stateStore(request.getTableId());
         List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(request.getFileReferences());
         stateStore.addFilesWithReferences(files);
         IngestJob job = request.getJob();
@@ -109,17 +114,22 @@ public class StateStoreCommitter {
     }
 
     void splitPartition(SplitPartitionCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        StateStore stateStore = stateStore(request.getTableId());
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
     }
 
     void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        StateStore stateStore = stateStore(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
     }
 
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
+        StateStore stateStore = stateStore(request.getTableId());
         stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
+    }
+
+    private StateStore stateStore(String tableId) {
+        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+        return stateStoreProvider.getStateStore(tableProperties);
     }
 }
