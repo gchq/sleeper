@@ -96,7 +96,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<SQSMessage> messages = event.getRecords();
         PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
-                .trackMaxPollsAcrossInvocations()
+                .trackMaxRetriesAcrossInvocations()
                 .build();
         for (int i = 0; i < messages.size(); i++) {
             SQSMessage message = messages.get(i);
