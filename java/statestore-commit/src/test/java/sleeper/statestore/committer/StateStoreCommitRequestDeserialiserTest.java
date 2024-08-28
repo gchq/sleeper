@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.commit;
+package sleeper.statestore.committer;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,9 +41,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.statestore.committer.CommitRequestValidationException;
-import sleeper.statestore.committer.StateStoreCommitRequest;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 
 import java.time.Duration;
 import java.time.Instant;
