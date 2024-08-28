@@ -29,9 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.commit.StateStoreCommitRequest;
-import sleeper.commit.StateStoreCommitRequestDeserialiser;
-import sleeper.commit.StateStoreCommitter;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -43,6 +40,9 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
+import sleeper.statestore.committer.StateStoreCommitter;
 
 import java.time.Duration;
 import java.time.Instant;

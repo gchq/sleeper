@@ -22,13 +22,13 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.commit.StateStoreCommitRequest;
-import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;

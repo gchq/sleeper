@@ -41,6 +41,9 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.statestore.committer.CommitRequestValidationException;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 
 import java.time.Duration;
 import java.time.Instant;

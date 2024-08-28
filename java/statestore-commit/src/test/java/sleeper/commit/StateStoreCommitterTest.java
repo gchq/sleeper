@@ -46,6 +46,8 @@ import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitter;
 
 import java.time.Duration;
 import java.time.Instant;

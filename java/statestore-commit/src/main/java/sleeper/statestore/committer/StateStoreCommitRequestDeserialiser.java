@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.commit;
+package sleeper.statestore.committer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;

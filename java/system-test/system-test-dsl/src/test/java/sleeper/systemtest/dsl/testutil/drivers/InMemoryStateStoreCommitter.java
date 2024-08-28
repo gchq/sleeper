@@ -15,12 +15,12 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.commit.StateStoreCommitRequest;
-import sleeper.commit.StateStoreCommitRequestDeserialiser;
-import sleeper.commit.StateStoreCommitter;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
+import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
