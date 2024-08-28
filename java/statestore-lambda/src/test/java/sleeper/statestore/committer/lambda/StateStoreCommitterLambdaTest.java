@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFa
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -54,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -122,11 +124,14 @@ public class StateStoreCommitterLambdaTest {
     void shouldFailFirstAddTransactionWhenItConflictsAndLambdaIsSetToOnlyUpdateOnFailedCommit() throws Exception {
         // Given
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT, "false");
+        tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "false");
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
         stateStore().addFile(file1);
         AtomicInteger addTransactionCalls = new AtomicInteger();
+        AtomicInteger readTransactionCalls = new AtomicInteger();
         filesLog.atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
+        filesLog.atStartOfReadTransactions(() -> readTransactionCalls.incrementAndGet());
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
@@ -135,21 +140,25 @@ public class StateStoreCommitterLambdaTest {
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
+        assertThat(addTransactionCalls.get()).isEqualTo(2);
+        assertThat(readTransactionCalls.get()).isEqualTo(1);
         assertThat(stateStore().getFileReferences())
                 .containsExactly(file1, file2);
         assertThat(retryWaits).isEmpty();
-        assertThat(addTransactionCalls.get()).isEqualTo(2);
     }
 
     @Test
     void shouldSucceedFirstAddTransactionWhenItConflictsAndLambdaIsSetToUpdateOnEveryCommit() throws Exception {
         // Given
         tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT, "true");
+        tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "false");
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
         stateStore().addFile(file1);
         AtomicInteger addTransactionCalls = new AtomicInteger();
+        AtomicInteger readTransactionCalls = new AtomicInteger();
         filesLog.atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
+        filesLog.atStartOfReadTransactions(() -> readTransactionCalls.incrementAndGet());
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
@@ -158,10 +167,39 @@ public class StateStoreCommitterLambdaTest {
 
         // Then
         assertThat(response.getBatchItemFailures()).isEmpty();
+        assertThat(addTransactionCalls.get()).isEqualTo(1);
+        assertThat(readTransactionCalls.get()).isEqualTo(1);
         assertThat(stateStore().getFileReferences())
                 .containsExactly(file1, file2);
         assertThat(retryWaits).isEmpty();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldSucceedFirstAddTransactionWhenItConflictsAndLambdaIsSetToUpdateOnEveryBatch() throws Exception {
+        // Given
+        tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT, "false");
+        tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH, "true");
+        FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
+        FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
+        stateStore().addFile(file1);
+        AtomicInteger addTransactionCalls = new AtomicInteger();
+        AtomicInteger readTransactionCalls = new AtomicInteger();
+        filesLog.atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
+        filesLog.atStartOfReadTransactions(() -> readTransactionCalls.incrementAndGet());
+
+        // When
+        SQSBatchResponse response = lambda().handleRequest(event(
+                addFilesMessage("test-message", file2)),
+                null);
+
+        // Then
+        assertThat(response.getBatchItemFailures()).isEmpty();
         assertThat(addTransactionCalls.get()).isEqualTo(1);
+        assertThat(readTransactionCalls.get()).isEqualTo(1);
+        assertThat(stateStore().getFileReferences())
+                .containsExactly(file1, file2);
+        assertThat(retryWaits).isEmpty();
     }
 
     private StateStore stateStore() {

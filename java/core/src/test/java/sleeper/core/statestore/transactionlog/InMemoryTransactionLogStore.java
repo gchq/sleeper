@@ -111,6 +111,17 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         startOfRead = onNext(action);
     }
 
+    /**
+     * Sets some operation that should happen just before transactions are read. This will occur every time the local
+     * state store brings itself up to date. If an exception is thrown in the operation, that will be thrown out of the
+     * transaction log store.
+     *
+     * @param action the operation to occur before transactions are read
+     */
+    public void atStartOfReadTransactions(ThrowingRunnable action) {
+        startOfRead = wrappingCheckedExceptions(action);
+    }
+
     public long getLastTransactionNumber() {
         return transactions.size();
     }

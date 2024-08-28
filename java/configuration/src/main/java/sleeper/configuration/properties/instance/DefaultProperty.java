@@ -327,6 +327,13 @@ public interface DefaultProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH = Index.propertyBuilder("sleeper.default.statestore.committer.update.every.batch")
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a batch of transactions in the asynchronous state store " +
+                    "committer.")
+            .defaultValue("true")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

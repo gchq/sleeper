@@ -67,6 +67,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
@@ -319,6 +320,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
                     "to avoid the extra queries.\n" +
                     "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
                     "be true to avoid conflicts and retries.")
+            .propertyGroup(TablePropertyGroup.METADATA).build();
+    TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.batch")
+            .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a batch of transactions in the asynchronous state store " +
+                    "committer.")
             .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
