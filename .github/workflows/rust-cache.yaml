@@ -27,4 +27,6 @@ jobs:
         run: SCCACHE_LOG=trace cross build --release --target x86_64-unknown-linux-gnu --verbose
       - name: Build aarch64
         working-directory: ./rust
+        env:
+          RUSTFLAGS: "-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1"
         run: SCCACHE_LOG=trace cross build --release --target aarch64-unknown-linux-gnu --verbose
