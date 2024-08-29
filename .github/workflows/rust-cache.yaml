@@ -8,8 +8,8 @@ on:
       - '.github/workflows/rust-cache.yaml'
 
 env:
+  CROSS_CONFIG: "Cross.sccache.toml"
   SCCACHE_GHA_ENABLED: "true"
-  RUSTC_WRAPPER: "sccache"
   SSCACHE_CACHE_SIZE: "2G"
 
 jobs:

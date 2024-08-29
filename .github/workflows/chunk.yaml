@@ -10,6 +10,7 @@ on:
         type: boolean
 
 env:
+  CROSS_CONFIG: "Cross.sccache.toml"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
 
