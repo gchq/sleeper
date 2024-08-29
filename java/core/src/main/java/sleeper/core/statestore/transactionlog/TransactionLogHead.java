@@ -88,7 +88,7 @@ class TransactionLogHead<T> {
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            prepareAddTransactionAttempt(attempt);
+            prepareAddTransactionAttempt(attempt, transaction);
             try {
                 attemptAddTransaction(updateTime, transaction);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
@@ -106,13 +106,23 @@ class TransactionLogHead<T> {
         throw new StateStoreException("Failed adding transaction", failure);
     }
 
-    private void prepareAddTransactionAttempt(int attempt) throws StateStoreException {
+    private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
         if (updateLogBeforeAddTransaction) {
             forceUpdate();
+            transaction.validate(state);
             waitBeforeAttempt(attempt);
         } else if (attempt > 1) {
             forceUpdate();
+            transaction.validate(state);
             waitBeforeAttempt(attempt - 1);
+        } else {
+            try {
+                transaction.validate(state);
+            } catch (StateStoreException e) {
+                LOGGER.warn("Failed validating transaction on first attempt for table {}, will update from log and revalidate: {}", sleeperTable, e.getMessage());
+                forceUpdate();
+                transaction.validate(state);
+            }
         }
     }
 
@@ -126,7 +136,6 @@ class TransactionLogHead<T> {
     }
 
     private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
-        transaction.validate(state);
         long transactionNumber = lastTransactionNumber + 1;
         try {
             logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
