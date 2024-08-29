@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.commit;
+package sleeper.statestore.committer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.GetStateStoreByTableId;
@@ -49,36 +48,20 @@ import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJ
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final StateStoreCommitRequestDeserialiser deserialiser;
     private final CompactionJobStatusStore compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final GetStateStoreByTableId stateStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
-            TablePropertiesProvider tablePropertiesProvider,
             CompactionJobStatusStore compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
             GetStateStoreByTableId stateStoreProvider,
-            LoadS3ObjectFromDataBucket loadFromDataBucket,
             Supplier<Instant> timeSupplier) {
-        this.deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, loadFromDataBucket);
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
-    }
-
-    /**
-     * Applies a state store commit request.
-     *
-     * @param  json the commit request JSON string
-     * @return      the commit request
-     */
-    public StateStoreCommitRequest applyFromJson(String json) throws StateStoreException {
-        StateStoreCommitRequest request = deserialiser.fromJson(json);
-        apply(request);
-        return request;
     }
 
     /**
@@ -138,18 +121,5 @@ public class StateStoreCommitter {
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getByTableId(request.getTableId());
         stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
-    }
-
-    /**
-     * Loads S3 objects from the data bucket.
-     */
-    public interface LoadS3ObjectFromDataBucket {
-        /**
-         * Loads the content of an S3 object.
-         *
-         * @param  key the key in the data bucket
-         * @return     the content
-         */
-        String loadFromDataBucket(String key);
     }
 }

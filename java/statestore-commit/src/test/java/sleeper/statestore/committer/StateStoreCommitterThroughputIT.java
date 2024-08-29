@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.commit;
+package sleeper.statestore.committer;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -162,11 +162,10 @@ public class StateStoreCommitterThroughputIT {
 
     private StateStoreCommitter committer() {
         TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
-        return new StateStoreCommitter(tablePropertiesProvider,
+        return new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 stateStoreProvider().byTableId(tablePropertiesProvider),
-                key -> s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), key),
                 Instant::now);
     }
 
