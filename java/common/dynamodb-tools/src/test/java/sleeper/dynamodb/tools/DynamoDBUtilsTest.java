@@ -118,7 +118,7 @@ public class DynamoDBUtilsTest {
         }
 
         @Test
-        void shouldThrowWrappedExceptionWhenOtherExceptionThrown() {
+        void shouldPropagateThrownException() {
             // Given
             RuntimeException exception = new RuntimeException("Custom runtime exception");
             Runnable runnable = () -> {
@@ -127,8 +127,7 @@ public class DynamoDBUtilsTest {
 
             // When / Then
             assertThatThrownBy(() -> retryOnceOnThrottlingException(runnable))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasCause(exception);
+                    .isSameAs(exception);
         }
 
         @Test
