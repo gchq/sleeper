@@ -61,6 +61,8 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
@@ -77,8 +79,7 @@ import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -134,7 +135,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3, dynamoDB, configuration);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();

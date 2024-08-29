@@ -240,7 +240,7 @@ public class DynamoDBUtils {
                     LOGGER.warn("Found DynamoDB throttling exception");
                     return false;
                 }
-                throw new RuntimeException(e);
+                throw e;
             }
         });
     }

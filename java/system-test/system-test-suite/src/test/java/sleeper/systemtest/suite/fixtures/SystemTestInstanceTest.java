@@ -33,7 +33,7 @@ import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.par
 
 public class SystemTestInstanceTest {
 
-    private final List<SystemTestInstanceConfiguration> instances = instances().collect(toUnmodifiableList());
+    private final List<SystemTestInstanceConfiguration> instances = readInstances();
 
     @Test
     void shouldFindInstances() {
@@ -60,11 +60,11 @@ public class SystemTestInstanceTest {
                 .extracting(config -> config.buildDeployConfig(parameters))
                 .flatExtracting(DeployInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
-                .asList().hasSize(instances.size())
+                .hasSize(instances.size())
                 .containsOnly("test-class");
     }
 
-    private Stream<SystemTestInstanceConfiguration> instances() {
+    private List<SystemTestInstanceConfiguration> readInstances() {
         return Stream.of(SystemTestInstance.class.getDeclaredFields())
                 .filter(field -> field.getType() == SystemTestInstanceConfiguration.class)
                 .map(field -> {
@@ -73,6 +73,7 @@ public class SystemTestInstanceTest {
                     } catch (IllegalAccessException e) {
                         throw new RuntimeException(e);
                     }
-                });
+                })
+                .collect(toUnmodifiableList());
     }
 }

@@ -38,6 +38,7 @@ import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreat
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -47,7 +48,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 

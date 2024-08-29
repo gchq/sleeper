@@ -27,6 +27,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -50,7 +51,6 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.model.QueryProcessingConfig;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Path;

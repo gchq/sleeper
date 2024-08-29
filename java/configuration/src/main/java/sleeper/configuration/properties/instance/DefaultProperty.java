@@ -18,7 +18,8 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.CompressionCodec;
+import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -47,7 +48,7 @@ public interface DefaultProperty {
             .description("The compression codec to use in the Parquet files.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .defaultValue("zstd")
-            .validationPredicate(Utils::isValidCompressionCodec)
+            .validationPredicate(CompressionCodec::isValid)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = Index.propertyBuilder("sleeper.default.parquet.dictionary.encoding.rowkey.fields")
             .description("Whether dictionary encoding should be used for row key columns in the Parquet files.")
@@ -257,30 +258,64 @@ public interface DefaultProperty {
                     "is large.")
             .defaultValue("async")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_ASYNC_COMMIT_BEHAVIOUR = Index.propertyBuilder("sleeper.default.statestore.commit.async.behaviour")
+            .description("This is the default for whether state store updates will be applied asynchronously via the " +
+                    "state store committer.\n" +
+                    "This is usually only used for state store implementations where there's a benefit to applying " +
+                    "state store updates in a single process for each Sleeper table. This is usually to avoid " +
+                    "contention from multiple processes performing updates at the same time.\n" +
+                    "This is separate from the properties that determine which state store updates will be done as " +
+                    "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
+                    "enabled for a given state store.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DefaultAsyncCommitBehaviour.class) + "\n" +
+                    "With `disabled`, asynchronous commits will never be used unless overridden in table properties.\n" +
+                    "With `per_implementation`, asynchronous commits will be used for all state store implementations " +
+                    "that are known to benefit from it, unless overridden in table properties.\n" +
+                    "With `all_implementations`, asynchronous commits will be used for all state stores unless " +
+                    "overridden in table properties.")
+            .defaultValue(DefaultAsyncCommitBehaviour.PER_IMPLEMENTATION.toString())
+            .validationPredicate(DefaultAsyncCommitBehaviour::isValid)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.id.assignment.commit.async")
-            .description("If true, compaction job ID assignment commit requests will be sent to the state store committer lambda " +
-                    "to be performed asynchronously. If false, compaction job ID assignments will be committed " +
-                    "synchronously in the compaction job creation lambda.")
+            .description("This is the default for whether created compaction jobs will be assigned to their input " +
+                    "files asynchronously via the state store committer, if asynchronous commit is enabled. " +
+                    "Otherwise, the compaction job creator will commit input file assignments directly to the state " +
+                    "store.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.compaction.job.commit.async")
-            .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
-                    "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
+            .description("This is the default for whether compaction tasks will commit finished jobs asynchronously " +
+                    "via the state store committer, if asynchronous commit is enabled. Otherwise, compaction tasks " +
+                    "will commit finished jobs directly to the state store.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.files.commit.async")
-            .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
-                    "asynchronously. If false, ingest tasks will commit new files synchronously.")
+            .description("This is the default for whether ingest tasks will add files asynchronously via the state " +
+                    "store committer, if asynchronous commit is enabled. Otherwise, ingest tasks will add files " +
+                    "directly to the state store.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.bulk.import.job.files.commit.async")
-            .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
-                    "asynchronously. If false, bulk import will commit new files at the end of the job synchronously.")
+            .description("This is the default for whether bulk import will add files asynchronously via the state " +
+                    "store committer, if asynchronous commit is enabled. Otherwise, bulk import will add files " +
+                    "directly to the state store.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.default.partition.splitting.commit.async")
+            .description("This is the default for whether partition splits will be applied asynchronously via the " +
+                    "state store committer, if asynchronous commit is enabled. Otherwise, the partition splitter " +
+                    "will apply splits directly to the state store.")
+            .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.default.gc.commit.async")
+            .description("This is the default for whether the garbage collector will record deleted files " +
+                    "asynchronously via the state store committer, if asynchronous commit is enabled. Otherwise, the " +
+                    "garbage collector will record this directly to the state store.")
+            .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.default.statestore.committer.update.every.commit")
             .description("When using the transaction log state store, this sets whether to update from the " +
@@ -290,6 +325,13 @@ public interface DefaultProperty {
                     "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
                     "be true to avoid conflicts and retries.")
             .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH = Index.propertyBuilder("sleeper.default.statestore.committer.update.every.batch")
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a batch of transactions in the asynchronous state store " +
+                    "committer.")
+            .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 

@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.commit;
+package sleeper.configuration.properties.validation;
 
-/**
- * An exception for invalid state store commit requests.
- */
-public class CommitRequestValidationException extends RuntimeException {
-    public CommitRequestValidationException(String message) {
-        super(message);
+import org.apache.commons.lang3.EnumUtils;
+
+public enum CompressionCodec {
+    UNCOMPRESSED,
+    SNAPPY,
+    GZIP,
+    LZO,
+    BROTLI,
+    LZ4,
+    ZSTD;
+
+    public static boolean isValid(String codec) {
+        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
     }
 }

@@ -29,6 +29,7 @@ import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -36,7 +37,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;

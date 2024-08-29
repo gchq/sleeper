@@ -36,6 +36,7 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -50,7 +51,7 @@ import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -200,7 +201,7 @@ public class BulkImportJobDriver {
             BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration);
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
             AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
             BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(

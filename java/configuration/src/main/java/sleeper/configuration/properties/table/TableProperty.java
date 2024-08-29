@@ -21,6 +21,8 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.validation.CompressionCodec;
+import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 
@@ -47,6 +49,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
@@ -61,8 +64,10 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
@@ -70,7 +75,6 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -81,7 +85,6 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 
@@ -90,7 +93,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QU
  */
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
-public interface TableProperty extends SleeperProperty {
+public interface TableProperty extends SleeperProperty, TablePropertyDefaultValue {
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -143,9 +146,12 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
-            .defaultProperty(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT)
+            .defaultPropertyWithBehaviour(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
             .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
-                    "store committer lambda. If false, the partition splitting lambda will apply splits synchronously.")
+                    "store committer lambda. If false, the partition splitting lambda will apply splits " +
+                    "synchronously.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
@@ -211,9 +217,11 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.gc.commit.async")
-            .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT)
+            .defaultPropertyWithBehaviour(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
             .description("If true, deletion of files will be applied via asynchronous requests sent to the state " +
-                    "store committer lambda. If false, the garbage collector lambda will apply synchronously.")
+                    "store committer lambda. If false, the garbage collector lambda will apply synchronously.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
@@ -247,16 +255,21 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")
-            .defaultProperty(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)
-            .description("If true, compaction job ID assignment commit requests will be sent to the state store committer lambda " +
-                    "to be performed asynchronously. If false, compaction job ID assignments will be committed " +
-                    "synchronously by the compaction job creation lambda.")
+            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .description("If true, compaction job ID assignment commit requests will be sent to the state store " +
+                    "committer lambda to be performed asynchronously. If false, compaction job ID assignments will " +
+                    "be committed synchronously by the compaction job creation lambda.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")
-            .defaultProperty(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC)
+            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
             .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
-                    "to be performed asynchronously. If false, compaction jobs will be committed synchronously by compaction tasks.")
+                    "to be performed asynchronously. If false, compaction jobs will be committed synchronously by " +
+                    "compaction tasks.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
@@ -289,6 +302,16 @@ public interface TableProperty extends SleeperProperty {
                     "sleeper.statestore.dynamodb.DynamoDBStateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
+    TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
+            .getDefaultValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
+            .description("Overrides whether or not to apply state store updates asynchronously via the state store " +
+                    "committer. Usually this is decided based on the state store implementation used by the Sleeper " +
+                    "table, but other default behaviour can be set for the Sleeper instance.\n" +
+                    "This is separate from the properties that determine which state store updates will be done as " +
+                    "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
+                    "enabled.")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
             .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
             .description("When using the transaction log state store, this sets whether to update from the " +
@@ -297,6 +320,12 @@ public interface TableProperty extends SleeperProperty {
                     "to avoid the extra queries.\n" +
                     "If the state store is commonly updated directly outside of the asynchronous committer, this can " +
                     "be true to avoid conflicts and retries.")
+            .propertyGroup(TablePropertyGroup.METADATA).build();
+    TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.batch")
+            .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)
+            .description("When using the transaction log state store, this sets whether to update from the " +
+                    "transaction log before adding a batch of transactions in the asynchronous state store " +
+                    "committer.")
             .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.add.transaction.max.attempts")
             .defaultProperty(DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS)
@@ -457,9 +486,12 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
-            .defaultProperty(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC)
+            .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
             .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
-                    "asynchronously. If false, bulk import will commit new files at the end of the job synchronously.")
+                    "asynchronously. If false, bulk import will commit new files at the end of the job " +
+                    "synchronously.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
 
     // Ingest batcher
@@ -535,9 +567,11 @@ public interface TableProperty extends SleeperProperty {
                     "is large.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
     TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.job.files.commit.async")
-            .defaultProperty(DEFAULT_INGEST_FILES_COMMIT_ASYNC)
+            .defaultPropertyWithBehaviour(DEFAULT_INGEST_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
-                    "asynchronously. If false, ingest tasks will commit new files synchronously.")
+                    "asynchronously. If false, ingest tasks will commit new files synchronously.\n" +
+                    "This is only applied if async commits are enabled for the table. The default value is set in an " +
+                    "instance property.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
 
     static List<TableProperty> getAll() {

@@ -54,6 +54,7 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
@@ -82,7 +83,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -707,7 +707,7 @@ class BulkImportJobDriverIT {
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),

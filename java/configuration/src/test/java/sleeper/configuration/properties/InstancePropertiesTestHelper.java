@@ -55,11 +55,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 
 public class InstancePropertiesTestHelper {
 

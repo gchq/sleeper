@@ -28,6 +28,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -42,7 +43,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.nio.file.Path;
 import java.util.Iterator;

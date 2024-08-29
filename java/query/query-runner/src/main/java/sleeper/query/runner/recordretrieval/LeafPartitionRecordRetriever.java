@@ -21,7 +21,6 @@ import sleeper.core.schema.Schema;
 import sleeper.query.model.LeafPartitionQuery;
 
 @FunctionalInterface
-@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method getRecords, seemingly mistaking a param tag for a continuation of the summary fragment.
 public interface LeafPartitionRecordRetriever {
 
     /**

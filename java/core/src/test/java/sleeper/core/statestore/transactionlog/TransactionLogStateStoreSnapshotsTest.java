@@ -42,6 +42,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
+    private final InMemoryTransactionLogSnapshots fileSnapshots = new InMemoryTransactionLogSnapshots();
+    private final InMemoryTransactionLogSnapshots partitionSnapshots = new InMemoryTransactionLogSnapshots();
 
     @Nested
     @DisplayName("Get snapshot on first load")
@@ -308,7 +310,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
         TransactionLogStateStore.Builder builder = stateStoreBuilder(schema)
-                .minTransactionsAheadToLoadSnapshot(1);
+                .minTransactionsAheadToLoadSnapshot(1)
+                .filesSnapshotLoader(fileSnapshots)
+                .partitionsSnapshotLoader(partitionSnapshots);
         config.accept(builder);
         return stateStore(builder);
     }

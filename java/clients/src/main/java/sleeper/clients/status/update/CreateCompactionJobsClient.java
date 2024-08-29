@@ -34,9 +34,10 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -83,7 +84,7 @@ public class CreateCompactionJobsClient {
                     .map(name -> tablePropertiesProvider.getByName(name))
                     .collect(toUnmodifiableList());
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
                     new ObjectFactory(instanceProperties, s3Client, "/tmp"),

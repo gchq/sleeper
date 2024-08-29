@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore;
+package sleeper.statestore.committer;
 
 /**
- * Retrieves a state store for a Sleeper table based on the table ID.
+ * An exception for invalid state store commit requests.
  */
-@FunctionalInterface
-public interface GetStateStoreByTableId {
-    /**
-     * Retrieves a state store for a Sleeper table based on the table ID.
-     *
-     * @param  tableId the Sleeper table ID
-     * @return         the state store
-     */
-    StateStore getByTableId(String tableId);
+public class CommitRequestValidationException extends RuntimeException {
+    public CommitRequestValidationException(String message) {
+        super(message);
+    }
 }

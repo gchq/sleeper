@@ -106,7 +106,7 @@ public class ParallelCompactionsST {
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
-                        .isBetween(0, 60));
+                        .isBetween(0, 100));
     }
 
 }

@@ -35,10 +35,11 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -133,7 +134,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return new StateStoreProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
     }
 
     public TableIndex tableIndex(InstanceProperties instanceProperties) {

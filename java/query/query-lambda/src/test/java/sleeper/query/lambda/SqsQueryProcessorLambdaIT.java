@@ -82,7 +82,7 @@ import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -755,7 +755,7 @@ public class SqsQueryProcessorLambdaIT {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(configuration)
                     .build();
@@ -800,7 +800,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
