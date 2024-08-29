@@ -120,7 +120,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
     private RequestHandle readRequest(SQSMessage message, Consumer<SQSMessage> onFail) {
         LOGGER.debug("Found message: {}", message.getBody());
-        return new RequestHandle(
+        return RequestHandle.withCallbackOnFail(
                 deserialiser.fromJson(message.getBody()),
                 () -> onFail.accept(message));
     }

@@ -557,7 +557,7 @@ public class StateStoreCommitterTest {
     }
 
     private RequestHandle message(StateStoreCommitRequest request) {
-        return new RequestHandle(request, () -> failedRequests.add(request));
+        return RequestHandle.withCallbackOnFail(request, () -> failedRequests.add(request));
     }
 
     private StateStoreCommitRequest addFilesRequest(String tableId, FileReference... files) {

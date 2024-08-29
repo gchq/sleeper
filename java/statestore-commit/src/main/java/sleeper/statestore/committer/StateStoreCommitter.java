@@ -201,16 +201,27 @@ public class StateStoreCommitter {
         private StateStoreCommitRequest request;
         private Runnable onFail;
 
-        public RequestHandle(StateStoreCommitRequest request, Runnable onFail) {
+        private RequestHandle(StateStoreCommitRequest request, Runnable onFail) {
             this.request = request;
             this.onFail = onFail;
         }
 
-        public StateStoreCommitRequest request() {
+        /**
+         * Creates a request handle.
+         *
+         * @param  request the request
+         * @param  onFail  the callback to run if the request failed
+         * @return         the handle
+         */
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Runnable onFail) {
+            return new RequestHandle(request, onFail);
+        }
+
+        private StateStoreCommitRequest request() {
             return request;
         }
 
-        public void failed() {
+        private void failed() {
             onFail.run();
         }
     }
