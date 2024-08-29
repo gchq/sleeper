@@ -49,6 +49,12 @@ public class InMemoryTransactionLogs {
         retryWaiter = multipleWaitActions(recordWaits(retryWaits), extraWaiter);
     }
 
+    /**
+     * Creates an instance of this class that will record the waits during transaction retries in an additional list.
+     * 
+     * @param  retryWaits the list to record retry waits in
+     * @return            an instance of this class
+     */
     public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
         return new InMemoryTransactionLogs(recordWaits(retryWaits));
     }
@@ -56,8 +62,9 @@ public class InMemoryTransactionLogs {
     /**
      * Creates a builder for a state store backed by the transaction logs held in this class.
      *
-     * @param  retryWaiter behaviour for waiting on retries, see ExponentialBackoffWithJitterTestHelper
-     * @return             the builder
+     * @param  sleeperTable the status of the table the state store is for
+     * @param  schema       the schema of the table the state store is for
+     * @return              the builder
      */
     public TransactionLogStateStore.Builder stateStoreBuilder(TableStatus sleeperTable, Schema schema) {
         return TransactionLogStateStore.builder()
