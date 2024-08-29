@@ -16,7 +16,6 @@
 passthrough = [
     "SCCACHE_ERROR_LOG",
     "SCCACHE_LOG",
-    "SCCACHE_DIR",
     "SSCACHE_CACHE_SIZE",
     "SCCACHE_GHA_ENABLED",
     "ACTIONS_CACHE_URL",
