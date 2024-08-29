@@ -30,6 +30,7 @@ RUN set -eux; \
     curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/$ssmArch/session-manager-plugin.deb" -o "session-manager-plugin.deb"
 RUN dpkg -i session-manager-plugin.deb
 
+# Set ownership for Sleeper directory & scripts
 RUN groupadd -g 2500 sleeperenv \
     && adduser --disabled-password --gecos "" --uid 2500 --gid 2500 sleeperenv \
     && passwd -d sleeperenv
