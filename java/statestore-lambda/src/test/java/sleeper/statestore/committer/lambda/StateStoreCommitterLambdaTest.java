@@ -49,7 +49,6 @@ import sleeper.statestore.committer.StateStoreCommitter;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +56,6 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class StateStoreCommitterLambdaTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
@@ -65,8 +63,8 @@ public class StateStoreCommitterLambdaTest {
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final List<Duration> retryWaits = new ArrayList<>();
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final List<Duration> retryWaits = transactionLogs.getRetryWaits();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
 
     @BeforeEach
@@ -118,7 +116,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStore stateStore() {
         StateStore stateStore = StateStoreFactory.forCommitterProcess(true, tableProperties,
-                transactionLogs.stateStoreBuilder(tableProperties.getStatus(), schema, recordWaits(retryWaits)))
+                transactionLogs.stateStoreBuilder(tableProperties.getStatus(), schema))
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
         return stateStore;

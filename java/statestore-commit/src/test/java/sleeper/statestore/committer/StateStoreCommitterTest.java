@@ -27,6 +27,7 @@ import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.InMemoryTransactionLogsPerTable;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -49,7 +50,6 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
@@ -93,7 +93,6 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
@@ -109,10 +108,9 @@ public class StateStoreCommitterTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Map<String, TableProperties> propertiesByTableId = new LinkedHashMap<>();
     private final Map<String, StateStore> stateStoreByTableId = new LinkedHashMap<>();
-    private final Map<String, InMemoryTransactionLogs> transactionLogsByTableId = new LinkedHashMap<>();
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final List<StateStoreCommitRequest> failedRequests = new ArrayList<>();
     private final List<Exception> failures = new ArrayList<>();
-    private final List<Duration> retryWaits = new ArrayList<>();
 
     @Nested
     @DisplayName("Commit a compaction job")
@@ -533,7 +531,7 @@ public class StateStoreCommitterTest {
             assertThat(readTransactionCalls.get()).isEqualTo(1);
             assertThat(stateStore(tableProperties).getFileReferences())
                     .containsExactly(file1, file2, file3);
-            assertThat(retryWaits).isEmpty();
+            assertThat(transactionLogs.getRetryWaits()).isEmpty();
         }
 
         @Test
@@ -562,7 +560,7 @@ public class StateStoreCommitterTest {
             assertThat(readTransactionCalls.get()).isEqualTo(2);
             assertThat(stateStore(tableProperties).getFileReferences())
                     .containsExactly(file1, file2, file3);
-            assertThat(retryWaits).isEmpty();
+            assertThat(transactionLogs.getRetryWaits()).isEmpty();
         }
 
         @Test
@@ -591,7 +589,7 @@ public class StateStoreCommitterTest {
             assertThat(readTransactionCalls.get()).isEqualTo(1);
             assertThat(stateStore(tableProperties).getFileReferences())
                     .containsExactly(file1, file2, file3);
-            assertThat(retryWaits).isEmpty();
+            assertThat(transactionLogs.getRetryWaits()).isEmpty();
         }
     }
 
@@ -645,7 +643,6 @@ public class StateStoreCommitterTest {
 
     private void createTable(TableProperties tableProperties) {
         propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
-        transactionLogsByTableId.put(tableProperties.get(TABLE_ID), new InMemoryTransactionLogs());
         try {
             stateStore(tableProperties).initialise(partitions.getAllPartitions());
         } catch (StateStoreException e) {
@@ -669,8 +666,7 @@ public class StateStoreCommitterTest {
         if (fixedStateStore != null) {
             return fixedStateStore;
         }
-        TransactionLogStateStore.Builder builder = transactionLogsByTableId.get(tableId).stateStoreBuilder(
-                tableProperties.getStatus(), tableProperties.getSchema(), recordWaits(retryWaits));
+        TransactionLogStateStore.Builder builder = transactionLogs.stateStoreBuilder(tableProperties);
         config.accept(builder);
         StateStore stateStore = builder.build();
         stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
@@ -678,8 +674,7 @@ public class StateStoreCommitterTest {
     }
 
     private InMemoryTransactionLogStore filesLog(TableProperties tableProperties) {
-        String tableId = tableProperties.get(TABLE_ID);
-        return transactionLogsByTableId.get(tableId).getFilesLogStore();
+        return transactionLogs.forTable(tableProperties).getFilesLogStore();
     }
 
     private StateStore stateStore(String tableId) {

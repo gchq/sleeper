@@ -20,7 +20,13 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.multipleWaitActions;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 /**
  * Gathers state for a state store backed by in-memory transaction logs. Helps with independent management of the
@@ -32,6 +38,20 @@ public class InMemoryTransactionLogs {
     private final InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
     private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
+    private final List<Duration> retryWaits = new ArrayList<>();
+    private final Waiter retryWaiter;
+
+    public InMemoryTransactionLogs() {
+        retryWaiter = recordWaits(retryWaits);
+    }
+
+    private InMemoryTransactionLogs(Waiter extraWaiter) {
+        retryWaiter = multipleWaitActions(recordWaits(retryWaits), extraWaiter);
+    }
+
+    public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
+        return new InMemoryTransactionLogs(recordWaits(retryWaits));
+    }
 
     /**
      * Creates a builder for a state store backed by the transaction logs held in this class.
@@ -39,7 +59,7 @@ public class InMemoryTransactionLogs {
      * @param  retryWaiter behaviour for waiting on retries, see ExponentialBackoffWithJitterTestHelper
      * @return             the builder
      */
-    public TransactionLogStateStore.Builder stateStoreBuilder(TableStatus sleeperTable, Schema schema, Waiter retryWaiter) {
+    public TransactionLogStateStore.Builder stateStoreBuilder(TableStatus sleeperTable, Schema schema) {
         return TransactionLogStateStore.builder()
                 .sleeperTable(sleeperTable)
                 .schema(schema)
@@ -67,5 +87,9 @@ public class InMemoryTransactionLogs {
 
     public InMemoryTransactionLogSnapshots getPartitionsSnapshots() {
         return partitionsSnapshots;
+    }
+
+    public List<Duration> getRetryWaits() {
+        return retryWaits;
     }
 }

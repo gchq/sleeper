@@ -69,6 +69,20 @@ public class ExponentialBackoffWithJitterTestHelper {
     }
 
     /**
+     * Creates an implementation of a waiter that performs multiple actions.
+     *
+     * @param  waiters actions to perform
+     * @return         a {@link Waiter} that performs the given actions
+     */
+    public static Waiter multipleWaitActions(Waiter... waiters) {
+        return millis -> {
+            for (Waiter waiter : waiters) {
+                waiter.waitForMillis(millis);
+            }
+        };
+    }
+
+    /**
      * Creates an implementation of a waiter that does nothing.
      *
      * @return a {@link Waiter} that does nothing
