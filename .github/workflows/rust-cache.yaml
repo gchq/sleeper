@@ -1,6 +1,5 @@
 name: Rust Nightly
 on:
-  # Trigger rebuild
   workflow_dispatch: # Allow manual running to refresh/check cache
   schedule: # Planned execution once per day
     - cron: "0 2 * * *"
