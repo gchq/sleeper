@@ -51,7 +51,7 @@ public class InMemoryTransactionLogs {
 
     /**
      * Creates an instance of this class that will record the waits during transaction retries in an additional list.
-     * 
+     *
      * @param  retryWaits the list to record retry waits in
      * @return            an instance of this class
      */
