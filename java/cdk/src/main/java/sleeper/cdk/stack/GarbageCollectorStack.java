@@ -88,6 +88,9 @@ public class GarbageCollectorStack extends NestedStack {
             timeoutSecsFromGcPeriod = (60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES));
         }
 
+        Duration handlerTimeout = Duration.seconds(Math.max(1, Math.min(timeoutSecsFromGcPeriod, 900)));
+        Duration queueVisibilityTimeout = handlerTimeout.plus(Duration.seconds(10));
+
         // Garbage collector function
         IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
                 .functionName(triggerFunctionName)
