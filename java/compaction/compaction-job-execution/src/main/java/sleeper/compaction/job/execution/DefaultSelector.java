@@ -26,7 +26,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.CompactionMethod;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_METHOD;
 

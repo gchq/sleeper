@@ -34,6 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -47,7 +48,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;

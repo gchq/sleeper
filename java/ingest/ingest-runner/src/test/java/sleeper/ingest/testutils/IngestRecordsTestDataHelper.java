@@ -24,6 +24,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -34,7 +35,6 @@ import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;

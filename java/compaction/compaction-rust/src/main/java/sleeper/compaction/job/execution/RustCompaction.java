@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.RustBridge.FFICompactionParams;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
@@ -34,7 +35,6 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

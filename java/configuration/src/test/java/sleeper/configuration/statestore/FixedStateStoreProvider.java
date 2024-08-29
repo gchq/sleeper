@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.configuration.statestore;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
@@ -22,10 +22,11 @@ import sleeper.core.table.TableStatus;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Test helper to implement state store provider with fixed state stores. Replaces {@link StateStoreFactory} with
+ * Test helper to implement state store provider with fixed state stores. Replaces StateStoreFactory with
  * pre-built state store instances.
  */
 public class FixedStateStoreProvider extends StateStoreProvider {
@@ -48,6 +49,16 @@ public class FixedStateStoreProvider extends StateStoreProvider {
                 throw new IllegalArgumentException("Table not found: " + tableName);
             }
             return stateStoreByTableName.get(tableName);
+        });
+    }
+
+    public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
+        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+            String tableId = tableProperties.get(TABLE_ID);
+            if (!stateStoreByTableId.containsKey(tableId)) {
+                throw new IllegalArgumentException("Table not found by ID: " + tableId);
+            }
+            return stateStoreByTableId.get(tableId);
         });
     }
 }

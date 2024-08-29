@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
-import org.jboss.threads.ArrayQueue;
+package sleeper.configuration.statestore;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
@@ -41,13 +35,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class StateStoreProvider {
     private final int cacheSize;
     private final Factory stateStoreFactory;
-    private final Map<String, StateStore> tableIdToStateStoreCache;
-    private final Queue<String> tableIds;
-
-    public StateStoreProvider(
-            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        this(instanceProperties, new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
-    }
+    private final Map<String, StateStore> tableIdToStateStoreCache = new HashMap<>();
+    private final Queue<String> tableIds = new LinkedList<>();
 
     public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory) {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
@@ -56,8 +45,6 @@ public class StateStoreProvider {
     protected StateStoreProvider(int cacheSize, Factory stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
-        this.tableIdToStateStoreCache = new HashMap<>();
-        this.tableIds = new ArrayQueue<>(cacheSize);
     }
 
     /**
@@ -77,16 +64,6 @@ public class StateStoreProvider {
             tableIds.add(tableId);
         }
         return tableIdToStateStoreCache.get(tableId);
-    }
-
-    /**
-     * Provides a helper to get a state store using a Sleeper table ID.
-     *
-     * @param  tablePropertiesProvider the table properties provider
-     * @return                         the helper
-     */
-    public GetStateStoreByTableId byTableId(TablePropertiesProvider tablePropertiesProvider) {
-        return tableId -> getStateStore(tablePropertiesProvider.getById(tableId));
     }
 
     /**

@@ -33,6 +33,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -42,7 +43,6 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
@@ -85,7 +85,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         committer = new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
-                stateStoreProvider.byTableId(tablePropertiesProvider),
+                tablePropertiesProvider, stateStoreProvider,
                 Instant::now);
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }

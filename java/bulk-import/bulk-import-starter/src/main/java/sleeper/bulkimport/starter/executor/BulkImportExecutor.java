@@ -23,11 +23,11 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;

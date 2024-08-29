@@ -33,6 +33,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
@@ -44,7 +45,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Duration;
@@ -161,11 +162,11 @@ public class StateStoreCommitterThroughputIT {
     }
 
     private StateStoreCommitter committer() {
-        TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
         return new StateStoreCommitter(
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
-                stateStoreProvider().byTableId(tablePropertiesProvider),
+                tablePropertiesProvider(),
+                stateStoreProvider(),
                 Instant::now);
     }
 
@@ -174,7 +175,7 @@ public class StateStoreCommitterThroughputIT {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return new StateStoreProvider(instanceProperties, s3, dynamoDB,
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB,
                 HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
     }
 

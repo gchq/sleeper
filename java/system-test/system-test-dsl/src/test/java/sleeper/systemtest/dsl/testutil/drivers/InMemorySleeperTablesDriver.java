@@ -21,13 +21,13 @@ import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.time.Instant;

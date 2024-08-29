@@ -20,8 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.GetStateStoreByTableId;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
@@ -46,28 +48,32 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
     private final PollWithRetries throttlingRetriesConfig;
-    private final GetStateStoreByTableId stateStoreProvider;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
 
-    public StateStoreWaitForFiles(GetStateStoreByTableId stateStoreProvider) {
+    public StateStoreWaitForFiles(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                JOB_ASSIGNMENT_THROTTLING_RETRIES, stateStoreProvider);
+                JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider);
     }
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts, ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
-            PollWithRetries throttlingRetriesConfig, GetStateStoreByTableId stateStoreProvider) {
+            PollWithRetries throttlingRetriesConfig,
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
     }
 
     @Override
     public void wait(CompactionJob job) throws InterruptedException {
         Instant startTime = Instant.now();
-        LOGGER.info("Waiting for {} file{} to be assigned to compaction job {}",
-                job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId());
-        StateStore stateStore = stateStoreProvider.getByTableId(job.getTableId());
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+        LOGGER.info("Waiting for {} file{} to be assigned to compaction job {} for table {}",
+                job.getInputFiles().size(), job.getInputFiles().size() > 1 ? "s" : "", job.getId(), tableProperties.getStatus());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         // If transaction log DynamoDB table is scaling up, wait with retries limited over all assignment wait attempts for this job
         PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
                 .trackMaxRetriesAcrossInvocations()

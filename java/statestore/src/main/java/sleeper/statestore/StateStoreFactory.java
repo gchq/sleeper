@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -72,6 +73,20 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      */
     public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
         return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
+    }
+
+    /**
+     * Creates a state store provider backed by an instance of this class to populate its cache.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  s3Client           the S3 client
+     * @param  dynamoDBClient     the DynamoDB client
+     * @param  configuration      the Hadoop configuration
+     * @return                    the state store provider
+     */
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+        return new StateStoreProvider(instanceProperties,
+                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
     }
 
     /**

@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
@@ -32,7 +33,6 @@ import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;

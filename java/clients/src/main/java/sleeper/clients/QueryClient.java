@@ -29,6 +29,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
@@ -42,7 +43,7 @@ import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -70,7 +71,7 @@ public class QueryClient extends QueryCommandLineClient {
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
                 new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                new StateStoreProvider(instanceProperties, s3Client, dynamoDBClient, conf));
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
