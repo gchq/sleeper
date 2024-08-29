@@ -42,6 +42,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
@@ -97,12 +98,12 @@ public class StateStoreCommitter {
             } catch (InterruptedException e) {
                 LOGGER.error("Interrupted applying commit request", e);
                 requests.subList(i, requests.size())
-                        .forEach(RequestHandle::failed);
+                        .forEach(failed -> failed.failed(e));
                 Thread.currentThread().interrupt();
                 break;
             } catch (RuntimeException e) {
                 LOGGER.error("Failed commit request", e);
-                handle.failed();
+                handle.failed(e);
             }
         }
     }
@@ -199,9 +200,9 @@ public class StateStoreCommitter {
      */
     public static class RequestHandle {
         private StateStoreCommitRequest request;
-        private Runnable onFail;
+        private Consumer<Exception> onFail;
 
-        private RequestHandle(StateStoreCommitRequest request, Runnable onFail) {
+        private RequestHandle(StateStoreCommitRequest request, Consumer<Exception> onFail) {
             this.request = request;
             this.onFail = onFail;
         }
@@ -214,6 +215,17 @@ public class StateStoreCommitter {
          * @return         the handle
          */
         public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Runnable onFail) {
+            return new RequestHandle(request, e -> onFail.run());
+        }
+
+        /**
+         * Creates a request handle.
+         *
+         * @param  request the request
+         * @param  onFail  the callback to run if the request failed
+         * @return         the handle
+         */
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Consumer<Exception> onFail) {
             return new RequestHandle(request, onFail);
         }
 
@@ -221,8 +233,8 @@ public class StateStoreCommitter {
             return request;
         }
 
-        private void failed() {
-            onFail.run();
+        private void failed(Exception exception) {
+            onFail.accept(exception);
         }
     }
 }

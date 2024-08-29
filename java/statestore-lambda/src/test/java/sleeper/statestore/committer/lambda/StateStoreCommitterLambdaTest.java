@@ -39,6 +39,7 @@ import sleeper.core.statestore.FilesReportTestHelper;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -60,7 +61,6 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CO
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreTestHelper.inMemoryTransactionLogStateStoreBuilder;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class StateStoreCommitterLambdaTest {
@@ -70,8 +70,8 @@ public class StateStoreCommitterLambdaTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final List<Duration> retryWaits = new ArrayList<>();
-    private final InMemoryTransactionLogStore filesLog = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogStore partitionsLog = new InMemoryTransactionLogStore();
+    private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final InMemoryTransactionLogStore filesLog = transactionLogs.getFilesLogStore();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
 
     @BeforeEach
@@ -210,9 +210,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStore stateStore() {
         StateStore stateStore = StateStoreFactory.forCommitterProcess(true, tableProperties,
-                inMemoryTransactionLogStateStoreBuilder(tableProperties.getStatus(), schema, recordWaits(retryWaits)))
-                .filesLogStore(filesLog)
-                .partitionsLogStore(partitionsLog)
+                transactionLogs.stateStoreBuilder(tableProperties.getStatus(), schema, recordWaits(retryWaits)))
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
         return stateStore;

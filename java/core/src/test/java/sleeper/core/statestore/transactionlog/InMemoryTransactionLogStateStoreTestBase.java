@@ -27,15 +27,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreTestHelper.inMemoryTransactionLogStateStoreBuilder;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class InMemoryTransactionLogStateStoreTestBase {
 
     protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
-    protected final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
-    protected final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
+    protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
+    protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     protected final List<Duration> retryWaits = new ArrayList<>();
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
@@ -65,9 +65,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(Schema schema) {
-        return inMemoryTransactionLogStateStoreBuilder(sleeperTable, schema, recordWaits(retryWaits))
-                .filesLogStore(filesLogStore)
-                .partitionsLogStore(partitionsLogStore);
+        return transactionLogs.stateStoreBuilder(sleeperTable, schema, recordWaits(retryWaits));
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
