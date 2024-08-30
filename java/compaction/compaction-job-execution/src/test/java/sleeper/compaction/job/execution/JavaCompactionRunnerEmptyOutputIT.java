@@ -29,11 +29,11 @@ import sleeper.core.statestore.FileReference;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.writeRootFile;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.readDataFile;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.writeRootFile;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
 

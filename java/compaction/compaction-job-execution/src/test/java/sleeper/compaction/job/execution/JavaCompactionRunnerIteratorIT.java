@@ -18,9 +18,9 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -31,7 +31,7 @@ import sleeper.core.statestore.FileReference;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -40,16 +40,16 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
     @Test
     void shouldApplyIteratorDuringCompaction() throws Exception {
         // Given
-        Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
+        Schema schema = CompactionRunnerTestUtils.createSchemaWithKeyTimestampValue();
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = CompactSortedFilesTestData.specifiedFromEvens((even, record) -> {
+        List<Record> data1 = CompactionRunnerTestData.specifiedFromEvens((even, record) -> {
             record.put("key", (long) even);
             record.put("timestamp", System.currentTimeMillis());
             record.put("value", 987654321L);
         });
-        List<Record> data2 = CompactSortedFilesTestData.specifiedFromOdds((odd, record) -> {
+        List<Record> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, record) -> {
             record.put("key", (long) odd);
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
@@ -70,6 +70,6 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);
         assertThat(summary.getRecordsWritten()).isEqualTo(100L);
-        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
     }
 }

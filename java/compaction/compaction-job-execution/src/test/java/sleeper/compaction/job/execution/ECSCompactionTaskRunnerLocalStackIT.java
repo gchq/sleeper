@@ -102,7 +102,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdsToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;

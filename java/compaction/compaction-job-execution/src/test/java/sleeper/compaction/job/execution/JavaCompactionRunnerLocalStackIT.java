@@ -31,8 +31,8 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
@@ -50,8 +50,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -107,8 +107,8 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         stateStore.initialise(tree.getAllPartitions());
 
-        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
+        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -120,10 +120,10 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
+        List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
