@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.rust;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.LibraryLoader;
