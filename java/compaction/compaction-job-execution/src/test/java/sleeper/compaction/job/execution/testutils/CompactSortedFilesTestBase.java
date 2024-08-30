@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.DefaultSelector;
+import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -74,13 +74,13 @@ public class CompactSortedFilesTestBase {
     }
 
     protected RecordsProcessed compact(Schema schema, CompactionJob job) throws Exception {
-        DefaultSelector selector = createCompactionSelector();
-        CompactionRunner runner = selector.chooseCompactor(job);
+        DefaultCompactionRunnerFactory selector = createCompactionSelector();
+        CompactionRunner runner = selector.createCompactor(job);
         return runner.compact(job);
     }
 
-    private DefaultSelector createCompactionSelector() throws Exception {
-        return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
+    private DefaultCompactionRunnerFactory createCompactionSelector() throws Exception {
+        return new DefaultCompactionRunnerFactory(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars(),
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
