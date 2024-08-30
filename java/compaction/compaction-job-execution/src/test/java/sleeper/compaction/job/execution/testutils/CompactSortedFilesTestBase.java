@@ -15,23 +15,27 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultSelector;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
+import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -41,6 +45,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -61,18 +66,24 @@ public class CompactSortedFilesTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dataFolderName);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(DEFAULT_COMPACTION_METHOD, CompactionMethod.JAVA.toString());
     }
 
     protected CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected DefaultSelector createCompactionSelector(Schema schema, Configuration configuration) throws Exception {
-        tableProperties.setSchema(schema);
+    protected RecordsProcessed compact(Schema schema, CompactionJob job) throws Exception {
+        DefaultSelector selector = createCompactionSelector();
+        CompactionRunner runner = selector.chooseCompactor(job);
+        return runner.compact(job);
+    }
+
+    private DefaultSelector createCompactionSelector() throws Exception {
         return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars(),
-                configuration);
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {

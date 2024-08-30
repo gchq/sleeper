@@ -18,7 +18,6 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
@@ -28,7 +27,6 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.util.List;
 
@@ -66,10 +64,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(schema, compactionJob);
+
         // Then
         //  - Read output files and check that they contain the right results
         assertThat(summary.getRecordsRead()).isEqualTo(200L);

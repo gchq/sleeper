@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.core.partition.PartitionsBuilder;
@@ -31,7 +30,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.util.List;
 
@@ -57,10 +55,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -106,10 +101,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector selector = createCompactionSelector(schema,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = selector.chooseCompactor(compactionJob);
-            RecordsProcessed summary = runner.compact(compactionJob);
+            RecordsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
@@ -162,10 +154,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector selector = createCompactionSelector(schema,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = selector.chooseCompactor(compactionJob);
-            RecordsProcessed summary = runner.compact(compactionJob);
+            RecordsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
