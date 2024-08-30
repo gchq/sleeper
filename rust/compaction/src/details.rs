@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::aws_s3::ObjectStoreFactory;
-use aws_config::{BehaviorVersion, Region};
-use aws_credential_types::{provider::ProvideCredentials, Credentials};
+use crate::aws_s3::{default_s3_config, s3_config, ObjectStoreFactory};
+use aws_config::Region;
+use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
+use object_store::aws::{self, AmazonS3Builder};
 
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
@@ -178,30 +179,22 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
 async fn create_object_store_factory(
     aws_config_override: &Option<AwsConfig>,
 ) -> Result<ObjectStoreFactory> {
-    match aws_config_override {
-        Some(aws_config) => {
-            let creds =
-                Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
-            let region = Region::new(String::from(&aws_config.region));
-            return Ok(ObjectStoreFactory::new(
-                &creds,
-                &region,
-                Some(&aws_config.endpoint),
-            ));
-        }
-        None => {
-            let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-            let creds = config
-                .credentials_provider()
-                .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
-                .provide_credentials()
-                .await?;
-            let region = config
-                .region()
-                .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-            return Ok(ObjectStoreFactory::new(&creds, &region, None));
-        }
-    }
+    let s3_config = match aws_config_override {
+        Some(aws_config) => Some(to_s3_config(aws_config)),
+        None => match default_s3_config().await {
+            Ok(config) => Some(config),
+            Err(_) => None,
+        },
+    };
+    Ok(ObjectStoreFactory::new(s3_config))
+}
+
+fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
+    let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
+    let region = Region::new(String::from(&aws_config.region));
+    s3_config(&creds, &region)
+        .with_endpoint(&aws_config.endpoint)
+        .with_allow_http(true)
 }
 
 /// Creates a file path suitable for writing sketches to.

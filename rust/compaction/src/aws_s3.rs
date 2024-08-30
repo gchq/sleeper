@@ -25,7 +25,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use aws_types::region::Region;
+use aws_config::{BehaviorVersion, Region};
+use aws_credential_types::provider::ProvideCredentials;
 use bytes::{Bytes, BytesMut};
 use color_eyre::eyre::eyre;
 use futures::{stream::BoxStream, Future};
@@ -96,23 +97,15 @@ pub trait ExtendedObjectStore: ObjectStore {
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
-    creds: Arc<CredentialsFromConfigProvider>,
-    region: Region,
-    endpoint: Option<String>,
+    s3_config: Option<AmazonS3Builder>,
     store_map: RefCell<HashMap<String, Arc<dyn ExtendedObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(
-        creds: &aws_credential_types::Credentials,
-        region: &Region,
-        endpoint: Option<&String>,
-    ) -> Self {
+    pub fn new(s3_config: Option<AmazonS3Builder>) -> Self {
         Self {
-            creds: Arc::new(CredentialsFromConfigProvider::new(creds)),
-            region: region.clone(),
-            endpoint: endpoint.cloned(),
+            s3_config,
             store_map: RefCell::new(HashMap::new()),
         }
     }
@@ -165,18 +158,33 @@ impl ObjectStoreFactory {
     }
 
     fn connect_s3(&self, src: &Url) -> color_eyre::Result<AmazonS3> {
-        let mut builder = AmazonS3Builder::from_env()
-            .with_credentials(self.creds.clone())
-            .with_region(self.region.as_ref())
-            .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?);
-        match &self.endpoint {
-            Some(endpoint) => {
-                builder = builder.with_endpoint(endpoint).with_allow_http(true);
-            }
-            None => {}
-        };
-        Ok(builder.build()?)
+        match &self.s3_config {
+            Some(config) => Ok(config
+                .clone()
+                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
+                .build()?),
+            None => Err(eyre!("no S3 configuration is set")),
+        }
     }
+}
+
+pub fn s3_config(creds: &aws_credential_types::Credentials, region: &Region) -> AmazonS3Builder {
+    AmazonS3Builder::from_env()
+        .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
+        .with_region(region.as_ref())
+}
+
+pub async fn default_s3_config() -> color_eyre::Result<AmazonS3Builder> {
+    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+    let creds = config
+        .credentials_provider()
+        .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+        .provide_credentials()
+        .await?;
+    let region = config
+        .region()
+        .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+    Ok(s3_config(&creds, region))
 }
 
 /// An [`ObjectStore`] wrapper that logs every HEAD and GET request
