@@ -96,16 +96,16 @@ pub trait ExtendedObjectStore: ObjectStore {
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
-    creds: Option<Arc<CredentialsFromConfigProvider>>,
+    creds: Arc<CredentialsFromConfigProvider>,
     region: Region,
     store_map: RefCell<HashMap<String, Arc<dyn ExtendedObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(value: Option<aws_credential_types::Credentials>, region: &Region) -> Self {
+    pub fn new(creds: &aws_credential_types::Credentials, region: &Region) -> Self {
         Self {
-            creds: value.map(|value| Arc::new(CredentialsFromConfigProvider::new(&value))),
+            creds: Arc::new(CredentialsFromConfigProvider::new(creds)),
             region: region.clone(),
             store_map: RefCell::new(HashMap::new()),
         }
@@ -148,18 +148,12 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ExtendedObjectStore>> {
         match src.scheme() {
-            "s3" => {
-                if let Some(creds) = &self.creds {
-                    Ok(AmazonS3Builder::from_env()
-                        .with_credentials(creds.clone())
-                        .with_region(self.region.as_ref())
-                        .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
-                        .build()
-                        .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?)
-                } else {
-                    Err(eyre!("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from"))
-                }
-            }
+            "s3" => Ok(AmazonS3Builder::from_env()
+                .with_credentials(self.creds.clone())
+                .with_region(self.region.as_ref())
+                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
+                .build()
+                .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(Arc::new(
                 LocalFileSystem::new(),
             )))),

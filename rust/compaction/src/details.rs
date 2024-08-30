@@ -152,18 +152,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
             let _ = output_file_path.set_scheme("s3");
         }
 
-        let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-        let region = config
-            .region()
-            .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-        let creds: aws_credential_types::Credentials = config
-            .credentials_provider()
-            .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
-            .provide_credentials()
-            .await?;
-
-        // Create our object store factory
-        let store_factory = ObjectStoreFactory::new(Some(creds), region);
+        let store_factory = create_object_store_factory().await?;
 
         crate::datafusion::compact(
             &store_factory,
@@ -174,6 +163,19 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
         .await
         .map_err(Into::into)
     }
+}
+
+async fn create_object_store_factory() -> Result<ObjectStoreFactory> {
+    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+    let creds = config
+        .credentials_provider()
+        .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+        .provide_credentials()
+        .await?;
+    let region = config
+        .region()
+        .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+    return Ok(ObjectStoreFactory::new(&creds, &region));
 }
 
 /// Creates a file path suitable for writing sketches to.
