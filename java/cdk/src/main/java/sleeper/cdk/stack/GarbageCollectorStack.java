@@ -78,7 +78,7 @@ public class GarbageCollectorStack extends NestedStack {
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");
         String functionName = String.join("-", "sleeper", instanceId, "garbage-collector");
 
-        // Timeout is set to either the configured timeout period within the properties or defaults to the period for which this runs. 
+        // Timeout is set to either the configured timeout period within the properties or defaults to the period for which this runs.
         // Both have a maximum of 900 seconds (15 minutes) which is the maximum execution time of a lambda.
         int timeoutSecsFromGcPeriod = -1;
         int gcPeriodTimeout = instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES);
