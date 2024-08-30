@@ -15,7 +15,10 @@
  */
 package sleeper.compaction.rust;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -39,17 +43,22 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.record.RecordReadSupport;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -174,18 +183,65 @@ public class RustCompactionRunnerIT {
         }
     }
 
-    protected CompactionJobFactory compactionFactory() {
+    @Nested
+    @DisplayName("Handle empty files")
+    class HandleEmptyFiles {
+
+        @Test
+        void shouldMergeEmptyAndNonEmptyFile() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record = new Record(Map.of("key", "test-value"));
+            FileReference emptyFile = writeEmptyFileToPartition("root");
+            FileReference nonEmptyFile = ingestRecordsGetFile(List.of(record));
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(emptyFile, nonEmptyFile), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(emptyFile.getFilename(), nonEmptyFile.getFilename()))));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(1);
+            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(record);
+        }
+
+        @Test
+        void shouldMergeTwoEmptyFiles() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReference file1 = writeEmptyFileToPartition("root");
+            FileReference file2 = writeEmptyFileToPartition("root");
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isZero();
+            assertThat(summary.getRecordsWritten()).isZero();
+            assertThat(dataFileExists(job.getOutputFile())).isFalse();
+        }
+    }
+
+    private CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected RecordsProcessed compact(CompactionJob job) throws Exception {
+    private RecordsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new RustCompactionRunner(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore));
         return runner.compact(job);
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
+    private FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(tempDir, null).toString())
@@ -200,6 +256,24 @@ public class RustCompactionRunnerIT {
         return files.get(0);
     }
 
+    private FileReference writeEmptyFileToPartition(String partitionId) throws Exception {
+        Schema schema = tableProperties.getSchema();
+        Sketches sketches = Sketches.from(schema);
+        String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+        }
+        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(dataFile, 0);
+        stateStore.addFile(fileReference);
+        return fileReference;
+    }
+
+    private String buildPartitionFilePath(String partitionId, String filename) {
+        String prefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        return TableUtils.constructPartitionParquetFilePath(prefix, partitionId, filename);
+    }
+
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {
         List<Record> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
@@ -209,5 +283,10 @@ public class RustCompactionRunnerIT {
             }
         }
         return results;
+    }
+
+    private boolean dataFileExists(String filename) throws IOException {
+        return FileSystem.getLocal(new Configuration())
+                .exists(new org.apache.hadoop.fs.Path(filename));
     }
 }
