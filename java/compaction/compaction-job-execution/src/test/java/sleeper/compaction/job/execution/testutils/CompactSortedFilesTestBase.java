@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -47,8 +48,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactSortedFilesTestBase {
@@ -57,8 +57,8 @@ public class CompactSortedFilesTestBase {
     public Path tempDir;
     protected String dataFolderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    protected final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    protected StateStore stateStore = inMemoryStateStoreWithNoPartitions();
 
     @BeforeEach
     public void setUpBase() throws Exception {
@@ -74,16 +74,19 @@ public class CompactSortedFilesTestBase {
     }
 
     protected RecordsProcessed compact(Schema schema, CompactionJob job) throws Exception {
-        DefaultCompactionRunnerFactory selector = createCompactionSelector();
+        return compact(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    }
+
+    protected RecordsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
+        DefaultCompactionRunnerFactory selector = createCompactionSelector(conf);
         CompactionRunner runner = selector.createCompactor(job);
         return runner.compact(job);
     }
 
-    private DefaultCompactionRunnerFactory createCompactionSelector() throws Exception {
+    private DefaultCompactionRunnerFactory createCompactionSelector(Configuration conf) throws Exception {
         return new DefaultCompactionRunnerFactory(new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars(),
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                ObjectFactory.noUserJars(), conf);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
