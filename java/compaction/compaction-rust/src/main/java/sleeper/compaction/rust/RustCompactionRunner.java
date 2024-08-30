@@ -108,6 +108,7 @@ public class RustCompactionRunner implements CompactionRunner {
             Region region, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
+        params.override_aws_config.set(false);
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);

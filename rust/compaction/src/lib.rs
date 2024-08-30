@@ -27,6 +27,7 @@ mod details;
 
 use chrono::Local;
 use color_eyre::eyre::eyre;
+use details::AwsConfig;
 use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
 use log::{error, info, warn, LevelFilter};
 use std::borrow::Borrow;
@@ -79,6 +80,11 @@ fn maybe_cfg_log() {
 /// for details. Field ordering and types MUST match between the two definitions!
 #[repr(C)]
 pub struct FFICompactionParams {
+    override_aws_config: bool,
+    aws_region: *const c_char,
+    aws_endpoint: *const c_char,
+    aws_access_key: *const c_char,
+    aws_secret_key: *const c_char,
     input_files_len: usize,
     input_files: *const *const c_char,
     output_file: *const c_char,
@@ -120,6 +126,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         let region = compute_region(params, &row_key_cols)?;
 
         Ok(Self {
+            aws_config: unpack_aws_config(params)?,
             input_files: unpack_string_array(params.input_files, params.input_files_len)?
                 .into_iter()
                 .map(Url::parse)
@@ -148,6 +155,27 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             region,
         })
     }
+}
+
+fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
+    Ok(if params.override_aws_config {
+        Some(AwsConfig {
+            region: unsafe { CStr::from_ptr(params.aws_region) }
+                .to_str()?
+                .to_owned(),
+            endpoint: unsafe { CStr::from_ptr(params.aws_endpoint) }
+                .to_str()?
+                .to_owned(),
+            access_key: unsafe { CStr::from_ptr(params.aws_access_key) }
+                .to_str()?
+                .to_owned(),
+            secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
+                .to_str()?
+                .to_owned(),
+        })
+    } else {
+        None
+    })
 }
 
 fn compute_region<'a, T: Borrow<str>>(

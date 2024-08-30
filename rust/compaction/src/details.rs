@@ -37,6 +37,7 @@ pub enum PartitionBound<'a> {
 /// All the information for a a Sleeper compaction.
 #[derive(Debug)]
 pub struct CompactionInput<'a> {
+    pub aws_config: Option<AwsConfig>,
     pub input_files: Vec<Url>,
     pub output_file: Url,
     pub row_key_cols: Vec<String>,
@@ -56,6 +57,7 @@ pub struct CompactionInput<'a> {
 impl Default for CompactionInput<'_> {
     fn default() -> Self {
         Self {
+            aws_config: None,
             input_files: Vec::default(),
             output_file: Url::parse("file:///").unwrap(),
             row_key_cols: Vec::default(),
@@ -72,6 +74,14 @@ impl Default for CompactionInput<'_> {
             region: HashMap::default(),
         }
     }
+}
+
+#[derive(Debug)]
+pub struct AwsConfig {
+    pub region: String,
+    pub endpoint: String,
+    pub access_key: String,
+    pub secret_key: String,
 }
 
 /// Defines a partition range of a single column.
@@ -152,7 +162,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
             let _ = output_file_path.set_scheme("s3");
         }
 
-        let store_factory = create_object_store_factory().await?;
+        let store_factory = create_object_store_factory(input_data).await?;
 
         crate::datafusion::compact(
             &store_factory,
@@ -165,7 +175,9 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
     }
 }
 
-async fn create_object_store_factory() -> Result<ObjectStoreFactory> {
+async fn create_object_store_factory(
+    input_data: &CompactionInput<'_>,
+) -> Result<ObjectStoreFactory> {
     let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let creds = config
         .credentials_provider()
