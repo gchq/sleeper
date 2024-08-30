@@ -40,7 +40,7 @@ import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUti
 class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
     @Test
-    void shouldMergeFilesCorrectlyAndUpdateStateStoreWithLongKey() throws Exception {
+    void shouldMergeFilesWithLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -86,7 +86,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         }
 
         @Test
-        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithStringKey() throws Exception {
+        void shouldMergeFilesWithStringKey() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
             tableProperties.setSchema(schema);
@@ -139,7 +139,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         }
 
         @Test
-        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithByteArrayKey() throws Exception {
+        void shouldMergeFilesWithByteArrayKey() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
             tableProperties.setSchema(schema);

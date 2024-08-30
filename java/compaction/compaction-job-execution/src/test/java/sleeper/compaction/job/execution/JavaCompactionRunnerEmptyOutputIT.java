@@ -38,7 +38,7 @@ import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUti
 class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
 
     @Test
-    void shouldMergeFilesCorrectlyWhenSomeAreEmpty() throws Exception {
+    void shouldMergeFilesWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -62,7 +62,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
     }
 
     @Test
-    void shouldMergeFilesCorrectlyWhenAllAreEmpty() throws Exception {
+    void shouldMergeFilesWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
