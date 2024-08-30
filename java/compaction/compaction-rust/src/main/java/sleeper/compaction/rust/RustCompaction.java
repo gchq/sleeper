@@ -60,17 +60,15 @@ public class RustCompaction implements CompactionRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RustCompaction.class);
 
-    public RustCompaction(TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
+    public RustCompaction(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
     }
 
     @Override
     public RecordsProcessed compact(CompactionJob job) throws IOException, StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider
-                .getById(job.getTableId());
-        Schema schema = tableProperties.getSchema();
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Region region = stateStore.getAllPartitions().stream()
                 .filter(p -> Objects.equals(job.getPartitionId(), p.getId()))
@@ -82,7 +80,7 @@ public class RustCompaction implements CompactionRunner {
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, schema, region, runtime);
+        FFICompactionParams params = createFFIParams(job, tableProperties, region, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
@@ -100,15 +98,15 @@ public class RustCompaction implements CompactionRunner {
      * region etc.
      *
      * @param  job             compaction job
-     * @param  tableProperties table configuration for this table
-     * @param  schema          the table schema
+     * @param  tableProperties configuration for the Sleeper table
      * @param  region          region being compacted
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema,
+    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, jnr.ffi.Runtime runtime) {
+        Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
