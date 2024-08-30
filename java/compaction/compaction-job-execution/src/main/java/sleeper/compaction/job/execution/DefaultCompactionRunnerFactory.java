@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.rust.RustCompaction;
+import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
@@ -72,7 +72,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
             case RUST:
-                return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
+                return new RustCompactionRunner(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
             default:
                 return createJavaRunner();
@@ -80,6 +80,6 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     private CompactionRunner createJavaRunner() {
-        return new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
+        return new JavaCompactionRunner(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
     }
 }

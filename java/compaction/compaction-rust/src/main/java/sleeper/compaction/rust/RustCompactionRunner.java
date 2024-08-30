@@ -51,16 +51,16 @@ import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
-public class RustCompaction implements CompactionRunner {
+public class RustCompactionRunner implements CompactionRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
     /** Maximum number of rows in a Parquet row group. */
     private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompaction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
 
-    public RustCompaction(
+    public RustCompactionRunner(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
