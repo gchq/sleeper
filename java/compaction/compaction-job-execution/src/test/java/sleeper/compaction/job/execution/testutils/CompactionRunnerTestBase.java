@@ -51,7 +51,7 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-public class CompactSortedFilesTestBase {
+public class CompactionRunnerTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     @TempDir
     public Path tempDir;

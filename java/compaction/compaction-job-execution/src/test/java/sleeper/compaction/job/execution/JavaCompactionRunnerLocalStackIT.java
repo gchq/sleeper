@@ -31,8 +31,8 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
@@ -62,7 +62,7 @@ import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Cli
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
+public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(

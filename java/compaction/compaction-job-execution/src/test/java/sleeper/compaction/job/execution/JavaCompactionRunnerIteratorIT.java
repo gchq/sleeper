@@ -18,9 +18,9 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -35,7 +35,7 @@ import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestU
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
-class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
+class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
 
     @Test
     void shouldApplyIteratorDuringCompaction() throws Exception {

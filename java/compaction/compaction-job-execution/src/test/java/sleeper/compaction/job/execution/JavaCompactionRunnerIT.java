@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
-class CompactSortedFilesIT extends CompactSortedFilesTestBase {
+class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
     @Test
     void shouldMergeFilesCorrectlyAndUpdateStateStoreWithLongKey() throws Exception {
