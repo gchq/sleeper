@@ -19,7 +19,7 @@ use crate::aws_s3::{default_s3_config, s3_config, ObjectStoreFactory};
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
-use object_store::aws::{self, AmazonS3Builder};
+use object_store::aws::AmazonS3Builder;
 
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
