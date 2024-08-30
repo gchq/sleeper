@@ -32,7 +32,7 @@ use futures::{stream::BoxStream, Future};
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    aws::{AmazonS3Builder, AwsCredential},
+    aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
     path::Path,
     CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
@@ -98,15 +98,21 @@ pub trait ExtendedObjectStore: ObjectStore {
 pub struct ObjectStoreFactory {
     creds: Arc<CredentialsFromConfigProvider>,
     region: Region,
+    endpoint: Option<String>,
     store_map: RefCell<HashMap<String, Arc<dyn ExtendedObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(creds: &aws_credential_types::Credentials, region: &Region) -> Self {
+    pub fn new(
+        creds: &aws_credential_types::Credentials,
+        region: &Region,
+        endpoint: Option<&String>,
+    ) -> Self {
         Self {
             creds: Arc::new(CredentialsFromConfigProvider::new(creds)),
             region: region.clone(),
+            endpoint: endpoint.cloned(),
             store_map: RefCell::new(HashMap::new()),
         }
     }
@@ -148,17 +154,28 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ExtendedObjectStore>> {
         match src.scheme() {
-            "s3" => Ok(AmazonS3Builder::from_env()
-                .with_credentials(self.creds.clone())
-                .with_region(self.region.as_ref())
-                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
-                .build()
+            "s3" => Ok(self
+                .connect_s3(src)
                 .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(Arc::new(
                 LocalFileSystem::new(),
             )))),
             _ => Err(eyre!("no object store for given schema")),
         }
+    }
+
+    fn connect_s3(&self, src: &Url) -> color_eyre::Result<AmazonS3> {
+        let mut builder = AmazonS3Builder::from_env()
+            .with_credentials(self.creds.clone())
+            .with_region(self.region.as_ref())
+            .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?);
+        match &self.endpoint {
+            Some(endpoint) => {
+                builder = builder.with_endpoint(endpoint).with_allow_http(true);
+            }
+            None => {}
+        };
+        Ok(builder.build()?)
     }
 }
 

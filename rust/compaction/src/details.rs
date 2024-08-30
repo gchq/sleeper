@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 use crate::aws_s3::ObjectStoreFactory;
-use aws_config::BehaviorVersion;
-use aws_credential_types::provider::ProvideCredentials;
+use aws_config::{BehaviorVersion, Region};
+use aws_credential_types::{provider::ProvideCredentials, Credentials};
 use color_eyre::eyre::{eyre, Result};
 
 use std::{collections::HashMap, path::PathBuf};
@@ -162,7 +162,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
             let _ = output_file_path.set_scheme("s3");
         }
 
-        let store_factory = create_object_store_factory(input_data).await?;
+        let store_factory = create_object_store_factory(&input_data.aws_config).await?;
 
         crate::datafusion::compact(
             &store_factory,
@@ -176,18 +176,32 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
 }
 
 async fn create_object_store_factory(
-    input_data: &CompactionInput<'_>,
+    aws_config_override: &Option<AwsConfig>,
 ) -> Result<ObjectStoreFactory> {
-    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-    let creds = config
-        .credentials_provider()
-        .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
-        .provide_credentials()
-        .await?;
-    let region = config
-        .region()
-        .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-    return Ok(ObjectStoreFactory::new(&creds, &region));
+    match aws_config_override {
+        Some(aws_config) => {
+            let creds =
+                Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
+            let region = Region::new(String::from(&aws_config.region));
+            return Ok(ObjectStoreFactory::new(
+                &creds,
+                &region,
+                Some(&aws_config.endpoint),
+            ));
+        }
+        None => {
+            let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+            let creds = config
+                .credentials_provider()
+                .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+                .provide_credentials()
+                .await?;
+            let region = config
+                .region()
+                .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+            return Ok(ObjectStoreFactory::new(&creds, &region, None));
+        }
+    }
 }
 
 /// Creates a file path suitable for writing sketches to.
