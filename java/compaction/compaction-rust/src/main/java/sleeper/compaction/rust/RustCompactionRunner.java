@@ -52,18 +52,25 @@ import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITE
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class RustCompactionRunner implements CompactionRunner {
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
     private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
+    private final AwsConfig awsConfig;
 
     public RustCompactionRunner(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        this(tablePropertiesProvider, stateStoreProvider, null);
+    }
+
+    public RustCompactionRunner(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider, AwsConfig awsConfig) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.awsConfig = awsConfig;
     }
 
     @Override
@@ -104,11 +111,19 @@ public class RustCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+    private FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
-        params.override_aws_config.set(false);
+        if (awsConfig != null) {
+            params.override_aws_config.set(true);
+            params.aws_region.set(awsConfig.region);
+            params.aws_endpoint.set(awsConfig.endpoint);
+            params.aws_access_key.set(awsConfig.accessKey);
+            params.aws_secret_key.set(awsConfig.secretKey);
+        } else {
+            params.override_aws_config.set(false);
+        }
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
@@ -225,5 +240,57 @@ public class RustCompactionRunner implements CompactionRunner {
     @Override
     public boolean supportsIterators() {
         return false;
+    }
+
+    public static class AwsConfig {
+        private final String region;
+        private final String endpoint;
+        private final String accessKey;
+        private final String secretKey;
+
+        private AwsConfig(Builder builder) {
+            region = builder.region;
+            endpoint = builder.endpoint;
+            accessKey = builder.accessKey;
+            secretKey = builder.secretKey;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private String region;
+            private String endpoint;
+            private String accessKey;
+            private String secretKey;
+
+            private Builder() {
+            }
+
+            public Builder region(String region) {
+                this.region = region;
+                return this;
+            }
+
+            public Builder endpoint(String endpoint) {
+                this.endpoint = endpoint;
+                return this;
+            }
+
+            public Builder accessKey(String accessKey) {
+                this.accessKey = accessKey;
+                return this;
+            }
+
+            public Builder secretKey(String secretKey) {
+                this.secretKey = secretKey;
+                return this;
+            }
+
+            public AwsConfig build() {
+                return new AwsConfig(this);
+            }
+        }
     }
 }
