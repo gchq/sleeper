@@ -15,7 +15,9 @@
  */
 package sleeper.compaction.rust;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,14 +25,13 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
-import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
@@ -41,18 +42,19 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.record.RecordReadSupport;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
@@ -60,7 +62,6 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
@@ -93,10 +94,9 @@ public class RustCompactionRunnerLocalStackIT {
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         Record record1 = new Record(Map.of("key", "record-1"));
         Record record2 = new Record(Map.of("key", "record-2"));
-        FileReference file1 = ingestRecordsGetFile(List.of(record1));
-        FileReference file2 = ingestRecordsGetFile(List.of(record2));
-        CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+        String file1 = writeFileForPartition("root", List.of(record1));
+        String file2 = writeFileForPartition("root", List.of(record2));
+        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
         // When
         RecordsProcessed summary = compact(job);
@@ -129,23 +129,29 @@ public class RustCompactionRunnerLocalStackIT {
                 .build();
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
-        try (S3AsyncClient s3AsyncClient = buildAwsV2Client(CONTAINER, S3, S3AsyncClient.builder())) {
-            IngestFactory factory = IngestFactory.builder()
-                    .objectFactory(ObjectFactory.noUserJars())
-                    .localDir(tempDir.toString())
-                    .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                    .instanceProperties(instanceProperties)
-                    .hadoopConfiguration(getHadoopConfiguration(CONTAINER))
-                    .s3AsyncClient(s3AsyncClient)
-                    .build();
-            IngestResult result = factory.ingestFromRecordIterator(tableProperties, records.iterator());
-            List<FileReference> files = result.getFileReferenceList();
-            if (files.size() != 1) {
-                throw new IllegalStateException("Expected 1 file ingested, found: " + files);
+    private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {
+        Schema schema = tableProperties.getSchema();
+        Sketches sketches = Sketches.from(schema);
+        Configuration configuration = getHadoopConfiguration(CONTAINER);
+        String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, configuration)) {
+            for (Record record : records) {
+                writer.write(record);
+                sketches.update(schema, record);
             }
-            return files.get(0);
         }
+        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, configuration);
+        return dataFile;
+    }
+
+    private CompactionJob createCompactionForPartition(String jobId, String partitionId, List<String> filenames) {
+        return compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
+    }
+
+    private String buildPartitionFilePath(String partitionId, String filename) {
+        String prefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        return TableUtils.constructPartitionParquetFilePath(prefix, partitionId, filename);
     }
 
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {

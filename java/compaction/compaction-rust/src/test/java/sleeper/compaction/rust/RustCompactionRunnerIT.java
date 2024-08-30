@@ -29,7 +29,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.TableUtils;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
@@ -42,11 +41,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.record.RecordReadSupport;
@@ -68,7 +63,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class RustCompactionRunnerIT {
@@ -98,11 +92,9 @@ public class RustCompactionRunnerIT {
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", "record-1"));
             Record record2 = new Record(Map.of("key", "record-2"));
-            FileReference file1 = ingestRecordsGetFile(List.of(record1));
-            FileReference file2 = ingestRecordsGetFile(List.of(record2));
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
-
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
             // When
             RecordsProcessed summary = compact(job);
 
@@ -121,10 +113,9 @@ public class RustCompactionRunnerIT {
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1L));
             Record record2 = new Record(Map.of("key", 2L));
-            FileReference file1 = ingestRecordsGetFile(List.of(record1));
-            FileReference file2 = ingestRecordsGetFile(List.of(record2));
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -144,10 +135,9 @@ public class RustCompactionRunnerIT {
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1));
             Record record2 = new Record(Map.of("key", 2));
-            FileReference file1 = ingestRecordsGetFile(List.of(record1));
-            FileReference file2 = ingestRecordsGetFile(List.of(record2));
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -167,10 +157,9 @@ public class RustCompactionRunnerIT {
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", new byte[]{1, 2}));
             Record record2 = new Record(Map.of("key", new byte[]{3, 4}));
-            FileReference file1 = ingestRecordsGetFile(List.of(record1));
-            FileReference file2 = ingestRecordsGetFile(List.of(record2));
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -194,10 +183,9 @@ public class RustCompactionRunnerIT {
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record = new Record(Map.of("key", "test-value"));
-            FileReference emptyFile = writeEmptyFileToPartition("root");
-            FileReference nonEmptyFile = ingestRecordsGetFile(List.of(record));
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(emptyFile, nonEmptyFile), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(emptyFile.getFilename(), nonEmptyFile.getFilename()))));
+            String emptyFile = writeFileForPartition("root", List.of());
+            String nonEmptyFile = writeFileForPartition("root", List.of(record));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(emptyFile, nonEmptyFile));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -215,10 +203,9 @@ public class RustCompactionRunnerIT {
             Schema schema = schemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            FileReference file1 = writeEmptyFileToPartition("root");
-            FileReference file2 = writeEmptyFileToPartition("root");
-            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+            String file1 = writeFileForPartition("root", List.of());
+            String file2 = writeFileForPartition("root", List.of());
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -241,32 +228,23 @@ public class RustCompactionRunnerIT {
         return runner.compact(job);
     }
 
-    private FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
-        IngestFactory factory = IngestFactory.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .localDir(createTempDirectory(tempDir, null).toString())
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                .instanceProperties(instanceProperties)
-                .build();
-        IngestResult result = factory.ingestFromRecordIterator(tableProperties, records.iterator());
-        List<FileReference> files = result.getFileReferenceList();
-        if (files.size() != 1) {
-            throw new IllegalStateException("Expected 1 file ingested, found: " + files);
-        }
-        return files.get(0);
-    }
-
-    private FileReference writeEmptyFileToPartition(String partitionId) throws Exception {
+    private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+            for (Record record : records) {
+                writer.write(record);
+                sketches.update(schema, record);
+            }
         }
         org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
-        FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(dataFile, 0);
-        stateStore.addFile(fileReference);
-        return fileReference;
+        return dataFile;
+    }
+
+    private CompactionJob createCompactionForPartition(String jobId, String partitionId, List<String> filenames) {
+        return compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
