@@ -17,6 +17,8 @@ package sleeper.compaction.rust;
 
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,6 +34,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -72,27 +77,101 @@ public class RustCompactionRunnerIT {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
     }
 
-    @Test
-    void shouldRunCompactionJob() throws Exception {
-        // Given
-        Schema schema = schemaWithKey("key", new StringType());
-        tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        Record record1 = new Record(Map.of("key", "record-1"));
-        Record record2 = new Record(Map.of("key", "record-2"));
-        FileReference file1 = ingestRecordsGetFile(List.of(record1));
-        FileReference file2 = ingestRecordsGetFile(List.of(record2));
-        CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+    @Nested
+    @DisplayName("Handle data types")
+    class HandleDataTypes {
 
-        // When
-        RecordsProcessed summary = compact(job);
+        @Test
+        void shouldMergeFilesWithStringKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", "record-1"));
+            Record record2 = new Record(Map.of("key", "record-2"));
+            FileReference file1 = ingestRecordsGetFile(List.of(record1));
+            FileReference file2 = ingestRecordsGetFile(List.of(record2));
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
 
-        // Then
-        assertThat(summary.getRecordsRead()).isEqualTo(2);
-        assertThat(summary.getRecordsWritten()).isEqualTo(2);
-        assertThat(readDataFile(schema, job.getOutputFile()))
-                .containsExactly(record1, record2);
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(record1, record2);
+        }
+
+        @Test
+        void shouldMergeFilesWithLongKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new LongType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", 1L));
+            Record record2 = new Record(Map.of("key", 2L));
+            FileReference file1 = ingestRecordsGetFile(List.of(record1));
+            FileReference file2 = ingestRecordsGetFile(List.of(record2));
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(record1, record2);
+        }
+
+        @Test
+        void shouldMergeFilesWithIntKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", 1));
+            Record record2 = new Record(Map.of("key", 2));
+            FileReference file1 = ingestRecordsGetFile(List.of(record1));
+            FileReference file2 = ingestRecordsGetFile(List.of(record2));
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(record1, record2);
+        }
+
+        @Test
+        void shouldMergeFilesWithByteArrayKey() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new ByteArrayType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", new byte[]{1, 2}));
+            Record record2 = new Record(Map.of("key", new byte[]{3, 4}));
+            FileReference file1 = ingestRecordsGetFile(List.of(record1));
+            FileReference file2 = ingestRecordsGetFile(List.of(record2));
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file1, file2), "root");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of(file1.getFilename(), file2.getFilename()))));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(record1, record2);
+        }
     }
 
     protected CompactionJobFactory compactionFactory() {
