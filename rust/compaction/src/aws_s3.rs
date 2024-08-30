@@ -163,7 +163,9 @@ impl ObjectStoreFactory {
                 .clone()
                 .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
                 .build()?),
-            None => Err(eyre!("no S3 configuration is set")),
+            None => Err(eyre!(
+                "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
+            )),
         }
     }
 }

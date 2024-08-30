@@ -163,7 +163,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
             let _ = output_file_path.set_scheme("s3");
         }
 
-        let store_factory = create_object_store_factory(&input_data.aws_config).await?;
+        let store_factory = create_object_store_factory(&input_data.aws_config).await;
 
         crate::datafusion::compact(
             &store_factory,
@@ -178,7 +178,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
 
 async fn create_object_store_factory(
     aws_config_override: &Option<AwsConfig>,
-) -> Result<ObjectStoreFactory> {
+) -> ObjectStoreFactory {
     let s3_config = match aws_config_override {
         Some(aws_config) => Some(to_s3_config(aws_config)),
         None => match default_s3_config().await {
@@ -186,7 +186,7 @@ async fn create_object_store_factory(
             Err(_) => None,
         },
     };
-    Ok(ObjectStoreFactory::new(s3_config))
+    ObjectStoreFactory::new(s3_config)
 }
 
 fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
