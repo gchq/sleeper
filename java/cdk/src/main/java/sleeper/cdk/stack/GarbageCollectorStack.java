@@ -80,9 +80,7 @@ public class GarbageCollectorStack extends NestedStack {
 
         // Timeout is set to the configured timeout period within the properties. This has a maximum of 900 seconds
         // (15 minutes) which is the maximum execution time of a lambda.
-        int timeoutSecsFromGcPeriod = (60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES));
-
-        Duration handlerTimeout = Duration.seconds(Math.max(1, Math.min(timeoutSecsFromGcPeriod, 900)));
+        Duration handlerTimeout = Duration.seconds((60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES)));
         Duration queueVisibilityTimeout = handlerTimeout.plus(Duration.seconds(10));
 
         // Garbage collector function

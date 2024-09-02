@@ -54,6 +54,10 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num > 0 && num <= 10);
     }
 
+    public static boolean isPositiveIntegerLtEq900(String integer) {
+        return parseAndCheckInteger(integer, num -> num > 0 && num <= 900);
+    }
+
     public static boolean isNonNegativeInteger(String integer) {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
