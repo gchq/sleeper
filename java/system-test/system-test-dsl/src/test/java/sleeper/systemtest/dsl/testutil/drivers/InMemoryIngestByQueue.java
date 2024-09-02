@@ -31,6 +31,7 @@ import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -86,6 +87,17 @@ public class InMemoryIngestByQueue {
                 taskStore.taskStarted(task);
                 runningTasks.add(task);
             }
+        };
+    }
+
+    public InvokeIngestTasksDriverNew tasksDriverNew() {
+        return () -> {
+            IngestTaskStatus task = IngestTaskStatus.builder()
+                    .taskId(UUID.randomUUID().toString())
+                    .startTime(Instant.now())
+                    .build();
+            taskStore.taskStarted(task);
+            runningTasks.add(task);
         };
     }
 

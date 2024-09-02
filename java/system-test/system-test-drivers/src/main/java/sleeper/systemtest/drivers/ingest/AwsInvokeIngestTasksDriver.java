@@ -28,11 +28,12 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
-public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
+public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver, InvokeIngestTasksDriverNew {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsInvokeIngestTasksDriver.class);
 
     private final SystemTestInstanceContext instance;
@@ -43,6 +44,11 @@ public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
         this.lambdaClient = clients.getLambda();
+    }
+
+    @Override
+    public void invokeStandardIngestTaskCreator() {
+        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
     }
 
     public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {

@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -78,6 +79,11 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
 
     @Override
     public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InvokeIngestTasksDriverNew invokeIngestTasksNew(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
