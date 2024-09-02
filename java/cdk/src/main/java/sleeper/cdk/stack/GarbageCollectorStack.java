@@ -81,7 +81,6 @@ public class GarbageCollectorStack extends NestedStack {
         // Timeout is set to the configured timeout period within the properties. This has a maximum of 900 seconds
         // (15 minutes) which is the maximum execution time of a lambda.
         Duration handlerTimeout = Duration.seconds((60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES)));
-        Duration queueVisibilityTimeout = handlerTimeout.plus(Duration.seconds(10));
 
         // Garbage collector function
         IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
@@ -134,7 +133,7 @@ public class GarbageCollectorStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
-                .visibilityTimeout(queueVisibilityTimeout)
+                .visibilityTimeout(handlerTimeout)
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());
