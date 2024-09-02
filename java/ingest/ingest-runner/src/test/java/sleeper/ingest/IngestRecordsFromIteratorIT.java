@@ -120,7 +120,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Read files and check they have the correct records
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactly(getSingleRecord().get(0));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
+        //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", builder -> builder
