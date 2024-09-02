@@ -27,8 +27,8 @@ public interface GarbageCollectionProperty {
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES = Index.propertyBuilder("sleeper.gc.lambda.timeout")
-            .description("The configurable timeout wait (seconds) for the garbage collector lambda. When not set defaults to the garbage collector period.")
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES = Index.propertyBuilder("sleeper.gc.lambda.timeout.minutes")
+            .description("The configurable timeout wait (minutes) for the garbage collector lambda. When not set defaults to the garbage collector period.")
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
