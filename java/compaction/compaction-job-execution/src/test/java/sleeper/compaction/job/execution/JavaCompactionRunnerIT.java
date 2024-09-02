@@ -30,7 +30,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -86,8 +85,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         compact(schema, compactionJob);
 
         // Then
-        Sketches sketches = readSketches(schema, compactionJob.getOutputFile());
-        assertThat(SketchesDeciles.from(sketches))
+        assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", builder -> builder
                                 .min(0L).max(199L)

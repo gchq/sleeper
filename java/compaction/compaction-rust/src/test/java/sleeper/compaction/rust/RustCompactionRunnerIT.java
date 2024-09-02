@@ -238,8 +238,7 @@ public class RustCompactionRunnerIT {
             compact(job);
 
             // Then
-            Sketches sketches = readSketches(schema, job.getOutputFile());
-            assertThat(SketchesDeciles.from(sketches))
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.builder()
                             .field("key", builder -> builder
                                     .min("record-1").max("record-2")
