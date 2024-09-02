@@ -30,7 +30,7 @@ public class SketchesDeciles {
 
     private final Map<String, SketchDeciles> decilesByField;
 
-    public SketchesDeciles(Map<String, SketchDeciles> decilesByField) {
+    private SketchesDeciles(Map<String, SketchDeciles> decilesByField) {
         this.decilesByField = decilesByField;
     }
 

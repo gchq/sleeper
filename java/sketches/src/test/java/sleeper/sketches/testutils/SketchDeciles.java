@@ -18,17 +18,12 @@ package sleeper.sketches.testutils;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.sketches.Sketches;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
-
-import static java.util.stream.Collectors.toMap;
 
 public class SketchDeciles {
 
@@ -46,12 +41,6 @@ public class SketchDeciles {
         this.decileByRank = decileByRank;
     }
 
-    public static Map<String, SketchDeciles> from(Sketches sketches) {
-        return sketches.getQuantilesSketches().entrySet().stream()
-                .map(entry -> Map.entry(entry.getKey(), from(entry.getValue())))
-                .collect(toMap(Entry::getKey, Entry::getValue));
-    }
-
     public static SketchDeciles from(ItemsSketch<?> sketch) {
         return new SketchDeciles(sketch.getMinValue(), sketch.getMaxValue(), readDecilesByRank(sketch));
     }
@@ -62,10 +51,6 @@ public class SketchDeciles {
 
     public static SketchDeciles empty() {
         return builder().build();
-    }
-
-    public static SketchDeciles byRank(Map<Double, Object> decileByRank) {
-        return new SketchDeciles(decileByRank.get(0.0), decileByRank.get(1.0), decileByRank);
     }
 
     private static Map<Double, Object> readDecilesByRank(ItemsSketch<?> sketch) {
