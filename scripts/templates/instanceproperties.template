@@ -793,7 +793,7 @@ sleeper.gc.period.minutes=15
 
 # The configurable timeout wait (minutes) for the garbage collector lambda. When not set defaults to
 # the garbage collector period.
-sleeper.gc.lambda.timeout.minutes=15
+sleeper.gc.lambda.timeout.minutes=14
 
 # The amount of memory in MB for the lambda function used to perform garbage collection.
 sleeper.gc.memory=1024

@@ -243,7 +243,7 @@ class InstancePropertiesTest {
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.set(SUBNETS, "subnet1");
         instanceProperties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 20);
-        instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES, 20);
+        instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES, 15);
         instanceProperties.setNumber(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);
         instanceProperties.setNumber(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS, 800);

@@ -29,9 +29,9 @@ public interface GarbageCollectionProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES = Index.propertyBuilder("sleeper.gc.lambda.timeout.minutes")
             .description("The configurable timeout wait (minutes) for the garbage collector lambda. When not set defaults to the garbage collector period.")
-            .defaultValue("15")
+            .defaultValue("14")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
-            .validationPredicate(Utils::isPositiveIntegerLtEq900)
+            .validationPredicate(Utils::isPositiveIntegerLtEq15)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
             .description("The amount of memory in MB for the lambda function used to perform garbage collection.")
