@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketches.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -57,14 +57,15 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
                 .containsExactlyElementsOf(getRecords());
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileReferences.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(3L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", builder -> builder
+                                .min(1L).max(3L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
+                        .build());
     }
 
     @Test
