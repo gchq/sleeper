@@ -31,7 +31,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 
@@ -86,16 +86,15 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         compact(schema, compactionJob);
 
         // Then
-        Sketches sketches = getSketches(schema, compactionJob.getOutputFile());
-        assertThat(sketches.getQuantilesSketches().keySet()).containsExactly("key");
-        AssertQuantiles.forSketch(sketches.getQuantilesSketch("key"))
-                .min(0L).max(199L)
-                .quantile(0.0, 0L).quantile(0.1, 20L)
-                .quantile(0.2, 40L).quantile(0.3, 60L)
-                .quantile(0.4, 80L).quantile(0.5, 100L)
-                .quantile(0.6, 120L).quantile(0.7, 140L)
-                .quantile(0.8, 160L).quantile(0.9, 180L)
-                .verify();
+        Sketches sketches = readSketches(schema, compactionJob.getOutputFile());
+        assertThat(SketchesDeciles.from(sketches))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", builder -> builder
+                                .min(0L).max(199L)
+                                .rank(0.1, 20L).rank(0.2, 40L).rank(0.3, 60L)
+                                .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
+                                .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
+                        .build());
     }
 
     @Nested

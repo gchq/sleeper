@@ -25,6 +25,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 
@@ -82,5 +84,29 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assertThat(summary.getRecordsRead()).isZero();
         assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
+    }
+
+    @Test
+    void shouldWriteSketchWhenWritingEmptyFile() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        FileReference file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
+        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        compact(schema, compactionJob);
+
+        // Then
+        Sketches sketches = readSketches(schema, compactionJob.getOutputFile());
+        assertThat(SketchesDeciles.from(sketches))
+                .isEqualTo(SketchesDeciles.builder()
+                        .fieldEmpty("key")
+                        .build());
     }
 }

@@ -47,6 +47,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.record.RecordReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -217,6 +218,38 @@ public class RustCompactionRunnerIT {
         }
     }
 
+    @Nested
+    @DisplayName("Write sketches")
+    class WriteSketches {
+
+        @Test
+        void shouldWriteSketchWhenMergingFiles() throws Exception {
+            // Given
+            Schema schema = schemaWithKey("key", new StringType());
+            tableProperties.setSchema(schema);
+            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", "record-1"));
+            Record record2 = new Record(Map.of("key", "record-2"));
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            compact(job);
+
+            // Then
+            Sketches sketches = readSketches(schema, job.getOutputFile());
+            assertThat(SketchesDeciles.from(sketches))
+                    .isEqualTo(SketchesDeciles.builder()
+                            .field("key", builder -> builder
+                                    .min("record-1").max("record-2")
+                                    .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
+                                    .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")
+                                    .rank(0.7, "record-2").rank(0.8, "record-2").rank(0.9, "record-2"))
+                            .build());
+        }
+    }
+
     private CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
@@ -266,5 +299,10 @@ public class RustCompactionRunnerIT {
     private boolean dataFileExists(String filename) throws IOException {
         return FileSystem.getLocal(new Configuration())
                 .exists(new org.apache.hadoop.fs.Path(filename));
+    }
+
+    private Sketches readSketches(Schema schema, String filename) throws IOException {
+        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, new Configuration());
     }
 }

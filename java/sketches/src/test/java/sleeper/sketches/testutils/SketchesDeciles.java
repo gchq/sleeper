@@ -91,6 +91,11 @@ public class SketchesDeciles {
             return this;
         }
 
+        public Builder fieldEmpty(String field) {
+            decilesByField.put(field, SketchDeciles.empty());
+            return this;
+        }
+
         public SketchesDeciles build() {
             return new SketchesDeciles(decilesByField);
         }

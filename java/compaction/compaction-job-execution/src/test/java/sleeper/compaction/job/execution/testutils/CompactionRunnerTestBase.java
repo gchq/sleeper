@@ -113,12 +113,12 @@ public class CompactionRunnerTestBase {
         return files.get(0);
     }
 
-    protected Sketches getSketches(Schema schema, String filename) throws IOException {
-        return getSketches(schema, filename, new Configuration());
+    protected Sketches readSketches(Schema schema, String filename) throws IOException {
+        return readSketches(schema, filename, new Configuration());
     }
 
-    protected Sketches getSketches(Schema schema, String filename, Configuration configuration) throws IOException {
-        String sketchFile = filename.replace(".parquet", ".sketches");
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(new org.apache.hadoop.fs.Path(sketchFile), configuration);
+    protected Sketches readSketches(Schema schema, String filename, Configuration configuration) throws IOException {
+        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, configuration);
     }
 }
