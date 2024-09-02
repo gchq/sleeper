@@ -30,6 +30,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.AssertQuantiles;
 
 import java.util.List;
 
@@ -63,6 +65,37 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+    }
+
+    @Test
+    void shouldWriteSketchWhenMergingFiles() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
+
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        compact(schema, compactionJob);
+
+        // Then
+        Sketches sketches = getSketches(schema, compactionJob.getOutputFile());
+        assertThat(sketches.getQuantilesSketches().keySet()).containsExactly("key");
+        AssertQuantiles.forSketch(sketches.getQuantilesSketch("key"))
+                .min(0L).max(199L)
+                .quantile(0.0, 0L).quantile(0.1, 20L)
+                .quantile(0.2, 40L).quantile(0.3, 60L)
+                .quantile(0.4, 80L).quantile(0.5, 100L)
+                .quantile(0.6, 120L).quantile(0.7, 140L)
+                .quantile(0.8, 160L).quantile(0.9, 180L)
+                .verify();
     }
 
     @Nested

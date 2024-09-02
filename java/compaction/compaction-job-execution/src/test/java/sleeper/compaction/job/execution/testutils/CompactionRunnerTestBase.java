@@ -37,7 +37,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
@@ -108,5 +111,14 @@ public class CompactionRunnerTestBase {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);
         }
         return files.get(0);
+    }
+
+    protected Sketches getSketches(Schema schema, String filename) throws IOException {
+        return getSketches(schema, filename, new Configuration());
+    }
+
+    protected Sketches getSketches(Schema schema, String filename, Configuration configuration) throws IOException {
+        String sketchFile = filename.replace(".parquet", ".sketches");
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(new org.apache.hadoop.fs.Path(sketchFile), configuration);
     }
 }
