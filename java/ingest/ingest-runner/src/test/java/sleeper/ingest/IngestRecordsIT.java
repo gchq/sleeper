@@ -102,7 +102,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(1L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
@@ -110,7 +110,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(3L).max(3L)
                                 .rank(0.1, 3L).rank(0.2, 3L).rank(0.3, 3L)
                                 .rank(0.4, 3L).rank(0.5, 3L).rank(0.6, 3L)
@@ -157,7 +157,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(2, 2)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 2, 2).rankBytes(0.6, 2, 2)
@@ -165,7 +165,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .minBytes(64, 65).maxBytes(64, 65)
                                 .rankBytes(0.1, 64, 65).rankBytes(0.2, 64, 65).rankBytes(0.3, 64, 65)
                                 .rankBytes(0.4, 64, 65).rankBytes(0.5, 64, 65).rankBytes(0.6, 64, 65)
@@ -215,12 +215,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key1", builder -> builder
+                        .field("key1", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(5)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 5).rankBytes(0.6, 5)
                                 .rankBytes(0.7, 5).rankBytes(0.8, 5).rankBytes(0.9, 5))
-                        .field("key2", builder -> builder
+                        .field("key2", deciles -> deciles
                                 .minBytes(2, 3).maxBytes(99)
                                 .rankBytes(0.1, 2, 3).rankBytes(0.2, 2, 3).rankBytes(0.3, 2, 3)
                                 .rankBytes(0.4, 2, 3).rankBytes(0.5, 99).rankBytes(0.6, 99)
@@ -228,12 +228,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key1", builder -> builder
+                        .field("key1", deciles -> deciles
                                 .minBytes(11, 2).maxBytes(64, 65)
                                 .rankBytes(0.1, 11, 2).rankBytes(0.2, 11, 2).rankBytes(0.3, 11, 2)
                                 .rankBytes(0.4, 64, 65).rankBytes(0.5, 64, 65).rankBytes(0.6, 64, 65)
                                 .rankBytes(0.7, 64, 65).rankBytes(0.8, 64, 65).rankBytes(0.9, 64, 65))
-                        .field("key2", builder -> builder
+                        .field("key2", deciles -> deciles
                                 .minBytes(2, 2).maxBytes(67, 68)
                                 .rankBytes(0.1, 2, 2).rankBytes(0.2, 2, 2).rankBytes(0.3, 2, 2)
                                 .rankBytes(0.4, 67, 68).rankBytes(0.5, 67, 68).rankBytes(0.6, 67, 68)
@@ -311,12 +311,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key1", builder -> builder
+                        .field("key1", deciles -> deciles
                                 .min(0).max(100)
                                 .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
                                 .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
                                 .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
-                        .field("key2", builder -> builder
+                        .field("key2", deciles -> deciles
                                 .min(1L).max(1L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
@@ -324,12 +324,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key1", builder -> builder
+                        .field("key1", deciles -> deciles
                                 .min(0).max(100)
                                 .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
                                 .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
                                 .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
-                        .field("key2", builder -> builder
+                        .field("key2", deciles -> deciles
                                 .min(20L).max(50L)
                                 .rank(0.1, 20L).rank(0.2, 20L).rank(0.3, 20L)
                                 .rank(0.4, 20L).rank(0.5, 50L).rank(0.6, 50L)
@@ -367,7 +367,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(0L).max(1L)
                                 .rank(0.1, 0L).rank(0.2, 0L).rank(0.3, 0L)
                                 .rank(0.4, 0L).rank(0.5, 1L).rank(0.6, 1L)
@@ -407,7 +407,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReference.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(3L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
@@ -459,7 +459,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(-198L).max(1L)
                                 .rank(0.1, -178L).rank(0.2, -158L).rank(0.3, -138L)
                                 .rank(0.4, -118L).rank(0.5, -98L).rank(0.6, -78L)
@@ -467,7 +467,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(2L).max(201L)
                                 .rank(0.1, 22L).rank(0.2, 42L).rank(0.3, 62L)
                                 .rank(0.4, 82L).rank(0.5, 102L).rank(0.6, 122L)
@@ -564,7 +564,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(10L)
                                 .rank(0.1, 3L).rank(0.2, 5L).rank(0.3, 5L)
                                 .rank(0.4, 5L).rank(0.5, 5L).rank(0.6, 5L)
@@ -613,7 +613,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(11, 2)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)

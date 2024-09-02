@@ -56,7 +56,7 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(3L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)

@@ -109,7 +109,7 @@ public class RustCompactionRunnerLocalStackIT {
                 .containsExactly(record1, record2);
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min("record-1").max("record-2")
                                 .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
                                 .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")

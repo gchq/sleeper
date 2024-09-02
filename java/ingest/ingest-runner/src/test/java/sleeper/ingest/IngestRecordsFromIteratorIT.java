@@ -77,7 +77,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(1L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
@@ -85,7 +85,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(3L).max(3L)
                                 .rank(0.1, 3L).rank(0.2, 3L).rank(0.3, 3L)
                                 .rank(0.4, 3L).rank(0.5, 3L).rank(0.6, 3L)
@@ -123,7 +123,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(1L).max(1L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)

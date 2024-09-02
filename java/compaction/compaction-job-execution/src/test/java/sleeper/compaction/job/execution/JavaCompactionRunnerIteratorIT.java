@@ -74,7 +74,7 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()
-                        .field("key", builder -> builder
+                        .field("key", deciles -> deciles
                                 .min(0L).max(198L)
                                 .rank(0.1, 20L).rank(0.2, 40L).rank(0.3, 60L)
                                 .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
