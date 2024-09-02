@@ -22,9 +22,10 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 
 public class WaitForIngestTasks {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
@@ -38,18 +39,22 @@ public class WaitForIngestTasks {
     }
 
     public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) throws InterruptedException {
-        poll.pollUntil("expected number of tasks running one of given jobs", () -> {
+        if (numTasksStartedAJob(jobIds) >= expectedTasks) {
+            return;
+        }
+        poll.pollUntil("expected number of tasks running given jobs", () -> {
             invokeDriver.invokeStandardIngestTaskCreator();
-            Set<String> taskIds = new HashSet<>();
-            for (String jobId : jobIds) {
-                jobStatusStore.getJob(jobId).ifPresent(status -> {
-                    status.getJobRuns().stream()
-                            .map(ProcessRun::getTaskId)
-                            .forEach(taskIds::add);
-                });
-            }
-            LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
-            return taskIds.size() == expectedTasks;
+            return numTasksStartedAJob(jobIds) >= expectedTasks;
         });
+    }
+
+    private int numTasksStartedAJob(List<String> jobIds) {
+        Set<String> taskIds = jobIds.stream()
+                .flatMap(jobId -> jobStatusStore.getJob(jobId).stream())
+                .flatMap(status -> status.getJobRuns().stream())
+                .map(ProcessRun::getTaskId)
+                .collect(toSet());
+        LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
+        return taskIds.size();
     }
 }
