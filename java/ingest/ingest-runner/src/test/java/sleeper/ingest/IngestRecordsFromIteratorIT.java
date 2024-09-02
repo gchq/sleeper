@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketches.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,21 +74,23 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .containsExactly(getRecords().get(0));
         assertThat(readRecords(rightFile))
                 .containsExactly(getRecords().get(1));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(1L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
-                .min(3L).max(3L)
-                .quantile(0.0, 3L).quantile(0.1, 3L)
-                .quantile(0.2, 3L).quantile(0.3, 3L)
-                .quantile(0.4, 3L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", builder -> builder
+                                .min(1L).max(1L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", builder -> builder
+                                .min(3L).max(3L)
+                                .rank(0.1, 3L).rank(0.2, 3L).rank(0.3, 3L)
+                                .rank(0.4, 3L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
+                        .build());
     }
 
     @Test
@@ -119,13 +121,14 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactly(getSingleRecord().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileReferences.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(1L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", builder -> builder
+                                .min(1L).max(1L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
+                        .build());
     }
 
     @Test
