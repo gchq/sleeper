@@ -25,7 +25,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -103,8 +102,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         compact(schema, compactionJob);
 
         // Then
-        Sketches sketches = readSketches(schema, compactionJob.getOutputFile());
-        assertThat(SketchesDeciles.from(sketches))
+        assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()
                         .fieldEmpty("key")
                         .build());
