@@ -62,7 +62,7 @@ public class SystemTestPythonIngest {
     }
 
     public SystemTestPythonIngest invokeTask() {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }
 

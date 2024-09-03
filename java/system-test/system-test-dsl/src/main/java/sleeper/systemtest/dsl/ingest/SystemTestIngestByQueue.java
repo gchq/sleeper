@@ -62,7 +62,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        invokeTasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds);
+        invokeTasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }
 

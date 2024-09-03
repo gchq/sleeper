@@ -55,7 +55,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(getInvokeResult().createdJobIds);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(getInvokeResult().createdJobIds, pollDriver);
         return this;
     }
 

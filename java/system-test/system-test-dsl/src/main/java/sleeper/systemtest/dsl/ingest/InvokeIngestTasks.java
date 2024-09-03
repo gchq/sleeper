@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
 import java.util.List;
@@ -42,6 +43,11 @@ public class InvokeIngestTasks {
     public void invokeUntilOneTaskStartedAJob(List<String> jobIds) {
         invokeUntilNumTasksStartedAJob(1, jobIds,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    }
+
+    public void invokeUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
+        invokeUntilNumTasksStartedAJob(1, jobIds,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
 
     public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
