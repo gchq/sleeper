@@ -27,7 +27,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -45,7 +45,7 @@ public class SystemTestCluster {
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
-    private final InvokeIngestTasksDriver tasksDriver;
+    private final InvokeIngestTasksDriverNew tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
@@ -59,7 +59,7 @@ public class SystemTestCluster {
         driver = baseDrivers.dataGenerationTasks(context);
         ingestByQueue = instanceAdminDrivers.ingestByQueue(context);
         sourceFiles = baseDrivers.generatedSourceFiles(context.parameters(), context.systemTest());
-        tasksDriver = instanceAdminDrivers.invokeIngestTasks(context);
+        tasksDriver = instanceAdminDrivers.invokeIngestTasksNew(context);
         waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
         waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
     }
@@ -85,12 +85,12 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster invokeStandardIngestTask() {
-        tasksDriver.invokeStandardIngestTask();
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(jobIds);
         return this;
     }
 
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        tasksDriver.invokeStandardIngestTasks(expectedTasks, poll);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
         return this;
     }
 
