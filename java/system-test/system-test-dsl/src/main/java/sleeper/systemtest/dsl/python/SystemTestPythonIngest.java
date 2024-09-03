@@ -16,10 +16,12 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -33,15 +35,16 @@ public class SystemTestPythonIngest {
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
+    private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestPythonIngest(
-            IngestByAnyQueueDriver fromS3Driver, IngestLocalFileByAnyQueueDriver localFileDriver,
-            InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {
-        this.fromS3Driver = fromS3Driver;
-        this.localFileDriver = localFileDriver;
-        this.tasksDriver = tasksDriver;
-        this.waitForJobs = waitForJobs;
+    public SystemTestPythonIngest(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
+        fromS3Driver = drivers.pythonIngest(context);
+        localFileDriver = drivers.pythonIngestLocalFile(context);
+        tasksDriver = drivers.invokeIngestTasks(context);
+        waitForJobs = drivers.waitForIngest(context);
+        pollDriver = drivers.pollWithRetries();
     }
 
     public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
@@ -65,6 +68,6 @@ public class SystemTestPythonIngest {
 
     public void waitForJobs() {
         waitForJobs.waitForJobs(sentJobIds,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }

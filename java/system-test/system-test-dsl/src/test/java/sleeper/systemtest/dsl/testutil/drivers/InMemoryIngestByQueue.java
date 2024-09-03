@@ -32,6 +32,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -88,21 +89,21 @@ public class InMemoryIngestByQueue {
         }, jobStore);
     }
 
-    public WaitForJobs waitForIngest(SystemTestContext context) {
+    public WaitForJobs waitForIngest(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(context.instance(), properties -> {
             String taskId = runningTasks.stream().map(IngestTaskStatus::getTaskId)
                     .findFirst().orElseThrow();
             finishJobs(context, taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore);
+        }, properties -> taskStore, pollDriver);
     }
 
-    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+    public WaitForJobs waitForBulkImport(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(context.instance(), properties -> {
             finishJobs(context, "bulk-import-task");
             return jobStore;
-        });
+        }, pollDriver);
     }
 
     public IngestJobStatusStore jobStore() {

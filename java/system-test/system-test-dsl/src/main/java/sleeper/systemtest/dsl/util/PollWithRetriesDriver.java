@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.dsl.util;
 
-package sleeper.systemtest.dsl.compaction;
-
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
-public interface CompactionDriver {
+import java.time.Duration;
 
-    CompactionJobStatusStore getJobStatusStore();
+@FunctionalInterface
+public interface PollWithRetriesDriver {
 
-    void triggerCreateJobs();
+    PollWithRetries pollWithIntervalAndTimeout(Duration pollInterval, Duration timeout);
 
-    void forceCreateJobs();
+    static PollWithRetriesDriver realWaits() {
+        return PollWithRetries::intervalAndPollingTimeout;
+    }
 
-    void invokeTasks(int expectedTasks, PollWithRetries poll);
+    static PollWithRetriesDriver noWaits() {
+        return (pollInterval, timeout) -> PollWithRetries.builder()
+                .pollIntervalAndTimeout(pollInterval, timeout)
+                .sleepInInterval(millis -> { // Do not really wait
+                })
+                .build();
 
-    void forceStartTasks(int numberOfTasks, PollWithRetries poll);
+    }
 
-    void scaleToZero();
 }

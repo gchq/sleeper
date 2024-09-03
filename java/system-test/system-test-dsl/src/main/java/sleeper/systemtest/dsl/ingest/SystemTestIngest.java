@@ -20,6 +20,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -56,11 +57,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
     }
 
     public SystemTestDirectBulkImport directEmrServerless() {
@@ -96,5 +97,9 @@ public class SystemTestIngest {
 
     private WaitForJobs waitForBulkImport() {
         return adminDrivers.waitForBulkImport(context);
+    }
+
+    private PollWithRetriesDriver pollDriver() {
+        return adminDrivers.pollWithRetries();
     }
 }

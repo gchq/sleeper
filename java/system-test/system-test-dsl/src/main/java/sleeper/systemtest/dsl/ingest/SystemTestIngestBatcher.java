@@ -20,6 +20,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.util.List;
@@ -31,14 +32,16 @@ public class SystemTestIngestBatcher {
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
+    private final PollWithRetriesDriver pollDriver;
     private Result lastInvokeResult;
 
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
-        this.sourceFiles = context.sourceFiles();
-        this.driver = drivers.ingestBatcher(context);
-        this.tasksDriver = drivers.invokeIngestTasks(context);
-        this.waitForIngest = drivers.waitForIngest(context);
-        this.waitForBulkImport = drivers.waitForBulkImport(context);
+        sourceFiles = context.sourceFiles();
+        driver = drivers.ingestBatcher(context);
+        tasksDriver = drivers.invokeIngestTasks(context);
+        waitForIngest = drivers.waitForIngest(context);
+        waitForBulkImport = drivers.waitForBulkImport(context);
+        pollDriver = drivers.pollWithRetries();
     }
 
     public SystemTestIngestBatcher sendSourceFiles(String... filenames) {
