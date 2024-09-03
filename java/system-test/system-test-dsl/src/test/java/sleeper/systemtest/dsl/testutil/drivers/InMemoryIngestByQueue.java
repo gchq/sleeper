@@ -90,21 +90,21 @@ public class InMemoryIngestByQueue {
         };
     }
 
-    public WaitForJobs waitForIngest(SystemTestContext context) {
+    public WaitForJobs waitForIngest(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(context.instance(), properties -> {
             String taskId = runningTasks.stream().map(IngestTaskStatus::getTaskId)
                     .findFirst().orElseThrow();
             finishJobs(context, taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore, PollWithRetriesDriver.noWaits());
+        }, properties -> taskStore, pollDriver);
     }
 
-    public WaitForJobs waitForBulkImport(SystemTestContext context) {
+    public WaitForJobs waitForBulkImport(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(context.instance(), properties -> {
             finishJobs(context, "bulk-import-task");
             return jobStore;
-        }, PollWithRetriesDriver.noWaits());
+        }, pollDriver);
     }
 
     public IngestJobStatusStore jobStore() {

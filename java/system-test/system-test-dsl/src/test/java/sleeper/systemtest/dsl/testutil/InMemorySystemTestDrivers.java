@@ -138,12 +138,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return ingestByQueue.waitForIngest(context);
+        return ingestByQueue.waitForIngest(context, pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return ingestByQueue.waitForBulkImport(context);
+        return ingestByQueue.waitForBulkImport(context, pollWithRetries());
     }
 
     @Override
@@ -162,7 +162,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return compaction.waitForJobs(context);
+        return compaction.waitForJobs(context, pollWithRetries());
     }
 
     @Override

@@ -87,14 +87,14 @@ public class InMemoryCompaction {
         return new Driver(instance);
     }
 
-    public WaitForJobs waitForJobs(SystemTestContext context) {
+    public WaitForJobs waitForJobs(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(context.instance(), properties -> {
             String taskId = runningTasks.stream().map(CompactionTaskStatus::getTaskId)
                     .findFirst().orElseThrow();
             finishJobs(context.instance(), taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore, PollWithRetriesDriver.noWaits());
+        }, properties -> taskStore, pollDriver);
     }
 
     public CompactionJobStatusStore jobStore() {
