@@ -60,6 +60,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -213,6 +214,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public PartitionReportDriver partitionReports(SystemTestContext context) {
         return reports.partitions(context.instance());
+    }
+
+    @Override
+    public PollWithRetriesDriver pollWithRetries() {
+        return PollWithRetriesDriver.noWaits();
     }
 
     @Override
