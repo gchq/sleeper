@@ -42,6 +42,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -64,6 +65,7 @@ public class InMemoryIngestByQueue {
     private final InMemoryDataStore sourceFiles;
     private final InMemoryDataStore data;
     private final InMemorySketchesStore sketches;
+    private final Supplier<Instant> timeSupplier = () -> Instant.now().plus(Duration.ofSeconds(1));
 
     public InMemoryIngestByQueue(InMemoryDataStore sourceFiles, InMemoryDataStore data, InMemorySketchesStore sketches) {
         this.sourceFiles = sourceFiles;
@@ -97,7 +99,7 @@ public class InMemoryIngestByQueue {
     }
 
     private IngestTask newTask(SystemTestContext context, String taskId) {
-        return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
+        return new IngestTask(() -> UUID.randomUUID().toString(), timeSupplier,
                 messageReceiver(context), ingester(context, taskId), jobStore, taskStore, taskId);
     }
 
@@ -164,7 +166,7 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore, jobStore,
-                updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(Instant.now()));
+                updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
         return new InMemoryDirectIngestDriver(context.instance(), data, sketches)
                 .ingest(instanceProperties, tableProperties, stateStore, addFilesToStateStore, iterator);
