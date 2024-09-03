@@ -128,6 +128,8 @@ public class IngestJobMessageHandler<T> {
         List<String> validationFailures = new ArrayList<>();
         if (files == null) {
             validationFailures.add("Missing property \"files\"");
+        } else if (files.stream().anyMatch(file -> file == null)) {
+            validationFailures.add("One of the files was null");
         }
         Optional<TableStatus> tableOpt = getTable(ingestJob);
         if (tableOpt.isEmpty()) {
