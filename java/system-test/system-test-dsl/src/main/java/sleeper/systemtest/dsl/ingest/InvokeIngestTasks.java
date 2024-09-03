@@ -52,7 +52,7 @@ public class InvokeIngestTasks {
             return;
         }
         try {
-            poll.pollUntil("expected number of tasks running given jobs", () -> {
+            poll.pollUntil("expected number of tasks have picked up a job", () -> {
                 invokeTaskCreator.invokeCreator();
                 return numTasksStartedAJob(jobIds) >= expectedTasks;
             });
