@@ -31,23 +31,23 @@ public class AwsWaitForJobs {
     private AwsWaitForJobs() {
     }
 
-    public static WaitForJobs forIngest(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+    public static WaitForJobs forIngest(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(instance,
                 properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
                 properties -> IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                PollWithRetriesDriver.realWaits());
+                pollDriver);
     }
 
-    public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+    public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(instance,
                 properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                PollWithRetriesDriver.realWaits());
+                pollDriver);
     }
 
-    public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
+    public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(instance,
                 properties -> CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
                 properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                PollWithRetriesDriver.realWaits());
+                pollDriver);
     }
 }
