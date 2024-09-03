@@ -20,7 +20,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -31,7 +31,7 @@ public class SystemTestPythonApi {
     private final IngestByAnyQueueDriver ingestDriver;
     private final IngestLocalFileByAnyQueueDriver ingestLocalFileDriver;
     private final IngestByAnyQueueDriver bulkImportDriver;
-    private final InvokeIngestTasksDriver tasksDriver;
+    private final InvokeIngestTasksDriverNew tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private final PythonQueryTypesDriver queryDriver;
@@ -42,7 +42,7 @@ public class SystemTestPythonApi {
         ingestDriver = drivers.pythonIngest(context);
         ingestLocalFileDriver = drivers.pythonIngestLocalFile(context);
         bulkImportDriver = drivers.pythonBulkImport(context);
-        tasksDriver = drivers.invokeIngestTasks(context);
+        tasksDriver = drivers.invokeIngestTasksNew(context);
         waitForIngest = drivers.waitForIngest(context);
         waitForBulkImport = drivers.waitForBulkImport(context);
         queryDriver = drivers.pythonQuery(context);

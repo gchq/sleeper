@@ -21,7 +21,6 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -60,9 +59,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        invokeTasksDriver.invokeTasksForCurrentInstance()
-                .invokeUntilNumTasksStartedAJob(1, sentJobIds,
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+        invokeTasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds);
         return this;
     }
 

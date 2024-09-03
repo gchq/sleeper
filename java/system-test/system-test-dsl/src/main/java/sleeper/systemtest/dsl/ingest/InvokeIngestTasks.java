@@ -22,6 +22,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +37,11 @@ public class InvokeIngestTasks {
     public InvokeIngestTasks(InvokeTaskCreator invokeTaskCreator, IngestJobStatusStore jobStatusStore) {
         this.invokeTaskCreator = invokeTaskCreator;
         this.jobStatusStore = jobStatusStore;
+    }
+
+    public void invokeUntilOneTaskStartedAJob(List<String> jobIds) {
+        invokeUntilNumTasksStartedAJob(1, jobIds,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
 
     public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
