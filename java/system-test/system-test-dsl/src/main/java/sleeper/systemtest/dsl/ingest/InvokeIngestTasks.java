@@ -38,14 +38,22 @@ public class InvokeIngestTasks {
         this.jobStatusStore = jobStatusStore;
     }
 
-    public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) throws InterruptedException {
+    public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
+        if (jobIds.isEmpty()) {
+            throw new IllegalArgumentException("Need jobs to wait for before invoking tasks, none are yet specified");
+        }
         if (numTasksStartedAJob(jobIds) >= expectedTasks) {
             return;
         }
-        poll.pollUntil("expected number of tasks running given jobs", () -> {
-            invokeTaskCreator.invokeCreator();
-            return numTasksStartedAJob(jobIds) >= expectedTasks;
-        });
+        try {
+            poll.pollUntil("expected number of tasks running given jobs", () -> {
+                invokeTaskCreator.invokeCreator();
+                return numTasksStartedAJob(jobIds) >= expectedTasks;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private int numTasksStartedAJob(List<String> jobIds) {

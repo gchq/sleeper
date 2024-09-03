@@ -138,7 +138,7 @@ public class InvokeIngestTasksTest {
     }
 
     @Test
-    void shouldStartTaskWithUnexpectedJob() {
+    void shouldFailWhenTaskStartedWithUnexpectedJob() {
         // Given
         onInvokeTaskCreator(() -> {
             jobStore.jobStarted(jobStartedOnTask("other-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
@@ -148,6 +148,15 @@ public class InvokeIngestTasksTest {
         assertThatThrownBy(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(2, List.of("test-job"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
+        assertThat(waits).isEmpty();
+    }
+
+    @Test
+    void shouldFailWhenNoJobsGiven() {
+        // When / Then
+        assertThatThrownBy(() -> invokeTasks()
+                .invokeUntilNumTasksStartedAJob(1, List.of(), noRetries()))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThat(waits).isEmpty();
     }
 
