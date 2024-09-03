@@ -25,11 +25,6 @@ public interface InvokeIngestTasksDriver {
 
     void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll);
 
-    default void invokeStandardIngestTask() {
-        invokeStandardIngestTasks(1,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
-
     default void invokeStandardIngestTask(PollWithRetriesDriver pollDriver) {
         invokeStandardIngestTasks(1,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
