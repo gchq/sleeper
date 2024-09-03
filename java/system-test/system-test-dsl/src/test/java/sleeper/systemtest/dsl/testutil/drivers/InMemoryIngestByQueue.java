@@ -77,7 +77,7 @@ public class InMemoryIngestByQueue {
         queuedJobs.add(job);
     }
 
-    public InvokeIngestTasksDriver tasksDriverNew() {
+    public InvokeIngestTasksDriver tasksDriver() {
         return () -> new InvokeIngestTasks(() -> {
             IngestTaskStatus task = IngestTaskStatus.builder()
                     .taskId(UUID.randomUUID().toString())

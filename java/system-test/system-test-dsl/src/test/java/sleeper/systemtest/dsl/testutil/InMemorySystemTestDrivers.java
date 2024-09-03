@@ -132,7 +132,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
-        return ingestByQueue.tasksDriverNew();
+        return ingestByQueue.tasksDriver();
     }
 
     @Override
