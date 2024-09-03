@@ -22,13 +22,13 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class SystemTestIngestBatcher {
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
-    private final InvokeIngestTasksDriver tasksDriver;
+    private final InvokeIngestTasksDriverNew tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private Result lastInvokeResult;
@@ -36,7 +36,7 @@ public class SystemTestIngestBatcher {
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
         this.sourceFiles = context.sourceFiles();
         this.driver = drivers.ingestBatcher(context);
-        this.tasksDriver = drivers.invokeIngestTasks(context);
+        this.tasksDriver = drivers.invokeIngestTasksNew(context);
         this.waitForIngest = drivers.waitForIngest(context);
         this.waitForBulkImport = drivers.waitForBulkImport(context);
     }
@@ -52,7 +52,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        tasksDriver.invokeStandardIngestTask();
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(getInvokeResult().createdJobIds);
         return this;
     }
 
@@ -78,9 +78,9 @@ public class SystemTestIngestBatcher {
     }
 
     public static class Result {
-        private final Set<String> createdJobIds;
+        private final List<String> createdJobIds;
 
-        public Result(Set<String> createdJobIds) {
+        public Result(List<String> createdJobIds) {
             this.createdJobIds = createdJobIds;
         }
 

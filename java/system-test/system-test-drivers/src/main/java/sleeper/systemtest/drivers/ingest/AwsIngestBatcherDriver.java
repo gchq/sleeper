@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -82,14 +84,14 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
         }
     }
 
-    public Set<String> invokeGetJobIds() {
+    public List<String> invokeGetJobIds() {
         LOGGER.info("Triggering ingest batcher job creation lambda");
         Set<String> jobIdsBefore = getAllJobIdsInStore().collect(Collectors.toSet());
         InvokeLambda.invokeWith(lambdaClient,
                 instance.getInstanceProperties().get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
-        Set<String> jobIds = getAllJobIdsInStore().collect(Collectors.toSet());
-        jobIds.removeAll(jobIdsBefore);
-        return jobIds;
+        return getAllJobIdsInStore()
+                .filter(not(jobIdsBefore::contains))
+                .collect(toUnmodifiableList());
     }
 
     private Stream<String> getAllJobIdsInStore() {
