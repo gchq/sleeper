@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class SystemTestIngestBatcher {
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
-    private final InvokeIngestTasksDriverNew tasksDriver;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private Result lastInvokeResult;

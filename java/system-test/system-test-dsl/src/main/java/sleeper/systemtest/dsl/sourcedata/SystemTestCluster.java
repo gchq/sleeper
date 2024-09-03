@@ -27,7 +27,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -45,7 +45,7 @@ public class SystemTestCluster {
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
-    private final InvokeIngestTasksDriverNew tasksDriver;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;

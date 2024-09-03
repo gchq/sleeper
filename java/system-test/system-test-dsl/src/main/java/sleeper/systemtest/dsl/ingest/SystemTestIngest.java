@@ -80,13 +80,13 @@ public class SystemTestIngest {
         return adminDrivers.ingestByQueue(context);
     }
 
-    private InvokeIngestTasksDriverNew noTasksDriverForBulkImport() {
+    private InvokeIngestTasksDriver noTasksDriverForBulkImport() {
         return () -> {
             throw new IllegalArgumentException("Bulk import does not require tasks to be invoked.");
         };
     }
 
-    private InvokeIngestTasksDriverNew tasksDriver() {
+    private InvokeIngestTasksDriver tasksDriver() {
         return adminDrivers.invokeIngestTasksNew(context);
     }
 

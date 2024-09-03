@@ -30,13 +30,13 @@ public class SystemTestIngestByQueue {
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
     private final InstanceProperty defaultQueueProperty;
-    private final InvokeIngestTasksDriverNew invokeTasksDriver;
+    private final InvokeIngestTasksDriver invokeTasksDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(
             IngestSourceFilesContext sourceFiles, IngestByQueue ingest, InstanceProperty defaultQueueProperty,
-            InvokeIngestTasksDriverNew invokeTasksDriver, WaitForJobs waitForJobs) {
+            InvokeIngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
         this.defaultQueueProperty = defaultQueueProperty;

@@ -32,7 +32,6 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -78,20 +77,7 @@ public class InMemoryIngestByQueue {
         queuedJobs.add(job);
     }
 
-    public InvokeIngestTasksDriver tasksDriver() {
-        return (expectedTasks, poll) -> {
-            for (int i = 0; i < expectedTasks; i++) {
-                IngestTaskStatus task = IngestTaskStatus.builder()
-                        .taskId(UUID.randomUUID().toString())
-                        .startTime(Instant.now())
-                        .build();
-                taskStore.taskStarted(task);
-                runningTasks.add(task);
-            }
-        };
-    }
-
-    public InvokeIngestTasksDriverNew tasksDriverNew() {
+    public InvokeIngestTasksDriver tasksDriverNew() {
         return () -> new InvokeIngestTasks(() -> {
             IngestTaskStatus task = IngestTaskStatus.builder()
                     .taskId(UUID.randomUUID().toString())

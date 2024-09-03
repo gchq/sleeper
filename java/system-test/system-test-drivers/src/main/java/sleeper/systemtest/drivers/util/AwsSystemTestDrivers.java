@@ -58,7 +58,6 @@ import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -159,12 +158,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
-        return new AwsInvokeIngestTasksDriver(context.instance(), clients);
-    }
-
-    @Override
-    public InvokeIngestTasksDriverNew invokeIngestTasksNew(SystemTestContext context) {
+    public InvokeIngestTasksDriver invokeIngestTasksNew(SystemTestContext context) {
         return new AwsInvokeIngestTasksDriver(context.instance(), clients);
     }
 

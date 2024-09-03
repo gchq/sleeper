@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.python;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -31,13 +31,13 @@ import java.util.UUID;
 public class SystemTestPythonIngest {
     private final IngestByAnyQueueDriver fromS3Driver;
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
-    private final InvokeIngestTasksDriverNew tasksDriver;
+    private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestPythonIngest(
             IngestByAnyQueueDriver fromS3Driver, IngestLocalFileByAnyQueueDriver localFileDriver,
-            InvokeIngestTasksDriverNew tasksDriver, WaitForJobs waitForJobs) {
+            InvokeIngestTasksDriver tasksDriver, WaitForJobs waitForJobs) {
         this.fromS3Driver = fromS3Driver;
         this.localFileDriver = localFileDriver;
         this.tasksDriver = tasksDriver;
