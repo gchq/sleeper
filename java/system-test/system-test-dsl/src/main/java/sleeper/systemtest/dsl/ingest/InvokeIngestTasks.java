@@ -40,11 +40,6 @@ public class InvokeIngestTasks {
         this.jobStatusStore = jobStatusStore;
     }
 
-    public void invokeUntilOneTaskStartedAJob(List<String> jobIds) {
-        invokeUntilNumTasksStartedAJob(1, jobIds,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
-
     public void invokeUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
         invokeUntilNumTasksStartedAJob(1, jobIds,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
