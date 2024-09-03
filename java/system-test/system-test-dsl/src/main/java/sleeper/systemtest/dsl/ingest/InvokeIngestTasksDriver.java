@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
 
@@ -27,5 +28,10 @@ public interface InvokeIngestTasksDriver {
     default void invokeStandardIngestTask() {
         invokeStandardIngestTasks(1,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    }
+
+    default void invokeStandardIngestTask(PollWithRetriesDriver pollDriver) {
+        invokeStandardIngestTasks(1,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
 }

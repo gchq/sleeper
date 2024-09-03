@@ -31,6 +31,7 @@ import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -96,14 +97,14 @@ public class InMemoryIngestByQueue {
             finishJobs(context, taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore);
+        }, properties -> taskStore, PollWithRetriesDriver.noWaits());
     }
 
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
         return WaitForJobs.forBulkImport(context.instance(), properties -> {
             finishJobs(context, "bulk-import-task");
             return jobStore;
-        });
+        }, PollWithRetriesDriver.noWaits());
     }
 
     public IngestJobStatusStore jobStore() {

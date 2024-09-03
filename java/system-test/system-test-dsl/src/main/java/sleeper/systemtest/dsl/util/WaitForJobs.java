@@ -39,50 +39,59 @@ public class WaitForJobs {
     private final String typeDescription;
     private final Function<InstanceProperties, JobStatusStore> getJobsStore;
     private final Function<InstanceProperties, TaskStatusStore> getTasksStore;
+    private final PollWithRetriesDriver pollDriver;
 
     private WaitForJobs(
             SystemTestInstanceContext instance, String typeDescription,
             Function<InstanceProperties, JobStatusStore> getJobsStore,
-            Function<InstanceProperties, TaskStatusStore> getTasksStore) {
+            Function<InstanceProperties, TaskStatusStore> getTasksStore,
+            PollWithRetriesDriver pollDriver) {
         this.instance = instance;
         this.typeDescription = typeDescription;
         this.getJobsStore = getJobsStore;
         this.getTasksStore = getTasksStore;
+        this.pollDriver = pollDriver;
     }
 
     public static WaitForJobs forIngest(
             SystemTestInstanceContext instance,
             Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
-            Function<InstanceProperties, IngestTaskStatusStore> getTasksStore) {
+            Function<InstanceProperties, IngestTaskStatusStore> getTasksStore,
+            PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
-                properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)));
+                properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)),
+                pollDriver);
     }
 
     public static WaitForJobs forBulkImport(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, IngestJobStatusStore> getJobsStore) {
+            Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+            PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "bulk import",
                 properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
-                properties -> () -> true);
+                properties -> () -> true,
+                pollDriver);
     }
 
     public static WaitForJobs forCompaction(
             SystemTestInstanceContext instance,
             Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
-            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore) {
+            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore,
+            PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "compaction",
                 properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
-                properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)));
+                properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)),
+                pollDriver);
     }
 
     public void waitForJobs(Collection<String> jobIds) {
-        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
+        waitForJobs(jobIds, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
         waitForJobs(jobIds, pollUntilJobsFinished,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
     }
 
     public void waitForJobs(

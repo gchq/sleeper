@@ -51,6 +51,7 @@ import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.io.IOException;
@@ -93,7 +94,7 @@ public class InMemoryCompaction {
             finishJobs(context.instance(), taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore);
+        }, properties -> taskStore, PollWithRetriesDriver.noWaits());
     }
 
     public CompactionJobStatusStore jobStore() {
