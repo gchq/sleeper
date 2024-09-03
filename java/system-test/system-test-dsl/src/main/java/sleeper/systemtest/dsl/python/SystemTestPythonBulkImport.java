@@ -16,8 +16,10 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -28,11 +30,14 @@ import java.util.UUID;
 public class SystemTestPythonBulkImport {
     private final IngestByAnyQueueDriver ingestDriver;
     private final WaitForJobs waitForJobs;
+    private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestPythonBulkImport(IngestByAnyQueueDriver ingestDriver, WaitForJobs waitForJobs) {
-        this.ingestDriver = ingestDriver;
-        this.waitForJobs = waitForJobs;
+    public SystemTestPythonBulkImport(SystemTestContext context) {
+        SystemTestDrivers drivers = context.instance().adminDrivers();
+        ingestDriver = drivers.pythonBulkImport(context);
+        waitForJobs = drivers.waitForBulkImport(context);
+        pollDriver = drivers.pollWithRetries();
     }
 
     public SystemTestPythonBulkImport fromS3(String... files) {
@@ -44,6 +49,6 @@ public class SystemTestPythonBulkImport {
 
     public void waitForJobs() {
         waitForJobs.waitForJobs(sentJobIds,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }
