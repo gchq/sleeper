@@ -87,7 +87,7 @@ public class SystemTestIngest {
     }
 
     private InvokeIngestTasksDriver tasksDriver() {
-        return adminDrivers.invokeIngestTasksNew(context);
+        return adminDrivers.invokeIngestTasks(context);
     }
 
     private WaitForJobs waitForIngest() {

@@ -42,7 +42,7 @@ public class SystemTestPythonApi {
         ingestDriver = drivers.pythonIngest(context);
         ingestLocalFileDriver = drivers.pythonIngestLocalFile(context);
         bulkImportDriver = drivers.pythonBulkImport(context);
-        tasksDriver = drivers.invokeIngestTasksNew(context);
+        tasksDriver = drivers.invokeIngestTasks(context);
         waitForIngest = drivers.waitForIngest(context);
         waitForBulkImport = drivers.waitForBulkImport(context);
         queryDriver = drivers.pythonQuery(context);

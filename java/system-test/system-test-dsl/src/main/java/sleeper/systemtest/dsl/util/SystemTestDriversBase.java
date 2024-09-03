@@ -77,7 +77,7 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
     }
 
     @Override
-    public InvokeIngestTasksDriver invokeIngestTasksNew(SystemTestContext context) {
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

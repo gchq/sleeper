@@ -36,7 +36,7 @@ public class SystemTestIngestBatcher {
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
         this.sourceFiles = context.sourceFiles();
         this.driver = drivers.ingestBatcher(context);
-        this.tasksDriver = drivers.invokeIngestTasksNew(context);
+        this.tasksDriver = drivers.invokeIngestTasks(context);
         this.waitForIngest = drivers.waitForIngest(context);
         this.waitForBulkImport = drivers.waitForBulkImport(context);
     }

@@ -59,7 +59,7 @@ public class SystemTestCluster {
         driver = baseDrivers.dataGenerationTasks(context);
         ingestByQueue = instanceAdminDrivers.ingestByQueue(context);
         sourceFiles = baseDrivers.generatedSourceFiles(context.parameters(), context.systemTest());
-        tasksDriver = instanceAdminDrivers.invokeIngestTasksNew(context);
+        tasksDriver = instanceAdminDrivers.invokeIngestTasks(context);
         waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
         waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
     }

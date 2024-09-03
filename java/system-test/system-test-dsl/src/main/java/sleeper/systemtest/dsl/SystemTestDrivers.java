@@ -81,7 +81,7 @@ public interface SystemTestDrivers {
 
     IngestBatcherDriver ingestBatcher(SystemTestContext context);
 
-    InvokeIngestTasksDriver invokeIngestTasksNew(SystemTestContext context);
+    InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context);
 
     WaitForJobs waitForIngest(SystemTestContext context);
 

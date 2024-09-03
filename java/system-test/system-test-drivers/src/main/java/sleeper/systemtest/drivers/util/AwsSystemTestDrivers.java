@@ -158,7 +158,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public InvokeIngestTasksDriver invokeIngestTasksNew(SystemTestContext context) {
+    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
         return new AwsInvokeIngestTasksDriver(context.instance(), clients);
     }
 
