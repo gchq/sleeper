@@ -27,14 +27,14 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
-public class WaitForIngestTasks {
-    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
+public class InvokeIngestTasks {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InvokeIngestTasks.class);
 
-    private final InvokeIngestTasksDriverNew invokeDriver;
+    private final InvokeTaskCreator invokeTaskCreator;
     private final IngestJobStatusStore jobStatusStore;
 
-    public WaitForIngestTasks(InvokeIngestTasksDriverNew invokeDriver, IngestJobStatusStore jobStatusStore) {
-        this.invokeDriver = invokeDriver;
+    public InvokeIngestTasks(InvokeTaskCreator invokeTaskCreator, IngestJobStatusStore jobStatusStore) {
+        this.invokeTaskCreator = invokeTaskCreator;
         this.jobStatusStore = jobStatusStore;
     }
 
@@ -43,7 +43,7 @@ public class WaitForIngestTasks {
             return;
         }
         poll.pollUntil("expected number of tasks running given jobs", () -> {
-            invokeDriver.invokeStandardIngestTaskCreator();
+            invokeTaskCreator.invokeCreator();
             return numTasksStartedAJob(jobIds) >= expectedTasks;
         });
     }
@@ -56,5 +56,10 @@ public class WaitForIngestTasks {
                 .collect(toSet());
         LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
         return taskIds.size();
+    }
+
+    public interface InvokeTaskCreator {
+
+        void invokeCreator();
     }
 }

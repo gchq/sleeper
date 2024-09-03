@@ -24,9 +24,12 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriverNew;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -47,6 +50,11 @@ public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver, Invo
     }
 
     @Override
+    public InvokeIngestTasks invokeTasksForCurrentInstance() {
+        IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
+        return new InvokeIngestTasks(this::invokeTasksForCurrentInstance, statusStore);
+    }
+
     public void invokeStandardIngestTaskCreator() {
         InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
     }

@@ -33,11 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class WaitForIngestTasksTest {
+public class InvokeIngestTasksTest {
 
     private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final List<Duration> waits = new ArrayList<>();
-    private InvokeIngestTasksDriverNew invokeDriver;
+    private InvokeIngestTasks.InvokeTaskCreator invokeCreator;
 
     @Test
     void shouldInvokeTaskThatImmediatelyStartsJob() {
@@ -47,7 +47,7 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatCode(() -> waitForTasks()
+        assertThatCode(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
                 .doesNotThrowAnyException();
         assertThat(waits).isEmpty();
@@ -58,7 +58,7 @@ public class WaitForIngestTasksTest {
         jobStore.jobStarted(jobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
 
         // When / Then
-        assertThatCode(() -> waitForTasks()
+        assertThatCode(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
                 .doesNotThrowAnyException();
         assertThat(waits).isEmpty();
@@ -70,7 +70,7 @@ public class WaitForIngestTasksTest {
         jobStore.jobStarted(jobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
 
         // When / Then
-        assertThatCode(() -> waitForTasks()
+        assertThatCode(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), noRetries()))
                 .doesNotThrowAnyException();
         assertThat(waits).isEmpty();
@@ -84,7 +84,7 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> waitForTasks()
+        assertThatThrownBy(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
@@ -100,7 +100,7 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatCode(() -> waitForTasks()
+        assertThatCode(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), retries(1)))
                 .doesNotThrowAnyException();
         assertThat(waits).hasSize(1);
@@ -116,7 +116,7 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatCode(() -> waitForTasks()
+        assertThatCode(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), retries(1)))
                 .doesNotThrowAnyException();
         assertThat(waits).hasSize(1);
@@ -131,7 +131,7 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> waitForTasks()
+        assertThatThrownBy(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(2, List.of("job-1", "job-2"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
@@ -145,14 +145,14 @@ public class WaitForIngestTasksTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> waitForTasks()
+        assertThatThrownBy(() -> invokeTasks()
                 .invokeUntilNumTasksStartedAJob(2, List.of("test-job"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
     }
 
-    private WaitForIngestTasks waitForTasks() {
-        return new WaitForIngestTasks(invokeDriver, jobStore);
+    private InvokeIngestTasks invokeTasks() {
+        return new InvokeIngestTasks(invokeCreator, jobStore);
     }
 
     private PollWithRetries noRetries() {
@@ -169,7 +169,7 @@ public class WaitForIngestTasksTest {
 
     private void onInvokeTaskCreator(Runnable... actions) {
         Iterator<Runnable> iterator = List.of(actions).iterator();
-        invokeDriver = () -> iterator.next().run();
+        invokeCreator = () -> iterator.next().run();
     }
 
     private IngestJobStartedEvent jobStartedOnTask(String jobId, String taskId, Instant startTime) {

@@ -17,6 +17,6 @@ package sleeper.systemtest.dsl.ingest;
 
 public interface InvokeIngestTasksDriverNew {
 
-    void invokeStandardIngestTaskCreator();
+    InvokeIngestTasks invokeTasksForCurrentInstance();
 
 }
