@@ -24,13 +24,8 @@ import org.apache.commons.lang3.EnumUtils;
 public enum CompactionMethod {
     /** Pure Java compaction implementation. */
     JAVA,
-    /**
-     * Rust compaction method. This uses a native library written in Rust to perform a
-     * compaction.
-     */
-    RUST;
-
-    public static final CompactionMethod DEFAULT = CompactionMethod.JAVA;
+    /** Uses a native library written in Rust to perform a compaction with Apache DataFusion. */
+    DATAFUSION;
 
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);

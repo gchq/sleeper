@@ -23,6 +23,8 @@ import sleeper.configuration.properties.validation.CompactionMethod;
 
 import java.util.List;
 
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
+
 public interface CompactionProperty {
     UserDefinedInstanceProperty ECR_COMPACTION_REPO = Index.propertyBuilder("sleeper.compaction.repo")
             .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
@@ -261,8 +263,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
-                    "experimental.")
+            .description("Select which compaction method to use if not configured against a Sleeper table. DataFusion " +
+                    "compaction support is experimental.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
             .defaultValue(CompactionMethod.JAVA.toString())
             .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

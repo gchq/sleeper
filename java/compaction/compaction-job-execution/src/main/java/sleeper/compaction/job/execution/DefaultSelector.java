@@ -70,7 +70,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
 
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
-            case RUST:
+            case DATAFUSION:
                 return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
             default:
