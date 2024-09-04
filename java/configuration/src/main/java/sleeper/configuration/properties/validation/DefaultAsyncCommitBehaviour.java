@@ -52,7 +52,7 @@ public enum DefaultAsyncCommitBehaviour {
         };
     }
 
-    public static TablePropertyComputeValue defaultAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
+    public static TablePropertyComputeValue computeAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
         return (value, instanceProperties, tableProperties) -> {
             if (tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED)) {
                 return SleeperProperties.applyDefaultValue(value,
