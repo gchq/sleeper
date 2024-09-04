@@ -33,7 +33,7 @@ class TablePropertyImpl implements TableProperty {
     private final String propertyName;
     private final String description;
     private final PropertyGroup propertyGroup;
-    private final TablePropertyDefaultValue getDefaultValue;
+    private final TablePropertyComputeValue computeValue;
     private final String defaultValue;
     private final SleeperProperty defaultProperty;
     private final Predicate<String> validationPredicate;
@@ -45,7 +45,7 @@ class TablePropertyImpl implements TableProperty {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
-        getDefaultValue = Optional.ofNullable(builder.getDefaultValue).orElseGet(TablePropertyDefaultValue::none);
+        computeValue = Optional.ofNullable(builder.computeValue).orElseGet(TablePropertyComputeValue::none);
         defaultValue = builder.defaultValue;
         defaultProperty = builder.defaultProperty;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
@@ -78,8 +78,8 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public String getDefaultValue(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return getDefaultValue.getDefaultValue(instanceProperties, tableProperties);
+    public String computeValue(String value, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return computeValue.computeValue(value, instanceProperties, tableProperties);
     }
 
     @Override
@@ -125,7 +125,7 @@ class TablePropertyImpl implements TableProperty {
         private String propertyName;
         private String description;
         private PropertyGroup propertyGroup;
-        private TablePropertyDefaultValue getDefaultValue;
+        private TablePropertyComputeValue computeValue;
         private String defaultValue;
         private SleeperProperty defaultProperty;
         private Predicate<String> validationPredicate = s -> true;
@@ -152,27 +152,27 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public Builder getDefaultValue(TablePropertyDefaultValue getDefaultValue) {
-            if (this.getDefaultValue != null) {
-                throw new IllegalArgumentException("Set default twice for property " + propertyName);
+        public Builder computeValue(TablePropertyComputeValue computeValue) {
+            if (this.computeValue != null) {
+                throw new IllegalArgumentException("Set value computation twice for property " + propertyName);
             }
-            this.getDefaultValue = getDefaultValue;
+            this.computeValue = computeValue;
             return this;
         }
 
         public Builder defaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
-            return getDefaultValue(TablePropertyDefaultValue.fixed(defaultValue));
+            return computeValue(TablePropertyComputeValue.fixedDefault(defaultValue));
         }
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
-            return defaultPropertyWithBehaviour(defaultProperty, TablePropertyDefaultValue::defaultProperty);
+            return defaultPropertyWithBehaviour(defaultProperty, TablePropertyComputeValue::defaultProperty);
         }
 
-        public <T extends SleeperProperty> Builder defaultPropertyWithBehaviour(T defaultProperty, Function<T, TablePropertyDefaultValue> behaviour) {
+        public <T extends SleeperProperty> Builder defaultPropertyWithBehaviour(T defaultProperty, Function<T, TablePropertyComputeValue> behaviour) {
             this.defaultProperty = defaultProperty;
             this.defaultValue = defaultProperty.getDefaultValue();
-            return getDefaultValue(behaviour.apply(defaultProperty))
+            return computeValue(behaviour.apply(defaultProperty))
                     .validationPredicate(defaultProperty.validationPredicate());
         }
 

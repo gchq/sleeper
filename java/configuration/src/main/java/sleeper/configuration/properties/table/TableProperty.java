@@ -93,7 +93,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QU
  */
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
-public interface TableProperty extends SleeperProperty, TablePropertyDefaultValue {
+public interface TableProperty extends SleeperProperty, TablePropertyComputeValue {
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -303,7 +303,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
-            .getDefaultValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
+            .computeValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
             .description("Overrides whether or not to apply state store updates asynchronously via the state store " +
                     "committer. Usually this is decided based on the state store implementation used by the Sleeper " +
                     "table, but other default behaviour can be set for the Sleeper instance.\n" +

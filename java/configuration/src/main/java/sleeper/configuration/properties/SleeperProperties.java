@@ -41,8 +41,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,22 +91,20 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public String get(T property) {
-        return compute(property, applyDefaultValue(property::getDefaultValue));
+        return compute(property, value -> applyDefaultValue(value, property::getDefaultValue));
     }
 
-    protected String compute(T property, Function<String, String> compute) {
+    protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
         return compute.apply(value);
     }
 
-    protected Function<String, String> applyDefaultValue(Supplier<String> getDefault) {
-        return value -> {
-            if ("".equals(value) || value == null) {
-                return getDefault.get();
-            } else {
-                return value;
-            }
-        };
+    public static String applyDefaultValue(String value, Supplier<String> getDefault) {
+        if ("".equals(value) || value == null) {
+            return getDefault.get();
+        } else {
+            return value;
+        }
     }
 
     public void set(T property, String value) {

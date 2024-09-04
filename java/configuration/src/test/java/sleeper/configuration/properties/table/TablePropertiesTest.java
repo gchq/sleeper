@@ -89,10 +89,10 @@ class TablePropertiesTest {
     }
 
     @Test
-    void shouldApplyCustomDefaultBehaviour() {
+    void shouldApplyCustomComputeBehaviour() {
         // Given
-        Iterator<String> defaults = Stream.iterate(1, i -> i + 1).map(i -> "" + i).iterator();
-        DummyTableProperty property = DummyTableProperty.customDefault((instanceProperties, tableProperties) -> defaults.next());
+        Iterator<String> values = Stream.iterate(1, i -> i + 1).map(i -> "" + i).iterator();
+        DummyTableProperty property = DummyTableProperty.customCompute((value, instanceProperties, tableProperties) -> values.next());
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
 
         // When

@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.table;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -84,7 +83,6 @@ public class TablePropertiesAsyncCommitsTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldOverrideCommitTypePropertyWhenCommitsDisabledForTable() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());

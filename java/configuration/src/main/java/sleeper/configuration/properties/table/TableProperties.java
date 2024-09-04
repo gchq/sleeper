@@ -105,7 +105,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     public String get(TableProperty property) {
-        return compute(property, applyDefaultValue(() -> property.getDefaultValue(instanceProperties, this)));
+        return compute(property, value -> property.computeValue(value, instanceProperties, this));
     }
 
     public Schema getSchema() {
