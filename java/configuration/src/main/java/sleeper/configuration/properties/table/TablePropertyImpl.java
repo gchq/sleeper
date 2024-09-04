@@ -24,6 +24,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -158,6 +159,10 @@ class TablePropertyImpl implements TableProperty {
             }
             this.computeValue = computeValue;
             return this;
+        }
+
+        public Builder getDefaultValue(BiFunction<InstanceProperties, TableProperties, String> getDefault) {
+            return computeValue(TablePropertyComputeValue.applyDefaultValue(getDefault));
         }
 
         public Builder defaultValue(String defaultValue) {

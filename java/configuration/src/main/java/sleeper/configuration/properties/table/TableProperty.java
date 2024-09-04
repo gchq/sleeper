@@ -303,7 +303,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
-            .computeValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
+            .getDefaultValue(DefaultAsyncCommitBehaviour::getDefaultAsyncCommitEnabled)
             .description("Overrides whether or not to apply state store updates asynchronously via the state store " +
                     "committer. Usually this is decided based on the state store implementation used by the Sleeper " +
                     "table, but other default behaviour can be set for the Sleeper instance.\n" +

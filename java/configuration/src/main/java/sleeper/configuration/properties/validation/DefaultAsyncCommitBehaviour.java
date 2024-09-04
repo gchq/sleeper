@@ -17,7 +17,9 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertyComputeValue;
 
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
@@ -33,20 +35,18 @@ public enum DefaultAsyncCommitBehaviour {
         return EnumUtils.isValidEnumIgnoreCase(DefaultAsyncCommitBehaviour.class, behaviour);
     }
 
-    public static TablePropertyComputeValue defaultAsyncCommitEnabled() {
-        return TablePropertyComputeValue.applyDefaultValue((instanceProperties, tableProperties) -> {
-            DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
-            switch (behaviour) {
-                case DISABLED:
-                    return "false";
-                case ALL_IMPLEMENTATIONS:
-                    return "true";
-                case PER_IMPLEMENTATION:
-                default:
-                    String classname = tableProperties.get(STATESTORE_CLASSNAME);
-                    return "" + classname.contains("TransactionLog");
-            }
-        });
+    public static String getDefaultAsyncCommitEnabled(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
+        switch (behaviour) {
+            case DISABLED:
+                return "false";
+            case ALL_IMPLEMENTATIONS:
+                return "true";
+            case PER_IMPLEMENTATION:
+            default:
+                String classname = tableProperties.get(STATESTORE_CLASSNAME);
+                return "" + classname.contains("TransactionLog");
+        }
     }
 
     public static TablePropertyComputeValue computeAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
