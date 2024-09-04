@@ -18,9 +18,13 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -35,9 +39,24 @@ public class TablePropertiesAsyncCommitsTest {
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
+                .isTrue();
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(true);
+                .isTrue();
+    }
+
+    @Test
+    void shouldDisableAsyncCommitsInInstanceProperty() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
+                .isFalse();
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isFalse();
     }
 
     @Test
@@ -48,49 +67,117 @@ public class TablePropertiesAsyncCommitsTest {
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(false);
+                .isFalse();
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(false);
+                .isFalse();
     }
 
     @Test
     void shouldDisableAsyncCommitsByTypeInInstanceProperty() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.ALL_IMPLEMENTATIONS);
         instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
+                .isTrue();
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(false);
+                .isFalse();
     }
 
     @Test
     void shouldEnableAsyncCommitsInTableProperty() {
         // Given
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
+                .isTrue();
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(true);
+                .isTrue();
     }
 
     @Test
     void shouldOverrideCommitTypePropertyWhenCommitsDisabledForTable() {
         // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
 
         // When / Then
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(false);
+                .isFalse();
+    }
+
+    @Test
+    void shouldApplyCommitTypeDefaultPropertyWhenCommitsEnabledForTable() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
+        instanceProperties.set(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, "true");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isFalse();
+        assertThat(tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC))
+                .isTrue();
+    }
+
+    @Test
+    void shouldApplyCommitTypeTablePropertyWhenCommitsEnabledForTable() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "true");
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "false");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isFalse();
+    }
+
+    @Test
+    void shouldEnableAsyncCommitForOnlyIngestForOneTable() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
+        instanceProperties.set(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, "false");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isTrue();
+        assertThat(tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC))
+                .isFalse();
+    }
+
+    @Test
+    void shouldOverrideDefaultCommitTypePropertyWhenCommitsEnabledForTable() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
+        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isTrue();
     }
 }

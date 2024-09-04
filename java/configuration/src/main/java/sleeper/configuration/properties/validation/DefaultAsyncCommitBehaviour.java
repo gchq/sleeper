@@ -50,12 +50,17 @@ public enum DefaultAsyncCommitBehaviour {
     }
 
     public static TablePropertyComputeValue computeAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
-        TablePropertyComputeValue applyDefault = TablePropertyComputeValue.defaultProperty(defaultUpdateEnabledProperty);
-        return (value, instanceProperties, tableProperties) -> {
-            if (tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED)) {
-                return applyDefault.computeValue(value, instanceProperties, tableProperties);
+        return (typeEnabledStr, instanceProperties, tableProperties) -> {
+            if (typeEnabledStr == null) {
+                boolean typeEnabledByDefault = instanceProperties.getBoolean(defaultUpdateEnabledProperty);
+                boolean tableEnabled = tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED);
+                return "" + (typeEnabledByDefault && tableEnabled);
+            } else if (tableProperties.isSet(STATESTORE_ASYNC_COMMITS_ENABLED)) {
+                boolean typeEnabled = Boolean.parseBoolean(typeEnabledStr);
+                boolean tableEnabled = tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED);
+                return "" + (typeEnabled && tableEnabled);
             } else {
-                return "false";
+                return typeEnabledStr;
             }
         };
     }
