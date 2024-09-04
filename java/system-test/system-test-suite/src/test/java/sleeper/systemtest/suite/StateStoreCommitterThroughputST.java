@@ -58,7 +58,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(75.0, 120.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+                .isBetween(90.0, 120.0); // Lambda limits throughput to 100/s but we usually see slightly higher
     }
 
     @Test
