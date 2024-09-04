@@ -41,7 +41,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,14 +99,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
             value = null;
         }
         return compute.apply(value);
-    }
-
-    public static String applyDefaultValue(String value, Supplier<String> getDefault) {
-        if ("".equals(value) || value == null) {
-            return getDefault.get();
-        } else {
-            return value;
-        }
     }
 
     public void set(T property, String value) {
