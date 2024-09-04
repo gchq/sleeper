@@ -84,7 +84,9 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     private CreateQueueResult createStateStoreCommitterQueue(String instanceId) {
         return clients.getSqs().createQueue(new CreateQueueRequest()
                 .withQueueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
-                .withAttributes(Map.of("FifoQueue", "true")));
+                .withAttributes(Map.of("FifoQueue", "true",
+                        "FifoThroughputLimit", "perMessageGroupId",
+                        "DeduplicationScope", "messageGroup")));
     }
 
     @Override

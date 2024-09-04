@@ -28,6 +28,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.DeduplicationScope;
+import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -96,6 +98,8 @@ public class StateStoreCommitterStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
+                .fifoThroughputLimit(FifoThroughputLimit.PER_MESSAGE_GROUP_ID)
+                .deduplicationScope(DeduplicationScope.MESSAGE_GROUP)
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
