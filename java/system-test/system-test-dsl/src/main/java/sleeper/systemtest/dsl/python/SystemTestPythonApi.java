@@ -17,46 +17,25 @@
 package sleeper.systemtest.dsl.python;
 
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
 public class SystemTestPythonApi {
-    private final SystemTestInstanceContext instance;
-    private final IngestByAnyQueueDriver ingestDriver;
-    private final IngestLocalFileByAnyQueueDriver ingestLocalFileDriver;
-    private final IngestByAnyQueueDriver bulkImportDriver;
-    private final InvokeIngestTasksDriver tasksDriver;
-    private final WaitForJobs waitForIngest;
-    private final WaitForJobs waitForBulkImport;
-    private final PythonQueryTypesDriver queryDriver;
+    private final SystemTestContext context;
 
     public SystemTestPythonApi(SystemTestContext context) {
-        instance = context.instance();
-        SystemTestDrivers drivers = instance.adminDrivers();
-        ingestDriver = drivers.pythonIngest(context);
-        ingestLocalFileDriver = drivers.pythonIngestLocalFile(context);
-        bulkImportDriver = drivers.pythonBulkImport(context);
-        tasksDriver = drivers.invokeIngestTasks(context);
-        waitForIngest = drivers.waitForIngest(context);
-        waitForBulkImport = drivers.waitForBulkImport(context);
-        queryDriver = drivers.pythonQuery(context);
+        this.context = context;
     }
 
     public SystemTestPythonIngest ingestByQueue() {
-        return new SystemTestPythonIngest(ingestDriver, ingestLocalFileDriver, tasksDriver, waitForIngest);
+        return new SystemTestPythonIngest(context);
     }
 
     public SystemTestPythonBulkImport bulkImport() {
-        return new SystemTestPythonBulkImport(bulkImportDriver, waitForBulkImport);
+        return new SystemTestPythonBulkImport(context);
     }
 
     public SystemTestPythonQuery query(Path outputDir) {
-        return new SystemTestPythonQuery(instance, queryDriver, outputDir);
+        return new SystemTestPythonQuery(context, outputDir);
     }
 }
