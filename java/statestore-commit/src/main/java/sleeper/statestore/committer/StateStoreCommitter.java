@@ -33,8 +33,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.PollWithRetries;
-import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
@@ -77,18 +75,15 @@ public class StateStoreCommitter {
     /**
      * Applies a batch of state store commit requests.
      *
-     * @param throttlingRetriesConfig settings for retries due to DynamoDB API throttling
-     * @param requests                the commit requests
+     * @param retryOnThrottling function to apply retries due to DynamoDB API throttling
+     * @param requests          the commit requests
      */
-    public void applyBatch(PollWithRetries throttlingRetriesConfig, List<RequestHandle> requests) {
+    public void applyBatch(RetryOnThrottling retryOnThrottling, List<RequestHandle> requests) {
         updateBeforeBatch(requests);
-        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
-                .trackMaxRetriesAcrossInvocations()
-                .build();
         for (int i = 0; i < requests.size(); i++) {
             RequestHandle handle = requests.get(i);
             try {
-                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
+                retryOnThrottling.doWithRetries(() -> {
                     try {
                         apply(handle.request());
                     } catch (StateStoreException e) {
@@ -236,5 +231,21 @@ public class StateStoreCommitter {
         private void failed(Exception exception) {
             onFail.accept(exception);
         }
+    }
+
+    /**
+     * Retries if the DynamoDB table is throttled. This is applied when updating the local state from the transaction
+     * log, and when applying commit requests.
+     */
+    @FunctionalInterface
+    public interface RetryOnThrottling {
+
+        /**
+         * Apply the given operation.
+         *
+         * @param  runnable             the operation to apply with retries
+         * @throws InterruptedException if the retries were interrupted
+         */
+        void doWithRetries(Runnable runnable) throws InterruptedException;
     }
 }

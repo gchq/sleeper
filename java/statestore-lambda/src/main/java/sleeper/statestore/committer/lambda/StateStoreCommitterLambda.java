@@ -35,12 +35,14 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
+import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -105,7 +107,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<RequestHandle> requests = getRequestHandlesWithFailureTracking(event,
                 failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
-        committer.applyBatch(throttlingRetriesConfig, requests);
+        committer.applyBatch(retryForBatch(), requests);
         Instant finishTime = Instant.now();
         LOGGER.info("Lambda finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
@@ -123,5 +125,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         return RequestHandle.withCallbackOnFail(
                 deserialiser.fromJson(message.getBody()),
                 () -> onFail.accept(message));
+    }
+
+    private RetryOnThrottling retryForBatch() {
+        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
+                .trackMaxRetriesAcrossInvocations()
+                .build();
+        return operation -> DynamoDBUtils.retryOnThrottlingException(throttlingRetries, operation);
     }
 }
