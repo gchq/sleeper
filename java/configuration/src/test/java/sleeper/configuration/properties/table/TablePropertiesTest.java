@@ -18,8 +18,8 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.DummySleeperProperty;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.Iterator;
 import java.util.List;
@@ -30,12 +30,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesTest {
@@ -93,10 +89,10 @@ class TablePropertiesTest {
     }
 
     @Test
-    void shouldApplyCustomDefaultBehaviour() {
+    void shouldApplyCustomComputeBehaviour() {
         // Given
-        Iterator<String> defaults = Stream.iterate(1, i -> i + 1).map(i -> "" + i).iterator();
-        DummyTableProperty property = DummyTableProperty.customDefault((instanceProperties, tableProperties) -> defaults.next());
+        Iterator<String> values = Stream.iterate(1, i -> i + 1).map(i -> "" + i).iterator();
+        DummyTableProperty property = DummyTableProperty.customCompute((value, instanceProperties, tableProperties) -> values.next());
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
 
         // When
@@ -168,60 +164,5 @@ class TablePropertiesTest {
         // When / Then
         assertThat(tableProperties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
-    }
-
-    @Test
-    void shouldEnableAsyncCommitsByDefaultForTransactionLogStateStore() {
-        // Given
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
-
-        // When / Then
-        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
-        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(true);
-    }
-
-    @Test
-    void shouldDisableAsyncCommitsByDefaultForDynamoDBStateStore() {
-        // Given
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-
-        // When / Then
-        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(false);
-        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(false);
-    }
-
-    @Test
-    void shouldDisableAsyncCommitsByTypeInInstanceProperty() {
-        // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
-
-        // When / Then
-        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
-        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(false);
-    }
-
-    @Test
-    void shouldEnableAsyncCommitsInTableProperty() {
-        // Given
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
-
-        // When / Then
-        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
-                .isEqualTo(true);
-        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
-                .isEqualTo(true);
     }
 }

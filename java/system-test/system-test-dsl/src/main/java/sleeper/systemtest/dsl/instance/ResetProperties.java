@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.SleeperProperty;
 
 import static java.util.function.Predicate.not;
 

@@ -17,7 +17,7 @@ package sleeper.clients.admin.properties;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertiesInvalidException;
-import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Set;
 import java.util.stream.Collectors;

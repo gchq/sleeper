@@ -17,8 +17,8 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.Map;
 import java.util.Objects;

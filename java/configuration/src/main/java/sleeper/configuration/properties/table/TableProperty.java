@@ -19,8 +19,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
@@ -93,7 +93,7 @@ import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QU
  */
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
-public interface TableProperty extends SleeperProperty, TablePropertyDefaultValue {
+public interface TableProperty extends SleeperProperty, TablePropertyComputeValue {
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -146,7 +146,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
                     "store committer lambda. If false, the partition splitting lambda will apply splits " +
                     "synchronously.\n" +
@@ -217,7 +217,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty GARBAGE_COLLECTOR_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.gc.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, deletion of files will be applied via asynchronous requests sent to the state " +
                     "store committer lambda. If false, the garbage collector lambda will apply synchronously.\n" +
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +
@@ -255,7 +255,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, compaction job ID assignment commit requests will be sent to the state store " +
                     "committer lambda to be performed asynchronously. If false, compaction job ID assignments will " +
                     "be committed synchronously by the compaction job creation lambda.\n" +
@@ -264,7 +264,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, compaction job commit requests will be sent to the state store committer lambda " +
                     "to be performed asynchronously. If false, compaction jobs will be committed synchronously by " +
                     "compaction tasks.\n" +
@@ -303,7 +303,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
-            .getDefaultValue(DefaultAsyncCommitBehaviour.defaultAsyncCommitEnabled())
+            .getDefaultValue(DefaultAsyncCommitBehaviour::getDefaultAsyncCommitEnabled)
             .description("Overrides whether or not to apply state store updates asynchronously via the state store " +
                     "committer. Usually this is decided based on the state store implementation used by the Sleeper " +
                     "table, but other default behaviour can be set for the Sleeper instance.\n" +
@@ -486,7 +486,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, bulk import will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, bulk import will commit new files at the end of the job " +
                     "synchronously.\n" +
@@ -567,7 +567,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyDefaultValu
                     "is large.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
     TableProperty INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.ingest.job.files.commit.async")
-            .defaultPropertyWithBehaviour(DEFAULT_INGEST_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::defaultAsyncCommitForUpdate)
+            .defaultPropertyWithBehaviour(DEFAULT_INGEST_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, ingest tasks will add files via requests sent to the state store committer lambda " +
                     "asynchronously. If false, ingest tasks will commit new files synchronously.\n" +
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +

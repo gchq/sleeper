@@ -16,25 +16,25 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class DummyTableProperty implements TableProperty {
 
-    private final TablePropertyDefaultValue getDefaultValue;
+    private final TablePropertyComputeValue computeValue;
     private final SleeperProperty defaultProperty;
 
-    private DummyTableProperty(TablePropertyDefaultValue getDefaultValue, SleeperProperty defaultProperty) {
-        this.getDefaultValue = getDefaultValue;
+    private DummyTableProperty(TablePropertyComputeValue computeValue, SleeperProperty defaultProperty) {
+        this.computeValue = computeValue;
         this.defaultProperty = defaultProperty;
     }
 
     public static DummyTableProperty defaultedFrom(SleeperProperty defaultProperty) {
-        return new DummyTableProperty(TablePropertyDefaultValue.defaultProperty(defaultProperty), defaultProperty);
+        return new DummyTableProperty(TablePropertyComputeValue.defaultProperty(defaultProperty), defaultProperty);
     }
 
-    public static DummyTableProperty customDefault(TablePropertyDefaultValue getDefaultValue) {
-        return new DummyTableProperty(getDefaultValue, null);
+    public static DummyTableProperty customCompute(TablePropertyComputeValue computeValue) {
+        return new DummyTableProperty(computeValue, null);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class DummyTableProperty implements TableProperty {
     }
 
     @Override
-    public String getDefaultValue(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return getDefaultValue.getDefaultValue(instanceProperties, tableProperties);
+    public String computeValue(String value, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return computeValue.computeValue(value, instanceProperties, tableProperties);
     }
 }

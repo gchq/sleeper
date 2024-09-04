@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 import java.util.Optional;
