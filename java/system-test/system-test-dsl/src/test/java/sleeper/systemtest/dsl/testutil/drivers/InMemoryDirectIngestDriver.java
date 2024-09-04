@@ -21,10 +21,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -46,16 +48,21 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
 
     @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
-        ingest(instance.getTableProperties(), records);
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        TableProperties tableProperties = instance.getTableProperties();
+        StateStore stateStore = instance.getStateStore(tableProperties);
+        ingest(instanceProperties, tableProperties, stateStore, AddFilesToStateStore.synchronous(stateStore), records);
     }
 
-    public IngestResult ingest(TableProperties tableProperties, Iterator<Record> records) {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
+    public IngestResult ingest(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            StateStore stateStore, AddFilesToStateStore addFilesToStateStore, Iterator<Record> records) {
         try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordBatchFactory(InMemoryRecordBatch::new)
                 .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, sketches, instanceProperties, tableProperties))
-                .stateStore(instance.getStateStore(tableProperties))
+                .stateStore(stateStore)
+                .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();
         } catch (StateStoreException | IteratorCreationException | IOException e) {

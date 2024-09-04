@@ -25,6 +25,9 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+
 public class SystemTestIngest {
     private final SystemTestContext context;
     private final SystemTestDrivers baseDrivers;
@@ -54,11 +57,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForIngest(), pollDriver());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForBulkImport(), pollDriver());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
     }
 
     public SystemTestDirectBulkImport directEmrServerless() {
@@ -76,6 +79,12 @@ public class SystemTestIngest {
 
     private IngestByQueue ingestByQueue() {
         return adminDrivers.ingestByQueue(context);
+    }
+
+    private InvokeIngestTasksDriver noTasksDriverForBulkImport() {
+        return () -> {
+            throw new IllegalArgumentException("Bulk import does not require tasks to be invoked.");
+        };
     }
 
     private InvokeIngestTasksDriver tasksDriver() {

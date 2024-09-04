@@ -18,6 +18,7 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -54,10 +55,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_C
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 
@@ -111,9 +110,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.setNumber(DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 1);
 
-        instanceProperties.set(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, "false");
-        instanceProperties.set(DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT, "false");
-        instanceProperties.set(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+        instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
 
         // Ingest
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, Integer.MAX_VALUE);

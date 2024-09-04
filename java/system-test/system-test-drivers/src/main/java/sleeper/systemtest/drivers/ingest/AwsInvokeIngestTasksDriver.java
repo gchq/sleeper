@@ -17,23 +17,20 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsInvokeIngestTasksDriver.class);
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
@@ -45,20 +42,12 @@ public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
         this.lambdaClient = clients.getLambda();
     }
 
-    public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
+    @Override
+    public InvokeIngestTasks invokeTasksForCurrentInstance() {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        IngestTaskStatusStore taskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
-        try {
-            poll.pollUntil("tasks are started", () -> {
-                InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(INGEST_LAMBDA_FUNCTION));
-                int tasksStarted = taskStatusStore.getAllTasks().size() - tasksFinishedBefore;
-                LOGGER.info("Found {} new ingest tasks", tasksStarted);
-                return tasksStarted >= expectedTasks;
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        return new InvokeIngestTasks(() -> {
+            InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(INGEST_LAMBDA_FUNCTION));
+        }, statusStore);
     }
 }

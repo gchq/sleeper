@@ -23,7 +23,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class SystemTestIngestBatcher {
@@ -55,7 +55,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        tasksDriver.invokeStandardIngestTask(pollDriver);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(getInvokeResult().createdJobIds, pollDriver);
         return this;
     }
 
@@ -81,9 +81,9 @@ public class SystemTestIngestBatcher {
     }
 
     public static class Result {
-        private final Set<String> createdJobIds;
+        private final List<String> createdJobIds;
 
-        public Result(Set<String> createdJobIds) {
+        public Result(List<String> createdJobIds) {
             this.createdJobIds = createdJobIds;
         }
 

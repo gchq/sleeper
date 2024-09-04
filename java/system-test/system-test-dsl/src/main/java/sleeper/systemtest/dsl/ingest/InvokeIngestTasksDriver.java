@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.systemtest.dsl.ingest;
-
-import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-
-import java.time.Duration;
 
 public interface InvokeIngestTasksDriver {
 
-    void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll);
+    InvokeIngestTasks invokeTasksForCurrentInstance();
 
-    default void invokeStandardIngestTask(PollWithRetriesDriver pollDriver) {
-        invokeStandardIngestTasks(1,
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
 }

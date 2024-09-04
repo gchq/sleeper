@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -63,17 +64,18 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestToQueue() throws Exception {
             // Given
+            setAsyncCommit(true, tableProperties);
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Iterator<Instant> times = List.of(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                     startTime, finishTime,
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
             CompactionJob job1 = createJobOnQueue("job1");
             RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
 
             // When
-            runTask(processJobs(jobSucceeds(job1Summary)), times::poll);
+            runTask(processJobs(jobSucceeds(job1Summary)), times::next);
 
             // Then
             assertThat(successfulJobs).containsExactly(job1);
@@ -95,6 +97,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestsForDifferentTablesToQueue() throws Exception {
             // Given
+            setAsyncCommit(true, table1, table2);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
@@ -142,7 +145,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldOnlySendJobCommitRequestsForTablesConfiguredForAsyncCommit() throws Exception {
             // Given
-            table2.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+            setAsyncCommit(true, table1);
+            setAsyncCommit(false, table2);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
@@ -189,6 +193,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldCorrelateAsynchronousCommitsAfterTwoRunsFinished() throws Exception {
             // Given
+            setAsyncCommit(true, tableProperties);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");

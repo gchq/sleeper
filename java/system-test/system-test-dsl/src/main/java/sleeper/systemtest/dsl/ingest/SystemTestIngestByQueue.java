@@ -26,29 +26,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-
 public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
+    private final InstanceProperty defaultQueueProperty;
     private final InvokeIngestTasksDriver invokeTasksDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(
-            IngestSourceFilesContext sourceFiles, IngestByQueue ingest,
+            IngestSourceFilesContext sourceFiles, IngestByQueue ingest, InstanceProperty defaultQueueProperty,
             InvokeIngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
+        this.defaultQueueProperty = defaultQueueProperty;
         this.invokeTasksDriver = invokeTasksDriver;
         this.waitForJobs = waitForJobs;
         this.pollDriver = pollDriver;
     }
 
     public SystemTestIngestByQueue sendSourceFiles(String... files) {
-        return sendSourceFiles(INGEST_JOB_QUEUE_URL, files);
+        return sendSourceFiles(defaultQueueProperty, files);
     }
 
     public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
@@ -57,12 +57,12 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue sendSourceFilesToAllTables(String... files) {
-        sentJobIds.addAll(ingest.sendJobToAllTablesGetIds(INGEST_JOB_QUEUE_URL, sourceFiles(files)));
+        sentJobIds.addAll(ingest.sendJobToAllTablesGetIds(defaultQueueProperty, sourceFiles(files)));
         return this;
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        invokeTasksDriver.invokeStandardIngestTask(pollDriver);
+        invokeTasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }
 
