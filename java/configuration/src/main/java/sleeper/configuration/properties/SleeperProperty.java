@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.instance;
-
-import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
+package sleeper.configuration.properties;
 
 import java.util.Locale;
 import java.util.function.Predicate;
