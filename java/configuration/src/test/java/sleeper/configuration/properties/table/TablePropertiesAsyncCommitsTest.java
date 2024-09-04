@@ -108,7 +108,7 @@ public class TablePropertiesAsyncCommitsTest {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
         instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
 
@@ -140,7 +140,7 @@ public class TablePropertiesAsyncCommitsTest {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
         instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "true");
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "false");
 
