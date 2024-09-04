@@ -91,11 +91,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public String get(T property) {
-        return compute(property, value -> applyDefaultValue(value, property::getDefaultValue));
+        return compute(property, value -> value != null ? value : property.getDefaultValue());
     }
 
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
+        if ("".equals(value)) {
+            value = null;
+        }
         return compute.apply(value);
     }
 

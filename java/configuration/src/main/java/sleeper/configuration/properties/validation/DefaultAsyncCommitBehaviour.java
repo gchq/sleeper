@@ -17,7 +17,6 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TablePropertyComputeValue;
 
@@ -35,28 +34,26 @@ public enum DefaultAsyncCommitBehaviour {
     }
 
     public static TablePropertyComputeValue defaultAsyncCommitEnabled() {
-        return (value, instanceProperties, tableProperties) -> {
-            return SleeperProperties.applyDefaultValue(value, () -> {
-                DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
-                switch (behaviour) {
-                    case DISABLED:
-                        return "false";
-                    case ALL_IMPLEMENTATIONS:
-                        return "true";
-                    case PER_IMPLEMENTATION:
-                    default:
-                        String classname = tableProperties.get(STATESTORE_CLASSNAME);
-                        return "" + classname.contains("TransactionLog");
-                }
-            });
-        };
+        return TablePropertyComputeValue.applyDefaultValue((instanceProperties, tableProperties) -> {
+            DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
+            switch (behaviour) {
+                case DISABLED:
+                    return "false";
+                case ALL_IMPLEMENTATIONS:
+                    return "true";
+                case PER_IMPLEMENTATION:
+                default:
+                    String classname = tableProperties.get(STATESTORE_CLASSNAME);
+                    return "" + classname.contains("TransactionLog");
+            }
+        });
     }
 
     public static TablePropertyComputeValue computeAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
+        TablePropertyComputeValue applyDefault = TablePropertyComputeValue.defaultProperty(defaultUpdateEnabledProperty);
         return (value, instanceProperties, tableProperties) -> {
             if (tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED)) {
-                return SleeperProperties.applyDefaultValue(value,
-                        () -> instanceProperties.get(defaultUpdateEnabledProperty));
+                return applyDefault.computeValue(value, instanceProperties, tableProperties);
             } else {
                 return "false";
             }
