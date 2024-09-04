@@ -47,16 +47,6 @@ public interface TablePropertyComputeValue {
         }
     }
 
-    static TablePropertyComputeValue enabledBy(TableProperty property, TablePropertyComputeValue compute) {
-        return (value, instanceProperties, tableProperties) -> {
-            if (tableProperties.getBoolean(property)) {
-                return compute.computeValue(value, instanceProperties, tableProperties);
-            } else {
-                return "false";
-            }
-        };
-    }
-
     static TablePropertyComputeValue applyDefaultValue(Supplier<String> getDefault) {
         return applyDefaultValue((instanceProperties, tableProperties) -> getDefault.get());
     }
