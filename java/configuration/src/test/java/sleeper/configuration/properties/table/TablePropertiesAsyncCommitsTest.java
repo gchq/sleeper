@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -80,5 +81,18 @@ public class TablePropertiesAsyncCommitsTest {
                 .isEqualTo(true);
         assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
                 .isEqualTo(true);
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldOverrideCommitTypePropertyWhenCommitsDisabledForTable() {
+        // Given
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isEqualTo(false);
     }
 }
