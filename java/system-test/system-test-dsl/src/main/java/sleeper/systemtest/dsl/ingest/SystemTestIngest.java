@@ -20,6 +20,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
@@ -53,11 +54,11 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForIngest());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForIngest(), pollDriver());
     }
 
     public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForBulkImport());
+        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), tasksDriver(), waitForBulkImport(), pollDriver());
     }
 
     public SystemTestDirectBulkImport directEmrServerless() {
@@ -87,5 +88,9 @@ public class SystemTestIngest {
 
     private WaitForJobs waitForBulkImport() {
         return adminDrivers.waitForBulkImport(context);
+    }
+
+    private PollWithRetriesDriver pollDriver() {
+        return adminDrivers.pollWithRetries();
     }
 }

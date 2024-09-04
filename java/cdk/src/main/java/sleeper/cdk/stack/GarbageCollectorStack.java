@@ -53,6 +53,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 
@@ -77,12 +78,7 @@ public class GarbageCollectorStack extends NestedStack {
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");
         String functionName = String.join("-", "sleeper", instanceId, "garbage-collector");
 
-        // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
-        // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
-        // of a lambda.
-        int timeoutSecsFromGcPeriod = (int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES));
-        Duration handlerTimeout = Duration.seconds(Math.max(1, Math.min(timeoutSecsFromGcPeriod, 900)));
-        Duration queueVisibilityTimeout = handlerTimeout.plus(Duration.seconds(10));
+        Duration handlerTimeout = Duration.seconds((60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES)));
 
         // Garbage collector function
         IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
@@ -135,7 +131,7 @@ public class GarbageCollectorStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
-                .visibilityTimeout(queueVisibilityTimeout)
+                .visibilityTimeout(handlerTimeout)
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());

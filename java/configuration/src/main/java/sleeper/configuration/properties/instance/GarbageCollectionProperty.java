@@ -27,11 +27,18 @@ public interface GarbageCollectionProperty {
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES = Index.propertyBuilder("sleeper.gc.lambda.timeout.minutes")
+            .description("The configurable timeout wait in minutes for the garbage collector lambda.")
+            .defaultValue("14")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .validationPredicate(Utils::isPositiveIntegerLtEq15)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
             .description("The amount of memory in MB for the lambda function used to perform garbage collection.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
+
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
             .description("The number of tables to perform garbage collection for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")

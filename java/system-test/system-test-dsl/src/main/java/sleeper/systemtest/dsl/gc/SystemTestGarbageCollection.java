@@ -16,19 +16,23 @@
 
 package sleeper.systemtest.dsl.gc;
 
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
 
 public class SystemTestGarbageCollection {
 
     private final GarbageCollectionDriver driver;
+    private final PollWithRetriesDriver pollDriver;
     private final SystemTestInstanceContext instance;
 
     public SystemTestGarbageCollection(SystemTestContext context) {
-        driver = context.instance().adminDrivers().garbageCollection(context);
+        SystemTestDrivers instanceAdminDrivers = context.instance().adminDrivers();
+        driver = instanceAdminDrivers.garbageCollection(context);
+        pollDriver = instanceAdminDrivers.pollWithRetries();
         instance = context.instance();
     }
 
@@ -39,7 +43,7 @@ public class SystemTestGarbageCollection {
 
     public void waitFor() {
         WaitForGC.waitUntilNoUnreferencedFiles(instance,
-                PollWithRetries.intervalAndPollingTimeout(
+                pollDriver.pollWithIntervalAndTimeout(
                         Duration.ofSeconds(5), Duration.ofSeconds(60)));
     }
 }

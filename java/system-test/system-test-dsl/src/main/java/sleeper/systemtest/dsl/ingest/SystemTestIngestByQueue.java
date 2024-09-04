@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.util.ArrayList;
@@ -33,15 +34,17 @@ public class SystemTestIngestByQueue {
     private final IngestByQueue ingest;
     private final InvokeIngestTasksDriver invokeTasksDriver;
     private final WaitForJobs waitForJobs;
+    private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(
             IngestSourceFilesContext sourceFiles, IngestByQueue ingest,
-            InvokeIngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs) {
+            InvokeIngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
         this.invokeTasksDriver = invokeTasksDriver;
         this.waitForJobs = waitForJobs;
+        this.pollDriver = pollDriver;
     }
 
     public SystemTestIngestByQueue sendSourceFiles(String... files) {
@@ -59,7 +62,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        invokeTasksDriver.invokeStandardIngestTask();
+        invokeTasksDriver.invokeStandardIngestTask(pollDriver);
         return this;
     }
 
