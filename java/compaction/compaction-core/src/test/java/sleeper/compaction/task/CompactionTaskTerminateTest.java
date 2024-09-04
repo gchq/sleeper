@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.task;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,12 +34,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 
 public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
-
-    @BeforeEach
-    void setUp() {
-        // Synchronous commit checks time for commit status store update.
-        setAsyncCommit(true, tableProperties);
-    }
 
     @Nested
     @DisplayName("Stop if idle for a specified period")
@@ -90,6 +83,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
                     Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Idle time check with empty queue and finish
             CompactionJob job = createJobOnQueue("job1");
 
@@ -114,6 +108,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
                     Instant.parse("2024-02-22T13:50:06Z")).iterator(); // Second check + finish
             CompactionJob job = createJob("job1");
 
@@ -144,6 +139,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:03Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job committed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
                     Instant.parse("2024-02-22T13:50:06Z")).iterator(); // Third check + finish
             CompactionJob job = createJob("job1");
