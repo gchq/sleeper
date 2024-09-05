@@ -18,11 +18,14 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.DummySleeperProperty;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,30 +67,42 @@ class TablePropertiesTest {
     @Test
     void shouldDefaultToAnotherTablePropertyIfConfigured() {
         // Given
+        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(TABLE_NAME);
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(TABLE_NAME, "id");
+        tableProperties.set(TABLE_NAME, "some-table");
 
         // When
-        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(TABLE_NAME);
+        String value = tableProperties.get(defaultingProperty);
 
         // Then
-        assertThat(tableProperties.get(defaultingProperty)).isEqualTo("id");
+        assertThat(value).isEqualTo("some-table");
     }
 
     @Test
     void shouldThrowRuntimeExceptionIfConfiguredWithNonInstanceOrNonTableProperty() {
         // Given
+        SleeperProperty sleeperProperty = new DummySleeperProperty();
+
+        // When / Then
+        assertThatThrownBy(() -> DummyTableProperty.defaultedFrom(sleeperProperty))
+                .hasMessageStartingWith("Unexpected default property type: ");
+    }
+
+    @Test
+    void shouldApplyCustomComputeBehaviour() {
+        // Given
+        Iterator<String> values = Stream.iterate(1, i -> i + 1).map(i -> "" + i).iterator();
+        DummyTableProperty property = DummyTableProperty.customCompute((value, instanceProperties, tableProperties) -> values.next());
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(TABLE_NAME, "id");
 
         // When
-        SleeperProperty sleeperProperty = new DummySleeperProperty();
-        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(sleeperProperty);
+        String value1 = tableProperties.get(property);
+        String value2 = tableProperties.get(property);
+        String value3 = tableProperties.get(property);
 
         // Then
-        assertThatThrownBy(() -> tableProperties.get(defaultingProperty))
-                .hasMessage("Unable to process SleeperProperty, should have either been null, an " +
-                        "instance property or a table property");
+        assertThat(List.of(value1, value2, value3))
+                .containsExactly("1", "2", "3");
     }
 
     @Test

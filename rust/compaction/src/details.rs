@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::aws_s3::ObjectStoreFactory;
-use aws_config::BehaviorVersion;
-use aws_credential_types::provider::ProvideCredentials;
+use crate::aws_s3::{default_s3_config, s3_config, ObjectStoreFactory};
+use aws_config::Region;
+use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
+use object_store::aws::AmazonS3Builder;
 
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
@@ -37,6 +38,7 @@ pub enum PartitionBound<'a> {
 /// All the information for a a Sleeper compaction.
 #[derive(Debug)]
 pub struct CompactionInput<'a> {
+    pub aws_config: Option<AwsConfig>,
     pub input_files: Vec<Url>,
     pub output_file: Url,
     pub row_key_cols: Vec<String>,
@@ -51,6 +53,37 @@ pub struct CompactionInput<'a> {
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
     pub region: HashMap<String, ColRange<'a>>,
+}
+
+impl Default for CompactionInput<'_> {
+    fn default() -> Self {
+        Self {
+            aws_config: None,
+            input_files: Vec::default(),
+            output_file: Url::parse("file:///").unwrap(),
+            row_key_cols: Vec::default(),
+            sort_key_cols: Vec::default(),
+            max_row_group_size: 1_000_000,
+            max_page_size: 65535,
+            compression: "zstd".into(),
+            writer_version: "2.0".into(),
+            column_truncate_length: usize::MAX,
+            stats_truncate_length: usize::MAX,
+            dict_enc_row_keys: true,
+            dict_enc_sort_keys: true,
+            dict_enc_values: true,
+            region: HashMap::default(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct AwsConfig {
+    pub region: String,
+    pub endpoint: String,
+    pub access_key: String,
+    pub secret_key: String,
+    pub allow_http: bool,
 }
 
 /// Defines a partition range of a single column.
@@ -131,18 +164,7 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
             let _ = output_file_path.set_scheme("s3");
         }
 
-        let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-        let region = config
-            .region()
-            .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-        let creds: aws_credential_types::Credentials = config
-            .credentials_provider()
-            .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
-            .provide_credentials()
-            .await?;
-
-        // Create our object store factory
-        let store_factory = ObjectStoreFactory::new(Some(creds), region);
+        let store_factory = create_object_store_factory(&input_data.aws_config).await;
 
         crate::datafusion::compact(
             &store_factory,
@@ -153,6 +175,24 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
         .await
         .map_err(Into::into)
     }
+}
+
+async fn create_object_store_factory(
+    aws_config_override: &Option<AwsConfig>,
+) -> ObjectStoreFactory {
+    let s3_config = match aws_config_override {
+        Some(aws_config) => Some(to_s3_config(aws_config)),
+        None => default_s3_config().await.ok(),
+    };
+    ObjectStoreFactory::new(s3_config)
+}
+
+fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
+    let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
+    let region = Region::new(String::from(&aws_config.region));
+    s3_config(&creds, &region)
+        .with_endpoint(&aws_config.endpoint)
+        .with_allow_http(aws_config.allow_http)
 }
 
 /// Creates a file path suitable for writing sketches to.

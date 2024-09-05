@@ -33,14 +33,14 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SystemTestIngestBatcherTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(withDefaultProperties("main"));
+        sleeper.connectToInstance(MAIN);
     }
 
     @Test

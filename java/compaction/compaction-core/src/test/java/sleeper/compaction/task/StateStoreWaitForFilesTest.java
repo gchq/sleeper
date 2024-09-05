@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -33,7 +35,6 @@ import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.DoubleSupplier;
 
 import static java.util.stream.Collectors.reducing;
@@ -46,7 +47,6 @@ import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
@@ -215,7 +215,8 @@ public class StateStoreWaitForFilesTest {
                 JOB_ASSIGNMENT_THROTTLING_RETRIES.toBuilder()
                         .sleepInInterval(millis -> foundWaits.add(Duration.ofMillis(millis)))
                         .build(),
-                Map.of(tableProperties.get(TABLE_ID), stateStore)::get);
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore));
     }
 
     protected void actionAfterWait(WaitAction action) throws Exception {

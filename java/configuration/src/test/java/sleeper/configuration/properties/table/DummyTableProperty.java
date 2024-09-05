@@ -16,18 +16,25 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 public class DummyTableProperty implements TableProperty {
 
+    private final TablePropertyComputeValue computeValue;
     private final SleeperProperty defaultProperty;
 
-    private DummyTableProperty(SleeperProperty defaultProperty) {
+    private DummyTableProperty(TablePropertyComputeValue computeValue, SleeperProperty defaultProperty) {
+        this.computeValue = computeValue;
         this.defaultProperty = defaultProperty;
     }
 
     public static DummyTableProperty defaultedFrom(SleeperProperty defaultProperty) {
-        return new DummyTableProperty(defaultProperty);
+        return new DummyTableProperty(TablePropertyComputeValue.defaultProperty(defaultProperty), defaultProperty);
+    }
+
+    public static DummyTableProperty customCompute(TablePropertyComputeValue computeValue) {
+        return new DummyTableProperty(computeValue, null);
     }
 
     @Override
@@ -58,5 +65,10 @@ public class DummyTableProperty implements TableProperty {
     @Override
     public SleeperProperty getDefaultProperty() {
         return defaultProperty;
+    }
+
+    @Override
+    public String computeValue(String value, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return computeValue.computeValue(value, instanceProperties, tableProperties);
     }
 }

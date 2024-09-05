@@ -180,7 +180,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty STATESTORE_COMMITTER_LOG_GROUP = Index.propertyBuilder("sleeper.statestore.committer.log.group")
-            .description("The nane of the log group for the state store committer.")
+            .description("The name of the log group for the state store committer.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty STATESTORE_COMMITTER_EVENT_SOURCE_ID = Index.propertyBuilder("sleeper.statestore.committer.event.source.id")
+            .description("The UUID of the event source mapping for the state store committer.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 

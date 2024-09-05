@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.compaction;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -27,20 +28,22 @@ import java.util.List;
 public class SystemTestCompaction {
 
     private final CompactionDriver driver;
+    private final PollWithRetriesDriver pollDriver;
     private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
     public SystemTestCompaction(SystemTestContext context) {
         SystemTestDrivers drivers = context.instance().adminDrivers();
-        this.driver = drivers.compaction(context);
-        this.waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
-        this.waitForJobs = drivers.waitForCompaction(context);
+        driver = drivers.compaction(context);
+        pollDriver = drivers.pollWithRetries();
+        waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
+        waitForJobs = drivers.waitForCompaction(context);
     }
 
     public SystemTestCompaction createJobs(int expectedJobs) {
         return createJobs(expectedJobs,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     }
 
     public SystemTestCompaction createJobs(int expectedJobs, PollWithRetries poll) {
@@ -55,18 +58,18 @@ public class SystemTestCompaction {
 
     public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
         forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobsToFinishThenCommit(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
         return this;
     }
 
     public SystemTestCompaction invokeTasks(int expectedTasks) {
-        driver.invokeTasks(expectedTasks);
+        driver.invokeTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
         return this;
     }
 
     public SystemTestCompaction forceStartTasks(int expectedTasks) {
-        driver.forceStartTasks(expectedTasks);
+        driver.forceStartTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
         return this;
     }
 

@@ -81,6 +81,15 @@ class TransactionLogPartitionStore implements PartitionStore {
         clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
 
+    /**
+     * Updates the local state from the transaction log.
+     *
+     * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
+     */
+    public void updateFromLog() throws StateStoreException {
+        head.update();
+    }
+
     private Stream<Partition> partitions() throws StateStoreException {
         head.update();
         return head.state().all().stream();

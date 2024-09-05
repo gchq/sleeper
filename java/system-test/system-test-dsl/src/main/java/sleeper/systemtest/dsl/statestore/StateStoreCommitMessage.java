@@ -15,6 +15,10 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.core.statestore.FileReference;
+
+import java.util.List;
+
 public class StateStoreCommitMessage {
 
     private final String tableId;
@@ -29,12 +33,39 @@ public class StateStoreCommitMessage {
         return new StateStoreCommitMessage(tableId, body);
     }
 
+    public static Commit addFileWithJob(FileReference file) {
+        return factory -> factory.addFileWithJob(file);
+    }
+
+    public static Commit addFiles(List<FileReference> files) {
+        return factory -> factory.addFiles(files);
+    }
+
+    public static Commit addFile(FileReference file) {
+        return factory -> factory.addFiles(List.of(file));
+    }
+
+    public static Commit addPartitionFile(String partitionId, String filename, long records) {
+        return factory -> factory.addFiles(
+                List.of(FileReference.builder()
+                        .partitionId(partitionId)
+                        .filename(filename)
+                        .numberOfRecords(records)
+                        .countApproximate(false)
+                        .onlyContainsDataForThisPartition(true)
+                        .build()));
+    }
+
     public String getTableId() {
         return tableId;
     }
 
     public String getBody() {
         return body;
+    }
+
+    public interface Commit {
+        StateStoreCommitMessage createMessage(StateStoreCommitMessageFactory factory);
     }
 
 }

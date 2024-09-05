@@ -29,6 +29,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -44,7 +45,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.utils.HadoopPathUtils;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;

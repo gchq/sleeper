@@ -25,14 +25,15 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use aws_types::region::Region;
+use aws_config::{BehaviorVersion, Region};
+use aws_credential_types::provider::ProvideCredentials;
 use bytes::{Bytes, BytesMut};
 use color_eyre::eyre::eyre;
 use futures::{stream::BoxStream, Future};
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    aws::{AmazonS3Builder, AwsCredential},
+    aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
     path::Path,
     CredentialProvider, Error, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
@@ -96,17 +97,15 @@ pub trait ExtendedObjectStore: ObjectStore {
 /// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
-    creds: Option<Arc<CredentialsFromConfigProvider>>,
-    region: Region,
+    s3_config: Option<AmazonS3Builder>,
     store_map: RefCell<HashMap<String, Arc<dyn ExtendedObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(value: Option<aws_credential_types::Credentials>, region: &Region) -> Self {
+    pub fn new(s3_config: Option<AmazonS3Builder>) -> Self {
         Self {
-            creds: value.map(|value| Arc::new(CredentialsFromConfigProvider::new(&value))),
-            region: region.clone(),
+            s3_config,
             store_map: RefCell::new(HashMap::new()),
         }
     }
@@ -148,24 +147,46 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ExtendedObjectStore>> {
         match src.scheme() {
-            "s3" => {
-                if let Some(creds) = &self.creds {
-                    Ok(AmazonS3Builder::from_env()
-                        .with_credentials(creds.clone())
-                        .with_region(self.region.as_ref())
-                        .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
-                        .build()
-                        .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?)
-                } else {
-                    Err(eyre!("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from"))
-                }
-            }
+            "s3" => Ok(self
+                .connect_s3(src)
+                .map(|e| Arc::new(LoggingObjectStore::new(Arc::new(e))))?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(Arc::new(
                 LocalFileSystem::new(),
             )))),
             _ => Err(eyre!("no object store for given schema")),
         }
     }
+
+    fn connect_s3(&self, src: &Url) -> color_eyre::Result<AmazonS3> {
+        match &self.s3_config {
+            Some(config) => Ok(config
+                .clone()
+                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
+                .build()?),
+            None => Err(eyre!(
+                "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
+            )),
+        }
+    }
+}
+
+pub fn s3_config(creds: &aws_credential_types::Credentials, region: &Region) -> AmazonS3Builder {
+    AmazonS3Builder::from_env()
+        .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
+        .with_region(region.as_ref())
+}
+
+pub async fn default_s3_config() -> color_eyre::Result<AmazonS3Builder> {
+    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+    let creds = config
+        .credentials_provider()
+        .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
+        .provide_credentials()
+        .await?;
+    let region = config
+        .region()
+        .ok_or(eyre!("Couldn't retrieve AWS region"))?;
+    Ok(s3_config(&creds, region))
 }
 
 /// An [`ObjectStore`] wrapper that logs every HEAD and GET request

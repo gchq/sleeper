@@ -23,7 +23,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,21 +34,22 @@ import static java.util.Map.entry;
 
 public class SystemTestPartitioning {
 
-    private final SystemTestContext context;
-    private final SystemTestDrivers drivers;
     private final SystemTestInstanceContext instance;
+    private final PartitionSplittingDriver splittingDriver;
+    private final PollWithRetriesDriver pollDriver;
 
     public SystemTestPartitioning(SystemTestContext context) {
-        this.context = context;
-        this.drivers = context.instance().adminDrivers();
-        this.instance = context.instance();
+        SystemTestDrivers drivers = context.instance().adminDrivers();
+        instance = context.instance();
+        splittingDriver = drivers.partitionSplitting(context);
+        pollDriver = drivers.pollWithRetries();
     }
 
     public void split() {
         WaitForPartitionSplitting wait = WaitForPartitionSplitting.forCurrentPartitionsNeedingSplitting(instance);
-        drivers.partitionSplitting(context).splitPartitions();
+        splittingDriver.splitPartitions();
         try {
-            wait.pollUntilFinished(instance);
+            wait.pollUntilFinished(instance, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

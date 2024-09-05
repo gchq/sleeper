@@ -28,8 +28,8 @@ import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;

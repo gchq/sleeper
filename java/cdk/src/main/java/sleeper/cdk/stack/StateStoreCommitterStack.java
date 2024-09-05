@@ -18,7 +18,9 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -26,6 +28,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.DeduplicationScope;
+import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -42,6 +46,7 @@ import static sleeper.cdk.Utils.createAlarmForDlq;
 import static sleeper.cdk.Utils.createLambdaLogGroup;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_EVENT_SOURCE_ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -93,6 +98,8 @@ public class StateStoreCommitterStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
+                .fifoThroughputLimit(FifoThroughputLimit.PER_MESSAGE_GROUP_ID)
+                .deduplicationScope(DeduplicationScope.MESSAGE_GROUP)
                 .visibilityTimeout(
                         Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
@@ -131,10 +138,23 @@ public class StateStoreCommitterStack extends NestedStack {
                 .environment(environmentVariables)
                 .logGroup(logGroup));
 
-        handlerFunction.addEventSource(SqsEventSource.Builder.create(commitQueue)
+        SqsEventSource eventSource = SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
-                .build());
+                .build();
+        handlerFunction.addEventSource(eventSource);
+        instanceProperties.set(STATESTORE_COMMITTER_EVENT_SOURCE_ID, eventSource.getEventSourceMappingId());
 
+        policiesStack.getEditStateStoreCommitterTriggerPolicyForGrants().addStatements(
+                PolicyStatement.Builder.create()
+                        .effect(Effect.ALLOW)
+                        .actions(List.of("lambda:GetEventSourceMapping"))
+                        .resources(List.of(eventSource.getEventSourceMappingArn()))
+                        .build(),
+                PolicyStatement.Builder.create()
+                        .effect(Effect.ALLOW)
+                        .actions(List.of("lambda:UpdateEventSourceMapping"))
+                        .resources(List.of(eventSource.getEventSourceMappingArn()))
+                        .build());
         logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
         logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
         configBucketStack.grantRead(handlerFunction);

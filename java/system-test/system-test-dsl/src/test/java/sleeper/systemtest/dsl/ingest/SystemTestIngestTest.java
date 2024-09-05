@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
@@ -25,10 +26,15 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SystemTestIngestTest {
+
+    @BeforeEach
+    void setUp(SleeperSystemTest sleeper) {
+        sleeper.connectToInstance(MAIN);
+    }
 
     @Test
     void shouldIngestByQueue(SleeperSystemTest sleeper) {
@@ -37,7 +43,6 @@ public class SystemTestIngestTest {
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.connectToInstance(withDefaultProperties("main"));
         sleeper.sourceFiles().create("test.parquet", record);
 
         // When
@@ -59,7 +64,6 @@ public class SystemTestIngestTest {
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.connectToInstance(withDefaultProperties("main"));
         sleeper.sourceFiles().create("test.parquet", record);
 
         // When

@@ -19,8 +19,6 @@ package sleeper.systemtest.dsl.compaction;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
-import java.time.Duration;
-
 public interface CompactionDriver {
 
     CompactionJobStatusStore getJobStatusStore();
@@ -31,15 +29,7 @@ public interface CompactionDriver {
 
     void invokeTasks(int expectedTasks, PollWithRetries poll);
 
-    default void invokeTasks(int expectedTasks) {
-        invokeTasks(expectedTasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
-
     void forceStartTasks(int numberOfTasks, PollWithRetries poll);
-
-    default void forceStartTasks(int expectedTasks) {
-        forceStartTasks(expectedTasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-    }
 
     void scaleToZero();
 }

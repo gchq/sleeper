@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -48,6 +49,7 @@ public class SystemTestCluster {
     private final InvokeIngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
+    private final PollWithRetriesDriver pollDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
@@ -62,6 +64,7 @@ public class SystemTestCluster {
         tasksDriver = instanceAdminDrivers.invokeIngestTasks(context);
         waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
         waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
+        pollDriver = instanceAdminDrivers.pollWithRetries();
     }
 
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
@@ -70,7 +73,7 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster runDataGenerationTasks() {
-        return runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+        return runDataGenerationTasks(pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
     public SystemTestCluster runDataGenerationTasks(PollWithRetries poll) {
@@ -85,12 +88,12 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster invokeStandardIngestTask() {
-        tasksDriver.invokeStandardIngestTask();
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(jobIds, pollDriver);
         return this;
     }
 
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        tasksDriver.invokeStandardIngestTasks(expectedTasks, poll);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
         return this;
     }
 
@@ -115,7 +118,7 @@ public class SystemTestCluster {
 
     public void waitForTotalFileReferences(int expectedFileReferences) {
         waitForTotalFileReferences(expectedFileReferences,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
     }
 
     public void waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {

@@ -25,9 +25,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingInt;
-
 public class WaitForStateStoreCommitLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForStateStoreCommitLogs.class);
     private static final Duration QUERY_RUNS_TIME_SLACK = Duration.ofSeconds(5);
@@ -38,31 +35,23 @@ public class WaitForStateStoreCommitLogs {
         this.driver = driver;
     }
 
-    public void waitForCommitLogs(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
+    public StateStoreCommitterLogs waitForCommitLogs(PollWithRetries poll, Map<String, Integer> waitForNumCommitsByTableId, Instant getRunsAfterTime) throws InterruptedException {
         LOGGER.info("Waiting for commits by table ID: {}", waitForNumCommitsByTableId);
         Instant startTime = getRunsAfterTime.minus(QUERY_RUNS_TIME_SLACK);
-        poll.pollUntil("all state store commits are applied", () -> {
-            Instant endTime = Instant.now().plus(QUERY_RUNS_TIME_SLACK);
-            return getRemainingCommitsInPeriod(waitForNumCommitsByTableId, startTime, endTime)
-                    .isEmpty();
-        });
+        return poll.queryUntil("all state store commits are applied", () -> {
+            Instant endTime = Instant.now().plus(Duration.ofMinutes(10));
+            return driver.getLogsInPeriod(startTime, endTime);
+        }, logs -> getRemainingCommits(waitForNumCommitsByTableId, logs).isEmpty());
     }
 
-    public Map<String, Integer> getRemainingCommitsInPeriod(Map<String, Integer> waitForNumCommitsByTableId, Instant startTime, Instant endTime) {
-        Map<String, Integer> numCommitsByTableId = getNumCommitsByTableIdInPeriod(startTime, endTime);
-        Map<String, Integer> remainingCommitsByTableId = getRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
+    public static Map<String, Integer> getRemainingCommits(Map<String, Integer> waitForNumCommitsByTableId, StateStoreCommitterLogs logs) {
+        Map<String, Integer> numCommitsByTableId = logs.countNumCommitsByTableId(waitForNumCommitsByTableId.keySet());
+        Map<String, Integer> remainingCommitsByTableId = countRemainingCommitsByTableId(waitForNumCommitsByTableId, numCommitsByTableId);
         LOGGER.info("Remaining unapplied commits by table ID: {}", remainingCommitsByTableId);
         return remainingCommitsByTableId;
     }
 
-    private Map<String, Integer> getNumCommitsByTableIdInPeriod(Instant startTime, Instant endTime) {
-        return driver.getLogsInPeriod(startTime, endTime).stream()
-                .filter(entry -> entry instanceof StateStoreCommitSummary)
-                .map(entry -> (StateStoreCommitSummary) entry)
-                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
-    }
-
-    private static Map<String, Integer> getRemainingCommitsByTableId(
+    private static Map<String, Integer> countRemainingCommitsByTableId(
             Map<String, Integer> waitForNumCommitsByTableId, Map<String, Integer> numCommitsByTableId) {
         Map<String, Integer> remainingCommitsByTableId = new HashMap<>(waitForNumCommitsByTableId);
         numCommitsByTableId.forEach((tableId, numCommits) -> {
