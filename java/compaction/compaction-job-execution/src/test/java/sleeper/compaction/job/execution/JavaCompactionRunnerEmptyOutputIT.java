@@ -18,29 +18,28 @@ package sleeper.compaction.job.execution;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData.writeRootFile;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.readDataFile;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.writeRootFile;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
-class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
+class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
 
     @Test
-    void shouldMergeFilesCorrectlyWhenSomeAreEmpty() throws Exception {
+    void shouldMergeFilesWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -54,10 +53,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -67,7 +63,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
     }
 
     @Test
-    void shouldMergeFilesCorrectlyWhenAllAreEmpty() throws Exception {
+    void shouldMergeFilesWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
@@ -80,15 +76,35 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
         assertThat(summary.getRecordsRead()).isZero();
         assertThat(summary.getRecordsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
+    }
+
+    @Test
+    void shouldWriteSketchWhenWritingEmptyFile() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        FileReference file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
+        FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
+
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        compact(schema, compactionJob);
+
+        // Then
+        assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .fieldEmpty("key")
+                        .build());
     }
 }

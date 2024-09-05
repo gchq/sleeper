@@ -44,7 +44,7 @@ object_store = { version = "0.10.1", features = [
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.31.0", features = ["full"] }
 aws-config = { version = "1.2.0" } # Credential loading
-aws-credential-types = { version = "1.2.0" } # Credential provider types
+aws-credential-types = { version = "1.2.0", features = ["hardcoded-credentials"] } # Credential provider types
 aws-types = { version = "1.2.0" } # for Region
 url = { version = "2.4.0" } # URL processing for S3
 bytes = { version = "1.4.0" } # Byte buffer for S3 uploading
