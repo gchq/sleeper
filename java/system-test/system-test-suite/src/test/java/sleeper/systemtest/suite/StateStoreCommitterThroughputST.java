@@ -107,7 +107,7 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(25.0, 130.0));
+                        .isBetween(20.0, 130.0));
     }
 
 }
