@@ -126,6 +126,7 @@ public class RustCompactionRunnerLocalStackIT {
                 .endpoint(CONTAINER.getEndpointOverride(S3).toString())
                 .accessKey(CONTAINER.getAccessKey())
                 .secretKey(CONTAINER.getSecretKey())
+                .allowHttp(true)
                 .build();
     }
 

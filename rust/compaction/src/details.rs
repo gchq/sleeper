@@ -21,7 +21,7 @@ use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
 use object_store::aws::AmazonS3Builder;
 
-use std::{collections::HashMap, iter::Map, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
@@ -83,6 +83,7 @@ pub struct AwsConfig {
     pub endpoint: String,
     pub access_key: String,
     pub secret_key: String,
+    pub allow_http: bool,
 }
 
 /// Defines a partition range of a single column.
@@ -191,7 +192,7 @@ fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
     let region = Region::new(String::from(&aws_config.region));
     s3_config(&creds, &region)
         .with_endpoint(&aws_config.endpoint)
-        .with_allow_http(true)
+        .with_allow_http(aws_config.allow_http)
 }
 
 /// Creates a file path suitable for writing sketches to.

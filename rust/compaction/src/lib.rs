@@ -85,6 +85,7 @@ pub struct FFICompactionParams {
     aws_endpoint: *const c_char,
     aws_access_key: *const c_char,
     aws_secret_key: *const c_char,
+    aws_allow_http: bool,
     input_files_len: usize,
     input_files: *const *const c_char,
     output_file: *const c_char,
@@ -172,6 +173,7 @@ fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<
             secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
                 .to_str()?
                 .to_owned(),
+            allow_http: params.aws_allow_http,
         })
     } else {
         None

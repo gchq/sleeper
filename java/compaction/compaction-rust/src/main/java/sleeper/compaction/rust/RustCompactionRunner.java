@@ -119,6 +119,7 @@ public class RustCompactionRunner implements CompactionRunner {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.region);
             params.aws_endpoint.set(awsConfig.endpoint);
+            params.aws_allow_http.set(awsConfig.allowHttp);
             params.aws_access_key.set(awsConfig.accessKey);
             params.aws_secret_key.set(awsConfig.secretKey);
         } else {
@@ -247,12 +248,14 @@ public class RustCompactionRunner implements CompactionRunner {
         private final String endpoint;
         private final String accessKey;
         private final String secretKey;
+        private final boolean allowHttp;
 
         private AwsConfig(Builder builder) {
             region = builder.region;
             endpoint = builder.endpoint;
             accessKey = builder.accessKey;
             secretKey = builder.secretKey;
+            allowHttp = builder.allowHttp;
         }
 
         public static Builder builder() {
@@ -264,6 +267,7 @@ public class RustCompactionRunner implements CompactionRunner {
             private String endpoint;
             private String accessKey;
             private String secretKey;
+            private boolean allowHttp;
 
             private Builder() {
             }
@@ -285,6 +289,11 @@ public class RustCompactionRunner implements CompactionRunner {
 
             public Builder secretKey(String secretKey) {
                 this.secretKey = secretKey;
+                return this;
+            }
+
+            public Builder allowHttp(boolean allowHttp) {
+                this.allowHttp = allowHttp;
                 return this;
             }
 
