@@ -2,10 +2,14 @@
 Compaction Job Status Report
 ----------------------------
 Total jobs: 0
-Total jobs not yet started: 0
-Total jobs with a run in progress: 0
-Total jobs finished successfully: 0
-Total jobs with any failed run: 0
+Jobs not yet started: 0
+Jobs in an unfinished run: 0
+Jobs in an unfinished run after a failed run: 0
+Failed jobs (may be retried): 0
+Runs in progress: 0
+Runs awaiting commit: 0
+Jobs finished successfully: 0
+Jobs finished successfully with more than one run: 0
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

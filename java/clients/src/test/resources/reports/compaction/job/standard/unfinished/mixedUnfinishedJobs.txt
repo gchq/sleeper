@@ -2,9 +2,12 @@
 Compaction Job Status Report
 ----------------------------
 Total unfinished jobs: 4
-Total unfinished jobs not started: 1
-Total unfinished jobs in progress: 1
-Total unfinished jobs awaiting retry: 1
+Jobs not yet started: 1
+Jobs in an unfinished run: 2
+Jobs in an unfinished run after a failed run: 0
+Failed jobs (may be retried): 1
+Runs in progress: 1
+Runs awaiting commit: 1
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE       | CREATE_TIME              | JOB_ID                               | INPUT_FILES | PARTITION_ID                         | TASK_ID                              | START_TIME               |
 | UNCOMMITTED | 2022-09-20T13:33:12.001Z | job44444-4444-4444-4444-444444444444 |           1 | partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD | task1111-1111-1111-1111-111111111111 | 2022-09-20T13:34:12.001Z |
