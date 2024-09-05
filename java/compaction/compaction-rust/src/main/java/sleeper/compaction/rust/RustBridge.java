@@ -133,9 +133,9 @@ public class RustBridge {
         public final Struct.Boolean override_aws_config = new Struct.Boolean();
         public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
         public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
-        public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
         public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
+        public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         /** Array of input files to compact. */
         public final Array<java.lang.String> input_files = new Array<>(this);
         /** Output file name. */
