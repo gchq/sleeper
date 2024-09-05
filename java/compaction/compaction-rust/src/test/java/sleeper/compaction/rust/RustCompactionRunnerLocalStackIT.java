@@ -48,6 +48,7 @@ import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.io.parquet.record.RecordReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -106,6 +107,14 @@ public class RustCompactionRunnerLocalStackIT {
         assertThat(summary.getRecordsWritten()).isEqualTo(2);
         assertThat(readDataFile(schema, job.getOutputFile()))
                 .containsExactly(record1, record2);
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min("record-1").max("record-2")
+                                .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
+                                .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")
+                                .rank(0.7, "record-2").rank(0.8, "record-2").rank(0.9, "record-2"))
+                        .build());
     }
 
     protected CompactionJobFactory compactionFactory() {
@@ -165,5 +174,10 @@ public class RustCompactionRunnerLocalStackIT {
             }
         }
         return results;
+    }
+
+    private Sketches readSketches(Schema schema, String filename) throws IOException {
+        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, getHadoopConfiguration(CONTAINER));
     }
 }

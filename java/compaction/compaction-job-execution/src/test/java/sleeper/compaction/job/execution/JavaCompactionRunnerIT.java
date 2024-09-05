@@ -30,6 +30,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 
@@ -63,6 +64,35 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+    }
+
+    @Test
+    void shouldWriteSketchWhenMergingFiles() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        tableProperties.setSchema(schema);
+        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
+
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        compact(schema, compactionJob);
+
+        // Then
+        assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(0L).max(199L)
+                                .rank(0.1, 20L).rank(0.2, 40L).rank(0.3, 60L)
+                                .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
+                                .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
+                        .build());
     }
 
     @Nested

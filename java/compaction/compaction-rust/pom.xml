@@ -89,6 +89,13 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>sleeper</groupId>
+			<artifactId>sketches</artifactId>
+			<version>${project.parent.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
