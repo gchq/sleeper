@@ -124,7 +124,7 @@ public class RustBridge {
     /**
      * The compaction input data that will be populated from the Java side. If you updated
      * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
-     * in rust/compaction/src/lib.rs.
+     * in rust/compaction/src/lib.rs. The order and types of the fields must match exactly.
      */
     @SuppressWarnings(value = {"checkstyle:membername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
