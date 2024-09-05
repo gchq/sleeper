@@ -117,6 +117,7 @@ async fn main() -> color_eyre::Result<()> {
         );
     }
     let details = CompactionInput {
+        aws_config: None,
         input_files: input_urls,
         output_file: output_url,
         max_page_size: args.max_page_size,
