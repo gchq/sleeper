@@ -20,9 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
@@ -31,25 +30,24 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
-class CompactSortedFilesIT extends CompactSortedFilesTestBase {
+class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
     @Test
-    void shouldMergeFilesCorrectlyAndUpdateStateStoreWithLongKey() throws Exception {
+    void shouldMergeFilesWithLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
         stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
+        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -57,17 +55,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactionSelector(schema,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
+        List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 
     @Nested
@@ -76,9 +71,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddStrings() {
             // When
-            List<Record> evens = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings();
-            List<Record> odds = CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings();
-            List<Record> combined = CompactSortedFilesTestData.combineSortedBySingleKey(evens, odds);
+            List<Record> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Record> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
+            List<Record> combined = CompactionRunnerTestData.combineSortedBySingleKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
@@ -91,14 +86,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         }
 
         @Test
-        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithStringKey() throws Exception {
+        void shouldMergeFilesWithStringKey() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings();
-            List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings();
+            List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -106,17 +101,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector selector = createCompactionSelector(schema,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = selector.chooseCompactor(compactionJob);
-            RecordsProcessed summary = runner.compact(compactionJob);
+            RecordsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
+            List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+            assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
 
@@ -127,9 +119,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddByteArrays() {
             // When
-            List<Record> evens = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> odds = CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays();
-            List<Record> combined = CompactSortedFilesTestData.combineSortedBySingleByteArrayKey(evens, odds);
+            List<Record> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
+            List<Record> combined = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100)
@@ -147,14 +139,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         }
 
         @Test
-        void shouldMergeFilesCorrectlyAndUpdateStateStoreWithByteArrayKey() throws Exception {
+        void shouldMergeFilesWithByteArrayKey() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
             tableProperties.setSchema(schema);
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays();
+            List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -162,17 +154,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            DefaultSelector selector = createCompactionSelector(schema,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionRunner runner = selector.chooseCompactor(compactionJob);
-            RecordsProcessed summary = runner.compact(compactionJob);
+            RecordsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleByteArrayKey(data1, data2);
+            List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-            assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+            assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
 }

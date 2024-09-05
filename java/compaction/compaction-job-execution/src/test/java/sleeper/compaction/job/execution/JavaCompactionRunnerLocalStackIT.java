@@ -31,14 +31,9 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestBase;
-import sleeper.compaction.job.execution.testutils.CompactSortedFilesTestData;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
+import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -47,7 +42,6 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -56,18 +50,19 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.assignJobIdToInputFiles;
-import static sleeper.compaction.job.execution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
+import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
-public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
+public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(
@@ -94,61 +89,52 @@ public class CompactSortedFilesLocalStackIT extends CompactSortedFilesTestBase {
 
     @BeforeEach
     void setUp() {
-        instanceProperties.resetAndValidate(createTestInstanceProperties().getProperties());
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        String dataBucket = "data-bucket-" + instanceProperties.get(ID);
+        instanceProperties.set(FILE_SYSTEM, "s3a://");
+        instanceProperties.set(DATA_BUCKET, dataBucket);
+        instanceProperties.unset(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE);
+        s3Client.createBucket(dataBucket);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 
-    protected FileReference ingestRecordsGetFile(StateStore stateStore, List<Record> records) throws Exception {
-        return ingestRecordsGetFile(records, builder -> builder
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                .hadoopConfiguration(configuration)
-                .s3AsyncClient(s3AsyncClient));
-    }
-
-    private StateStore createStateStore(Schema schema) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)
-                .getStateStore(tableProperties);
-    }
-
-    private DefaultSelector createCompactSortedFiles(Schema schema, StateStore stateStore) throws Exception {
-        tableProperties.setSchema(schema);
-        return new DefaultSelector(new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                ObjectFactory.noUserJars(),
-                configuration);
-    }
-
     @Test
-    public void shouldUpdateStateStoreAfterRunningCompactionJob() throws Exception {
+    public void shouldRunCompactionJob() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        StateStore stateStore = createStateStore(schema);
+        createStateStore();
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         stateStore.initialise(tree.getAllPartitions());
 
-        List<Record> data1 = CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(stateStore, data1);
-        FileReference file2 = ingestRecordsGetFile(stateStore, data2);
+        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        FileReference file1 = ingestRecordsGetFile(data1);
+        FileReference file2 = ingestRecordsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        DefaultSelector selector = createCompactSortedFiles(schema, stateStore);
-        CompactionRunner runner = selector.chooseCompactor(compactionJob);
-        RecordsProcessed summary = runner.compact(compactionJob);
+        RecordsProcessed summary = compact(compactionJob, configuration);
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = CompactSortedFilesTestData.combineSortedBySingleKey(data1, data2);
+        List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
-        assertThat(CompactSortedFilesTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+    }
+
+    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
+        return ingestRecordsGetFile(records, builder -> builder
+                .hadoopConfiguration(configuration)
+                .s3AsyncClient(s3AsyncClient));
+    }
+
+    private void createStateStore() {
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)
+                .getStateStore(tableProperties);
     }
 }

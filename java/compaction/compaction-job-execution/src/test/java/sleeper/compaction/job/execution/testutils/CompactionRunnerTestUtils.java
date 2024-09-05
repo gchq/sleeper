@@ -28,9 +28,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class CompactSortedFilesTestUtils {
+public class CompactionRunnerTestUtils {
 
-    private CompactSortedFilesTestUtils() {
+    private CompactionRunnerTestUtils() {
     }
 
     public static Schema createSchemaWithTypesForKeyAndTwoValues(PrimitiveType keyType, Type value1Type, Type value2Type) {
