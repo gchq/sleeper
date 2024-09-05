@@ -21,7 +21,7 @@ use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
 use object_store::aws::AmazonS3Builder;
 
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, iter::Map, path::PathBuf};
 use url::Url;
 
 /// Type safe variant for Sleeper partition boundary
@@ -181,10 +181,7 @@ async fn create_object_store_factory(
 ) -> ObjectStoreFactory {
     let s3_config = match aws_config_override {
         Some(aws_config) => Some(to_s3_config(aws_config)),
-        None => match default_s3_config().await {
-            Ok(config) => Some(config),
-            Err(_) => None,
-        },
+        None => default_s3_config().await.ok(),
     };
     ObjectStoreFactory::new(s3_config)
 }
