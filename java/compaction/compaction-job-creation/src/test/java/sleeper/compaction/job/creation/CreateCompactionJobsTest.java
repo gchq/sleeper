@@ -423,7 +423,6 @@ public class CreateCompactionJobsTest {
             assertThat(jobs).containsExactly(job);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(job, createdTime));
-
         }
     }
 
