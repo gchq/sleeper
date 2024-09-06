@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.rust;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.RustBridge.FFICompactionParams;
+import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
@@ -51,26 +51,31 @@ import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
-public class RustCompaction implements CompactionRunner {
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
+public class RustCompactionRunner implements CompactionRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
     private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompaction.class);
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
+    private final AwsConfig awsConfig;
 
-    public RustCompaction(TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
+    public RustCompactionRunner(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        this(tablePropertiesProvider, stateStoreProvider, null);
+    }
+
+    public RustCompactionRunner(
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider, AwsConfig awsConfig) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.awsConfig = awsConfig;
     }
 
     @Override
     public RecordsProcessed compact(CompactionJob job) throws IOException, StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider
-                .getById(job.getTableId());
-        Schema schema = tableProperties.getSchema();
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Region region = stateStore.getAllPartitions().stream()
                 .filter(p -> Objects.equals(job.getPartitionId(), p.getId()))
@@ -82,7 +87,7 @@ public class RustCompaction implements CompactionRunner {
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, schema, region, runtime);
+        FFICompactionParams params = createFFIParams(job, tableProperties, region, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
@@ -100,16 +105,26 @@ public class RustCompaction implements CompactionRunner {
      * region etc.
      *
      * @param  job             compaction job
-     * @param  tableProperties table configuration for this table
-     * @param  schema          the table schema
+     * @param  tableProperties configuration for the Sleeper table
      * @param  region          region being compacted
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties, Schema schema,
+    private FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, jnr.ffi.Runtime runtime) {
+        Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
+        if (awsConfig != null) {
+            params.override_aws_config.set(true);
+            params.aws_region.set(awsConfig.region);
+            params.aws_endpoint.set(awsConfig.endpoint);
+            params.aws_allow_http.set(awsConfig.allowHttp);
+            params.aws_access_key.set(awsConfig.accessKey);
+            params.aws_secret_key.set(awsConfig.secretKey);
+        } else {
+            params.override_aws_config.set(false);
+        }
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
@@ -226,5 +241,65 @@ public class RustCompaction implements CompactionRunner {
     @Override
     public boolean supportsIterators() {
         return false;
+    }
+
+    public static class AwsConfig {
+        private final String region;
+        private final String endpoint;
+        private final String accessKey;
+        private final String secretKey;
+        private final boolean allowHttp;
+
+        private AwsConfig(Builder builder) {
+            region = builder.region;
+            endpoint = builder.endpoint;
+            accessKey = builder.accessKey;
+            secretKey = builder.secretKey;
+            allowHttp = builder.allowHttp;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private String region;
+            private String endpoint;
+            private String accessKey;
+            private String secretKey;
+            private boolean allowHttp;
+
+            private Builder() {
+            }
+
+            public Builder region(String region) {
+                this.region = region;
+                return this;
+            }
+
+            public Builder endpoint(String endpoint) {
+                this.endpoint = endpoint;
+                return this;
+            }
+
+            public Builder accessKey(String accessKey) {
+                this.accessKey = accessKey;
+                return this;
+            }
+
+            public Builder secretKey(String secretKey) {
+                this.secretKey = secretKey;
+                return this;
+            }
+
+            public Builder allowHttp(boolean allowHttp) {
+                this.allowHttp = allowHttp;
+                return this;
+            }
+
+            public AwsConfig build() {
+                return new AwsConfig(this);
+            }
+        }
     }
 }
