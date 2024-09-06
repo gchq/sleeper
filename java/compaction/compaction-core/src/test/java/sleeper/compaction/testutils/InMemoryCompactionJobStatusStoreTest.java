@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.testutils;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFaile
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
@@ -74,6 +76,19 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobCreated(job, storeTime));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldStoreInputFilesAssigned() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant assignedTime = Instant.parse("2023-03-29T12:27:43Z");
+            CompactionJob job = addFilesAssignedJob(createdTime, assignedTime);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableId))
+                    .containsExactly(jobFilesAssigned(job, createdTime, assignedTime));
         }
 
         @Test
@@ -496,6 +511,13 @@ class InMemoryCompactionJobStatusStoreTest {
     }
 
     private CompactionJob addCreatedJob(Instant createdTime) {
+        CompactionJob job = dataHelper.singleFileCompaction();
+        store.fixUpdateTime(createdTime);
+        store.jobCreated(job);
+        return job;
+    }
+
+    private CompactionJob addFilesAssignedJob(Instant createdTime, Instant assignedTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
         store.jobCreated(job);

@@ -42,6 +42,7 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
+    private final CompactionJobFilesAssignedStatus filesAssignedStatus;
     private final ProcessRuns jobRuns;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
@@ -50,6 +51,7 @@ public class CompactionJobStatus {
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
+        filesAssignedStatus = builder.filesAssignedStatus;
         jobRuns = builder.jobRuns;
         runsByStatusType = jobRuns.getRunsLatestFirst().stream()
                 .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
@@ -84,6 +86,11 @@ public class CompactionJobStatus {
 
     public Instant getCreateUpdateTime() {
         return createdStatus.getUpdateTime();
+    }
+
+    public Optional<Instant> getInputFilesAssignedUpdateTime() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(CompactionJobFilesAssignedStatus::getUpdateTime);
     }
 
     public String getPartitionId() {
@@ -179,6 +186,7 @@ public class CompactionJobStatus {
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
+        private CompactionJobFilesAssignedStatus filesAssignedStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -192,6 +200,11 @@ public class CompactionJobStatus {
 
         public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
             this.createdStatus = createdStatus;
+            return this;
+        }
+
+        public Builder filesAssignedStatus(CompactionJobFilesAssignedStatus filesAssignedStatus) {
+            this.filesAssignedStatus = filesAssignedStatus;
             return this;
         }
 
@@ -219,29 +232,28 @@ public class CompactionJobStatus {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof CompactionJobStatus)) {
             return false;
         }
-        CompactionJobStatus status = (CompactionJobStatus) o;
-        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRuns, status.jobRuns);
+        CompactionJobStatus other = (CompactionJobStatus) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(createdStatus, other.createdStatus)
+                && Objects.equals(filesAssignedStatus, other.filesAssignedStatus)
+                && Objects.equals(jobRuns, other.jobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, jobRuns);
+        return Objects.hash(jobId, createdStatus, filesAssignedStatus, jobRuns);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobStatus{" +
-                "jobId='" + jobId + '\'' +
-                ", createdStatus=" + createdStatus +
-                ", jobRuns=" + jobRuns +
-                ", expiryDate=" + expiryDate +
-                '}';
+        return "CompactionJobStatus{jobId=" + jobId + ", createdStatus=" + createdStatus +
+                ", filesAssignedStatus=" + filesAssignedStatus + ", jobRuns=" + jobRuns +
+                ", expiryDate=" + expiryDate + "}";
     }
 }
