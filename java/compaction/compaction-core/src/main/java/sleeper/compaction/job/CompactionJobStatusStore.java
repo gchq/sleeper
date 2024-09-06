@@ -20,6 +20,7 @@ import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,9 @@ public interface CompactionJobStatusStore {
     }
 
     default void jobInputFilesAssigned(CompactionJob job) {
+    }
+
+    default void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
     }
 
     default void jobStarted(CompactionJobStartedEvent event) {
