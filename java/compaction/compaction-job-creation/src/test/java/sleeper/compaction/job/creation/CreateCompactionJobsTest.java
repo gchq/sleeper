@@ -46,9 +46,11 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -421,6 +423,36 @@ public class CreateCompactionJobsTest {
                     jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2),
                     jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1));
         }
+
+        @Test
+        void shouldNotSaveFilesAssignedUpdateWithAsynchronousCommit() throws Exception {
+            // Given
+            tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 1);
+            tableProperties.set(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "true");
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .singlePartition("root")
+                    .buildList());
+            FileReference file = fileFactory().rootFile("test.parquet", 100L);
+            stateStore.addFiles(List.of(file));
+
+            Instant createdTime = Instant.parse("2024-09-06T10:11:00Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime).iterator()::next);
+
+            // When
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+
+            // Then
+            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+            CompactionJob job = jobFactory.createCompactionJob("test-job", List.of(file), "root");
+            assertThat(jobs).containsExactly(job);
+            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobCreated(job, createdTime));
+
+        }
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
     }
 
     private void createJobs(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
