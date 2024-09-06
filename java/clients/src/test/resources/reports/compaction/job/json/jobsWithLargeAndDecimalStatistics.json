@@ -6,6 +6,9 @@
       "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
       "inputFilesCount": 1
     },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-13T12:01:01Z"
+    },
     "jobRuns": [
       {
         "taskId": "task-id",
@@ -48,6 +51,9 @@
       "updateTime": "2022-10-13T12:00:00Z",
       "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-13T12:00:01Z"
     },
     "jobRuns": [
       {
