@@ -21,10 +21,7 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
@@ -65,46 +62,40 @@ public abstract class CompactionJobStatusReporterTestBase {
                 .parentJoining(partition("F"), partition("E"), partition("C"))
                 .parentJoining(partition("G"), partition("F"), partition("D")));
 
-        CompactionJob job1 = dataHelper.singleFileCompaction(partition("A"));
-        Instant creationTime1 = Instant.parse("2022-09-17T13:33:12.001Z");
-        CompactionJob job2 = dataHelper.singleFileCompaction(partition("B"));
-        Instant creationTime2 = Instant.parse("2022-09-18T13:33:12.001Z");
-        Instant startedTime2 = Instant.parse("2022-09-18T13:34:12.001Z");
-        CompactionJob job3 = dataHelper.singleFileCompaction(partition("C"));
-        Instant creationTime3 = Instant.parse("2022-09-19T13:33:12.001Z");
-        Instant startedTime3 = Instant.parse("2022-09-19T13:34:12.001Z");
-        CompactionJob job4 = dataHelper.singleFileCompaction(partition("D"));
-        Instant creationTime4 = Instant.parse("2022-09-20T13:33:12.001Z");
-        CompactionJobStartedStatus started4 = compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z"));
-        CompactionJobFinishedStatus finished4 = compactionFinishedStatus(summary(started4, Duration.ofMinutes(1), 600, 300));
-        CompactionJob job5 = dataHelper.singleFileCompaction(partition("E"));
-        Instant creationTime5 = Instant.parse("2022-09-21T13:33:12.001Z");
-        CompactionJobStartedStatus started5 = compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z"));
-        CompactionJobFinishedStatus finished5 = compactionFinishedStatus(summary(started5, Duration.ofMinutes(1), 600, 300));
-        CompactionJobCommittedStatus committed5 = compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z"));
-        CompactionJob job6 = dataHelper.singleFileCompaction(partition("F"));
-        Instant creationTime6 = Instant.parse("2022-09-22T13:33:12.001Z");
-        CompactionJobStartedStatus started6 = compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z"));
-        CompactionJobCommittedStatus committed6 = compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z"));
-
-        CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobCreated(job2, creationTime2,
-                startedCompactionRun(task(1), startedTime2));
-        CompactionJobStatus status3 = jobCreated(job3, creationTime3,
+        CompactionJobStatus status1 = jobCreated(
+                dataHelper.singleFileCompaction(partition("A")),
+                Instant.parse("2022-09-17T13:33:12.001Z"));
+        CompactionJobStatus status2 = jobCreated(
+                dataHelper.singleFileCompaction(partition("B")),
+                Instant.parse("2022-09-18T13:33:12.001Z"),
+                startedCompactionRun(task(1), Instant.parse("2022-09-18T13:34:12.001Z")));
+        CompactionJobStatus status3 = jobCreated(
+                dataHelper.singleFileCompaction(partition("C")),
+                Instant.parse("2022-09-19T13:33:12.001Z"),
                 failedCompactionRun(task(1),
-                        new ProcessRunTime(startedTime3, Duration.ofMinutes(1)),
+                        new ProcessRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
-        CompactionJobStatus status4 = jobCreated(job4, creationTime4,
+        CompactionJobStatus status4 = jobCreated(
+                dataHelper.singleFileCompaction(partition("D")),
+                Instant.parse("2022-09-20T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started4).finishedStatus(finished4)
+                        .startedStatus(compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z")))
+                        .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-20T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .build());
-        CompactionJobStatus status5 = jobCreated(job5, creationTime5,
+        CompactionJobStatus status5 = jobCreated(
+                dataHelper.singleFileCompaction(partition("E")),
+                Instant.parse("2022-09-21T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started5).finishedStatus(finished5).statusUpdate(committed5)
+                        .startedStatus(compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z")))
+                        .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-21T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
+                        .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z")))
                         .build());
-        CompactionJobStatus status6 = jobCreated(job6, creationTime6,
+        CompactionJobStatus status6 = jobCreated(
+                dataHelper.singleFileCompaction(partition("F")),
+                Instant.parse("2022-09-22T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
-                        .startedStatus(started6).statusUpdate(committed6)
+                        .startedStatus(compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z")))
+                        .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z")))
                         .build());
         return Arrays.asList(status6, status5, status4, status3, status2, status1);
     }
