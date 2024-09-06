@@ -34,10 +34,11 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommi
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FILES_ASSIGNED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
-import static sleeper.compaction.job.status.CompactionJobStatusType.PENDING;
 import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
@@ -57,7 +58,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestStatusType()).isEqualTo(CREATED);
     }
 
     @Test
@@ -75,7 +76,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, filesAssigned);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestStatusType()).isEqualTo(FILES_ASSIGNED);
     }
 
     @Test

@@ -72,7 +72,7 @@ Start update time: 2022-09-18T13:34:12.123Z
 Not finished
 --------------------------
 Details for job $(jobId1):
-State: PENDING
+State: CREATED
 Creation time: 2022-09-17T13:33:12.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------

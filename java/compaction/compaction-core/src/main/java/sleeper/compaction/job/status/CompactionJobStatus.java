@@ -33,7 +33,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FILES_ASSIGNED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
@@ -55,7 +57,9 @@ public class CompactionJobStatus {
         jobRuns = builder.jobRuns;
         runsByStatusType = jobRuns.getRunsLatestFirst().stream()
                 .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
-        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runsByStatusType.keySet());
+        furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(
+                filesAssignedStatus == null ? CREATED : FILES_ASSIGNED,
+                runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
 
