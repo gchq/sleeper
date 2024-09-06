@@ -38,7 +38,7 @@ log = { version = "0.4.19" } # Logging support
 arrow = { version = "52.0.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.28" } # Async processing
 datafusion = { version = "39.0.0", features = ["backtrace"] }
-object_store = { version = "0.10.1", features = [
+object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
