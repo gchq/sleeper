@@ -11,12 +11,11 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-10-13T12:01:10.123Z",
-            "startTime": "2022-10-13T12:01:10Z"
+            "startTime": "2022-10-13T12:01:10Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-13T14:01:10.123Z",
             "summary": {
               "recordsProcessed": {
@@ -31,12 +30,13 @@
               },
               "recordsReadPerSecond": 138.97222222222223,
               "recordsWrittenPerSecond": 69.48611111111111
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-10-13T14:01:30Z",
-            "updateTime": "2022-10-13T14:01:30.123Z"
+            "updateTime": "2022-10-13T14:01:30.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
@@ -54,12 +54,11 @@
         "taskId": "task-id",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-10-13T12:00:10.123Z",
-            "startTime": "2022-10-13T12:00:10Z"
+            "startTime": "2022-10-13T12:00:10Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-13T12:00:10.123Z",
             "summary": {
               "recordsProcessed": {
@@ -74,12 +73,13 @@
               },
               "recordsReadPerSecond": 4878.048780487805,
               "recordsWrittenPerSecond": 2439.0243902439024
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-10-13T12:00:30Z",
-            "updateTime": "2022-10-13T12:00:30.123Z"
+            "updateTime": "2022-10-13T12:00:30.123Z",
+            "type": "COMMITTED"
           }
         ]
       }

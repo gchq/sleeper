@@ -14,14 +14,14 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-22T13:34:12.123Z",
-            "startTime": "2022-09-22T13:34:12.001Z"
+            "startTime": "2022-09-22T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-09-22T13:36:12.001Z",
-            "updateTime": "2022-09-22T13:36:12.123Z"
+            "updateTime": "2022-09-22T13:36:12.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
@@ -42,12 +42,11 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-21T13:34:12.123Z",
-            "startTime": "2022-09-21T13:34:12.001Z"
+            "startTime": "2022-09-21T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-21T13:35:12.123Z",
             "summary": {
               "recordsProcessed": {
@@ -62,12 +61,13 @@
               },
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-09-21T13:36:12.001Z",
-            "updateTime": "2022-09-21T13:36:12.123Z"
+            "updateTime": "2022-09-21T13:36:12.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
@@ -88,12 +88,11 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-20T13:34:12.123Z",
-            "startTime": "2022-09-20T13:34:12.001Z"
+            "startTime": "2022-09-20T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-20T13:35:12.123Z",
             "summary": {
               "recordsProcessed": {
@@ -108,7 +107,8 @@
               },
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           }
         ]
       }
@@ -129,12 +129,11 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-19T13:34:12.123Z",
-            "startTime": "2022-09-19T13:34:12.001Z"
+            "startTime": "2022-09-19T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FAILED",
             "updateTime": "2022-09-19T13:35:12.123Z",
             "runTime": {
               "startTime": "2022-09-19T13:34:12.001Z",
@@ -145,7 +144,8 @@
             "failureReasons": [
               "Something went wrong",
               "More details"
-            ]
+            ],
+            "type": "FAILED"
           }
         ]
       }
@@ -166,9 +166,9 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-18T13:34:12.123Z",
-            "startTime": "2022-09-18T13:34:12.001Z"
+            "startTime": "2022-09-18T13:34:12.001Z",
+            "type": "STARTED"
           }
         ]
       }
