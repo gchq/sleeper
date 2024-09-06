@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.testutils;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,7 +78,6 @@ class InMemoryCompactionJobStatusStoreTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldStoreInputFilesAssigned() {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
@@ -521,6 +519,8 @@ class InMemoryCompactionJobStatusStoreTest {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
         store.jobCreated(job);
+        store.fixUpdateTime(assignedTime);
+        store.jobInputFilesAssigned(job);
         return job;
     }
 

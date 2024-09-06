@@ -42,7 +42,7 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
-    private final CompactionJobFilesAssignedStatus filesAssignedStatus;
+    private final CompactionJobInputFilesAssignedStatus filesAssignedStatus;
     private final ProcessRuns jobRuns;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
@@ -79,6 +79,7 @@ public class CompactionJobStatus {
                 .map(createdStatus -> builder()
                         .jobId(updates.getJobId())
                         .createdStatus(createdStatus)
+                        .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
                         .jobRuns(updates.getRuns())
                         .expiryDate(updates.getFirstRecord().getExpiryDate())
                         .build());
@@ -90,7 +91,7 @@ public class CompactionJobStatus {
 
     public Optional<Instant> getInputFilesAssignedUpdateTime() {
         return Optional.ofNullable(filesAssignedStatus)
-                .map(CompactionJobFilesAssignedStatus::getUpdateTime);
+                .map(CompactionJobInputFilesAssignedStatus::getUpdateTime);
     }
 
     public String getPartitionId() {
@@ -186,7 +187,7 @@ public class CompactionJobStatus {
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private CompactionJobFilesAssignedStatus filesAssignedStatus;
+        private CompactionJobInputFilesAssignedStatus filesAssignedStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -203,7 +204,7 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder filesAssignedStatus(CompactionJobFilesAssignedStatus filesAssignedStatus) {
+        public Builder filesAssignedStatus(CompactionJobInputFilesAssignedStatus filesAssignedStatus) {
             this.filesAssignedStatus = filesAssignedStatus;
             return this;
         }

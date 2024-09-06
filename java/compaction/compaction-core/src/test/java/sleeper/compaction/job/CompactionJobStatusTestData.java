@@ -18,8 +18,8 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFilesAssignedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -53,7 +53,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStatus.builder()
                 .jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
-                .filesAssignedStatus(new CompactionJobFilesAssignedStatus(assignedTime))
+                .filesAssignedStatus(new CompactionJobInputFilesAssignedStatus(assignedTime))
                 .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
                 .build();
     }

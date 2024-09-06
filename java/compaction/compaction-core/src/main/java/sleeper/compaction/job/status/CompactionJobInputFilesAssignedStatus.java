@@ -20,11 +20,11 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobFilesAssignedStatus implements ProcessStatusUpdate {
+public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
 
-    public CompactionJobFilesAssignedStatus(Instant updateTime) {
+    public CompactionJobInputFilesAssignedStatus(Instant updateTime) {
         this.updateTime = updateTime;
     }
 
@@ -43,10 +43,10 @@ public class CompactionJobFilesAssignedStatus implements ProcessStatusUpdate {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof CompactionJobFilesAssignedStatus)) {
+        if (!(obj instanceof CompactionJobInputFilesAssignedStatus)) {
             return false;
         }
-        CompactionJobFilesAssignedStatus other = (CompactionJobFilesAssignedStatus) obj;
+        CompactionJobInputFilesAssignedStatus other = (CompactionJobInputFilesAssignedStatus) obj;
         return Objects.equals(updateTime, other.updateTime);
     }
 
