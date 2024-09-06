@@ -59,15 +59,15 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
-public class StandardCompactor implements CompactionRunner {
+public class JavaCompactionRunner implements CompactionRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final Configuration configuration;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StandardCompactor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaCompactionRunner.class);
 
-    public StandardCompactor(
+    public JavaCompactionRunner(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;

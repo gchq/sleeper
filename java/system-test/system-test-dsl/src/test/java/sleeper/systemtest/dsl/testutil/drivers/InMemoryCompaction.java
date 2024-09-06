@@ -24,7 +24,7 @@ import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.execution.StandardCompactor;
+import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -218,7 +218,7 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
-            mergingIterator = StandardCompactor.getMergingIterator(
+            mergingIterator = JavaCompactionRunner.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);

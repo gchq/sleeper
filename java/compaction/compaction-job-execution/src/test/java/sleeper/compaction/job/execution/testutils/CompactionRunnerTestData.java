@@ -44,9 +44,9 @@ import java.util.stream.Stream;
 
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
-public class CompactSortedFilesTestData {
+public class CompactionRunnerTestData {
 
-    private CompactSortedFilesTestData() {
+    private CompactionRunnerTestData() {
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenLongs() {
@@ -60,22 +60,22 @@ public class CompactSortedFilesTestData {
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenStrings() {
-        return streamKeyAndTwoValuesFromEvens(CompactSortedFilesTestData::nthString)
+        return streamKeyAndTwoValuesFromEvens(CompactionRunnerTestData::nthString)
                 .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddStrings() {
-        return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthString)
+        return streamKeyAndTwoValuesFromOdds(CompactionRunnerTestData::nthString)
                 .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenByteArrays() {
-        return streamKeyAndTwoValuesFromEvens(CompactSortedFilesTestData::nthByteArray)
+        return streamKeyAndTwoValuesFromEvens(CompactionRunnerTestData::nthByteArray)
                 .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
-        return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthByteArray)
+        return streamKeyAndTwoValuesFromOdds(CompactionRunnerTestData::nthByteArray)
                 .collect(Collectors.toList());
     }
 

@@ -22,7 +22,7 @@ import sleeper.compaction.job.CompactionRunner;
  * Interface for classes that implement logic for choosing which compaction method should be chosen.
  */
 @FunctionalInterface
-public interface CompactionAlgorithmSelector {
+public interface CompactionRunnerFactory {
     /**
      * Picks a CompactionRunner implementation that is capable
      * of running a compaction on the given job.
@@ -30,5 +30,5 @@ public interface CompactionAlgorithmSelector {
      * @param  job compaction job
      * @return     a compactor object
      */
-    CompactionRunner chooseCompactor(CompactionJob job);
+    CompactionRunner createCompactor(CompactionJob job);
 }

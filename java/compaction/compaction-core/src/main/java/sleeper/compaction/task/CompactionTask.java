@@ -56,7 +56,7 @@ public class CompactionTask {
     private final PropertiesReloader propertiesReloader;
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
-    private final CompactionAlgorithmSelector selector;
+    private final CompactionRunnerFactory selector;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
@@ -68,7 +68,7 @@ public class CompactionTask {
     public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
-            CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId) {
+            CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskStore, selector, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
@@ -78,7 +78,7 @@ public class CompactionTask {
             PropertiesReloader propertiesReloader,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
         this.propertiesReloader = propertiesReloader;
@@ -164,7 +164,7 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {
-            CompactionRunner compactor = this.selector.chooseCompactor(job);
+            CompactionRunner compactor = selector.createCompactor(job);
             RecordsProcessed recordsProcessed = compactor.compact(job);
             Instant jobFinishTime = timeSupplier.get();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);

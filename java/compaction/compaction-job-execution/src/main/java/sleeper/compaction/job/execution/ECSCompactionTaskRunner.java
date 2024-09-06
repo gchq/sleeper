@@ -58,7 +58,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultSelector},
+ * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultCompactionRunnerFactory},
  * and the processing of SQS messages to {@link SqsCompactionQueueHandler}.
  */
 public class ECSCompactionTaskRunner {
@@ -99,7 +99,7 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-            DefaultSelector compactionSelector = new DefaultSelector(tablePropertiesProvider, stateStoreProvider, objectFactory,
+            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(tablePropertiesProvider, stateStoreProvider, objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
             WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);

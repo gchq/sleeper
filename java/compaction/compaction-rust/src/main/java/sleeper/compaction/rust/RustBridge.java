@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.rust;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.LibraryLoader;
@@ -124,11 +124,18 @@ public class RustBridge {
     /**
      * The compaction input data that will be populated from the Java side. If you updated
      * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
-     * in rust/compaction/src/lib.rs.
+     * in rust/compaction/src/lib.rs. The order and types of the fields must match exactly.
      */
     @SuppressWarnings(value = {"checkstyle:membername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class FFICompactionParams extends Struct {
+        /** Optional AWS configuration. */
+        public final Struct.Boolean override_aws_config = new Struct.Boolean();
+        public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
+        public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         /** Array of input files to compact. */
         public final Array<java.lang.String> input_files = new Array<>(this);
         /** Output file name. */
