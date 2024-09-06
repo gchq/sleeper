@@ -2,9 +2,12 @@
 Compaction Job Status Report
 ----------------------------
 Total unfinished jobs: 0
-Total unfinished jobs not started: 0
-Total unfinished jobs in progress: 0
-Total unfinished jobs awaiting retry: 0
+Jobs not yet started: 0
+Jobs in an unfinished run: 0
+Jobs in an unfinished run after a failed run: 0
+Failed jobs (may be retried): 0
+Runs in progress: 0
+Runs awaiting commit: 0
 ------------------------------------------------------------------------------------
 | STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME |
 ------------------------------------------------------------------------------------

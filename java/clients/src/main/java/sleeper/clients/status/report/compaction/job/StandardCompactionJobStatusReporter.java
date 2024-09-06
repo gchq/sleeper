@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDurationString;
 import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
 
@@ -91,16 +90,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printSummary(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType) {
-        if (queryType.equals(JobQuery.Type.RANGE)) {
+        if (queryType == JobQuery.Type.RANGE) {
             printRangeSummary(jobStatusList);
-        }
-        if (queryType.equals(JobQuery.Type.DETAILED)) {
+        } else if (queryType == JobQuery.Type.DETAILED) {
             printDetailedSummary(jobStatusList);
-        }
-        if (queryType.equals(JobQuery.Type.UNFINISHED)) {
+        } else if (queryType == JobQuery.Type.UNFINISHED) {
             printUnfinishedSummary(jobStatusList);
-        }
-        if (queryType.equals(JobQuery.Type.ALL)) {
+        } else if (queryType == JobQuery.Type.ALL) {
             printAllSummary(jobStatusList);
         }
     }
@@ -108,8 +104,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printRangeSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total jobs in defined range: %d%n",
                 jobStatusList.size());
-        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
-        printDelayStatistics(jobStatusList, out);
+        printStatusCounts(jobStatusList);
+        printRateAndDelayStatistics(jobStatusList);
     }
 
     private void printDetailedSummary(List<CompactionJobStatus> jobStatusList) {
@@ -151,25 +147,32 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
-        out.printf("Total unfinished jobs not started: %d%n",
-                jobStatusList.stream().filter(not(CompactionJobStatus::isStarted)).count());
-        out.printf("Total unfinished jobs in progress: %d%n",
-                jobStatusList.stream().filter(CompactionJobStatus::isAnyRunInProgress).count());
-        out.printf("Total unfinished jobs awaiting retry: %d%n",
-                jobStatusList.stream().filter(CompactionJobStatus::isAwaitingRetry).count());
+        printUnfinishedStatusCounts(jobStatusList);
     }
 
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total jobs: %d%n", jobStatusList.size());
-        out.printf("Total jobs not yet started: %d%n", jobStatusList.stream().filter(job -> !job.isStarted()).count());
-        out.printf("Total jobs with a run in progress: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunInProgress).count());
-        out.printf("Total jobs finished successfully: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunSuccessful).count());
-        out.printf("Total jobs with any failed run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunFailed).count());
-        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
-        printDelayStatistics(jobStatusList, out);
+        printStatusCounts(jobStatusList);
+        printRateAndDelayStatistics(jobStatusList);
     }
 
-    private void printDelayStatistics(List<CompactionJobStatus> jobs, PrintStream out) {
+    private void printStatusCounts(List<CompactionJobStatus> jobStatusList) {
+        printUnfinishedStatusCounts(jobStatusList);
+        out.printf("Jobs finished successfully: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunSuccessful).count());
+        out.printf("Jobs finished successfully with more than one run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isMultipleRunsAndAnySuccessful).count());
+    }
+
+    private void printUnfinishedStatusCounts(List<CompactionJobStatus> jobStatusList) {
+        out.printf("Jobs not yet started: %d%n", jobStatusList.stream().filter(job -> !job.isStarted()).count());
+        out.printf("Jobs in an unfinished run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunUnfinished).count());
+        out.printf("Jobs in an unfinished run after a failed run: %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAnyRunUnfinishedAndARunFailed).count());
+        out.printf("Failed jobs (may be retried): %d%n", jobStatusList.stream().filter(CompactionJobStatus::isAwaitingRetry).count());
+        out.printf("Runs in progress: %d%n", jobStatusList.stream().mapToInt(CompactionJobStatus::getRunsInProgress).sum());
+        out.printf("Runs awaiting commit: %d%n", jobStatusList.stream().mapToInt(CompactionJobStatus::getRunsAwaitingCommit).sum());
+    }
+
+    private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
+        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
         if (jobs.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
             out.println("Statistics for delays between all finish and commit times:");
             out.println("  " + delayStatistics(jobs));

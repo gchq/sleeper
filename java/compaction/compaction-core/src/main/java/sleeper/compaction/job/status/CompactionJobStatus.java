@@ -24,23 +24,26 @@ import sleeper.core.record.process.status.TimeWindowQuery;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
 
 public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
     private final ProcessRuns jobRuns;
-    private final transient Set<CompactionJobStatusType> runStatusTypes;
+    private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
@@ -48,10 +51,9 @@ public class CompactionJobStatus {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
         jobRuns = builder.jobRuns;
-        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
-                .map(CompactionJobStatusType::statusTypeOfJobRun)
-                .collect(toUnmodifiableSet());
-        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
+        runsByStatusType = jobRuns.getRunsLatestFirst().stream()
+                .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
+        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
 
@@ -97,23 +99,51 @@ public class CompactionJobStatus {
     }
 
     public boolean isUnstartedOrInProgress() {
-        return !isStarted() || runStatusTypes.contains(IN_PROGRESS) || !runStatusTypes.contains(FINISHED);
+        return !isStarted() || runStatusTypes().contains(IN_PROGRESS) || !runStatusTypes().contains(FINISHED);
     }
 
     public boolean isAnyRunInProgress() {
-        return runStatusTypes.contains(IN_PROGRESS);
+        return runStatusTypes().contains(IN_PROGRESS);
     }
 
     public boolean isAnyRunSuccessful() {
-        return runStatusTypes.contains(FINISHED);
+        return runStatusTypes().contains(FINISHED);
+    }
+
+    public boolean isAnyRunUnfinishedAndARunFailed() {
+        return isAnyRunUnfinished() && isAnyRunFailed();
+    }
+
+    public boolean isAnyRunUnfinished() {
+        return getRunsInProgress() + getRunsAwaitingCommit() > 0;
     }
 
     public boolean isAnyRunFailed() {
-        return runStatusTypes.contains(FAILED);
+        return runStatusTypes().contains(FAILED);
     }
 
     public boolean isAwaitingRetry() {
-        return runStatusTypes.contains(FAILED) && runStatusTypes.size() == 1;
+        return runStatusTypes().equals(Set.of(FAILED));
+    }
+
+    public int getRunsInProgress() {
+        return runsByStatusType.getOrDefault(IN_PROGRESS, 0);
+    }
+
+    public int getRunsAwaitingCommit() {
+        return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
+    }
+
+    private Set<CompactionJobStatusType> runStatusTypes() {
+        return runsByStatusType.keySet();
+    }
+
+    public boolean isMultipleRunsAndAnySuccessful() {
+        return isMultipleRuns() && isAnyRunSuccessful();
+    }
+
+    public boolean isMultipleRuns() {
+        return jobRuns.getRunsLatestFirst().size() > 1;
     }
 
     public Instant getExpiryDate() {
