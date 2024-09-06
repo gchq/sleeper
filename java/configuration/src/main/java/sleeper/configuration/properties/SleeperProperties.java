@@ -95,7 +95,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
-        if ("".equals(value)) {
+        if (property.isIgnoreEmptyValue() && "".equals(value)) {
             value = null;
         }
         return compute.apply(value);

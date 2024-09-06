@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
@@ -178,7 +179,7 @@ class SleeperPropertiesTest {
         }
 
         @Test
-        void shouldSetEmptyList() {
+        void shouldSetEmptyListWhenPropertyHasNoDefaultValue() {
             // Given
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
             testSleeperProperties.setList(INGEST_SOURCE_BUCKET, List.of("test-bucket"));
@@ -189,6 +190,41 @@ class SleeperPropertiesTest {
             // Then
             assertThat(testSleeperProperties.get(INGEST_SOURCE_BUCKET)).isNull();
             assertThat(testSleeperProperties.getList(INGEST_SOURCE_BUCKET)).isEmpty();
+        }
+
+        @Test
+        void shouldSetEmptyListWhenPropertyHasDefaultValueAndIsSetToAllowEmptyValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of());
+
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEmpty();
+            assertThat(testSleeperProperties.getList(OPTIONAL_STACKS)).isEmpty();
+        }
+
+        @Test
+        void shouldReadEmptyListFromString() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties(
+                    loadProperties("sleeper.optional.stacks="));
+
+            // When / Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEmpty();
+            assertThat(testSleeperProperties.getList(OPTIONAL_STACKS)).isEmpty();
+        }
+
+        @Test
+        void shouldReadEmptyListFromStringWithSpace() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties(
+                    loadProperties("sleeper.optional.stacks= \n"));
+
+            // When / Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEmpty();
+            assertThat(testSleeperProperties.getList(OPTIONAL_STACKS)).isEmpty();
         }
 
         @Test
@@ -215,6 +251,20 @@ class SleeperPropertiesTest {
             // Then
             assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
                     .isEqualTo(OPTIONAL_STACKS.getDefaultValue() + ",a,b");
+        }
+
+        @Test
+        void shouldAddToEmptyListWhenPropertyHasDefaultValueAndIsSetToAllowEmptyValue() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.setList(OPTIONAL_STACKS, List.of());
+
+            // When
+            testSleeperProperties.addToListIfMissing(OPTIONAL_STACKS, List.of("a", "b"));
+
+            // Then
+            assertThat(testSleeperProperties.get(OPTIONAL_STACKS))
+                    .isEqualTo("a,b");
         }
 
         @Test

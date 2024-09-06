@@ -72,4 +72,8 @@ public interface SleeperProperty {
         return false;
     }
 
+    default boolean isIgnoreEmptyValue() {
+        return true;
+    }
+
 }
