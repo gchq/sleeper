@@ -66,6 +66,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createdStatus.updateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_TIME = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -89,6 +91,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return storeWithUpdateTimes(updateTimes);
+    }
+
+    protected CompactionJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }

@@ -27,6 +27,7 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -75,6 +76,7 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String JOB_RUN_ID = "JobRunId";
     private static final String TASK_ID = "TaskId";
     private static final String UPDATE_TYPE_CREATED = "created";
+    private static final String UPDATE_TYPE_INPUT_FILES_ASSIGNED = "inputFilesAssigned";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
     private static final String UPDATE_TYPE_COMMITTED = "committed";
@@ -90,6 +92,12 @@ class DynamoDBCompactionJobStatusFormat {
         builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size());
+        return builder.build();
+    }
+
+    public static Map<String, AttributeValue> createFilesAssignedUpdate(
+            DynamoDBRecordBuilder builder) {
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED);
         return builder.build();
     }
 
@@ -182,6 +190,9 @@ class DynamoDBCompactionJobStatusFormat {
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
+            case UPDATE_TYPE_INPUT_FILES_ASSIGNED:
+                return new CompactionJobInputFilesAssignedStatus(
+                        getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_STARTED:
                 return CompactionJobStartedStatus.startAndUpdateTime(
                         getInstantAttribute(item, START_TIME),

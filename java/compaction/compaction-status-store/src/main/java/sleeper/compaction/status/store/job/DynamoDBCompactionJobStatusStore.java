@@ -50,6 +50,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createFilesAssignedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
@@ -118,6 +119,15 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
             save(createJobCreatedUpdate(job, jobUpdateBuilder(job)));
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed saving created event for job " + job.getId(), e);
+        }
+    }
+
+    @Override
+    public void jobInputFilesAssigned(CompactionJob job) {
+        try {
+            save(createFilesAssignedUpdate(jobUpdateBuilder(job)));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + job.getId(), e);
         }
     }
 
