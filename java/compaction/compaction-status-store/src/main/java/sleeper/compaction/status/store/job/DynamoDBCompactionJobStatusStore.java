@@ -17,15 +17,13 @@ package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,39 +168,50 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         }
     }
 
-    private void save(Map<String, AttributeValue> update) {
+    private void save(Map<String, AttributeValue> statusUpdate) {
+        addStatusUpdate(statusUpdate);
+        updateJobStatus(statusUpdate);
+    }
+
+    private void addStatusUpdate(Map<String, AttributeValue> statusUpdate) {
         Instant startTime = Instant.now();
-        TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(updatesTableName)
-                                .withItem(update)),
-                        new TransactWriteItem().withUpdate(new Update()
-                                .withTableName(jobsTableName)
-                                .withKey(Map.of(JOB_ID, update.get(JOB_ID)))
-                                .withUpdateExpression("SET " +
-                                        "#Table = :table, " +
-                                        "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
-                                        "#LastUpdate = :update_time, " +
-                                        "#LastUpdateType = :update_type, " +
-                                        "#Expiry = if_not_exists(#Expiry, :expiry)")
-                                .withExpressionAttributeNames(Map.of(
-                                        "#Table", TABLE_ID,
-                                        "#FirstUpdate", JOB_FIRST_UPDATE_TIME,
-                                        "#LastUpdate", JOB_LAST_UPDATE_TIME,
-                                        "#LastUpdateType", JOB_LAST_UPDATE_TYPE,
-                                        "#Expiry", EXPIRY_DATE))
-                                .withExpressionAttributeValues(Map.of(
-                                        ":table", update.get(TABLE_ID),
-                                        ":update_time", update.get(UPDATE_TIME),
-                                        ":update_type", update.get(UPDATE_TYPE),
-                                        ":expiry", update.get(EXPIRY_DATE))))));
-        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+        PutItemResult result = dynamoDB.putItem(new PutItemRequest()
+                .withTableName(updatesTableName)
+                .withItem(statusUpdate)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
         LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
-                getStringAttribute(update, UPDATE_TYPE), getStringAttribute(update, JOB_ID),
-                totalCapacity, LoggedDuration.withFullOutput(startTime, Instant.now()));
+                getStringAttribute(statusUpdate, UPDATE_TYPE), getStringAttribute(statusUpdate, JOB_ID),
+                result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
+    }
+
+    private void updateJobStatus(Map<String, AttributeValue> statusUpdate) {
+        Instant startTime = Instant.now();
+        UpdateItemResult result = dynamoDB.updateItem(new UpdateItemRequest()
+                .withTableName(jobsTableName)
+                .withKey(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
+                .withUpdateExpression("SET " +
+                        "#Table = :table, " +
+                        "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
+                        "#LastUpdate = :update_time, " +
+                        "#LastUpdateType = :update_type, " +
+                        "#Expiry = if_not_exists(#Expiry, :expiry)")
+                .withExpressionAttributeNames(Map.of(
+                        "#Table", TABLE_ID,
+                        "#FirstUpdate", JOB_FIRST_UPDATE_TIME,
+                        "#LastUpdate", JOB_LAST_UPDATE_TIME,
+                        "#LastUpdateType", JOB_LAST_UPDATE_TYPE,
+                        "#Expiry", EXPIRY_DATE))
+                .withExpressionAttributeValues(Map.of(
+                        ":table", statusUpdate.get(TABLE_ID),
+                        ":update_time", statusUpdate.get(UPDATE_TIME),
+                        ":update_type", statusUpdate.get(UPDATE_TYPE),
+                        ":expiry", statusUpdate.get(EXPIRY_DATE)))
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        LOGGER.debug("Updated status for job {}, capacity consumed = {}, took {}",
+                getStringAttribute(statusUpdate, JOB_ID),
+                result.getConsumedCapacity().getCapacityUnits(),
+                LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {
