@@ -206,7 +206,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     private void runStartedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterRunStarted(logStream, time));
+        add(new StateStoreCommitterRunStarted(logStream, Instant.MIN, time));
     }
 
     private void committedAtTime(Instant time) {
@@ -214,11 +214,11 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     private void committedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitSummary(logStream, DEFAULT_TABLE_ID, "test-commit", time));
+        add(new StateStoreCommitSummary(logStream, Instant.MIN, DEFAULT_TABLE_ID, "test-commit", time));
     }
 
     private void committedToTableAtTime(String tableId, Instant time) {
-        add(new StateStoreCommitSummary(DEFAULT_LOG_STREAM, tableId, "test-commit", time));
+        add(new StateStoreCommitSummary(DEFAULT_LOG_STREAM, Instant.MIN, tableId, "test-commit", time));
     }
 
     private void runFinishedAtTime(Instant time) {
@@ -226,7 +226,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     private void runFinishedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterRunFinished(logStream, time));
+        add(new StateStoreCommitterRunFinished(logStream, Instant.MIN, time));
     }
 
     private void add(StateStoreCommitterLogEntry log) {

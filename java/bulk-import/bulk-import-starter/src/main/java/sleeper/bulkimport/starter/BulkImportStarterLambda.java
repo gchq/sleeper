@@ -40,7 +40,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.io.parquet.utils.HadoopPathUtils;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 
@@ -67,7 +67,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
-                new StateStoreProvider(instanceProperties, s3, dynamo, hadoopConfig),
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfig),
                 ingestJobStatusStore, new BulkImportJobWriterToS3(instanceProperties, s3),
                 platformExecutor, Instant::now);
         propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);

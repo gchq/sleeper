@@ -28,10 +28,10 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.List;

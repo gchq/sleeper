@@ -24,9 +24,8 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
@@ -49,7 +48,7 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
         for (String file : files) {
             store.addFile(FileIngestRequest.builder()
                     .file(file)
-                    .fileSizeBytes(1024)
+                    .fileSizeBytes(fileSizeBytes)
                     .tableId(instance.getTableProperties().get(TABLE_ID))
                     .receivedTime(Instant.now())
                     .build());
@@ -57,8 +56,8 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
     }
 
     @Override
-    public Set<String> invokeGetJobIds() {
-        Set<String> jobIds = new TreeSet<>();
+    public List<String> invokeGetJobIds() {
+        List<String> jobIds = new ArrayList<>();
         IngestBatcher.builder()
                 .instanceProperties(instance.getInstanceProperties())
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())

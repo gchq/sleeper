@@ -21,6 +21,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
@@ -28,7 +29,6 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.commit.AddFilesToStateStore;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;

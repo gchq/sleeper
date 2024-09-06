@@ -81,13 +81,13 @@ public class StateStoreCommitterRequestsPerSecond {
         return "StateStoreCommitterReport{averageRequestsPerSecondInRuns=" + averageRequestsPerSecondInRuns + ", averageRequestsPerSecondOverall=" + averageRequestsPerSecondOverall + "}";
     }
 
-    private static double computeAverageRequestsPerSecondInRuns(List<StateStoreCommitterRun> runs) {
+    public static double computeAverageRequestsPerSecondInRuns(List<StateStoreCommitterRun> runs) {
         return runs.stream()
                 .filter(run -> !run.getCommits().isEmpty())
                 .collect(averagingDouble(StateStoreCommitterRun::computeRequestsPerSecond));
     }
 
-    private static double computeAverageRequestsPerSecondOverall(List<StateStoreCommitterRun> runs) {
+    public static double computeAverageRequestsPerSecondOverall(List<StateStoreCommitterRun> runs) {
         StateStoreCommitterLogEntry firstLogEntry = null;
         StateStoreCommitterLogEntry lastLogEntry = null;
         int numCommits = 0;

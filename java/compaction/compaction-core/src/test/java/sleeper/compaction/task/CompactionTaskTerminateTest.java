@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -78,18 +79,19 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Iterator<Instant> times = List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Idle time check with empty queue and finish
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
+                    Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Idle time check with empty queue and finish
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            runTask(jobsSucceed(1), times::poll);
+            runTask(jobsSucceed(1), times::next);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(times).isExhausted();
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -101,12 +103,13 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Iterator<Instant> times = List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:02Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Second check + finish
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
+                    Instant.parse("2024-02-22T13:50:06Z")).iterator(); // Second check + finish
             CompactionJob job = createJob("job1");
 
             // When
@@ -116,10 +119,10 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                             receiveJob(),
                             receiveNoJob()),
                     processJobs(jobSucceeds()),
-                    times::poll);
+                    times::next);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(times).isExhausted();
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -131,13 +134,14 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Iterator<Instant> times = List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job started
                     Instant.parse("2024-02-22T13:50:03Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job committed
                     Instant.parse("2024-02-22T13:50:04Z"), // Second check
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Third check + finish
+                    Instant.parse("2024-02-22T13:50:06Z")).iterator(); // Third check + finish
             CompactionJob job = createJob("job1");
 
             // When
@@ -148,10 +152,10 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                             receiveNoJob(),
                             receiveNoJob()),
                     processJobs(jobSucceeds()),
-                    times::poll);
+                    times::next);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(times).isExhausted();
             assertThat(successfulJobs).containsExactly(job);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -163,16 +167,16 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Iterator<Instant> times = List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check + finish
+                    Instant.parse("2024-02-22T13:50:04Z")).iterator(); // Second idle time check + finish
 
             // When
-            runTask(processNoJobs(), times::poll);
+            runTask(processNoJobs(), times::next);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(times).isExhausted();
             assertThat(sleeps).isEmpty();
         }
     }

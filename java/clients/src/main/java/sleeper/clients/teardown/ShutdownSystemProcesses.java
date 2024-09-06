@@ -27,8 +27,8 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 import java.util.function.Consumer;

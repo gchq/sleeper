@@ -27,21 +27,21 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Polls a function until some condition is met or a maximum number of polls is reached. Waits for a constant interval
+ * Polls a function until some condition is met or a maximum number of retries is reached. Waits for a constant interval
  * between polls.
  */
 public class PollWithRetries {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollWithRetries.class);
 
     private final long pollIntervalMillis;
-    private final int maxPolls;
-    private final PollsTracker pollsTracker;
+    private final int maxRetries;
+    private final RetriesTracker retriesTracker;
     private final SleepInInterval sleepInInterval;
 
     private PollWithRetries(Builder builder) {
         pollIntervalMillis = builder.pollIntervalMillis;
-        maxPolls = builder.maxPolls;
-        pollsTracker = builder.pollsTracker;
+        maxRetries = builder.maxRetries;
+        retriesTracker = builder.pollsTracker;
         sleepInInterval = builder.sleepInInterval;
     }
 
@@ -52,19 +52,8 @@ public class PollWithRetries {
     /**
      * Creates an instance of this class.
      *
-     * @param  pollIntervalMillis milliseconds to wait in between polls
-     * @param  maxPolls           the maximum number of polls
-     * @return                    an instance of {@link PollWithRetries}
-     */
-    public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
-        return builder().pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls).build();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
      * @param  pollInterval time to wait in between polls
-     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of polls
+     * @param  timeout      the maximum amount of time to wait for, used to compute the maximum number of retries
      * @return              an instance of {@link PollWithRetries}
      */
     public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
@@ -92,43 +81,40 @@ public class PollWithRetries {
     public Builder toBuilder() {
         return builder()
                 .pollIntervalMillis(pollIntervalMillis)
-                .maxPolls(maxPolls)
-                .pollsTracker(pollsTracker)
+                .maxRetries(maxRetries)
+                .pollsTracker(retriesTracker)
                 .sleepInInterval(sleepInInterval);
     }
 
     /**
-     * Starts polling until an exit condition is met or the maximum polls has been reached.
+     * Starts polling until an exit condition is met or the maximum retries has been reached.
      *
      * @param  description          a short description to fill in the blank of "timed out waiting until _" or "expected
      *                              to find _"
      * @param  checkFinished        the exit condition
      * @throws InterruptedException if the thread was interrupted while waiting
-     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws TimedOutException    if the maximum number of retries is reached
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException, TimedOutException, CheckFailedException {
-        int polls = pollsTracker.getPollsBeforeInvocation();
-        failIfOverMaxPolls(description, polls);
-        while (!checkFinishedAndTrack(checkFinished)) {
-            polls++;
-            failIfOverMaxPolls(description, polls);
+        int retries = retriesTracker.getRetriesBeforeInvocation();
+        boolean finished = checkFinished.getAsBoolean();
+        while (!finished) {
+            failIfMetMaxRetries(description, retries);
+            retries++;
             sleepInInterval.sleep(pollIntervalMillis);
+            retriesTracker.beforeRetry();
+            finished = checkFinished.getAsBoolean();
         }
     }
 
-    private boolean checkFinishedAndTrack(BooleanSupplier checkFinished) {
-        pollsTracker.beforePoll();
-        return checkFinished.getAsBoolean();
-    }
-
-    private void failIfOverMaxPolls(String description, int polls) {
-        if (polls < maxPolls) {
+    private void failIfMetMaxRetries(String description, int retries) {
+        if (retries < maxRetries) {
             return;
         }
-        if (polls > 1) {
-            String message = "Timed out after " + polls + " tries waiting for " +
-                    LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * polls)) +
+        if (retries > 0) {
+            String message = "Timed out after " + retries + " retries waiting for " +
+                    LoggedDuration.withShortOutput(Duration.ofMillis(pollIntervalMillis * retries)) +
                     " until " + description;
             LOGGER.error(message);
             throw new TimedOutException(message);
@@ -149,7 +135,7 @@ public class PollWithRetries {
      * @param  condition            the exit condition to check against each query result
      * @return                      the last query result
      * @throws InterruptedException if the thread was interrupted while waiting
-     * @throws TimedOutException    if the maximum number of polls is reached
+     * @throws TimedOutException    if the maximum number of retries is reached
      * @throws CheckFailedException if configured to only poll once, and it failed
      */
     public <T> T queryUntil(String description, Supplier<T> query, Predicate<T> condition) throws InterruptedException, TimedOutException, CheckFailedException {
@@ -189,17 +175,17 @@ public class PollWithRetries {
             return false;
         }
         PollWithRetries other = (PollWithRetries) obj;
-        return pollIntervalMillis == other.pollIntervalMillis && maxPolls == other.maxPolls && Objects.equals(pollsTracker, other.pollsTracker);
+        return pollIntervalMillis == other.pollIntervalMillis && maxRetries == other.maxRetries && Objects.equals(retriesTracker, other.retriesTracker);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pollIntervalMillis, maxPolls, pollsTracker);
+        return Objects.hash(pollIntervalMillis, maxRetries, retriesTracker);
     }
 
     @Override
     public String toString() {
-        return "PollWithRetries{pollIntervalMillis=" + pollIntervalMillis + ", maxPolls=" + maxPolls + ", pollsTracker=" + pollsTracker + "}";
+        return "PollWithRetries{pollIntervalMillis=" + pollIntervalMillis + ", maxRetries=" + maxRetries + ", pollsTracker=" + retriesTracker + "}";
     }
 
     /**
@@ -207,8 +193,8 @@ public class PollWithRetries {
      */
     public static class Builder {
         private long pollIntervalMillis;
-        private int maxPolls;
-        private PollsTracker pollsTracker = TrackAttemptsPerInvocation.INSTANCE;
+        private int maxRetries;
+        private RetriesTracker pollsTracker = TrackRetriesPerInvocation.INSTANCE;
         private SleepInInterval sleepInInterval = Thread::sleep;
 
         /**
@@ -223,39 +209,39 @@ public class PollWithRetries {
         }
 
         /**
-         * Sets the maximum number of polls.
+         * Sets the maximum number of retries.
          *
-         * @param  maxPolls the maximum number of polls
-         * @return          the builder
+         * @param  maxRetries the maximum number of retries
+         * @return            the builder
          */
-        public Builder maxPolls(int maxPolls) {
-            this.maxPolls = maxPolls;
+        public Builder maxRetries(int maxRetries) {
+            this.maxRetries = maxRetries;
             return this;
         }
 
         /**
-         * Sets the interval between polls and maximum number, based on a timeout period.
+         * Sets the interval between polls and maximum retries, based on a timeout period.
          *
          * @param  pollInterval the interval
-         * @param  timeout      the timeout period, used to compute the maximum number of polls
+         * @param  timeout      the timeout period, used to compute the maximum number of retries
          * @return              the builder
          */
         public Builder pollIntervalAndTimeout(Duration pollInterval, Duration timeout) {
             long pollIntervalMillis = pollInterval.toMillis();
             long timeoutMillis = timeout.toMillis();
-            int maxPolls = (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING);
-            return pollIntervalMillis(pollIntervalMillis).maxPolls(maxPolls);
+            int maxRetries = (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING);
+            return pollIntervalMillis(pollIntervalMillis).maxRetries(maxRetries);
         }
 
         /**
-         * Sets a tracker to restrict the maximum number of polls. This is restricted across all future calls to poll a
-         * method via this object. Without this, the default is to apply the maximum number of polls within each
+         * Sets a tracker to restrict the maximum number of retries. This is restricted across all future calls to poll
+         * a method via this object. Without this, the default is to apply the maximum number of retries within each
          * individual call to poll a method.
          *
          * @return the builder
          */
-        public Builder trackMaxPollsAcrossInvocations() {
-            return pollsTracker(new TrackAttemptsAcrossInvocations());
+        public Builder trackMaxRetriesAcrossInvocations() {
+            return pollsTracker(new TrackRetriesAcrossInvocations());
         }
 
         /**
@@ -265,7 +251,7 @@ public class PollWithRetries {
          * @return         the builder
          */
         public Builder immediateRetries(int retries) {
-            return pollIntervalMillis(0).maxPolls(retries + 1);
+            return pollIntervalMillis(0).maxRetries(retries);
         }
 
         /**
@@ -274,10 +260,10 @@ public class PollWithRetries {
          * @return the builder
          */
         public Builder noRetries() {
-            return maxPolls(1);
+            return maxRetries(0);
         }
 
-        private Builder pollsTracker(PollsTracker pollsTracker) {
+        private Builder pollsTracker(RetriesTracker pollsTracker) {
             this.pollsTracker = pollsTracker;
             return this;
         }
@@ -330,56 +316,56 @@ public class PollWithRetries {
     }
 
     /**
-     * Tracks the number of polls made so far. This implemented based on whether attempts should be remembered between
+     * Tracks the number of retries made so far. This implemented based on whether retries should be remembered between
      * invocations.
      */
-    private interface PollsTracker {
-        int getPollsBeforeInvocation();
+    private interface RetriesTracker {
+        int getRetriesBeforeInvocation();
 
-        void beforePoll();
+        void beforeRetry();
     }
 
     /**
-     * Does not track attempts between polling invocations, so count of polls is not shared between invocations.
+     * Does not track retries between polling invocations, so count is not shared between invocations.
      */
-    private static class TrackAttemptsPerInvocation implements PollsTracker {
+    private static class TrackRetriesPerInvocation implements RetriesTracker {
 
-        private static final TrackAttemptsPerInvocation INSTANCE = new TrackAttemptsPerInvocation();
+        private static final TrackRetriesPerInvocation INSTANCE = new TrackRetriesPerInvocation();
 
         @Override
-        public int getPollsBeforeInvocation() {
+        public int getRetriesBeforeInvocation() {
             return 0;
         }
 
         @Override
-        public void beforePoll() {
+        public void beforeRetry() {
         }
 
         @Override
         public String toString() {
-            return "TrackAttemptsPerInvocation{}";
+            return "TrackRetriesPerInvocation{}";
         }
     }
 
     /**
-     * Tracks attempts between polling invocations, so count of attempts is across all invocations.
+     * Tracks retries between polling invocations, so count is across all invocations.
      */
-    private static class TrackAttemptsAcrossInvocations implements PollsTracker {
-        private int attempts = 0;
+    private static class TrackRetriesAcrossInvocations implements RetriesTracker {
+        private int retries = 0;
 
         @Override
-        public int getPollsBeforeInvocation() {
-            return attempts;
+        public int getRetriesBeforeInvocation() {
+            return retries;
         }
 
         @Override
-        public void beforePoll() {
-            attempts++;
+        public void beforeRetry() {
+            retries++;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(attempts);
+            return Objects.hash(retries);
         }
 
         @Override
@@ -387,16 +373,16 @@ public class PollWithRetries {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof TrackAttemptsAcrossInvocations)) {
+            if (!(obj instanceof TrackRetriesAcrossInvocations)) {
                 return false;
             }
-            TrackAttemptsAcrossInvocations other = (TrackAttemptsAcrossInvocations) obj;
-            return attempts == other.attempts;
+            TrackRetriesAcrossInvocations other = (TrackRetriesAcrossInvocations) obj;
+            return retries == other.retries;
         }
 
         @Override
         public String toString() {
-            return "TrackAttemptsAcrossInvocations{attempts=" + attempts + "}";
+            return "TrackRetriesAcrossInvocations{retries=" + retries + "}";
         }
     }
 

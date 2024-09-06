@@ -16,7 +16,6 @@
 package sleeper.configuration.properties;
 
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class DummySleeperProperty implements SleeperProperty {
     @Override

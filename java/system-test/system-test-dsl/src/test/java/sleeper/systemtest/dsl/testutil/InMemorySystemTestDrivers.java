@@ -60,6 +60,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -132,17 +133,17 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
-        return ingestByQueue.tasksDriver();
+        return ingestByQueue.tasksDriver(context);
     }
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return ingestByQueue.waitForIngest(context);
+        return ingestByQueue.waitForIngest(context, pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return ingestByQueue.waitForBulkImport(context);
+        return ingestByQueue.waitForBulkImport(context, pollWithRetries());
     }
 
     @Override
@@ -161,7 +162,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return compaction.waitForJobs(context);
+        return compaction.waitForJobs(context, pollWithRetries());
     }
 
     @Override
@@ -213,6 +214,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public PartitionReportDriver partitionReports(SystemTestContext context) {
         return reports.partitions(context.instance());
+    }
+
+    @Override
+    public PollWithRetriesDriver pollWithRetries() {
+        return PollWithRetriesDriver.noWaits();
     }
 
     @Override

@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperPropertyValues;
-import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
@@ -53,6 +52,10 @@ public class Utils {
 
     public static boolean isPositiveIntegerLtEq10(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0 && num <= 10);
+    }
+
+    public static boolean isPositiveIntegerLtEq15(String integer) {
+        return parseAndCheckInteger(integer, num -> num > 0 && num <= 15);
     }
 
     public static boolean isNonNegativeInteger(String integer) {
@@ -93,10 +96,6 @@ public class Utils {
 
     public static boolean isValidFadvise(String fadvise) {
         return VALID_FADVISE_VALUES.contains(fadvise);
-    }
-
-    public static boolean isValidCompressionCodec(String codec) {
-        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
     }
 
     public static boolean isValidLogRetention(String logRetention) {

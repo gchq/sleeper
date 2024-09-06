@@ -17,9 +17,7 @@ package sleeper.clients.status.report.statestore;
 
 import java.time.Instant;
 
-public interface StateStoreCommitterLogEntry {
-
-    String getLogStream();
+public interface StateStoreCommitterLogEntry extends LogEntry {
 
     Instant getTimeInCommitter();
 }

@@ -25,8 +25,6 @@ import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
@@ -107,17 +105,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     public String get(TableProperty property) {
-        SleeperProperty defaultProperty = property.getDefaultProperty();
-        if (defaultProperty == null) {
-            return super.get(property);
-        } else if (defaultProperty instanceof TableProperty) {
-            return getProperties().getProperty(property.getPropertyName(), get((TableProperty) defaultProperty));
-        } else if (defaultProperty instanceof InstanceProperty) {
-            return getProperties().getProperty(property.getPropertyName(), instanceProperties.get((InstanceProperty) defaultProperty));
-        } else {
-            throw new RuntimeException("Unable to process SleeperProperty, should have either been null, an " +
-                    "instance property or a table property");
-        }
+        return compute(property, value -> property.computeValue(value, instanceProperties, this));
     }
 
     public Schema getSchema() {

@@ -50,7 +50,6 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -215,7 +214,7 @@ public class DeleteTableIT {
 
     private void deleteTable(String tableName) throws Exception {
         new DeleteTable(instanceProperties, s3, propertiesStore,
-                new StateStoreProvider(instanceProperties, s3, dynamoDB, conf))
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf))
                 .delete(tableName);
     }
 
@@ -235,7 +234,7 @@ public class DeleteTableIT {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
-                .stateStoreProvider(new StateStoreProvider(instanceProperties, s3, dynamoDB, conf))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf))
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(conf)
                 .build();

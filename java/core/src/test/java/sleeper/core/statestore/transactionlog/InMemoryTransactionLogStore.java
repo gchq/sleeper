@@ -16,7 +16,10 @@
 package sleeper.core.statestore.transactionlog;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,12 +29,12 @@ import java.util.stream.Stream;
  */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private static final Runnable DO_NOTHING = () -> {
-    };
-
     private List<TransactionLogEntry> transactions = new ArrayList<>();
-    private Runnable startOfNextAdd = DO_NOTHING;
-    private Runnable startOfNextRead = DO_NOTHING;
+    private Runnable startOfAdd = () -> {
+    };
+    private Runnable startOfRead = () -> {
+    };
+    private boolean runningTrigger = false;
 
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
@@ -69,7 +72,32 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
      * @param action the operation to occur before the next transaction
      */
     public void atStartOfNextAddTransaction(ThrowingRunnable action) {
-        startOfNextAdd = wrappingCheckedExceptions(action);
+        startOfAdd = onNext(action);
+    }
+
+    /**
+     * Sets operations that should happen just before the next transactions are added. Each time a transaction is added,
+     * a single action will be taken from the list and run. This will occur after any local state has been brought up to
+     * date in the state store. If the given operation adds a transaction to the log, it will conflict with the
+     * transaction being added. If an exception is thrown in the operation, that will be thrown out of the transaction
+     * log store.
+     *
+     * @param actions the operations to occur as each transaction is added
+     */
+    public void atStartOfNextAddTransactions(List<ThrowingRunnable> actions) {
+        startOfAdd = onNext(actions);
+    }
+
+    /**
+     * Sets some operation that should happen just before any transaction is added. This will occur after any
+     * local state has been brought up to date in the state store. If the given operation adds a transaction to the
+     * log, it will conflict with the transaction being added. If an exception is thrown in the operation, that will be
+     * thrown out of the transaction log store.
+     *
+     * @param action the operation to occur before each transaction
+     */
+    public void atStartOfAddTransaction(ThrowingRunnable action) {
+        startOfAdd = wrappingCheckedExceptions(action);
     }
 
     /**
@@ -80,7 +108,18 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
      * @param action the operation to occur before the next time transactions are read
      */
     public void atStartOfNextReadTransactions(ThrowingRunnable action) {
-        startOfNextRead = wrappingCheckedExceptions(action);
+        startOfRead = onNext(action);
+    }
+
+    /**
+     * Sets some operation that should happen just before transactions are read. This will occur every time the local
+     * state store brings itself up to date. If an exception is thrown in the operation, that will be thrown out of the
+     * transaction log store.
+     *
+     * @param action the operation to occur before transactions are read
+     */
+    public void atStartOfReadTransactions(ThrowingRunnable action) {
+        startOfRead = wrappingCheckedExceptions(action);
     }
 
     public long getLastTransactionNumber() {
@@ -88,15 +127,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     private void doStartOfAddTransaction() {
-        Runnable action = startOfNextAdd;
-        startOfNextAdd = DO_NOTHING;
-        action.run();
+        startOfAdd.run();
     }
 
     private void doStartOfReadTransactions() {
-        Runnable action = startOfNextRead;
-        startOfNextRead = DO_NOTHING;
-        action.run();
+        startOfRead.run();
     }
 
     private static Runnable wrappingCheckedExceptions(ThrowingRunnable action) {
@@ -122,5 +157,43 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
          * @throws Exception if any exception was thrown by the action
          */
         void run() throws Exception;
+
+        ThrowingRunnable DO_NOTHING = () -> {
+        };
+    }
+
+    private TriggerActions onNext(ThrowingRunnable action) {
+        return onNext(List.of(action));
+    }
+
+    private TriggerActions onNext(List<ThrowingRunnable> actions) {
+        return new TriggerActions(actions);
+    }
+
+    /**
+     * Tracks actions that will be done when some trigger is met.
+     */
+    private class TriggerActions implements Runnable {
+
+        private final Queue<Runnable> queue = new LinkedList<>();
+
+        private TriggerActions(Collection<ThrowingRunnable> actions) {
+            actions.stream()
+                    .map(action -> wrappingCheckedExceptions(action))
+                    .forEach(queue::add);
+        }
+
+        @Override
+        public void run() {
+            if (runningTrigger) {
+                return;
+            }
+            Runnable runnable = queue.poll();
+            if (runnable != null) {
+                runningTrigger = true;
+                runnable.run();
+                runningTrigger = false;
+            }
+        }
     }
 }

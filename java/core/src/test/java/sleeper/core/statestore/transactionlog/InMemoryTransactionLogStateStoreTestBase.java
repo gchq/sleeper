@@ -21,28 +21,23 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class InMemoryTransactionLogStateStoreTestBase {
 
     protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
+    protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
+    protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
+    protected final List<Duration> retryWaits = transactionLogs.getRetryWaits();
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
-    protected InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
-    protected InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
-    protected InMemoryTransactionLogSnapshots fileSnapshots = new InMemoryTransactionLogSnapshots();
-    protected InMemoryTransactionLogSnapshots partitionSnapshots = new InMemoryTransactionLogSnapshots();
     protected StateStore store;
-    protected final List<Duration> retryWaits = new ArrayList<>();
 
     protected void initialiseWithSchema(Schema schema) throws Exception {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
@@ -68,17 +63,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(Schema schema) {
-        return TransactionLogStateStore.builder()
-                .sleeperTable(sleeperTable)
-                .schema(schema)
-                .filesLogStore(filesLogStore)
-                .filesSnapshotLoader(fileSnapshots)
-                .partitionsLogStore(partitionsLogStore)
-                .partitionsSnapshotLoader(partitionSnapshots)
-                .maxAddTransactionAttempts(10)
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
-                        fixJitterSeed(), recordWaits(retryWaits)));
+        return transactionLogs.stateStoreBuilder(sleeperTable, schema);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {

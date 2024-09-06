@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -30,7 +31,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
-import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Path;

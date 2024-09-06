@@ -22,18 +22,19 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.commit.StateStoreCommitRequest;
-import sleeper.commit.StateStoreCommitRequestDeserialiser;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequest;
+import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +70,7 @@ public class AwsStateStoreCommitterDriverIT {
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         FileReference file = FileReferenceFactory.from(partitions).rootFile("file.parquet", 123);
         sleeper.partitioning().setPartitions(partitions);
-        sleeper.stateStore().fakeCommits().send(factory -> factory.addFile(file));
+        sleeper.stateStore().fakeCommits().send(StateStoreCommitMessage.addFile(file));
 
         // Then
         String tableId = sleeper.tableProperties().get(TABLE_ID);
@@ -91,7 +92,7 @@ public class AwsStateStoreCommitterDriverIT {
                 .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
                 .collect(toUnmodifiableList());
         sleeper.partitioning().setPartitions(partitions);
-        sleeper.stateStore().fakeCommits().sendBatched(factory -> files.stream().map(file -> factory.addFile(file)));
+        sleeper.stateStore().fakeCommits().sendBatched(files.stream().map(StateStoreCommitMessage::addFile));
 
         // Then
         String tableId = sleeper.tableProperties().get(TABLE_ID);

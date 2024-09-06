@@ -20,4 +20,8 @@ import java.util.stream.Stream;
 public interface StateStoreCommitterDriver {
 
     void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+
+    void pauseReceivingMessages();
+
+    void resumeReceivingMessages();
 }

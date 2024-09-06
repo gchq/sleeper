@@ -114,7 +114,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs());
+        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs(), clients.getLambda());
     }
 
     @Override
@@ -164,12 +164,12 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override
@@ -199,7 +199,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override

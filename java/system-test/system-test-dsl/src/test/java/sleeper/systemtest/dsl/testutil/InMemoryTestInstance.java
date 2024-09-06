@@ -28,11 +28,10 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -75,9 +74,8 @@ public class InMemoryTestInstance {
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        instanceProperties.set(DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "false");
-        instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "in-memory-serverless-bulk-import-job-queue-url");
         return instanceProperties;
     }
 

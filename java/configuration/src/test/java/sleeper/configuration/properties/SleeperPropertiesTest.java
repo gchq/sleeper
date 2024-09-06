@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.IngestQueue;
 

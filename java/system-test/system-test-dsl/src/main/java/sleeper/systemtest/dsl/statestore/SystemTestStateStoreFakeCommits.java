@@ -17,14 +17,16 @@ package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestStateStoreFakeCommits {
 
@@ -34,27 +36,48 @@ public class SystemTestStateStoreFakeCommits {
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
     private final Instant getRunsAfterTime;
 
-    public SystemTestStateStoreFakeCommits(SystemTestContext context) {
+    public SystemTestStateStoreFakeCommits(
+            SystemTestContext context,
+            StateStoreCommitterDriver driver,
+            StateStoreCommitterLogsDriver logsDriver) {
+        this.driver = driver;
         instance = context.instance();
-        SystemTestDrivers adminDrivers = context.instance().adminDrivers();
-        driver = adminDrivers.stateStoreCommitter(context);
-        waiter = new WaitForStateStoreCommitLogs(adminDrivers.stateStoreCommitterLogs(context));
+        waiter = new WaitForStateStoreCommitLogs(logsDriver);
         getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
-    public SystemTestStateStoreFakeCommits sendBatched(Function<StateStoreCommitMessageFactory, Stream<StateStoreCommitMessage>> buildCommits) {
-        send(buildCommits.apply(messageFactory()));
+    public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
+        StateStoreCommitMessageFactory factory = messageFactory();
+        send(commits.map(commit -> commit.createMessage(factory)));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits send(Function<StateStoreCommitMessageFactory, StateStoreCommitMessage> buildCommit) {
-        send(Stream.of(buildCommit.apply(messageFactory())));
+    public SystemTestStateStoreFakeCommits sendBatchedForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
+                .map(table -> table.get(TABLE_ID))
+                .map(StateStoreCommitMessageFactory::new)
+                .collect(toUnmodifiableList());
+        send(commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory))));
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits send(StateStoreCommitMessage.Commit commit) {
+        send(Stream.of(commit.createMessage(messageFactory())));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
         waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
-        waitForNumCommitsByTableId.clear();
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits pauseReceivingCommitMessages() {
+        driver.pauseReceivingMessages();
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits resumeReceivingCommitMessages() {
+        driver.resumeReceivingMessages();
         return this;
     }
 

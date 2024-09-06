@@ -94,15 +94,15 @@ public class StateStoreCommitterRunsByTableTest {
     private StateStoreCommitterRun finishedRunWithCommitsInTables(String... commitTableIds) {
         return add(StateStoreCommitterRun.builder()
                 .logStream(DEFAULT_LOG_STREAM)
-                .start(new StateStoreCommitterRunStarted(DEFAULT_LOG_STREAM, Instant.now()))
-                .finish(new StateStoreCommitterRunFinished(DEFAULT_LOG_STREAM, Instant.now()))
+                .start(new StateStoreCommitterRunStarted(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
+                .finish(new StateStoreCommitterRunFinished(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
                 .commits(commitsWithTableIds(commitTableIds))
                 .build());
     }
 
     private List<StateStoreCommitSummary> commitsWithTableIds(String... tableIds) {
         return Stream.of(tableIds)
-                .map(tableId -> new StateStoreCommitSummary(DEFAULT_LOG_STREAM, tableId, "test-commit", Instant.now()))
+                .map(tableId -> new StateStoreCommitSummary(DEFAULT_LOG_STREAM, Instant.now(), tableId, "test-commit", Instant.now()))
                 .collect(toUnmodifiableList());
     }
 

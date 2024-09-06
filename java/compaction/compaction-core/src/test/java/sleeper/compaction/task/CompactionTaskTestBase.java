@@ -30,6 +30,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -57,6 +58,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -85,7 +87,7 @@ public class CompactionTaskTestBase {
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
 
     @BeforeEach
-    void setUp() {
+    void setUpBase() {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 10);
     }
@@ -104,7 +106,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor) throws Exception {
-        runTask(compactor, Instant::now);
+        runTask(compactor, timePassesAMinuteAtATime());
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
@@ -120,7 +122,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTaskCheckingFiles(WaitForFileAssignment fileAssignmentCheck, CompactionRunner compactor) throws Exception {
-        runTask(pollQueue(), fileAssignmentCheck, compactor, Instant::now, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(pollQueue(), fileAssignmentCheck, compactor, timePassesAMinuteAtATime(), DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(
@@ -137,9 +139,9 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
-                new FixedTablePropertiesProvider(tables), stateStoreByTableId::get, jobStore, commitRequestsOnQueue::add,
-                timeSupplier);
-        CompactionAlgorithmSelector selector = job -> compactor;
+                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId),
+                jobStore, commitRequestsOnQueue::add, timeSupplier);
+        CompactionRunnerFactory selector = job -> compactor;
         new CompactionTask(instanceProperties,
                 PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
                 committer, jobStore, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
@@ -149,7 +151,7 @@ public class CompactionTaskTestBase {
     private WaitForFileAssignment waitForFileAssignment() {
         return new StateStoreWaitForFiles(1,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE), JOB_ASSIGNMENT_THROTTLING_RETRIES,
-                stateStoreByTableId::get);
+                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId));
     }
 
     private Supplier<String> jobRunIdsInSequence() {
@@ -294,6 +296,18 @@ public class CompactionTaskTestBase {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
         };
+    }
+
+    protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "" + enabled);
+        }
+    }
+
+    private Supplier<Instant> timePassesAMinuteAtATime() {
+        return Stream.iterate(Instant.parse("2024-09-04T09:50:00Z"),
+                time -> time.plus(Duration.ofMinutes(1)))
+                .iterator()::next;
     }
 
     protected class ProcessJob {
