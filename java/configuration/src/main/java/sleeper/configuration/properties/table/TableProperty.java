@@ -21,6 +21,7 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
@@ -287,8 +288,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
 
     TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
             .defaultProperty(DEFAULT_COMPACTION_METHOD)
-            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
-                    "experimental.")
+            .description("Select which compaction method to use for the table. DataFusion compaction support is " +
+                    "experimental.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
 

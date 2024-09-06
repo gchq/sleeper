@@ -71,7 +71,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
-            case RUST:
+            case DATAFUSION:
                 return new RustCompactionRunner(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
             default:
