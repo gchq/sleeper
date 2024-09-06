@@ -220,7 +220,7 @@ public class CreateCompactionJobs {
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()), table.getTableUniqueId());
+                .collect(Collectors.toList()), table);
     }
 
     private void createJobsFromLeftoverFiles(

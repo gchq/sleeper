@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,7 +46,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
@@ -298,7 +296,6 @@ public class CreateCompactionJobsTest {
 
     @Nested
     @DisplayName("Assign input files to job in state store")
-    @Disabled("TODO")
     class AssignInputFiles {
 
         @Test
@@ -313,10 +310,6 @@ public class CreateCompactionJobsTest {
             FileReference fileTwo = factory.rootFile("fileTwo", 2L);
             stateStore.addFiles(List.of(fileOne, fileTwo));
 
-            Instant createdTime = Instant.parse("2024-09-06T10:11:00Z");
-            Instant filesAssignedTime = Instant.parse("2024-09-06T10:11:01Z");
-            jobStatusStore.setTimeSupplier(Stream.of(createdTime, filesAssignedTime).iterator()::next);
-
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
@@ -328,8 +321,6 @@ public class CreateCompactionJobsTest {
                     .containsExactly(
                             withJobId("test-job", fileOne),
                             withJobId("test-job", fileTwo));
-            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobFilesAssigned(expectedJob, createdTime, filesAssignedTime));
         }
 
         @Test
@@ -345,12 +336,6 @@ public class CreateCompactionJobsTest {
             FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
 
-            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
-            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
-            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
-            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
-            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2, filesAssignedTime1, filesAssignedTime2).iterator()::next);
-
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
 
@@ -363,9 +348,6 @@ public class CreateCompactionJobsTest {
                     .containsExactly(
                             withJobId("left-job", leftFile),
                             withJobId("right-job", rightFile));
-            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1),
-                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2));
         }
     }
 
@@ -385,7 +367,12 @@ public class CreateCompactionJobsTest {
             FileReference leftFile = factory.partitionFile("L", "leftFile", 1L);
             FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
-            jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
+
+            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
+            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
+            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
+            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, filesAssignedTime1, createdTime2, filesAssignedTime2).iterator()::next);
 
             // When we create compaction jobs
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
@@ -396,8 +383,8 @@ public class CreateCompactionJobsTest {
             CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobCreated(rightJob, DEFAULT_UPDATE_TIME),
-                    jobCreated(leftJob, DEFAULT_UPDATE_TIME));
+                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2),
+                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1));
         }
 
         @Test
@@ -416,6 +403,12 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftFile, rightFile));
             jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
 
+            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
+            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
+            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
+            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, filesAssignedTime1, createdTime2, filesAssignedTime2).iterator()::next);
+
             // When we create compaction jobs
             createJobs(Mode.STRATEGY, fixJobIds("left-job", "right-job"));
 
@@ -425,8 +418,8 @@ public class CreateCompactionJobsTest {
             CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobCreated(rightJob, DEFAULT_UPDATE_TIME),
-                    jobCreated(leftJob, DEFAULT_UPDATE_TIME));
+                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2),
+                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1));
         }
     }
 
