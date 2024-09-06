@@ -714,7 +714,7 @@ public class StateStoreCommitterTest {
             CompactionJob job, Instant createTime, Instant startTime, RecordsProcessedSummary summary) throws Exception {
         compactionJobStatusStore.jobCreated(job, createTime);
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
-                job.getId(), "root", List.of("input.parquet")));
+                job.getId(), job.getPartitionId(), job.getInputFiles()));
         stateStore(job.getTableId()).assignJobIds(assignIdRequests);
         compactionJobStatusStore.jobInputFilesAssigned(job.getTableId(), assignIdRequests, createTime);
         compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
