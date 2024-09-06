@@ -53,8 +53,8 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         setTimeSupplier(() -> now);
     }
 
-    public void setTimeSupplier(Supplier<Instant> timSupplier) {
-        this.timeSupplier = timSupplier;
+    public void setTimeSupplier(Supplier<Instant> timeSupplier) {
+        this.timeSupplier = timeSupplier;
     }
 
     private Instant getUpdateTimeOrDefault(Supplier<Instant> defaultTimeSupplier) {
