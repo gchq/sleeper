@@ -119,7 +119,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
-        out.printf("State: %s%n", jobStatus.getFurthestRunStatusType());
+        out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(this::printJobRun);
@@ -202,7 +202,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
         if (job.getJobRuns().isEmpty()) {
             table.row(row -> {
-                row.value(stateField, CompactionJobStatusType.PENDING);
+                row.value(stateField, job.getFurthestStatusType());
                 writeJobFields(job, row);
             });
         } else {

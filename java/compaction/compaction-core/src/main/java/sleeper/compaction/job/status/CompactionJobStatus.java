@@ -180,7 +180,7 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public CompactionJobStatusType getFurthestRunStatusType() {
+    public CompactionJobStatusType getFurthestStatusType() {
         return furthestRunStatusType;
     }
 

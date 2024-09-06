@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFailedStatus;
@@ -56,7 +57,25 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+    }
+
+    @Test
+    void shouldReportJobAssignedToInputFiles() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
+                Instant.parse("2023-03-22T15:36:05Z"));
+
+        // When
+        CompactionJobStatus status = jobStatusFromUpdates(created, filesAssigned);
+
+        // Then
+        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
     }
 
     @Test
@@ -73,7 +92,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
@@ -91,7 +110,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(UNCOMMITTED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(UNCOMMITTED);
     }
 
     @Test
@@ -110,7 +129,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished, committed);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -128,7 +147,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started, failed);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(FAILED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(FAILED);
     }
 
     @Test
@@ -149,7 +168,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, finished, committed, started2, failed);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(FINISHED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
     }
 
     @Test
@@ -168,6 +187,6 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, started1, failed, started2);
 
         // Then
-        assertThat(status.getFurthestRunStatusType()).isEqualTo(IN_PROGRESS);
+        assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
     }
 }
