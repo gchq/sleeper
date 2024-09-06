@@ -38,7 +38,7 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/json/mixedUnfinishedJobs.json"));
     }
 

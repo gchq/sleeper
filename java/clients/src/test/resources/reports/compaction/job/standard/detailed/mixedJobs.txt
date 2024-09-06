@@ -1,7 +1,7 @@
 
 Compaction Job Status Report
 ----------------------------
-Details for job job66666-6666-6666-6666-666666666666:
+Details for job job77777-7777-7777-7777-777777777777:
 State: FINISHED
 Creation time: 2022-09-22T13:33:12.001Z
 Partition ID: partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
@@ -11,7 +11,7 @@ Start time: 2022-09-22T13:34:12.001Z
 Start update time: 2022-09-22T13:34:12.123Z
 State store commit time: 2022-09-22T13:36:12.001Z
 --------------------------
-Details for job job55555-5555-5555-5555-555555555555:
+Details for job job66666-6666-6666-6666-666666666666:
 State: FINISHED
 Creation time: 2022-09-21T13:33:12.001Z
 Partition ID: partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE
@@ -29,7 +29,7 @@ Write rate (writes per second): 5.00
 State store commit time: 2022-09-21T13:36:12.001Z
 Delay between finish and commit: 1m
 --------------------------
-Details for job job44444-4444-4444-4444-444444444444:
+Details for job job55555-5555-5555-5555-555555555555:
 State: UNCOMMITTED
 Creation time: 2022-09-20T13:33:12.001Z
 Partition ID: partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD
@@ -46,7 +46,7 @@ Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 Not committed
 --------------------------
-Details for job job33333-3333-3333-3333-333333333333:
+Details for job job44444-4444-4444-4444-444444444444:
 State: FAILED
 Creation time: 2022-09-19T13:33:12.001Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
@@ -61,7 +61,7 @@ Run failed, reasons:
 - Something went wrong
 - More details
 --------------------------
-Details for job job22222-2222-2222-2222-222222222222:
+Details for job job33333-3333-3333-3333-333333333333:
 State: IN_PROGRESS
 Creation time: 2022-09-18T13:33:12.001Z
 Partition ID: partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
@@ -71,8 +71,13 @@ Start time: 2022-09-18T13:34:12.001Z
 Start update time: 2022-09-18T13:34:12.123Z
 Not finished
 --------------------------
+Details for job job22222-2222-2222-2222-222222222222:
+State: FILES_ASSIGNED
+Creation time: 2022-09-17T13:33:12.001Z
+Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
+--------------------------
 Details for job job11111-1111-1111-1111-111111111111:
 State: CREATED
-Creation time: 2022-09-17T13:33:12.001Z
+Creation time: 2022-09-16T13:33:12.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------
