@@ -1,6 +1,6 @@
 [
   {
-    "jobId": "$(jobId4)",
+    "jobId": "job44444-4444-4444-4444-444444444444",
     "createdStatus": {
       "updateTime": "2022-09-20T13:33:12.001Z",
       "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
@@ -38,7 +38,7 @@
     ]
   },
   {
-    "jobId": "$(jobId3)",
+    "jobId": "job33333-3333-3333-3333-333333333333",
     "createdStatus": {
       "updateTime": "2022-09-19T13:33:12.001Z",
       "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
@@ -72,7 +72,7 @@
     ]
   },
   {
-    "jobId": "$(jobId2)",
+    "jobId": "job22222-2222-2222-2222-222222222222",
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",
       "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
@@ -92,7 +92,7 @@
     ]
   },
   {
-    "jobId": "$(jobId1)",
+    "jobId": "job11111-1111-1111-1111-111111111111",
     "createdStatus": {
       "updateTime": "2022-09-17T13:33:12.001Z",
       "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",

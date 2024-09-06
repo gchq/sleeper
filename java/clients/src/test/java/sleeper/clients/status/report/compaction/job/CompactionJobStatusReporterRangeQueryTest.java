@@ -37,9 +37,9 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compaction/job/standard/range/mixedJobs.txt")));
+                .isEqualTo(example("reports/compaction/job/standard/range/mixedJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/mixedJobs.json")));
+                .isEqualTo(example("reports/compaction/job/json/mixedJobs.json"));
     }
 
     @Test

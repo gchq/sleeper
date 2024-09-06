@@ -87,6 +87,10 @@ public class CompactionJobTestDataHelper {
         return singleFileCompaction(singlePartition());
     }
 
+    public CompactionJob singleFileCompactionWithId(String jobId, String partitionId) {
+        return singleFileCompaction(jobId, partitionTree.getPartition(partitionId));
+    }
+
     public CompactionJob singleFileCompaction(String partitionId) {
         return singleFileCompaction(partitionTree.getPartition(partitionId));
     }
@@ -94,7 +98,14 @@ public class CompactionJobTestDataHelper {
     public CompactionJob singleFileCompaction(Partition partition) {
         validatePartitionSpecified(partition);
         return jobFactory.createCompactionJob(
-                Collections.singletonList(fileInPartition(partition)),
+                List.of(fileInPartition(partition)),
+                partition.getId());
+    }
+
+    public CompactionJob singleFileCompaction(String jobId, Partition partition) {
+        validatePartitionSpecified(partition);
+        return jobFactory.createCompactionJob(jobId,
+                List.of(fileInPartition(partition)),
                 partition.getId());
     }
 
