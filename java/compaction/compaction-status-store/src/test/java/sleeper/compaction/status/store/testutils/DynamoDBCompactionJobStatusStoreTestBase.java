@@ -94,6 +94,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return storeWithUpdateTimes(updateTimes);
     }
 
+    protected CompactionJobStatusStore storeWithUpdateTime(Instant updateTime) {
+        return storeWithUpdateTimes(updateTime);
+    }
+
     protected CompactionJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);

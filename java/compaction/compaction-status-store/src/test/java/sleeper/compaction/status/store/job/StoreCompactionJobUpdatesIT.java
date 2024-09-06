@@ -52,8 +52,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         Instant filesAssignedTime = Instant.parse("2024-09-06T09:48:05Z");
 
         // When
-        storeWithUpdateTimes(createdTime).jobCreated(job);
-        storeWithUpdateTimes(filesAssignedTime).jobInputFilesAssigned(job);
+        storeWithUpdateTime(createdTime).jobCreated(job);
+        storeWithUpdateTime(filesAssignedTime).jobInputFilesAssigned(job);
 
         // Then
         assertThat(getAllJobStatuses())
