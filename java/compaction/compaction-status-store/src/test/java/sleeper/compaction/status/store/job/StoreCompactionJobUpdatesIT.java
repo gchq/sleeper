@@ -37,6 +37,7 @@ import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compacti
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -45,15 +46,16 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile(100L)),
+        CompactionJob job = jobFactory.createCompactionJob("test-job",
+                List.of(fileFactory.rootFile("test.parquet", 100L)),
                 partition.getId());
         Instant createdTime = Instant.parse("2024-09-06T09:48:00Z");
         Instant filesAssignedTime = Instant.parse("2024-09-06T09:48:05Z");
 
         // When
         storeWithUpdateTime(createdTime).jobCreated(job);
-        storeWithUpdateTime(filesAssignedTime).jobInputFilesAssigned(job);
+        storeWithUpdateTime(filesAssignedTime).jobInputFilesAssigned(tableId, List.of(
+                assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))));
 
         // Then
         assertThat(getAllJobStatuses())

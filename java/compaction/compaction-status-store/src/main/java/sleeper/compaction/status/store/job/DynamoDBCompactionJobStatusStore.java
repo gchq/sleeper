@@ -38,6 +38,7 @@ import sleeper.compaction.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -123,11 +124,13 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobInputFilesAssigned(CompactionJob job) {
-        try {
-            save(createFilesAssignedUpdate(jobUpdateBuilder(job)));
-        } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + job.getId(), e);
+    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
+        for (AssignJobIdRequest request : requests) {
+            try {
+                save(createFilesAssignedUpdate(jobUpdateBuilder(tableId, request.getJobId())));
+            } catch (RuntimeException e) {
+                throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + request.getJobId(), e);
+            }
         }
     }
 
