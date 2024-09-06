@@ -51,7 +51,6 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
@@ -598,7 +597,7 @@ public class StateStoreCommitterTest {
     }
 
     private void apply(StateStoreCommitter committer, StateStoreCommitRequest... requests) {
-        committer.applyBatch(PollWithRetries.noRetries(),
+        committer.applyBatch(operation -> operation.run(),
                 Stream.of(requests)
                         .map(this::message)
                         .collect(toUnmodifiableList()));
