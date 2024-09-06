@@ -1,7 +1,7 @@
 
 Compaction Job Status Report
 ----------------------------
-Details for job $(jobId3):
+Details for job job33333-3333-3333-3333-333333333333:
 State: FINISHED
 Creation time: 2022-10-12T10:00:00.001Z
 Partition ID: root
@@ -37,7 +37,7 @@ Write rate (writes per second): 5.00
 State store commit time: 2022-10-12T10:01:45.001Z
 Delay between finish and commit: 15s
 --------------------------
-Details for job $(jobId2):
+Details for job job22222-2222-2222-2222-222222222222:
 State: IN_PROGRESS
 Creation time: 2022-10-11T10:00:00.001Z
 Partition ID: root
@@ -57,7 +57,7 @@ Run failed, reasons:
 - Unexpected failure reading input file
 - Some temporary IO problem
 --------------------------
-Details for job $(jobId1):
+Details for job job11111-1111-1111-1111-111111111111:
 State: FINISHED
 Creation time: 2022-10-10T10:00:00.001Z
 Partition ID: root

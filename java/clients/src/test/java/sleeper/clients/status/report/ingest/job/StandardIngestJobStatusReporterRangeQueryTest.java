@@ -36,8 +36,8 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
-                IngestJobStatusReporterTestHelper.replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/range/mixedJobs.txt")));
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2))
+                .isEqualTo(example("reports/ingest/job/standard/range/mixedJobs.txt"));
     }
 
     @Test
@@ -46,8 +46,8 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
-                IngestJobStatusReporterTestHelper.replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/range/unfinishedJobs.txt")));
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2))
+                .isEqualTo(example("reports/ingest/job/standard/range/unfinishedJobs.txt"));
     }
 
     @Test
@@ -56,7 +56,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> noJobs = List.of();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, noJobs, 0)).hasToString(
-                IngestJobStatusReporterTestHelper.replaceBracketedJobIds(noJobs, example("reports/ingest/job/standard/range/noJobs.txt")));
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, noJobs, 0))
+                .isEqualTo(example("reports/ingest/job/standard/range/noJobs.txt"));
     }
 }

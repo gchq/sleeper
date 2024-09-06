@@ -49,9 +49,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compaction/job/standard/all/jobWithMultipleRuns.txt")));
+                .isEqualTo(example("reports/compaction/job/standard/all/jobWithMultipleRuns.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobWithMultipleRuns.json")));
+                .isEqualTo(example("reports/compaction/job/json/jobWithMultipleRuns.json"));
     }
 
     @Test
@@ -61,9 +61,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compaction/job/standard/all/jobsWithLargeAndDecimalStatistics.txt")));
+                .isEqualTo(example("reports/compaction/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobsWithLargeAndDecimalStatistics.json")));
+                .isEqualTo(example("reports/compaction/job/json/jobsWithLargeAndDecimalStatistics.json"));
     }
 
     @Test

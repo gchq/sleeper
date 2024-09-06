@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.compaction.job;
 
-import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.job.CompactionJob;
@@ -110,7 +109,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     protected static List<CompactionJobStatus> jobsWithMultipleRuns() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
-        CompactionJobStatus succeededThenFailed = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus succeededThenFailed = jobCreated(dataHelper.singleFileCompactionWithId(job(1)),
                 Instant.parse("2022-10-10T10:00:00.001Z"),
                 failedCompactionRun(task(2), new ProcessRunTime(
                         Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
@@ -119,14 +118,14 @@ public abstract class CompactionJobStatusReporterTestBase {
                         Instant.parse("2022-10-10T10:01:00.001Z"), Duration.ofSeconds(20), 200L, 100L),
                         Instant.parse("2022-10-10T10:01:30.001Z")));
 
-        CompactionJobStatus failedThenInProgress = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus failedThenInProgress = jobCreated(dataHelper.singleFileCompactionWithId(job(2)),
                 Instant.parse("2022-10-11T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-11T10:02:00.001Z")),
                 failedCompactionRun(task(2), new ProcessRunTime(
                         Instant.parse("2022-10-11T10:01:00.001Z"), Duration.ofSeconds(30)),
                         List.of("Unexpected failure reading input file", "Some temporary IO problem")));
 
-        CompactionJobStatus twoFinishedRunsOneInProgress = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus twoFinishedRunsOneInProgress = jobCreated(dataHelper.singleFileCompactionWithId(job(3)),
                 Instant.parse("2022-10-12T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
                 finishedCompactionRun(task(2), summary(
@@ -145,11 +144,11 @@ public abstract class CompactionJobStatusReporterTestBase {
                 List.of(partition("A"), partition("B")), List.of("ggg"))
                 .parentJoining(partition("C"), partition("A"), partition("B")));
 
-        CompactionJob job1 = dataHelper.singleFileCompaction(partition("C"));
+        CompactionJob job1 = dataHelper.singleFileCompactionWithId(job(1), partition("C"));
         Instant creationTime1 = Instant.parse("2022-10-13T12:00:00.000Z");
         Instant startedTime1 = Instant.parse("2022-10-13T12:00:10.000Z");
         Instant committedTime1 = Instant.parse("2022-10-13T12:00:30.000Z");
-        CompactionJob job2 = dataHelper.singleFileCompaction(partition("C"));
+        CompactionJob job2 = dataHelper.singleFileCompactionWithId(job(2), partition("C"));
         Instant creationTime2 = Instant.parse("2022-10-13T12:01:00.000Z");
         Instant startedTime2 = Instant.parse("2022-10-13T12:01:10.000Z");
         Instant committedTime2 = Instant.parse("2022-10-13T14:01:30.000Z");
@@ -173,18 +172,6 @@ public abstract class CompactionJobStatusReporterTestBase {
                         .build())
                 .jobRunsLatestFirst(List.of())
                 .build());
-    }
-
-    public static String replaceStandardJobIds(List<CompactionJobStatus> job, String example) {
-        return StatusReporterTestHelper.replaceStandardJobIds(job.stream()
-                .map(CompactionJobStatus::getJobId)
-                .collect(Collectors.toList()), example);
-    }
-
-    public static String replaceBracketedJobIds(List<CompactionJobStatus> job, String example) {
-        return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
-                .map(CompactionJobStatus::getJobId)
-                .collect(Collectors.toList()), example);
     }
 
     public String verboseReportString(
