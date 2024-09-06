@@ -31,7 +31,7 @@ git2 = { version = "0.18.3" }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
 # Mac often won't have openssl library installed in place easy discoverable, if at all
-openssl = { version = '0.10.64', features = [
+openssl = { version = '0.10.66', features = [
     "vendored",
 ] } # Use vendored feature to build from source for cross compilation
 
