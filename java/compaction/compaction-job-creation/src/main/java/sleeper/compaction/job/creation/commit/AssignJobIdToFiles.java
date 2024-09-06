@@ -20,6 +20,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -37,8 +38,10 @@ public interface AssignJobIdToFiles {
 
     void assignJobIds(List<AssignJobIdRequest> requests, String tableId) throws StateStoreException;
 
-    static AssignJobIdToFiles synchronous(StateStore stateStore) {
-        return (assignJobIdRequests, tableId) -> stateStore.assignJobIds(assignJobIdRequests);
+    static AssignJobIdToFiles synchronous(StateStore stateStore, CompactionJobStatusStore statusStore) {
+        return (assignJobIdRequests, tableId) -> {
+            stateStore.assignJobIds(assignJobIdRequests);
+        };
     }
 
     static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {

@@ -47,15 +47,19 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 
 public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
-    private Instant fixedUpdateTime;
+    private Supplier<Instant> timeSupplier;
 
     public void fixUpdateTime(Instant now) {
-        fixedUpdateTime = now;
+        setTimeSupplier(() -> now);
+    }
+
+    public void setTimeSupplier(Supplier<Instant> timSupplier) {
+        this.timeSupplier = timSupplier;
     }
 
     private Instant getUpdateTimeOrDefault(Supplier<Instant> defaultTimeSupplier) {
-        if (null != fixedUpdateTime) {
-            return fixedUpdateTime;
+        if (null != timeSupplier) {
+            return timeSupplier.get();
         } else {
             return defaultTimeSupplier.get();
         }

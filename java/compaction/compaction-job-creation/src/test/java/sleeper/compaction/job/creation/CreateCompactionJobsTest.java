@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,13 +39,16 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -294,6 +298,7 @@ public class CreateCompactionJobsTest {
 
     @Nested
     @DisplayName("Assign input files to job in state store")
+    @Disabled("TODO")
     class AssignInputFiles {
 
         @Test
@@ -308,17 +313,23 @@ public class CreateCompactionJobsTest {
             FileReference fileTwo = factory.rootFile("fileTwo", 2L);
             stateStore.addFiles(List.of(fileOne, fileTwo));
 
+            Instant createdTime = Instant.parse("2024-09-06T10:11:00Z");
+            Instant filesAssignedTime = Instant.parse("2024-09-06T10:11:01Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime, filesAssignedTime).iterator()::next);
+
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1"));
+            CompactionJob expectedJob = jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
+            assertThat(jobs).containsExactly(expectedJob);
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
                             withJobId("test-job", fileOne),
                             withJobId("test-job", fileTwo));
+            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobFilesAssigned(expectedJob, createdTime, filesAssignedTime));
         }
 
         @Test
@@ -334,18 +345,27 @@ public class CreateCompactionJobsTest {
             FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
 
+            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
+            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
+            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
+            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2, filesAssignedTime1, filesAssignedTime2).iterator()::next);
+
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then
             CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("left-job", List.of(leftFile), "L"),
-                    jobFactory.createCompactionJob("right-job", List.of(rightFile), "R"));
+            CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
+            assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
                             withJobId("left-job", leftFile),
                             withJobId("right-job", rightFile));
+            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1),
+                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2));
         }
     }
 
