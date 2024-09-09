@@ -45,6 +45,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private final TableField stateField;
     private final TableField createTimeField;
+    private final TableField filesAssignedTimeField;
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField inputFilesCount;
@@ -64,6 +65,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         createTimeField = tableFactoryBuilder.addField("CREATE_TIME");
+        filesAssignedTimeField = tableFactoryBuilder.addField("FILES_ASSIGNED_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
@@ -203,12 +205,14 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         if (job.getJobRuns().isEmpty()) {
             table.row(row -> {
                 row.value(stateField, job.getFurthestStatusType());
+                row.value(filesAssignedTimeField, job.getInputFilesAssignedUpdateTime().orElse(null));
                 writeJobFields(job, row);
             });
         } else {
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
                 row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
+                row.value(filesAssignedTimeField, job.getInputFilesAssignedUpdateTime().orElse(null));
                 row.value(commitTimeField, run.getLastStatusOfType(CompactionJobCommittedStatus.class)
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
