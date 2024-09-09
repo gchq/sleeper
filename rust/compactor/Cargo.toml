@@ -31,13 +31,13 @@ thiserror = { version = "1.0.63" } # Derivable error enums
 log = { version = "0.4.17", features = [
     "release_max_level_debug",
 ] } # Standard logging framework
-env_logger = { version = "0.11.3" } # Standard logging to stderr
+env_logger = { version = "0.11.5" } # Standard logging to stderr
 human-panic = { version = "2.0.1" } # Readable panic messages
 clap = { version = "4.3.0", features = ["derive"] } # Cmd line args processing
 color-eyre = { version = "0.6.2" } # Colourised version of `anyhow`
 owo-colors = { version = "4.0.0" } # Colourised output
 compaction = { path = "../compaction" }
 chrono = { version = "0.4.26" } # Log helper
-tokio = { version = "1.20.1", features = ["full"] } # Async runtime
+tokio = { version = "1.40.0", features = ["full"] } # Async runtime
 url = { version = "2.4.0" }
 num-format = { version = "0.4.4" } # Formatted numbers
