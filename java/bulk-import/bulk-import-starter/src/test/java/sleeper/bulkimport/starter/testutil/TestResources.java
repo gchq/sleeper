@@ -15,7 +15,7 @@
  */
 package sleeper.bulkimport.starter.testutil;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +31,7 @@ public class TestResources {
 
     public static String exampleString(String path) {
         try (Reader reader = exampleReader(path)) {
-            return IOUtils.toString(reader);
+            return CharStreams.toString(reader);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load example: " + path, e);
         }

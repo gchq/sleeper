@@ -16,7 +16,7 @@
 
 package sleeper.clients.util;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Named;
@@ -37,11 +37,10 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UncheckedIOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -182,8 +181,9 @@ public class ShowPageIndexesIT {
     }
 
     private static String example(String path) throws IOException {
-        URL url = ShowPageIndexesIT.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+        try (Reader reader = new InputStreamReader(ShowPageIndexesIT.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        }
     }
 
     private String runShowPageIndexes(Path file) throws Exception {

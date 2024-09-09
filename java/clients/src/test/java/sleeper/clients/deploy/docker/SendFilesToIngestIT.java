@@ -17,7 +17,7 @@
 package sleeper.clients.deploy.docker;
 
 import com.amazonaws.services.sqs.model.Message;
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -27,7 +27,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -66,6 +66,6 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     }
 
     private String getObjectContents(String bucketName, String key) throws IOException {
-        return IOUtils.toString(s3Client.getObject(bucketName, key).getObjectContent(), Charset.defaultCharset());
+        return CharStreams.toString(new InputStreamReader(s3Client.getObject(bucketName, key).getObjectContent()));
     }
 }
