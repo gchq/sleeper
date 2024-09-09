@@ -103,6 +103,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
