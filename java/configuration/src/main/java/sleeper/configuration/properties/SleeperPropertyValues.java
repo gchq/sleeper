@@ -34,8 +34,12 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         return Boolean.parseBoolean(get(property));
     }
 
-    default int getInt(T property) {
-        return Integer.parseInt(get(property));
+    default Integer getInt(T property) {
+        try {
+            return Integer.parseInt(get(property));
+        } catch (NumberFormatException parseEx) {
+            return null;
+        }
     }
 
     default long getLong(T property) {
@@ -74,5 +78,4 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
             return Lists.newArrayList(value.split(","));
         }
     }
-
 }

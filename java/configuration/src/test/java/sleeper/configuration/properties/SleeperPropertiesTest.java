@@ -34,6 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -53,6 +54,20 @@ class SleeperPropertiesTest {
 
         // Then
         assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("5");
+    }
+
+    @Test
+    void shouldReturnNullntegerObjectWhenValueSetToNull() {
+        //Value needs to be assigned to variable as null not directly allowed as method argument in present context
+        String testVal = null;
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        //When
+        testSleeperProperties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM, testVal);
+
+        //Then
+        assertThat(testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
     }
 
     @Test
