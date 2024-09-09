@@ -57,7 +57,7 @@ class SleeperPropertiesTest {
     }
 
     @Test
-    void shouldReturnNullntegerObjectWhenValueSetToNull() {
+    void shouldReturnNullIntegerObjectWhenValueSetToNull() {
         //Value needs to be assigned to variable as null not directly allowed as method argument in present context
         String testVal = null;
         // Given
