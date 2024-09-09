@@ -123,6 +123,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Details for job %s:%n", jobStatus.getJobId());
         out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
+        jobStatus.getInputFilesAssignedUpdateTime().ifPresentOrElse(
+                filesAssignedTime -> out.printf("Input files assigned to job at time: %s%n", filesAssignedTime),
+                () -> out.printf("Input files not yet assigned to job%n"));
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(this::printJobRun);
         out.println("--------------------------");

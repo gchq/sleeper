@@ -74,6 +74,5 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
                 .isEqualTo(example("reports/compaction/job/standard/detailed/noJobFound.txt"));
         assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
-
     }
 }
