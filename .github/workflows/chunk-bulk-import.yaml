@@ -12,8 +12,6 @@ on:
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/bulk-import/bulk-import-runner/**'
-      - 'java/ingest/ingest-runner/**'
-      - 'java/common/common-job/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-core/**'
