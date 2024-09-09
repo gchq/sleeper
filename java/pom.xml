@@ -981,6 +981,9 @@
                             <ignoredUnusedDeclaredDependencies>
                                 <!-- Dependency plugin does not detect usages of Scala classes reliably, e.g. com.joom.spark.ExplicitRepartitionStrategy$ -->
                                 <ignoredUnusedDeclaredDependency>com.joom.spark:spark-platform_${scala.version}::</ignoredUnusedDeclaredDependency>
+                                <!-- For modules with no tests, e.g. system-test-cdk -->
+                                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-api::</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.assertj:assertj-core::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredNonTestScopedDependencies>
                                 <ignoredNonTestScopedDependency>com.amazonaws:aws-java-sdk-core::</ignoredNonTestScopedDependency>
