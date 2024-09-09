@@ -50,6 +50,6 @@ url = { version = "2.4.0" } # URL processing for S3
 bytes = { version = "1.7.1" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
-env_logger = { version = "0.11.3" }
+env_logger = { version = "0.11.5" }
 chrono = { version = "0.4.26" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
