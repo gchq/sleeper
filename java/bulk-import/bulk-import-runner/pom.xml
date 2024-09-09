@@ -50,6 +50,11 @@
             <artifactId>scala-library</artifactId>
             <version>${scala.minor.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sqs</artifactId>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
         <!-- STS is required to use the IAM role associated with the Service Account -->
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -97,12 +102,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-runner</artifactId>
+            <artifactId>ingest-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>parquet</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -133,13 +143,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

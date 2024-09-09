@@ -977,6 +977,10 @@
                             <failOnWarning>true</failOnWarning>
                             <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
                             <ignoredUsedUndeclaredDependencies>*:*:*:*</ignoredUsedUndeclaredDependencies>
+                            <ignoredUnusedDeclaredDependencies>
+                                <!-- Dependency plugin does not detect usages of Scala classes reliably, e.g. com.joom.spark.ExplicitRepartitionStrategy$ -->
+                                <ignoredUnusedDeclaredDependency>com.joom.spark:spark-platform_${scala.version}:compile:*</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
                 </executions>
