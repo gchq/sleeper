@@ -38,6 +38,6 @@ color-eyre = { version = "0.6.2" } # Colourised version of `anyhow`
 owo-colors = { version = "4.0.0" } # Colourised output
 compaction = { path = "../compaction" }
 chrono = { version = "0.4.26" } # Log helper
-tokio = { version = "1.20.1", features = ["full"] } # Async runtime
+tokio = { version = "1.40.0", features = ["full"] } # Async runtime
 url = { version = "2.4.0" }
 num-format = { version = "0.4.4" } # Formatted numbers
