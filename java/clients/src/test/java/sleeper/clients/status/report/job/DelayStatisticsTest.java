@@ -18,6 +18,7 @@ package sleeper.clients.status.report.job;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,28 +26,26 @@ public class DelayStatisticsTest {
     @Test
     void shouldReportStatisticsForOneDelay() {
         // Given
-        DelayStatistics statistics = DelayStatistics.builder()
-                .add(Duration.ofSeconds(10))
-                .build();
+        DelayStatistics statistics = DelayStatistics.fromDelays(Stream.of(
+                Duration.ofSeconds(10)));
 
         // When / Then
-        assertThat(statistics.toString())
-                .isEqualTo("avg: 10s, min: 10s, max: 10s, std dev: 0s");
+        assertThat(statistics)
+                .hasToString("avg: 10s, min: 10s, max: 10s, std dev: 0s");
     }
 
     @Test
     void shouldReportStatisticsForMultipleDelays() {
         // Given
-        DelayStatistics statistics = DelayStatistics.builder()
-                .add(Duration.ofSeconds(58))
-                .add(Duration.ofSeconds(59))
-                .add(Duration.ofSeconds(60))
-                .add(Duration.ofSeconds(61))
-                .add(Duration.ofSeconds(62))
-                .build();
+        DelayStatistics statistics = DelayStatistics.fromDelays(Stream.of(
+                Duration.ofSeconds(58),
+                Duration.ofSeconds(59),
+                Duration.ofSeconds(60),
+                Duration.ofSeconds(61),
+                Duration.ofSeconds(62)));
 
         // When / Then
-        assertThat(statistics.toString())
-                .isEqualTo("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
+        assertThat(statistics)
+                .hasToString("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
     }
 }
