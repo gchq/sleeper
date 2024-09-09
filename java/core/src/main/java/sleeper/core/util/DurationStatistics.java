@@ -39,20 +39,6 @@ public class DurationStatistics {
     }
 
     /**
-     * Calculates statistics from a stream of Duration objects.
-     *
-     * @param  durations the durations
-     * @return           the statistics
-     */
-    public static DurationStatistics from(Stream<Duration> durations) {
-        return builder()
-                .computeFromMilliseconds(durations
-                        .map(Duration::toMillis)
-                        .collect(toUnmodifiableList()))
-                .build();
-    }
-
-    /**
      * Calculates statistics from a stream of Duration objects, if any are present.
      *
      * @param  durations the durations
@@ -75,9 +61,6 @@ public class DurationStatistics {
 
     @Override
     public String toString() {
-        if (mean == null) {
-            return "no data";
-        }
         return String.format("avg: %s, min: %s, max: %s, std dev: %s",
                 LoggedDuration.withShortOutput(mean),
                 LoggedDuration.withShortOutput(min),
@@ -97,9 +80,6 @@ public class DurationStatistics {
         private long maxMillis = Long.MIN_VALUE;
 
         Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
-            if (durationsInMilliseconds.isEmpty()) {
-                return this;
-            }
             int n = durationsInMilliseconds.size();
             double meanMillis = durationsInMilliseconds.stream()
                     .peek(millis -> minMillis = Math.min(millis, minMillis))

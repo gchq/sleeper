@@ -91,13 +91,13 @@ public class CompactionJobStatus {
                         .build());
     }
 
-    public static DurationStatistics computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
-        return DurationStatistics.from(jobs.stream()
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
                 .flatMap(job -> job.getDelayBetweenCreatedAndFilesAssigned().stream()));
     }
 
-    public static DurationStatistics computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
-        return DurationStatistics.from(jobs.stream()
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
                 .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
     }
 

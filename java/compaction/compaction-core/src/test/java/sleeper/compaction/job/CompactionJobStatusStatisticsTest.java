@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.util.DurationStatistics;
 
 import java.time.Instant;
 import java.util.List;
@@ -50,11 +49,9 @@ public class CompactionJobStatusStatisticsTest {
                         summary(Instant.parse("2024-09-09T10:32:00Z"), Instant.parse("2024-09-09T10:33:00Z"), 100, 100),
                         Instant.parse("2024-09-09T10:33:01Z")));
 
-        // When
-        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status1, status2));
-
-        // Then
-        assertThat(statistics).hasToString("avg: 1.5s, min: 1s, max: 2s, std dev: 0.5s");
+        // When / Then
+        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status1, status2)))
+                .get().hasToString("avg: 1.5s, min: 1s, max: 2s, std dev: 0.5s");
     }
 
     @Test
@@ -66,11 +63,9 @@ public class CompactionJobStatusStatisticsTest {
                 uncommittedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100)));
 
-        // When
-        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status));
-
-        // Then
-        assertThat(statistics).hasToString("no data");
+        // When / Then
+        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status)))
+                .isEmpty();
     }
 
     @Test
@@ -83,11 +78,9 @@ public class CompactionJobStatusStatisticsTest {
                 Instant.parse("2024-09-09T10:31:50Z"),
                 Instant.parse("2024-09-09T10:31:53Z"));
 
-        // When
-        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status1, status2));
-
-        // Then
-        assertThat(statistics).hasToString("avg: 2.5s, min: 2s, max: 3s, std dev: 0.5s");
+        // When / Then
+        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status1, status2)))
+                .get().hasToString("avg: 2.5s, min: 2s, max: 3s, std dev: 0.5s");
     }
 
     @Test
@@ -96,10 +89,8 @@ public class CompactionJobStatusStatisticsTest {
         CompactionJobStatus status = jobCreated(dataHelper.singleFileCompaction(),
                 Instant.parse("2024-09-09T10:29:50Z"));
 
-        // When
-        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status));
-
-        // Then
-        assertThat(statistics).hasToString("no data");
+        // When / Then
+        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status)))
+                .isEmpty();
     }
 }

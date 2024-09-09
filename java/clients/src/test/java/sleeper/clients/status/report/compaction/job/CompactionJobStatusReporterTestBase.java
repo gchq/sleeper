@@ -159,12 +159,12 @@ public abstract class CompactionJobStatusReporterTestBase {
 
         CompactionJob job1 = dataHelper.singleFileCompaction(job(1), partition("C"));
         Instant creationTime1 = Instant.parse("2022-10-13T12:00:00.000Z");
-        Instant filesAssignedTime1 = Instant.parse("2022-10-13T12:00:01.000Z");
+        Instant filesAssignedTime1 = Instant.parse("2022-10-13T12:00:01.123Z");
         Instant startedTime1 = Instant.parse("2022-10-13T12:00:10.000Z");
         Instant committedTime1 = Instant.parse("2022-10-13T12:00:30.000Z");
         CompactionJob job2 = dataHelper.singleFileCompaction(job(2), partition("C"));
         Instant creationTime2 = Instant.parse("2022-10-13T12:01:00.000Z");
-        Instant filesAssignedTime2 = Instant.parse("2022-10-13T12:01:01.000Z");
+        Instant filesAssignedTime2 = Instant.parse("2022-10-13T12:01:05.000Z");
         Instant startedTime2 = Instant.parse("2022-10-13T12:01:10.000Z");
         Instant committedTime2 = Instant.parse("2022-10-13T14:01:30.000Z");
 

@@ -29,6 +29,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -176,10 +177,14 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
-        if (jobs.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
-            out.println("Statistics for delays between all finish and commit times:");
-            out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs));
-        }
+        out.println("Statistics for delay between creation and input files assignment time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs assigned to input files"));
+        out.println("Statistics for delay between finish and commit time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs committed"));
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {

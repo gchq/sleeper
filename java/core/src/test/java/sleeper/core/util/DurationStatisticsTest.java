@@ -26,43 +26,36 @@ public class DurationStatisticsTest {
     @Test
     void shouldReportStatisticsForOneDuration() {
         // Given
-        DurationStatistics statistics = DurationStatistics.from(Stream.of(
-                Duration.ofSeconds(10)));
+        Stream<Duration> data = Stream.of(
+                Duration.ofSeconds(10));
 
         // When / Then
-        assertThat(statistics)
-                .hasToString("avg: 10s, min: 10s, max: 10s, std dev: 0s");
+        assertThat(DurationStatistics.fromIfAny(data))
+                .get().hasToString("avg: 10s, min: 10s, max: 10s, std dev: 0s");
     }
 
     @Test
     void shouldReportStatisticsForMultipleDurations() {
         // Given
-        DurationStatistics statistics = DurationStatistics.from(Stream.of(
+        Stream<Duration> data = Stream.of(
                 Duration.ofSeconds(58),
                 Duration.ofSeconds(59),
                 Duration.ofSeconds(60),
                 Duration.ofSeconds(61),
-                Duration.ofSeconds(62)));
+                Duration.ofSeconds(62));
 
         // When / Then
-        assertThat(statistics)
-                .hasToString("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
+        assertThat(DurationStatistics.fromIfAny(data))
+                .get().hasToString("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
     }
 
     @Test
     void shouldReportNoData() {
         // Given
-        DurationStatistics statistics = DurationStatistics.from(Stream.of());
+        Stream<Duration> data = Stream.of();
 
         // When / Then
-        assertThat(statistics)
-                .hasToString("no data");
-    }
-
-    @Test
-    void shouldReportNoDataWhen() {
-        // When / Then
-        assertThat(DurationStatistics.fromIfAny(Stream.of()))
+        assertThat(DurationStatistics.fromIfAny(data))
                 .isEmpty();
     }
 }
