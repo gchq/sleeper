@@ -17,6 +17,8 @@ package sleeper.query.model;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -37,17 +39,17 @@ public class LeafPartitionQueryTest {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 100L)
+                .splitToNewChildren("L", "LL", "LR", 50L)
+                .buildTree();
+        Region regionLL = partitions.getPartition("LL").getRegion();
+        Region regionLR = partitions.getPartition("LR").getRegion();
+        Region regionR = partitions.getPartition("R").getRegion();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
-        Range range2 = rangeFactory.createRange(field, 1L, true, 11L, true);
-        Region region1 = new Region(range1);
-        Region region2 = new Region(range2);
-        Range partitionRange1 = rangeFactory.createRange(field, 0L, 200L);
-        Range partitionRange2 = rangeFactory.createRange(field, 10L, 200L);
-        Range partitionRange3 = rangeFactory.createRange(field, 0L, 123456L);
-        Region partitionRegion1 = new Region(partitionRange1);
-        Region partitionRegion2 = new Region(partitionRange2);
-        Region partitionRegion3 = new Region(partitionRange3);
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
+        Region region2 = new Region(rangeFactory.createRange(field, 75L, true, 110L, true));
         List<String> files = new ArrayList<>();
         files.add("file1");
         files.add("file2");
@@ -55,7 +57,7 @@ public class LeafPartitionQueryTest {
         files2.add("file3");
         LeafPartitionQuery query1 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
-                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .leafPartitionId("leaf").partitionRegion(regionLL).files(files)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
@@ -63,7 +65,7 @@ public class LeafPartitionQueryTest {
                 .build();
         LeafPartitionQuery query2 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region1))
-                .leafPartitionId("leaf").partitionRegion(partitionRegion1).files(files)
+                .leafPartitionId("leaf").partitionRegion(regionLL).files(files)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
@@ -71,7 +73,7 @@ public class LeafPartitionQueryTest {
                 .build();
         LeafPartitionQuery query3 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
-                .leafPartitionId("leaf").partitionRegion(partitionRegion2).files(files)
+                .leafPartitionId("leaf").partitionRegion(regionLR).files(files)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
@@ -79,7 +81,7 @@ public class LeafPartitionQueryTest {
                 .build();
         LeafPartitionQuery query4 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery").regions(List.of(region2))
-                .leafPartitionId("leaf").partitionRegion(partitionRegion3).files(files)
+                .leafPartitionId("leaf").partitionRegion(regionR).files(files)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
@@ -87,7 +89,7 @@ public class LeafPartitionQueryTest {
                 .build();
         LeafPartitionQuery query5 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery2").regions(List.of(region2))
-                .leafPartitionId("leaf").partitionRegion(partitionRegion3).files(files)
+                .leafPartitionId("leaf").partitionRegion(regionR).files(files)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
@@ -95,7 +97,7 @@ public class LeafPartitionQueryTest {
                 .build();
         LeafPartitionQuery query6 = LeafPartitionQuery.builder()
                 .tableId("myTable").queryId("id").subQueryId("subQuery2").regions(List.of(region2))
-                .leafPartitionId("leaf2").partitionRegion(partitionRegion3).files(files2)
+                .leafPartitionId("leaf2").partitionRegion(regionR).files(files2)
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
