@@ -59,6 +59,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BAT
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES;;
 
 public class TransactionLogSnapshotStack extends NestedStack {
@@ -87,7 +89,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(1)
+                .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
@@ -136,7 +138,8 @@ public class TransactionLogSnapshotStack extends NestedStack {
         queue.grantSendMessages(snapshotCreationTrigger);
 
         snapshotCreationLambda.addEventSource(SqsEventSource.Builder.create(queue)
-                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE)).build());
+                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
 
         coreStacks.grantReadTablesStatus(snapshotCreationTrigger);
         coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
@@ -155,7 +158,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(1)
+                .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotDeletionTriggerLogGroup", triggerFunctionName, instanceProperties)));
@@ -204,7 +207,8 @@ public class TransactionLogSnapshotStack extends NestedStack {
         queue.grantSendMessages(snapshotDeletionTrigger);
 
         snapshotDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
-                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE)).build());
+                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
 
         coreStacks.grantReadTablesStatus(snapshotDeletionTrigger);
         coreStacks.grantInvokeScheduled(snapshotDeletionTrigger, queue);

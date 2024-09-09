@@ -134,6 +134,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
@@ -276,7 +278,7 @@ public class CompactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
+                .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
@@ -293,6 +295,7 @@ public class CompactionStack extends NestedStack {
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
         // Grant permissions

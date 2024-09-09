@@ -51,6 +51,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
@@ -136,10 +138,12 @@ public class StateStoreCommitterStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
                 .environment(environmentVariables)
+                .reservedConcurrentExecutions(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 
         SqsEventSource eventSource = SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build();
         handlerFunction.addEventSource(eventSource);
         instanceProperties.set(STATESTORE_COMMITTER_EVENT_SOURCE_ID, eventSource.getEventSourceMappingId());
