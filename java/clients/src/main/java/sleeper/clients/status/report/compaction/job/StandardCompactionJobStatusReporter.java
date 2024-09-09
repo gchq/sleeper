@@ -17,7 +17,6 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.DurationStatistics;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
@@ -30,6 +29,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
 import java.time.Duration;

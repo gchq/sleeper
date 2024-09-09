@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.job;
-
-import sleeper.core.util.LoggedDuration;
+package sleeper.core.util;
 
 import java.time.Duration;
 import java.util.List;
@@ -23,6 +21,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Calculates statistics about a dataset of Duration objects.
+ */
 public class DurationStatistics {
     private final Duration min;
     private final Duration mean;
@@ -36,10 +37,12 @@ public class DurationStatistics {
         this.standardDeviation = Duration.ofMillis(builder.stdDevMillis);
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
+    /**
+     * Calculates statistics from a stream of Duration objects.
+     *
+     * @param  durations the durations
+     * @return           the statistics
+     */
     public static DurationStatistics from(Stream<Duration> durations) {
         return builder()
                 .computeFromMilliseconds(durations
@@ -48,6 +51,11 @@ public class DurationStatistics {
                 .build();
     }
 
+    private static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
     public String toString() {
         return String.format("avg: %s, min: %s, max: %s, std dev: %s",
                 LoggedDuration.withShortOutput(mean),
@@ -56,7 +64,10 @@ public class DurationStatistics {
                 LoggedDuration.withShortOutput(standardDeviation));
     }
 
-    public static class Builder {
+    /**
+     * Builds instances of this class.
+     */
+    private static class Builder {
         private long minMillis;
         private long meanMillis;
         private long maxMillis;
@@ -64,7 +75,7 @@ public class DurationStatistics {
         private long delayCount;
         private long stdDevMillis = 0;
 
-        public Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
+        Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
             durationsInMilliseconds.forEach(millis -> {
                 if (delayCount == 0) {
                     minMillis = millis;
@@ -84,7 +95,7 @@ public class DurationStatistics {
             return this;
         }
 
-        public DurationStatistics build() {
+        DurationStatistics build() {
             return new DurationStatistics(this);
         }
     }
