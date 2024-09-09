@@ -801,7 +801,7 @@ sleeper.partition.splitting.finder.timeout.seconds=900
 # The reserved concurrency for the find partitions to split lambda.
 # sleeper.partition.splitting.finder.concurrency.reserved=
 
-# The maximum given concurrency allow for the find partitions to split lambda.
+# The maximum given concurrency allowed for the find partitions to split lambda.
 # sleeper.partition.splitting.finder.concurrency.max=
 
 # The amount of memory in MB for the lambda function used to split partitions.
@@ -920,7 +920,7 @@ sleeper.compaction.max.concurrent.tasks=300
 # The reserved concurrency for the compaction lambda.
 # sleeper.compaction.concurrency.reserved=
 
-# The maximum given concurrency allow for the compaction lambda.
+# The maximum given concurrency allowed for the compaction lambda.
 # sleeper.compaction.concurrency.max=
 
 # The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes,
