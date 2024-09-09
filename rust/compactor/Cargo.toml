@@ -28,7 +28,7 @@ default-run = "main"
 
 [dependencies]
 thiserror = { version = "1.0.63" } # Derivable error enums
-log = { version = "0.4.17", features = [
+log = { version = "0.4.22", features = [
     "release_max_level_debug",
 ] } # Standard logging framework
 env_logger = { version = "0.11.5" } # Standard logging to stderr
