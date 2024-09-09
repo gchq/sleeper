@@ -23,13 +23,13 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class DelayStatistics {
+public class DurationStatistics {
     private final Duration min;
     private final Duration mean;
     private final Duration max;
     private final Duration standardDeviation;
 
-    public DelayStatistics(Builder builder) {
+    public DurationStatistics(Builder builder) {
         this.min = Duration.ofMillis(builder.minMillis);
         this.mean = Duration.ofMillis(builder.meanMillis);
         this.max = Duration.ofMillis(builder.maxMillis);
@@ -40,9 +40,9 @@ public class DelayStatistics {
         return new Builder();
     }
 
-    public static DelayStatistics fromDelays(Stream<Duration> delays) {
+    public static DurationStatistics from(Stream<Duration> durations) {
         return builder()
-                .computeFromMilliseconds(delays
+                .computeFromMilliseconds(durations
                         .map(Duration::toMillis)
                         .collect(toUnmodifiableList()))
                 .build();
@@ -84,8 +84,8 @@ public class DelayStatistics {
             return this;
         }
 
-        public DelayStatistics build() {
-            return new DelayStatistics(this);
+        public DurationStatistics build() {
+            return new DurationStatistics(this);
         }
     }
 }

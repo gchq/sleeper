@@ -17,7 +17,7 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.DelayStatistics;
+import sleeper.clients.status.report.job.DurationStatistics;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
@@ -183,8 +183,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .flatMap(job -> job.getJobRuns().stream()));
     }
 
-    private static DelayStatistics delayStatistics(List<CompactionJobStatus> jobs) {
-        return DelayStatistics.fromDelays(jobs.stream()
+    private static DurationStatistics delayStatistics(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.from(jobs.stream()
                 .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
     }
 

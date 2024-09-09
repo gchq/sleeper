@@ -22,11 +22,11 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DelayStatisticsTest {
+public class DurationStatisticsTest {
     @Test
     void shouldReportStatisticsForOneDelay() {
         // Given
-        DelayStatistics statistics = DelayStatistics.fromDelays(Stream.of(
+        DurationStatistics statistics = DurationStatistics.from(Stream.of(
                 Duration.ofSeconds(10)));
 
         // When / Then
@@ -37,7 +37,7 @@ public class DelayStatisticsTest {
     @Test
     void shouldReportStatisticsForMultipleDelays() {
         // Given
-        DelayStatistics statistics = DelayStatistics.fromDelays(Stream.of(
+        DurationStatistics statistics = DurationStatistics.from(Stream.of(
                 Duration.ofSeconds(58),
                 Duration.ofSeconds(59),
                 Duration.ofSeconds(60),
