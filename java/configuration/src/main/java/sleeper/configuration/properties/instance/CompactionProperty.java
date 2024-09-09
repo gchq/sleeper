@@ -117,6 +117,14 @@ public interface CompactionProperty {
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.concurrency.reserved")
+            .description("The reserved concurrency for the compaction lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.concurrency.max")
+            .description("The maximum given concurrency allow for the compaction lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.creation.period.minutes")
             .description("The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1).")
             .defaultValue("1")

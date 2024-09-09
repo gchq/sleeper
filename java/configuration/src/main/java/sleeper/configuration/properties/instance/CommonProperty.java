@@ -155,6 +155,14 @@ public interface CommonProperty {
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.metrics.concurrency.reserved")
+            .description("The reserved concurrency for the table metrics lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty METRCIS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
+            .description("The maximum given concurrency allowed for the table metrics lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
             .description("The number of tables to calculate metrics for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
@@ -213,6 +221,14 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved")
+            .description("The reserved concurrency for the snapshot creation lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.max")
+            .description("The maximum given concurrency allowed for the snapshot creation lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.batch.size")
             .description("The number of tables to delete old transaction log snapshots for in a single invocation. This will be the batch size" +
                     " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
@@ -226,6 +242,14 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.reserved")
+            .description("The reserved concurrency for the snapshot deletion lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.max")
+            .description("The maximum given concurrency allowed for the snapshot deletion lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.batch.size")
             .description("The number of tables to delete old transaction log transactions for in a single invocation. This will be the batch size" +
                     " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
@@ -239,6 +263,14 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.reserved")
+            .description("The reserved concurrency for the transaction deletion lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.max")
+            .description("The maximum given concurrency allowed for the transaction deletion lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")
@@ -290,6 +322,14 @@ public interface CommonProperty {
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.committer.concurrency.reserved")
+            .description("The reserved concurrency for the state store committer lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.committer.concurrency.max")
+            .description("The maximum given concurrency allowed for the state store committer lambda.")
+            .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
             .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")

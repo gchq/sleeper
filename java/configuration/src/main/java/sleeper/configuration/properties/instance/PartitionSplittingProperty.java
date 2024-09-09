@@ -51,6 +51,14 @@ public interface PartitionSplittingProperty {
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.reserved")
+            .description("The reserved concurrency for the find partitions to split lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+    UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.max")
+            .description("The maximum given concurrency allow for the find partitions to split lambda.")
+            .defaultValue(null)
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.memory")
             .description("The amount of memory in MB for the lambda function used to split partitions.")
             .defaultValue("2048")
