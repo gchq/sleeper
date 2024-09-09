@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DurationStatisticsTest {
     @Test
-    void shouldReportStatisticsForOneDelay() {
+    void shouldReportStatisticsForOneDuration() {
         // Given
         DurationStatistics statistics = DurationStatistics.from(Stream.of(
                 Duration.ofSeconds(10)));
@@ -35,7 +35,7 @@ public class DurationStatisticsTest {
     }
 
     @Test
-    void shouldReportStatisticsForMultipleDelays() {
+    void shouldReportStatisticsForMultipleDurations() {
         // Given
         DurationStatistics statistics = DurationStatistics.from(Stream.of(
                 Duration.ofSeconds(58),
@@ -47,5 +47,15 @@ public class DurationStatisticsTest {
         // When / Then
         assertThat(statistics)
                 .hasToString("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
+    }
+
+    @Test
+    void shouldReportNoData() {
+        // Given
+        DurationStatistics statistics = DurationStatistics.from(Stream.of());
+
+        // When / Then
+        assertThat(statistics)
+                .hasToString("no data");
     }
 }

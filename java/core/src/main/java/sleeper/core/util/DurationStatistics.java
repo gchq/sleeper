@@ -31,10 +31,10 @@ public class DurationStatistics {
     private final Duration standardDeviation;
 
     public DurationStatistics(Builder builder) {
-        this.min = Duration.ofMillis(builder.minMillis);
-        this.mean = Duration.ofMillis(builder.meanMillis);
-        this.max = Duration.ofMillis(builder.maxMillis);
-        this.standardDeviation = Duration.ofMillis(builder.stdDevMillis);
+        this.min = builder.min;
+        this.mean = builder.mean;
+        this.max = builder.max;
+        this.standardDeviation = builder.standardDeviation;
     }
 
     /**
@@ -57,6 +57,9 @@ public class DurationStatistics {
 
     @Override
     public String toString() {
+        if (mean == null) {
+            return "no data";
+        }
         return String.format("avg: %s, min: %s, max: %s, std dev: %s",
                 LoggedDuration.withShortOutput(mean),
                 LoggedDuration.withShortOutput(min),
@@ -68,22 +71,29 @@ public class DurationStatistics {
      * Builds instances of this class.
      */
     private static class Builder {
+        private Duration min;
+        private Duration mean;
+        private Duration max;
+        private Duration standardDeviation;
         private long minMillis = Long.MAX_VALUE;
-        private long meanMillis;
         private long maxMillis = Long.MIN_VALUE;
-        private long stdDevMillis = 0;
 
         Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
+            if (durationsInMilliseconds.isEmpty()) {
+                return this;
+            }
             int n = durationsInMilliseconds.size();
-            double mean = durationsInMilliseconds.stream()
+            double meanMillis = durationsInMilliseconds.stream()
                     .peek(millis -> minMillis = Math.min(millis, minMillis))
                     .peek(millis -> maxMillis = Math.max(millis, maxMillis))
                     .mapToLong(millis -> millis).sum() / (double) n;
             double variance = durationsInMilliseconds.stream()
-                    .mapToDouble(millis -> Math.pow(millis - mean, 2))
+                    .mapToDouble(millis -> Math.pow(millis - meanMillis, 2))
                     .sum() / n;
-            meanMillis = (long) mean;
-            stdDevMillis = (long) Math.sqrt(variance);
+            min = Duration.ofMillis(minMillis);
+            mean = Duration.ofMillis((long) meanMillis);
+            max = Duration.ofMillis(maxMillis);
+            standardDeviation = Duration.ofMillis((long) Math.sqrt(variance));
             return this;
         }
 

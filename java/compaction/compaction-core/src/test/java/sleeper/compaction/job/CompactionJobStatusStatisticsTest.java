@@ -26,6 +26,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
+import static sleeper.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionJobStatusStatisticsTest {
@@ -55,4 +56,19 @@ public class CompactionJobStatusStatisticsTest {
         assertThat(statistics).hasToString("avg: 1.5s, min: 1s, max: 2s, std dev: 0.5s");
     }
 
+    @Test
+    void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenNoneCommitted() {
+        // Given
+        CompactionJobStatus status = jobFilesAssigned(dataHelper.singleFileCompaction(),
+                Instant.parse("2024-09-09T10:29:50Z"),
+                Instant.parse("2024-09-09T10:29:51Z"),
+                uncommittedCompactionRun("test-task",
+                        summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100)));
+
+        // When
+        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status));
+
+        // Then
+        assertThat(statistics).hasToString("no data");
+    }
 }
