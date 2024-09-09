@@ -152,6 +152,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
         printUnfinishedStatusCounts(jobStatusList);
+        printUnfinishedDelayStatistics(jobStatusList);
     }
 
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
@@ -177,14 +178,18 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
-        out.println("Statistics for delay between creation and input files assignment time:");
-        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(jobs)
-                .map(DurationStatistics::toString)
-                .orElse("no jobs assigned to input files"));
+        printUnfinishedDelayStatistics(jobs);
         out.println("Statistics for delay between finish and commit time:");
         out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
                 .map(DurationStatistics::toString)
                 .orElse("no jobs committed"));
+    }
+
+    private void printUnfinishedDelayStatistics(List<CompactionJobStatus> jobs) {
+        out.println("Statistics for delay between creation and input files assignment time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs assigned to input files"));
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
