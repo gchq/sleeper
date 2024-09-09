@@ -123,6 +123,7 @@
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
@@ -656,6 +657,11 @@
                 <version>${commons-lang3.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
@@ -969,6 +975,7 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
+                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
                         </configuration>
                     </execution>
                 </executions>
