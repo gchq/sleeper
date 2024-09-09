@@ -199,9 +199,9 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.8.6</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
+        <dependency.plugin.version>3.8.0</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>10.0.4</dependency-check.plugin.version>
-        <dependency.plugin.version>3.8.0</dependency.plugin.version>
         <site.plugin.version>3.20.0</site.plugin.version>
         <exec.plugin.version>3.4.1</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
@@ -931,6 +931,17 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>analyze-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
         </plugins>
     </reporting>
     <build>
@@ -946,6 +957,21 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1205,6 +1231,11 @@
                     <version>${surefire.plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${dependency.plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>de.qaware.maven</groupId>
                     <artifactId>go-offline-maven-plugin</artifactId>
                     <version>${go-offline.plugin.version}</version>
@@ -1216,14 +1247,6 @@
                     <configuration>
                         <failBuildOnAnyVulnerability>true</failBuildOnAnyVulnerability>
                         <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${dependency.plugin.version}</version>
-                    <configuration>
-                        <failOnWarning>true</failOnWarning>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1260,6 +1283,16 @@
                         <executions>
                             <execution>
                                 <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>analyze</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>
@@ -1340,6 +1373,16 @@
                         <executions>
                             <execution>
                                 <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>analyze</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>

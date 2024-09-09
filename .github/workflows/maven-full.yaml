@@ -31,9 +31,6 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
-      - name: Analyze dependencies
-        run: mvn --batch-mode dependency:analyze-report --fail-at-end -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
-        working-directory: ./java
       - name: Validate properties templates are up to date
         working-directory: ./java
         run: |
