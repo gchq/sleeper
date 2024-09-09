@@ -68,30 +68,22 @@ public class DurationStatistics {
      * Builds instances of this class.
      */
     private static class Builder {
-        private long minMillis;
+        private long minMillis = Long.MAX_VALUE;
         private long meanMillis;
-        private long maxMillis;
-        private long totalMillis;
-        private long delayCount;
+        private long maxMillis = Long.MIN_VALUE;
         private long stdDevMillis = 0;
 
         Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
-            durationsInMilliseconds.forEach(millis -> {
-                if (delayCount == 0) {
-                    minMillis = millis;
-                } else {
-                    minMillis = Math.min(millis, minMillis);
-                }
-                maxMillis = Math.max(millis, maxMillis);
-                totalMillis += millis;
-                delayCount++;
-            });
-            meanMillis = totalMillis / delayCount;
-            double sumOfAvgDiffSquares = 0;
-            for (long millis : durationsInMilliseconds) {
-                sumOfAvgDiffSquares += Math.pow(millis - meanMillis, 2);
-            }
-            stdDevMillis = (long) Math.sqrt(sumOfAvgDiffSquares / delayCount);
+            int n = durationsInMilliseconds.size();
+            double mean = durationsInMilliseconds.stream()
+                    .peek(millis -> minMillis = Math.min(millis, minMillis))
+                    .peek(millis -> maxMillis = Math.max(millis, maxMillis))
+                    .mapToLong(millis -> millis).sum() / (double) n;
+            double variance = durationsInMilliseconds.stream()
+                    .mapToDouble(millis -> Math.pow(millis - mean, 2))
+                    .sum() / n;
+            meanMillis = (long) mean;
+            stdDevMillis = (long) Math.sqrt(variance);
             return this;
         }
 
