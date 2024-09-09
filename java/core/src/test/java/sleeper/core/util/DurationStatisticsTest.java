@@ -58,4 +58,11 @@ public class DurationStatisticsTest {
         assertThat(statistics)
                 .hasToString("no data");
     }
+
+    @Test
+    void shouldReportNoDataWhen() {
+        // When / Then
+        assertThat(DurationStatistics.fromIfAny(Stream.of()))
+                .isEmpty();
+    }
 }

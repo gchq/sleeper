@@ -17,6 +17,7 @@ package sleeper.core.util;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -49,6 +50,23 @@ public class DurationStatistics {
                         .map(Duration::toMillis)
                         .collect(toUnmodifiableList()))
                 .build();
+    }
+
+    /**
+     * Calculates statistics from a stream of Duration objects, if any are present.
+     *
+     * @param  durations the durations
+     * @return           the statistics, if any are present
+     */
+    public static Optional<DurationStatistics> fromIfAny(Stream<Duration> durations) {
+        List<Long> durationsInMills = durations.map(Duration::toMillis).collect(toUnmodifiableList());
+        if (durationsInMills.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(builder()
+                    .computeFromMilliseconds(durationsInMills)
+                    .build());
+        }
     }
 
     private static Builder builder() {
