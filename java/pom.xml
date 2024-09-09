@@ -980,7 +980,7 @@
                             <ignoredUsedUndeclaredDependencies>*:*:*:*</ignoredUsedUndeclaredDependencies>
                             <ignoredUnusedDeclaredDependencies>
                                 <!-- Dependency plugin does not detect usages of Scala classes reliably, e.g. com.joom.spark.ExplicitRepartitionStrategy$ -->
-                                <ignoredUnusedDeclaredDependency>com.joom.spark:spark-platform_${scala.version}:compile:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.joom.spark:spark-platform_${scala.version}::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredNonTestScopedDependencies>
                                 <ignoredNonTestScopedDependency>com.amazonaws:aws-java-sdk-core::</ignoredNonTestScopedDependency>
