@@ -159,7 +159,7 @@ public interface CommonProperty {
             .description("The reserved concurrency for the table metrics lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty METRCIS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
+    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
             .description("The maximum given concurrency allowed for the table metrics lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
