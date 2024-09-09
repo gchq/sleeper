@@ -29,7 +29,10 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify dependency:analyze-only -Pquick -T 1C -DfailOnWarning --fail-at-end -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        working-directory: ./java
+      - name: Analyze dependencies
+        run: mvn --batch-mode dependency:analyze-report -DfailOnWarning --fail-at-end -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Validate properties templates are up to date
         working-directory: ./java
