@@ -91,6 +91,11 @@ public class CompactionJobStatus {
                         .build());
     }
 
+    public static DurationStatistics computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.from(jobs.stream()
+                .flatMap(job -> job.getDelayBetweenCreatedAndFilesAssigned().stream()));
+    }
+
     public static DurationStatistics computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
         return DurationStatistics.from(jobs.stream()
                 .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
@@ -151,6 +156,12 @@ public class CompactionJobStatus {
 
     public int getRunsAwaitingCommit() {
         return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
+    }
+
+    public Optional<Duration> getDelayBetweenCreatedAndFilesAssigned() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(filesAssignedStatus -> Duration.between(
+                        createdStatus.getUpdateTime(), filesAssignedStatus.getUpdateTime()));
     }
 
     public Stream<Duration> runDelaysBetweenFinishAndCommit() {

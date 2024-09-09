@@ -25,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
@@ -67,6 +68,36 @@ public class CompactionJobStatusStatisticsTest {
 
         // When
         DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status));
+
+        // Then
+        assertThat(statistics).hasToString("no data");
+    }
+
+    @Test
+    void shouldComputeStatisticsForDelayBetweenCreationAndAssignmentWhenAssigned() {
+        // Given
+        CompactionJobStatus status1 = jobFilesAssigned(dataHelper.singleFileCompaction(),
+                Instant.parse("2024-09-09T10:29:50Z"),
+                Instant.parse("2024-09-09T10:29:52Z"));
+        CompactionJobStatus status2 = jobFilesAssigned(dataHelper.singleFileCompaction(),
+                Instant.parse("2024-09-09T10:31:50Z"),
+                Instant.parse("2024-09-09T10:31:53Z"));
+
+        // When
+        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status1, status2));
+
+        // Then
+        assertThat(statistics).hasToString("avg: 2.5s, min: 2s, max: 3s, std dev: 0.5s");
+    }
+
+    @Test
+    void shouldComputeStatisticsForDelayBetweenCreationAndAssignmentWhenNotAssigned() {
+        // Given
+        CompactionJobStatus status = jobCreated(dataHelper.singleFileCompaction(),
+                Instant.parse("2024-09-09T10:29:50Z"));
+
+        // When
+        DurationStatistics statistics = CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status));
 
         // Then
         assertThat(statistics).hasToString("no data");
