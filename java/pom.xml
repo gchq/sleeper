@@ -988,6 +988,8 @@
                                 <ignoredNonTestScopedDependency>software.amazon.awssdk:auth::</ignoredNonTestScopedDependency>
                                 <ignoredNonTestScopedDependency>software.amazon.awssdk:regions::</ignoredNonTestScopedDependency>
                                 <ignoredNonTestScopedDependency>com.google.guava:guava::</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>org.apache.parquet:parquet-hadoop::</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>org.apache.curator:curator-client::</ignoredNonTestScopedDependency>
                             </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
