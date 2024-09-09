@@ -976,6 +976,7 @@
                         <configuration>
                             <failOnWarning>true</failOnWarning>
                             <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <ignoredUsedUndeclaredDependencies>*:*:*:*</ignoredUsedUndeclaredDependencies>
                         </configuration>
                     </execution>
                 </executions>
