@@ -20,6 +20,7 @@ import sleeper.core.util.LoggedDuration;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class DelayStatistics {
     private final Duration minDelay;
@@ -36,6 +37,12 @@ public class DelayStatistics {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static DelayStatistics fromDelays(Stream<Duration> delays) {
+        DelayStatistics.Builder builder = DelayStatistics.builder();
+        delays.forEach(builder::add);
+        return builder.build();
     }
 
     public String toString() {

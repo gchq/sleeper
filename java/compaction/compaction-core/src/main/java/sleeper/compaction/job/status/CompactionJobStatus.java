@@ -21,6 +21,7 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -144,6 +145,19 @@ public class CompactionJobStatus {
 
     public int getRunsAwaitingCommit() {
         return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
+    }
+
+    public Stream<Duration> runDelaysBetweenFinishAndCommit() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
+    }
+
+    private Optional<Duration> delayBetweenFinishAndCommit(ProcessRun run) {
+        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+                        .map(finishedStatus -> Duration.between(
+                                finishedStatus.getSummary().getFinishTime(),
+                                committedStatus.getCommitTime())));
     }
 
     private Set<CompactionJobStatusType> runStatusTypes() {
