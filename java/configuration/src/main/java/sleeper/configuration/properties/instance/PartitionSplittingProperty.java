@@ -56,7 +56,7 @@ public interface PartitionSplittingProperty {
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.max")
-            .description("The maximum given concurrency allow for the find partitions to split lambda.")
+            .description("The maximum given concurrency allowed for the find partitions to split lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.memory")

@@ -122,7 +122,7 @@ public interface CompactionProperty {
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.concurrency.max")
-            .description("The maximum given concurrency allow for the compaction lambda.")
+            .description("The maximum given concurrency allowed for the compaction lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.creation.period.minutes")
