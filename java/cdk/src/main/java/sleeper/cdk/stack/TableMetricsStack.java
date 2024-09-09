@@ -40,7 +40,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
 
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +54,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
@@ -125,7 +125,6 @@ public class TableMetricsStack extends NestedStack {
                 "Alarms if there are any messages on the dead letter queue for the table metrics queue",
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
-        InstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE)).maxConcurrency(instanceProperties.getInt(METRICS_LAMBDA_CONCURRENCY_MAXIMUM)).build());
 
