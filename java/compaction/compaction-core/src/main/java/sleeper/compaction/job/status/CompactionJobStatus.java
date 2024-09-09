@@ -20,6 +20,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.util.DurationStatistics;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -88,6 +89,11 @@ public class CompactionJobStatus {
                         .jobRuns(updates.getRuns())
                         .expiryDate(updates.getFirstRecord().getExpiryDate())
                         .build());
+    }
+
+    public static DurationStatistics computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.from(jobs.stream()
+                .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
     }
 
     public Instant getCreateUpdateTime() {
