@@ -39,11 +39,13 @@ public interface GarbageCollectionProperty {
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.gc.concurrency.reserved")
-            .description("The reserved concurrency for the garbage collection lambda.")
+            .description("The reserved concurrency for the garbage collection lambda.\n " +
+                    "See reserved concurrency overview at: \r\n https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html\r\n")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.gc.concurrency.max")
-            .description("The maximum given concurrency allowed for the garbage collection lambda.")
+            .description("The maximum given concurrency allowed for the garbage collection lambda.\n " +
+                    "See maximum concurrency overview at: \r\n https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
