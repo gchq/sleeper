@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.dynamodb.tools;
+package sleeper.dynamodb.test;
 
 import org.testcontainers.containers.GenericContainer;
-
-import sleeper.core.CommonTestConstants;
 
 import java.util.List;
 
 public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
 
+    private static final String DYNAMO_CONTAINER_IMAGE = "amazon/dynamodb-local:1.21.0";
     private static final int DYNAMO_PORT = 8000;
 
     public DynamoDBContainer() {
-        super(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER);
+        super(DYNAMO_CONTAINER_IMAGE);
         setExposedPorts(List.of(DYNAMO_PORT));
     }
 

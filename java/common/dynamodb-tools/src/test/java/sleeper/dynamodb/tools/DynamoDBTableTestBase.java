@@ -23,6 +23,8 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import sleeper.dynamodb.test.DynamoDBTestBase;
+
 import java.util.List;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;

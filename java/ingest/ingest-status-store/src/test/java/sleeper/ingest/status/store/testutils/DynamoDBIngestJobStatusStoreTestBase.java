@@ -30,7 +30,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;

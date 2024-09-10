@@ -38,7 +38,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

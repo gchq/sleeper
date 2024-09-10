@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.dynamodb.tools;
+package sleeper.dynamodb.test;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.dynamodb.test.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class DynamoDBTestBase {

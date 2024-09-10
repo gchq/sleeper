@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.dynamodb.tools;
+package sleeper.dynamodb.test;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
