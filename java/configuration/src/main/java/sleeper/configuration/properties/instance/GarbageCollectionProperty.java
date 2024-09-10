@@ -41,12 +41,12 @@ public interface GarbageCollectionProperty {
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.gc.concurrency.reserved")
             .description("The reserved concurrency for the garbage collection lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .defaultValue(null)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.gc.concurrency.max")
             .description("The maximum given concurrency allowed for the garbage collection lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .defaultValue(null)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
             .description("The number of tables to perform garbage collection for in a single invocation. " +

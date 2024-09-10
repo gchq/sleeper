@@ -54,12 +54,12 @@ public interface PartitionSplittingProperty {
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.reserved")
             .description("The reserved concurrency for the find partitions to split lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .defaultValue(null)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.max")
             .description("The maximum given concurrency allowed for the find partitions to split lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .defaultValue(null)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.memory")
             .description("The amount of memory in MB for the lambda function used to split partitions.")
