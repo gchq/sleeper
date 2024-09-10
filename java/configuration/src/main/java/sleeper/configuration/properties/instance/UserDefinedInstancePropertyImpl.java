@@ -35,6 +35,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final boolean editable;
     private final boolean includedInTemplate;
     private final boolean includedInBasicTemplate;
+    private final boolean ignoreEmptyValue;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -47,6 +48,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         includedInTemplate = builder.includedInTemplate;
         includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
                 .orElseGet(UserDefinedInstanceProperty.super::isIncludedInBasicTemplate);
+        ignoreEmptyValue = builder.ignoreEmptyValue;
     }
 
     public static Builder builder() {
@@ -106,6 +108,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return includedInBasicTemplate;
     }
 
+    @Override
+    public boolean isIgnoreEmptyValue() {
+        return ignoreEmptyValue;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -116,6 +123,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private boolean editable = true;
         private boolean includedInTemplate = true;
         private Boolean includedInBasicTemplate;
+        private boolean ignoreEmptyValue = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
 
         private Builder() {
@@ -163,6 +171,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder includedInBasicTemplate(boolean includedInBasicTemplate) {
             this.includedInBasicTemplate = includedInBasicTemplate;
+            return this;
+        }
+
+        public Builder ignoreEmptyValue(boolean ignoreEmptyValue) {
+            this.ignoreEmptyValue = ignoreEmptyValue;
             return this;
         }
 

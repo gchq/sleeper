@@ -33,8 +33,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.PollWithRetries;
-import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
@@ -77,18 +75,15 @@ public class StateStoreCommitter {
     /**
      * Applies a batch of state store commit requests.
      *
-     * @param throttlingRetriesConfig settings for retries due to DynamoDB API throttling
-     * @param requests                the commit requests
+     * @param retryOnThrottling function to apply retries due to DynamoDB API throttling
+     * @param requests          the commit requests
      */
-    public void applyBatch(PollWithRetries throttlingRetriesConfig, List<RequestHandle> requests) {
-        updateBeforeBatch(requests);
-        PollWithRetries throttlingRetries = throttlingRetriesConfig.toBuilder()
-                .trackMaxRetriesAcrossInvocations()
-                .build();
+    public void applyBatch(RetryOnThrottling retryOnThrottling, List<RequestHandle> requests) {
+        updateBeforeBatch(retryOnThrottling, requests);
         for (int i = 0; i < requests.size(); i++) {
             RequestHandle handle = requests.get(i);
             try {
-                DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
+                retryOnThrottling.doWithRetries(() -> {
                     try {
                         apply(handle.request());
                     } catch (StateStoreException e) {
@@ -108,13 +103,13 @@ public class StateStoreCommitter {
         }
     }
 
-    private void updateBeforeBatch(List<RequestHandle> requests) {
+    private void updateBeforeBatch(RetryOnThrottling retryOnThrottling, List<RequestHandle> requests) {
         requests.stream()
                 .map(handle -> handle.request().getTableId()).distinct()
-                .forEach(this::updateBeforeBatchForTable);
+                .forEach(tableId -> updateBeforeBatchForTable(retryOnThrottling, tableId));
     }
 
-    private void updateBeforeBatchForTable(String tableId) {
+    private void updateBeforeBatchForTable(RetryOnThrottling retryOnThrottling, String tableId) {
         TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
         if (!tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH)) {
             return;
@@ -125,9 +120,16 @@ public class StateStoreCommitter {
         }
         TransactionLogStateStore state = (TransactionLogStateStore) stateStore;
         try {
-            state.updateFromLogs();
-        } catch (StateStoreException e) {
-            throw new RuntimeException("Failed updating state store at start of batch", e);
+            retryOnThrottling.doWithRetries(() -> {
+                try {
+                    state.updateFromLogs();
+                } catch (StateStoreException e) {
+                    throw new RuntimeException("Failed updating state store at start of batch", e);
+                }
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 
@@ -183,6 +185,7 @@ public class StateStoreCommitter {
     void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
+        compactionJobStatusStore.jobInputFilesAssigned(request.getTableId(), request.getAssignJobIdRequests());
     }
 
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
@@ -236,5 +239,22 @@ public class StateStoreCommitter {
         private void failed(Exception exception) {
             onFail.accept(exception);
         }
+    }
+
+    /**
+     * Retries if the DynamoDB table is throttled. This is applied when updating the local state from the transaction
+     * log, and when applying commit requests.
+     */
+    @FunctionalInterface
+    public interface RetryOnThrottling {
+
+        /**
+         * Apply the given operation. Will examine any exception thrown by the given operation. If the exception or any
+         * cause is a throttling exception, the operation will be retried up to a point.
+         *
+         * @param  runnable             the operation to apply with retries
+         * @throws InterruptedException if the retries were interrupted
+         */
+        void doWithRetries(Runnable runnable) throws InterruptedException;
     }
 }

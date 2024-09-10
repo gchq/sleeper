@@ -20,12 +20,14 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -35,14 +37,18 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public interface AssignJobIdToFiles {
     Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
 
-    void assignJobIds(List<AssignJobIdRequest> requests, String tableId) throws StateStoreException;
+    void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus) throws StateStoreException;
 
-    static AssignJobIdToFiles synchronous(StateStore stateStore) {
-        return (assignJobIdRequests, tableId) -> stateStore.assignJobIds(assignJobIdRequests);
+    static AssignJobIdToFiles synchronous(StateStore stateStore, CompactionJobStatusStore statusStore) {
+        return (assignJobIdRequests, tableStatus) -> {
+            stateStore.assignJobIds(assignJobIdRequests);
+            statusStore.jobInputFilesAssigned(tableStatus.getTableUniqueId(), assignJobIdRequests);
+        };
     }
 
     static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {
-        return (assignJobIdRequests, tableId) -> queueSender.send(new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableId));
+        return (assignJobIdRequests, tableStatus) -> queueSender.send(
+                new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableStatus.getTableUniqueId()));
     }
 
     interface AssignJobIdQueueSender {

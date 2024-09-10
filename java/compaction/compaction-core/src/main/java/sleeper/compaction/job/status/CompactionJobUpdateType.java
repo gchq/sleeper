@@ -25,7 +25,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
  * any other update.
  */
 public enum CompactionJobUpdateType {
-    CREATED(1, CompactionJobStatusType.PENDING),
+    CREATED(1, CompactionJobStatusType.CREATED),
     STARTED(2, CompactionJobStatusType.IN_PROGRESS),
     FINISHED_WHEN_COMMITTED(3, CompactionJobStatusType.UNCOMMITTED),
     COMMITTED(4, CompactionJobStatusType.FINISHED),

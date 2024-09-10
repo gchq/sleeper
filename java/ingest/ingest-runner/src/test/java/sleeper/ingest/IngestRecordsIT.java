@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.testutils.AssertQuantiles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
@@ -100,21 +99,23 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(getRecords().get(0));
         assertThat(readRecords(rightFile))
                 .containsExactly(getRecords().get(1));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(1L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
-                .min(3L).max(3L)
-                .quantile(0.0, 3L).quantile(0.1, 3L)
-                .quantile(0.2, 3L).quantile(0.3, 3L)
-                .quantile(0.4, 3L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(1L).max(1L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(3L).max(3L)
+                                .rank(0.1, 3L).rank(0.2, 3L).rank(0.3, 3L)
+                                .rank(0.4, 3L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
+                        .build());
     }
 
     @Test
@@ -153,21 +154,23 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecordsFromParquetFile(rightFile.getFilename(), schema))
                 .containsExactly(
                         getRecordsByteArrayKey().get(2));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{2, 2}))
-                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
-                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{2, 2}))
-                .quantile(0.6, wrap(new byte[]{2, 2})).quantile(0.7, wrap(new byte[]{2, 2}))
-                .quantile(0.8, wrap(new byte[]{2, 2})).quantile(0.9, wrap(new byte[]{2, 2})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
-                .min(wrap(new byte[]{64, 65})).max(wrap(new byte[]{64, 65}))
-                .quantile(0.0, wrap(new byte[]{64, 65})).quantile(0.1, wrap(new byte[]{64, 65}))
-                .quantile(0.2, wrap(new byte[]{64, 65})).quantile(0.3, wrap(new byte[]{64, 65}))
-                .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.5, wrap(new byte[]{64, 65}))
-                .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
-                .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .minBytes(1, 1).maxBytes(2, 2)
+                                .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 2, 2).rankBytes(0.6, 2, 2)
+                                .rankBytes(0.7, 2, 2).rankBytes(0.8, 2, 2).rankBytes(0.9, 2, 2))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .minBytes(64, 65).maxBytes(64, 65)
+                                .rankBytes(0.1, 64, 65).rankBytes(0.2, 64, 65).rankBytes(0.3, 64, 65)
+                                .rankBytes(0.4, 64, 65).rankBytes(0.5, 64, 65).rankBytes(0.6, 64, 65)
+                                .rankBytes(0.7, 64, 65).rankBytes(0.8, 64, 65).rankBytes(0.9, 64, 65))
+                        .build());
     }
 
     @Test
@@ -209,35 +212,33 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecords2DimByteArrayKey().get(1),
                         getRecords2DimByteArrayKey().get(2),
                         getRecords2DimByteArrayKey().get(3));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key1"))
-                .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{5}))
-                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
-                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{5}))
-                .quantile(0.6, wrap(new byte[]{5})).quantile(0.7, wrap(new byte[]{5}))
-                .quantile(0.8, wrap(new byte[]{5})).quantile(0.9, wrap(new byte[]{5})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key2"))
-                .min(wrap(new byte[]{2, 3})).max(wrap(new byte[]{99}))
-                .quantile(0.0, wrap(new byte[]{2, 3})).quantile(0.1, wrap(new byte[]{2, 3}))
-                .quantile(0.2, wrap(new byte[]{2, 3})).quantile(0.3, wrap(new byte[]{2, 3}))
-                .quantile(0.4, wrap(new byte[]{2, 3})).quantile(0.5, wrap(new byte[]{99}))
-                .quantile(0.6, wrap(new byte[]{99})).quantile(0.7, wrap(new byte[]{99}))
-                .quantile(0.8, wrap(new byte[]{99})).quantile(0.9, wrap(new byte[]{99})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key1"))
-                .min(wrap(new byte[]{11, 2})).max(wrap(new byte[]{64, 65}))
-                .quantile(0.0, wrap(new byte[]{11, 2})).quantile(0.1, wrap(new byte[]{11, 2}))
-                .quantile(0.2, wrap(new byte[]{11, 2})).quantile(0.3, wrap(new byte[]{11, 2}))
-                .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.5, wrap(new byte[]{64, 65}))
-                .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
-                .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key2"))
-                .min(wrap(new byte[]{2, 2})).max(wrap(new byte[]{67, 68}))
-                .quantile(0.0, wrap(new byte[]{2, 2})).quantile(0.1, wrap(new byte[]{2, 2}))
-                .quantile(0.2, wrap(new byte[]{2, 2})).quantile(0.3, wrap(new byte[]{2, 2}))
-                .quantile(0.4, wrap(new byte[]{67, 68})).quantile(0.5, wrap(new byte[]{67, 68}))
-                .quantile(0.6, wrap(new byte[]{67, 68})).quantile(0.7, wrap(new byte[]{67, 68}))
-                .quantile(0.8, wrap(new byte[]{67, 68})).quantile(0.9, wrap(new byte[]{67, 68})).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key1", deciles -> deciles
+                                .minBytes(1, 1).maxBytes(5)
+                                .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 5).rankBytes(0.6, 5)
+                                .rankBytes(0.7, 5).rankBytes(0.8, 5).rankBytes(0.9, 5))
+                        .field("key2", deciles -> deciles
+                                .minBytes(2, 3).maxBytes(99)
+                                .rankBytes(0.1, 2, 3).rankBytes(0.2, 2, 3).rankBytes(0.3, 2, 3)
+                                .rankBytes(0.4, 2, 3).rankBytes(0.5, 99).rankBytes(0.6, 99)
+                                .rankBytes(0.7, 99).rankBytes(0.8, 99).rankBytes(0.9, 99))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key1", deciles -> deciles
+                                .minBytes(11, 2).maxBytes(64, 65)
+                                .rankBytes(0.1, 11, 2).rankBytes(0.2, 11, 2).rankBytes(0.3, 11, 2)
+                                .rankBytes(0.4, 64, 65).rankBytes(0.5, 64, 65).rankBytes(0.6, 64, 65)
+                                .rankBytes(0.7, 64, 65).rankBytes(0.8, 64, 65).rankBytes(0.9, 64, 65))
+                        .field("key2", deciles -> deciles
+                                .minBytes(2, 2).maxBytes(67, 68)
+                                .rankBytes(0.1, 2, 2).rankBytes(0.2, 2, 2).rankBytes(0.3, 2, 2)
+                                .rankBytes(0.4, 67, 68).rankBytes(0.5, 67, 68).rankBytes(0.6, 67, 68)
+                                .rankBytes(0.7, 67, 68).rankBytes(0.8, 67, 68).rankBytes(0.9, 67, 68))
+                        .build());
     }
 
     @Test
@@ -307,35 +308,33 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         getRecordsOscillatingBetween2Partitions().get(1),
                         getRecordsOscillatingBetween2Partitions().get(3));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key1"))
-                .min(0).max(100)
-                .quantile(0.0, 0).quantile(0.1, 0)
-                .quantile(0.2, 0).quantile(0.3, 0)
-                .quantile(0.4, 0).quantile(0.5, 100)
-                .quantile(0.6, 100).quantile(0.7, 100)
-                .quantile(0.8, 100).quantile(0.9, 100).verify();
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key2"))
-                .min(1L).max(1L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key1"))
-                .min(0).max(100)
-                .quantile(0.0, 0).quantile(0.1, 0)
-                .quantile(0.2, 0).quantile(0.3, 0)
-                .quantile(0.4, 0).quantile(0.5, 100)
-                .quantile(0.6, 100).quantile(0.7, 100)
-                .quantile(0.8, 100).quantile(0.9, 100).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key2"))
-                .min(20L).max(50L)
-                .quantile(0.0, 20L).quantile(0.1, 20L)
-                .quantile(0.2, 20L).quantile(0.3, 20L)
-                .quantile(0.4, 20L).quantile(0.5, 50L)
-                .quantile(0.6, 50L).quantile(0.7, 50L)
-                .quantile(0.8, 50L).quantile(0.9, 50L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key1", deciles -> deciles
+                                .min(0).max(100)
+                                .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
+                                .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
+                                .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
+                        .field("key2", deciles -> deciles
+                                .min(1L).max(1L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key1", deciles -> deciles
+                                .min(0).max(100)
+                                .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
+                                .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
+                                .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
+                        .field("key2", deciles -> deciles
+                                .min(20L).max(50L)
+                                .rank(0.1, 20L).rank(0.2, 20L).rank(0.3, 20L)
+                                .rank(0.4, 20L).rank(0.5, 50L).rank(0.6, 50L)
+                                .rank(0.7, 50L).rank(0.8, 50L).rank(0.9, 50L))
+                        .build());
     }
 
     @Test
@@ -365,14 +364,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         getRecordsInFirstPartitionOnly().get(1),
                         getRecordsInFirstPartitionOnly().get(0));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(0L).max(1L)
-                .quantile(0.0, 0L).quantile(0.1, 0L)
-                .quantile(0.2, 0L).quantile(0.3, 0L)
-                .quantile(0.4, 0L).quantile(0.5, 1L)
-                .quantile(0.6, 1L).quantile(0.7, 1L)
-                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(0L).max(1L)
+                                .rank(0.1, 0L).rank(0.2, 0L).rank(0.3, 0L)
+                                .rank(0.4, 0L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
+                        .build());
     }
 
     @Test
@@ -404,14 +404,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecords().get(0),
                         getRecords().get(1),
                         getRecords().get(1));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileReference.getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(3L)
-                .quantile(0.0, 1L).quantile(0.1, 1L)
-                .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReference.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(1L).max(3L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
+                        .build());
     }
 
     @Test
@@ -455,21 +456,23 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(rightFile, schema))
                 .containsExactlyInAnyOrderElementsOf(rightRecords);
 
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, leftFile.getFilename()).getQuantilesSketch("key"))
-                .min(-198L).max(1L)
-                .quantile(0.0, -198L).quantile(0.1, -178L)
-                .quantile(0.2, -158L).quantile(0.3, -138L)
-                .quantile(0.4, -118L).quantile(0.5, -98L)
-                .quantile(0.6, -78L).quantile(0.7, -58L)
-                .quantile(0.8, -38L).quantile(0.9, -18L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, rightFile.getFilename()).getQuantilesSketch("key"))
-                .min(2L).max(201L)
-                .quantile(0.0, 2L).quantile(0.1, 22L)
-                .quantile(0.2, 42L).quantile(0.3, 62L)
-                .quantile(0.4, 82L).quantile(0.5, 102L)
-                .quantile(0.6, 122L).quantile(0.7, 142L)
-                .quantile(0.8, 162L).quantile(0.9, 182L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, leftFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(-198L).max(1L)
+                                .rank(0.1, -178L).rank(0.2, -158L).rank(0.3, -138L)
+                                .rank(0.4, -118L).rank(0.5, -98L).rank(0.6, -78L)
+                                .rank(0.7, -58L).rank(0.8, -38L).rank(0.9, -18L))
+                        .build());
+        assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(2L).max(201L)
+                                .rank(0.1, 22L).rank(0.2, 42L).rank(0.3, 62L)
+                                .rank(0.4, 82L).rank(0.5, 102L).rank(0.6, 122L)
+                                .rank(0.7, 142L).rank(0.8, 162L).rank(0.9, 182L))
+                        .build());
     }
 
     @Test
@@ -558,14 +561,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactlyElementsOf(getUnsortedRecords().stream()
                         .sorted(Comparator.comparing(o -> ((Long) o.get("key"))))
                         .collect(Collectors.toList()));
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileReferences.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(10L)
-                .quantile(0.0, 1L).quantile(0.1, 3L)
-                .quantile(0.2, 5L).quantile(0.3, 5L)
-                .quantile(0.4, 5L).quantile(0.5, 5L)
-                .quantile(0.6, 5L).quantile(0.7, 5L)
-                .quantile(0.8, 7L).quantile(0.9, 9L).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(1L).max(10L)
+                                .rank(0.1, 3L).rank(0.2, 5L).rank(0.3, 5L)
+                                .rank(0.4, 5L).rank(0.5, 5L).rank(0.6, 5L)
+                                .rank(0.7, 5L).rank(0.8, 7L).rank(0.9, 9L))
+                        .build());
     }
 
     @Test
@@ -606,13 +610,14 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 "sort", 1L,
                                 "value", 4L)));
 
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileReferences.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{11, 2}))
-                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
-                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{11, 2}))
-                .quantile(0.6, wrap(new byte[]{11, 2})).quantile(0.7, wrap(new byte[]{11, 2}))
-                .quantile(0.8, wrap(new byte[]{11, 2})).quantile(0.9, wrap(new byte[]{11, 2})).verify();
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .minBytes(1, 1).maxBytes(11, 2)
+                                .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
+                                .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
+                        .build());
     }
 }

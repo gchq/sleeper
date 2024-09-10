@@ -196,7 +196,7 @@ public class CompactionST {
         @BeforeEach
         void setUp(SleeperSystemTest sleeper) {
             sleeper.updateTableProperties(Map.of(
-                    COMPACTION_METHOD, CompactionMethod.RUST.toString(),
+                    COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString(),
                     COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                     COMPACTION_FILES_BATCH_SIZE, "2"));
         }

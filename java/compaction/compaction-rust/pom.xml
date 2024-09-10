@@ -83,6 +83,33 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>sleeper</groupId>
+			<artifactId>parquet</artifactId>
+			<version>${project.parent.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>sleeper</groupId>
+			<artifactId>sketches</artifactId>
+			<version>${project.parent.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-runner</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-runner</artifactId>
+            <version>${project.parent.version}</version>
+			<type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>localstack</artifactId>
 			<scope>test</scope>

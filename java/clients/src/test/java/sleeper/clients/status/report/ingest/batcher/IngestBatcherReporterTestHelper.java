@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.batcher;
 
-import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
@@ -24,11 +23,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class IngestBatcherReporterTestHelper {
     private IngestBatcherReporterTestHelper() {
@@ -88,12 +85,6 @@ public class IngestBatcherReporterTestHelper {
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
                         .jobId("test-job-1").build());
-    }
-
-    public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
-        return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
-                .map(IngestJobStatus::getJobId)
-                .collect(Collectors.toList()), example);
     }
 
     public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {

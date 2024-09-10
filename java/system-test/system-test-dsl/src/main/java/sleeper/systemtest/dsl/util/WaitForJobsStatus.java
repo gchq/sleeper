@@ -117,7 +117,7 @@ public class WaitForJobsStatus {
         }
 
         JobStatus(CompactionJobStatus status) {
-            CompactionJobStatusType statusType = status.getFurthestRunStatusType();
+            CompactionJobStatusType statusType = status.getFurthestStatusType();
             this.runsLatestFirst = status.getJobRuns();
             this.furthestStatusType = statusType.toString();
             this.finished = statusType == CompactionJobStatusType.FINISHED;

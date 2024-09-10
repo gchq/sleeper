@@ -68,7 +68,8 @@ public interface CommonProperty {
                     "DashboardStack,TableMetricsStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
-            .includedInBasicTemplate(true).build();
+            .includedInBasicTemplate(true)
+            .ignoreEmptyValue(false).build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)

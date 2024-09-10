@@ -169,7 +169,7 @@ public class CreateCompactionJobs {
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
         } else {
-            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
+            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore, jobStatusStore);
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
@@ -220,7 +220,7 @@ public class CreateCompactionJobs {
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
-                .collect(Collectors.toList()), table.getTableUniqueId());
+                .collect(Collectors.toList()), table);
     }
 
     private void createJobsFromLeftoverFiles(

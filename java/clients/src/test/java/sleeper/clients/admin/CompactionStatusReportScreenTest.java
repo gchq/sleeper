@@ -87,11 +87,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Compaction Job Status Report\n" +
                             "----------------------------\n" +
-                            "Total jobs: 1\n" +
-                            "Total jobs not yet started: 0\n" +
-                            "Total jobs with a run in progress: 1\n" +
-                            "Total jobs finished successfully: 0\n" +
-                            "Total jobs with any failed run: 0");
+                            "Total jobs: 1\n");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }
@@ -110,10 +106,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Compaction Job Status Report\n" +
                             "----------------------------\n" +
-                            "Total unfinished jobs: 1\n" +
-                            "Total unfinished jobs not started: 0\n" +
-                            "Total unfinished jobs in progress: 1\n" +
-                            "Total unfinished jobs awaiting retry: 0");
+                            "Total unfinished jobs: 1\n");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }

@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.task.CompactionAlgorithmSelector;
+import sleeper.compaction.rust.RustCompactionRunner;
+import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -34,15 +35,15 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_ME
  * Determines which compaction algorithm should be run based on the table and instance configuration properties and
  * other environmental information.
  */
-public class DefaultSelector implements CompactionAlgorithmSelector {
+public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final Configuration configuration;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSelector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
 
-    public DefaultSelector(
+    public DefaultCompactionRunnerFactory(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -52,7 +53,7 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
     }
 
     @Override
-    public CompactionRunner chooseCompactor(CompactionJob job) {
+    public CompactionRunner createCompactor(CompactionJob job) {
         TableProperties tableProperties = tablePropertiesProvider
                 .getById(job.getTableId());
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
@@ -70,8 +71,8 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
 
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
-            case RUST:
-                return new RustCompaction(tablePropertiesProvider, stateStoreProvider);
+            case DATAFUSION:
+                return new RustCompactionRunner(tablePropertiesProvider, stateStoreProvider);
             case JAVA:
             default:
                 return createJavaRunner();
@@ -79,6 +80,6 @@ public class DefaultSelector implements CompactionAlgorithmSelector {
     }
 
     private CompactionRunner createJavaRunner() {
-        return new StandardCompactor(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
+        return new JavaCompactionRunner(tablePropertiesProvider, stateStoreProvider, objectFactory, configuration);
     }
 }

@@ -20,38 +20,48 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.util.DurationStatistics;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
+import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FILES_ASSIGNED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
 
 public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
+    private final CompactionJobInputFilesAssignedStatus filesAssignedStatus;
     private final ProcessRuns jobRuns;
-    private final transient Set<CompactionJobStatusType> runStatusTypes;
+    private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
+        filesAssignedStatus = builder.filesAssignedStatus;
         jobRuns = builder.jobRuns;
-        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
-                .map(CompactionJobStatusType::statusTypeOfJobRun)
-                .collect(toUnmodifiableSet());
-        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
+        runsByStatusType = jobRuns.getRunsLatestFirst().stream()
+                .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
+        furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(
+                filesAssignedStatus == null ? CREATED : FILES_ASSIGNED,
+                runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
 
@@ -75,13 +85,29 @@ public class CompactionJobStatus {
                 .map(createdStatus -> builder()
                         .jobId(updates.getJobId())
                         .createdStatus(createdStatus)
+                        .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
                         .jobRuns(updates.getRuns())
                         .expiryDate(updates.getFirstRecord().getExpiryDate())
                         .build());
     }
 
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(job -> job.getDelayBetweenCreatedAndFilesAssigned().stream()));
+    }
+
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
+    }
+
     public Instant getCreateUpdateTime() {
         return createdStatus.getUpdateTime();
+    }
+
+    public Optional<Instant> getInputFilesAssignedUpdateTime() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(CompactionJobInputFilesAssignedStatus::getUpdateTime);
     }
 
     public String getPartitionId() {
@@ -97,23 +123,70 @@ public class CompactionJobStatus {
     }
 
     public boolean isUnstartedOrInProgress() {
-        return !isStarted() || runStatusTypes.contains(IN_PROGRESS) || !runStatusTypes.contains(FINISHED);
+        return !isStarted() || runStatusTypes().contains(IN_PROGRESS) || !runStatusTypes().contains(FINISHED);
     }
 
     public boolean isAnyRunInProgress() {
-        return runStatusTypes.contains(IN_PROGRESS);
+        return runStatusTypes().contains(IN_PROGRESS);
     }
 
     public boolean isAnyRunSuccessful() {
-        return runStatusTypes.contains(FINISHED);
+        return runStatusTypes().contains(FINISHED);
+    }
+
+    public boolean isAnyRunUnfinishedAndARunFailed() {
+        return isAnyRunUnfinished() && isAnyRunFailed();
+    }
+
+    public boolean isAnyRunUnfinished() {
+        return getRunsInProgress() + getRunsAwaitingCommit() > 0;
     }
 
     public boolean isAnyRunFailed() {
-        return runStatusTypes.contains(FAILED);
+        return runStatusTypes().contains(FAILED);
     }
 
     public boolean isAwaitingRetry() {
-        return runStatusTypes.contains(FAILED) && runStatusTypes.size() == 1;
+        return runStatusTypes().equals(Set.of(FAILED));
+    }
+
+    public int getRunsInProgress() {
+        return runsByStatusType.getOrDefault(IN_PROGRESS, 0);
+    }
+
+    public int getRunsAwaitingCommit() {
+        return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
+    }
+
+    public Optional<Duration> getDelayBetweenCreatedAndFilesAssigned() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(filesAssignedStatus -> Duration.between(
+                        createdStatus.getUpdateTime(), filesAssignedStatus.getUpdateTime()));
+    }
+
+    public Stream<Duration> runDelaysBetweenFinishAndCommit() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
+    }
+
+    private Optional<Duration> delayBetweenFinishAndCommit(ProcessRun run) {
+        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+                        .map(finishedStatus -> Duration.between(
+                                finishedStatus.getSummary().getFinishTime(),
+                                committedStatus.getCommitTime())));
+    }
+
+    private Set<CompactionJobStatusType> runStatusTypes() {
+        return runsByStatusType.keySet();
+    }
+
+    public boolean isMultipleRunsAndAnySuccessful() {
+        return isMultipleRuns() && isAnyRunSuccessful();
+    }
+
+    public boolean isMultipleRuns() {
+        return jobRuns.getRunsLatestFirst().size() > 1;
     }
 
     public Instant getExpiryDate() {
@@ -142,13 +215,14 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public CompactionJobStatusType getFurthestRunStatusType() {
+    public CompactionJobStatusType getFurthestStatusType() {
         return furthestRunStatusType;
     }
 
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
+        private CompactionJobInputFilesAssignedStatus filesAssignedStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -162,6 +236,11 @@ public class CompactionJobStatus {
 
         public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
             this.createdStatus = createdStatus;
+            return this;
+        }
+
+        public Builder filesAssignedStatus(CompactionJobInputFilesAssignedStatus filesAssignedStatus) {
+            this.filesAssignedStatus = filesAssignedStatus;
             return this;
         }
 
@@ -189,29 +268,28 @@ public class CompactionJobStatus {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof CompactionJobStatus)) {
             return false;
         }
-        CompactionJobStatus status = (CompactionJobStatus) o;
-        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRuns, status.jobRuns);
+        CompactionJobStatus other = (CompactionJobStatus) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(createdStatus, other.createdStatus)
+                && Objects.equals(filesAssignedStatus, other.filesAssignedStatus)
+                && Objects.equals(jobRuns, other.jobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, jobRuns);
+        return Objects.hash(jobId, createdStatus, filesAssignedStatus, jobRuns);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobStatus{" +
-                "jobId='" + jobId + '\'' +
-                ", createdStatus=" + createdStatus +
-                ", jobRuns=" + jobRuns +
-                ", expiryDate=" + expiryDate +
-                '}';
+        return "CompactionJobStatus{jobId=" + jobId + ", createdStatus=" + createdStatus +
+                ", filesAssignedStatus=" + filesAssignedStatus + ", jobRuns=" + jobRuns +
+                ", expiryDate=" + expiryDate + "}";
     }
 }

@@ -68,7 +68,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     static List<String> readList(String value) {
-        if (value == null) {
+        if (value == null || value.length() < 1) {
             return List.of();
         } else {
             return Lists.newArrayList(value.split(","));
