@@ -8,6 +8,8 @@ Jobs in an unfinished run after a failed run: 0
 Failed jobs (may be retried): 0
 Runs in progress: 0
 Runs awaiting commit: 0
+Statistics for delay between creation and input files assignment time:
+  no jobs assigned to input files
 ----------------------------------------------------------------------------------------------------------
 | STATE | CREATE_TIME | FILES_ASSIGNED_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME |
 ----------------------------------------------------------------------------------------------------------

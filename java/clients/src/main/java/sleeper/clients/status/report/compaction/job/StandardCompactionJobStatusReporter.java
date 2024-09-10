@@ -17,7 +17,6 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.DelayStatistics;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
@@ -30,10 +29,10 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -153,6 +152,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
         printUnfinishedStatusCounts(jobStatusList);
+        printUnfinishedDelayStatistics(jobStatusList);
     }
 
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
@@ -178,30 +178,23 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
-        if (jobs.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
-            out.println("Statistics for delays between all finish and commit times:");
-            out.println("  " + delayStatistics(jobs));
-        }
+        printUnfinishedDelayStatistics(jobs);
+        out.println("Statistics for delay between finish and commit time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs committed"));
+    }
+
+    private void printUnfinishedDelayStatistics(List<CompactionJobStatus> jobs) {
+        out.println("Statistics for delay between creation and input files assignment time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs assigned to input files"));
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
                 .flatMap(job -> job.getJobRuns().stream()));
-    }
-
-    private static DelayStatistics delayStatistics(List<CompactionJobStatus> jobs) {
-        DelayStatistics.Builder builder = DelayStatistics.builder();
-        jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream())
-                .filter(ProcessRun::isFinishedSuccessfully)
-                .forEach(jobRun -> {
-                    jobRun.getLastStatusOfType(CompactionJobCommittedStatus.class).ifPresent(commitStatus -> {
-                        Instant finishTime = jobRun.getFinishedStatus().getSummary().getFinishTime();
-                        Instant commitTime = commitStatus.getCommitTime();
-                        builder.add(Duration.between(finishTime, commitTime));
-                    });
-                });
-        return builder.build();
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {

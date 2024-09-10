@@ -20,7 +20,9 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.util.DurationStatistics;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -89,6 +91,16 @@ public class CompactionJobStatus {
                         .build());
     }
 
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(job -> job.getDelayBetweenCreatedAndFilesAssigned().stream()));
+    }
+
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
+    }
+
     public Instant getCreateUpdateTime() {
         return createdStatus.getUpdateTime();
     }
@@ -144,6 +156,25 @@ public class CompactionJobStatus {
 
     public int getRunsAwaitingCommit() {
         return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
+    }
+
+    public Optional<Duration> getDelayBetweenCreatedAndFilesAssigned() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(filesAssignedStatus -> Duration.between(
+                        createdStatus.getUpdateTime(), filesAssignedStatus.getUpdateTime()));
+    }
+
+    public Stream<Duration> runDelaysBetweenFinishAndCommit() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
+    }
+
+    private Optional<Duration> delayBetweenFinishAndCommit(ProcessRun run) {
+        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+                        .map(finishedStatus -> Duration.between(
+                                finishedStatus.getSummary().getFinishTime(),
+                                committedStatus.getCommitTime())));
     }
 
     private Set<CompactionJobStatusType> runStatusTypes() {

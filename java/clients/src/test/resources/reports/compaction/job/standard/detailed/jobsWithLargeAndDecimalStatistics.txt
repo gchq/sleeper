@@ -4,7 +4,7 @@ Compaction Job Status Report
 Details for job job22222-2222-2222-2222-222222222222:
 State: FINISHED
 Creation time: 2022-10-13T12:01:00Z
-Input files assigned to job at time: 2022-10-13T12:01:01Z
+Input files assigned to job at time: 2022-10-13T12:01:05Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
 
 Run on task task-id
@@ -23,7 +23,7 @@ Delay between finish and commit: 20s
 Details for job job11111-1111-1111-1111-111111111111:
 State: FINISHED
 Creation time: 2022-10-13T12:00:00Z
-Input files assigned to job at time: 2022-10-13T12:00:01Z
+Input files assigned to job at time: 2022-10-13T12:00:01.123Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
 
 Run on task task-id
