@@ -117,11 +117,11 @@ public interface CompactionProperty {
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.concurrency.reserved")
+    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.reserved")
             .description("The reserved concurrency for the compaction lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.concurrency.max")
+    UserDefinedInstanceProperty COMPACTION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
             .description("The maximum given concurrency allowed for the compaction lambda.")
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
