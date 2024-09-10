@@ -974,6 +974,9 @@
                                 <!-- For modules with no tests, e.g. system-test-cdk -->
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-api::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.assertj:assertj-core::</ignoredUnusedDeclaredDependency>
+                                <!-- For modules using test suites, e.g. system-test-suite -->
+                                <ignoredUnusedDeclaredDependency>org.junit.platform:junit-platform-suite::</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-engine::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
