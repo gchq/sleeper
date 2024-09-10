@@ -942,18 +942,18 @@ sleeper.compaction.job.creation.memory=1024
 # The timeout for the lambda that creates compaction jobs in seconds.
 sleeper.compaction.job.creation.timeout.seconds=900
 
-# The maximum number of concurrent compaction tasks to run.
-sleeper.compaction.max.concurrent.tasks=300
-
-# The reserved concurrency for the compaction lambda.
+# The reserved concurrency for the lambda used to create compaction jobs.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
 # sleeper.compaction.job.creation.concurrency.reserved=
 
-# The maximum given concurrency allowed for the compaction lambda.
+# The maximum given concurrency allowed for the lambda used to create compaction jobs.
 # See maximum concurrency overview at:
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
 # sleeper.compaction.job.creation.concurrency.max=
+
+# The maximum number of concurrent compaction tasks to run.
+sleeper.compaction.max.concurrent.tasks=300
 
 # The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes,
 # must be >= 1).
