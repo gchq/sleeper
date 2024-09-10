@@ -29,7 +29,6 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -71,7 +70,7 @@ class SleeperPropertiesTest {
     }
 
     @Test
-    void shouldReturnNullWhenPropertySetToValueThatIsntAnInt() {
+    void shouldReturnNullWhenPropertySetToValueThatIsNotAnInt() {
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
         // When
