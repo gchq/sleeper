@@ -146,7 +146,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
-        return new SystemTestLocalFiles(context.instance(), tempDir);
+        return new SystemTestLocalFiles(context.instance(), baseDrivers.localFiles(context), tempDir);
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {

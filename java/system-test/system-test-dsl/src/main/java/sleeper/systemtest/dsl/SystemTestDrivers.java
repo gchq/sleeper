@@ -42,6 +42,7 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
@@ -67,6 +68,8 @@ public interface SystemTestDrivers {
     GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest);
 
     IngestSourceFilesDriver sourceFiles(SystemTestContext context);
+
+    IngestLocalFilesDriver localFiles(SystemTestContext context);
 
     StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context);
 
