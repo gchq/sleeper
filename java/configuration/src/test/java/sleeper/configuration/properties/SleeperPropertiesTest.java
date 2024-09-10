@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -35,6 +36,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -54,6 +57,29 @@ class SleeperPropertiesTest {
 
         // Then
         assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("5");
+    }
+
+    @Test
+    void shouldReturnNullIntegerObjectWhenValueSetToNull() {
+
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        // When // Then
+        assertThat(testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
+    }
+
+    @Test
+    void shouldReturnNullWhenPropertySetToValueThatIsNotAnInt() {
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+        // When
+        testSleeperProperties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "Forty Two");
+
+        // Then
+        assertThatThrownBy(() -> testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
+                .isInstanceOf(NumberFormatException.class)
+                .hasMessageContaining("Forty Two");
     }
 
     @Test

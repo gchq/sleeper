@@ -126,6 +126,16 @@ sleeper.task.runner.timeout.seconds=900
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
 
+# The reserved concurrency for the table metrics lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.metrics.concurrency.reserved=
+
+# The maximum given concurrency allowed for the table metrics lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.metrics.concurrency.max=
+
 # The number of tables to calculate metrics for in a single invocation. This will be the batch size
 # for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.metrics.batch.size=1
@@ -162,6 +172,16 @@ sleeper.statestore.transactionlog.snapshot.creation.batch.size=1
 # The frequency in minutes with which the transaction log snapshot creation lambda is run.
 sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes=5
 
+# The reserved concurrency for the snapshot creation lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved=
+
+# The maximum given concurrency allowed for the snapshot creation lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.snapshot.creation.concurrency.max=
+
 # The number of tables to delete old transaction log snapshots for in a single invocation. This will
 # be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.snapshot.deletion.batch.size=1
@@ -169,12 +189,32 @@ sleeper.statestore.transactionlog.snapshot.deletion.batch.size=1
 # The frequency in minutes with which the transaction log snapshot deletion lambda is run.
 sleeper.statestore.transactionlog.snapshot.deletion.lambda.period.minutes=60
 
+# The reserved concurrency for the snapshot deletion lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.snapshot.deletion.concurrency.reserved=
+
+# The maximum given concurrency allowed for the snapshot deletion lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.snapshot.deletion.concurrency.max=
+
 # The number of tables to delete old transaction log transactions for in a single invocation. This
 # will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.transaction.deletion.batch.size=1
 
 # The frequency in minutes with which the transaction log transaction deletion lambda is run.
 sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes=60
+
+# The reserved concurrency for the transaction deletion lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.transaction.deletion.concurrency.reserved=
+
+# The maximum given concurrency allowed for the transaction deletion lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.transaction.deletion.concurrency.max=
 
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
@@ -205,6 +245,16 @@ sleeper.statestore.committer.lambda.timeout.seconds=900
 # The number of state store updates to be sent to the state store committer lambda in one invocation.
 # This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.committer.batch.size=10
+
+# The reserved concurrency for the state store committer lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.committer.concurrency.reserved=
+
+# The maximum given concurrency allowed for the state store committer lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.committer.concurrency.max=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
@@ -768,6 +818,16 @@ sleeper.partition.splitting.finder.memory=2048
 # The timeout in seconds for the lambda function used to identify partitions that need to be split.
 sleeper.partition.splitting.finder.timeout.seconds=900
 
+# The reserved concurrency for the find partitions to split lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.partition.splitting.finder.concurrency.reserved=
+
+# The maximum given concurrency allowed for the find partitions to split lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.partition.splitting.finder.concurrency.max=
+
 # The amount of memory in MB for the lambda function used to split partitions.
 sleeper.partition.splitting.memory=2048
 
@@ -796,6 +856,16 @@ sleeper.gc.lambda.timeout.minutes=14
 
 # The amount of memory in MB for the lambda function used to perform garbage collection.
 sleeper.gc.memory=1024
+
+# The reserved concurrency for the garbage collection lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.gc.concurrency.reserved=
+
+# The maximum given concurrency allowed for the garbage collection lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.gc.concurrency.max=
 
 # The number of tables to perform garbage collection for in a single invocation. This will be the
 # batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
@@ -871,6 +941,16 @@ sleeper.compaction.job.creation.memory=1024
 
 # The timeout for the lambda that creates compaction jobs in seconds.
 sleeper.compaction.job.creation.timeout.seconds=900
+
+# The reserved concurrency for the lambda used to create compaction jobs.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.compaction.job.creation.concurrency.reserved=
+
+# The maximum given concurrency allowed for the lambda used to create compaction jobs.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.compaction.job.creation.concurrency.max=
 
 # The maximum number of concurrent compaction tasks to run.
 sleeper.compaction.max.concurrent.tasks=300
