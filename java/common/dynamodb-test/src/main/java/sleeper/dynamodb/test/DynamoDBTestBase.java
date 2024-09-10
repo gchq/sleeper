@@ -17,6 +17,7 @@ package sleeper.dynamodb.test;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Container;
@@ -32,6 +33,7 @@ public abstract class DynamoDBTestBase {
     @Container
     public static final DynamoDBContainer CONTAINER = new DynamoDBContainer();
 
+    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     protected final AmazonDynamoDB dynamoDBClient = dynamoDBClientShared;
 
     @BeforeAll
