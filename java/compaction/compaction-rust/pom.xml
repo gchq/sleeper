@@ -28,17 +28,12 @@
 		<!-- Sleeper dependencies -->
 		<dependency>
 			<groupId>sleeper</groupId>
-			<artifactId>compaction-job-creation</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>common-job</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
 			<artifactId>core</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>sleeper</groupId>
+			<artifactId>compaction-core</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
@@ -70,20 +65,6 @@
 		</dependency>
 		<dependency>
 			<groupId>sleeper</groupId>
-			<artifactId>dynamodb-tools</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>statestore</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
 			<artifactId>parquet</artifactId>
 			<version>${project.parent.version}</version>
 			<type>test-jar</type>
@@ -96,12 +77,6 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-runner</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
@@ -122,11 +97,6 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
