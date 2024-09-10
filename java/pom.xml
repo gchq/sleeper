@@ -159,7 +159,7 @@
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.1.113.Final</netty.version>
-        <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
+        <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>9.4.56.v20240826</jetty.version>
         <jettison.version>1.5.4</jettison.version>
