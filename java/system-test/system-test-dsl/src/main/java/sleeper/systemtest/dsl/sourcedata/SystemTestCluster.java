@@ -88,12 +88,12 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster invokeStandardIngestTask() {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(jobIds, pollDriver);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(jobIds(), pollDriver);
         return this;
     }
 
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
+        tasksDriver.invokeTasksForCurrentInstance().invokeUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
         return this;
     }
 
