@@ -29,13 +29,16 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -86,14 +89,14 @@ public class WaitForJobsStatusTest {
     void shouldReportSeveralCompactionJobs() {
         // Given
         CompactionJob createdJob = compactionJob("created-job", "1.parquet", "2.parquet");
-        CompactionJob startedJob = compactionJob("started-job", "3.parquet", "4.parquet");
-        CompactionJob uncommittedJob = compactionJob("uncommitted-job", "5.parquet", "6.parquet");
-        CompactionJob finishedJob = compactionJob("finished-job", "7.parquet", "8.parquet");
+        CompactionJob filesAssignedJob = compactionJob("files-assigned-job", "a.parquet", "b.parquet");
+        CompactionJob startedJob = compactionJob("started-job", "x.parquet", "y.parquet");
+        CompactionJob uncommittedJob = compactionJob("uncommitted-job", "alpha.parquet", "beta.parquet");
+        CompactionJob finishedJob = compactionJob("finished-job", "first.parquet", "second.parquet");
         store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
-        store.jobCreated(createdJob);
-        store.jobCreated(startedJob);
-        store.jobCreated(uncommittedJob);
-        store.jobCreated(finishedJob);
+        jobCreated(createdJob, filesAssignedJob, startedJob, uncommittedJob, finishedJob);
+        store.fixUpdateTime(Instant.parse("2023-09-18T14:47:01Z"));
+        jobInputFilesAssigned(filesAssignedJob, startedJob, uncommittedJob, finishedJob);
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
         store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
         store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
@@ -109,19 +112,20 @@ public class WaitForJobsStatusTest {
         store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
-                List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
+                List.of("created-job", "files-assigned-job", "started-job", "uncommitted-job", "finished-job"),
                 Instant.parse("2023-09-18T14:50:01Z"));
 
         // Then
         assertThat(status).hasToString("{\n" +
                 "  \"countByFurthestStatus\": {\n" +
+                "    \"CREATED\": 1,\n" +
+                "    \"FILES_ASSIGNED\": 1,\n" +
                 "    \"FINISHED\": 1,\n" +
                 "    \"IN_PROGRESS\": 1,\n" +
-                "    \"PENDING\": 1,\n" +
                 "    \"UNCOMMITTED\": 1\n" +
                 "  },\n" +
-                "  \"numUnstarted\": 1,\n" +
-                "  \"numUnfinished\": 3,\n" +
+                "  \"numUnstarted\": 2,\n" +
+                "  \"numUnfinished\": 4,\n" +
                 "  \"firstInProgressStartTime\": \"2023-09-18T14:48:00Z\",\n" +
                 "  \"longestInProgressDuration\": \"PT2M1S\"\n" +
                 "}");
@@ -250,6 +254,17 @@ public class WaitForJobsStatusTest {
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
         store.fixUpdateTime(defaultUpdateTime(createdTime));
         store.jobCreated(job);
+    }
+
+    private void jobCreated(CompactionJob... jobs) {
+        Stream.of(jobs).forEach(store::jobCreated);
+    }
+
+    private void jobInputFilesAssigned(CompactionJob... jobs) {
+        store.jobInputFilesAssigned(table.getTableUniqueId(),
+                Stream.of(jobs)
+                        .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                        .collect(toUnmodifiableList()));
     }
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {

@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -41,8 +40,7 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobCreatedFromJob() {
         // Given
-        Partition partition = dataHelper.singlePartition();
-        CompactionJob job = dataHelper.singleFileCompaction(partition);
+        CompactionJob job = dataHelper.singleFileCompaction();
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
