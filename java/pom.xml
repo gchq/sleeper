@@ -985,17 +985,7 @@
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-api::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.assertj:assertj-core::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
-                            <ignoredNonTestScopedDependencies>
-                                <ignoredNonTestScopedDependency>com.amazonaws:aws-java-sdk-core::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>software.amazon.awssdk:sdk-core::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>software.amazon.awssdk:aws-core::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>software.amazon.awssdk:auth::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>software.amazon.awssdk:regions::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>software.amazon.awssdk:http-client-spi::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>com.google.guava:guava::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.parquet:parquet-hadoop::</ignoredNonTestScopedDependency>
-                                <ignoredNonTestScopedDependency>org.apache.curator:curator-client::</ignoredNonTestScopedDependency>
-                            </ignoredNonTestScopedDependencies>
+                            <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
                     </execution>
                 </executions>
