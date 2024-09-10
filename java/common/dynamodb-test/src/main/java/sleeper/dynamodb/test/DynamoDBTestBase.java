@@ -27,18 +27,20 @@ import static sleeper.dynamodb.test.GenericContainerAwsV1ClientHelper.buildAwsV1
 @Testcontainers
 public abstract class DynamoDBTestBase {
 
-    public static AmazonDynamoDB dynamoDBClient;
+    private static AmazonDynamoDB dynamoDBClientShared;
 
     @Container
     public static final DynamoDBContainer CONTAINER = new DynamoDBContainer();
 
+    protected final AmazonDynamoDB dynamoDBClient = dynamoDBClientShared;
+
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(CONTAINER, CONTAINER.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClientShared = buildAwsV1Client(CONTAINER, CONTAINER.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
     public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
+        dynamoDBClientShared.shutdown();
     }
 }

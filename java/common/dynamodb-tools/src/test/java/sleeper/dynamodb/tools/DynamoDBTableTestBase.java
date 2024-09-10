@@ -44,7 +44,7 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(TEST_TABLE_NAME);
     }
 
-    public static void createTable() {
+    public void createTable() {
         initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
                 List.of(
                         new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
