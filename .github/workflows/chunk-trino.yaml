@@ -15,12 +15,13 @@ on:
       - 'java/common/common-job/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/sketches/**'
-      - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
+      - 'java/ingest/ingest-core/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
 
 jobs:
   chunk-workflow:

@@ -10,12 +10,13 @@ on:
       - 'java/pom.xml'
       - 'java/garbage-collector/**'
       - 'java/metrics/**'
-      - 'java/common/common-invoke-tables/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
 
 jobs:
   chunk-workflow:
