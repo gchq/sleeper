@@ -62,6 +62,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTI
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES;;
 
 public class TransactionLogSnapshotStack extends NestedStack {
@@ -170,6 +171,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotDeletionLogGroup", deletionFunctionName, instanceProperties)));
