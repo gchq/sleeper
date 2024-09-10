@@ -269,7 +269,8 @@
     <suppress>
         <notes><![CDATA[
         Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
-        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.56.
+        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.56 at time of
+        writing.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
