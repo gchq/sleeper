@@ -35,7 +35,11 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     default Integer getInt(T property) {
-        return Integer.parseInt(get(property));
+        String val = get(property);
+        if (val != null)
+            return Integer.parseInt(val);
+        else
+            return null;
     }
 
     default long getLong(T property) {
