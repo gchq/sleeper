@@ -977,6 +977,9 @@
                                 <!-- For modules using test suites, e.g. system-test-suite -->
                                 <ignoredUnusedDeclaredDependency>org.junit.platform:junit-platform-suite::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-engine::</ignoredUnusedDeclaredDependency>
+                                <!-- For Trino -->
+                                <ignoredUnusedDeclaredDependency>io.trino:trino-plugin-toolkit::</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.junit.vintage:junit-vintage-engine::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
