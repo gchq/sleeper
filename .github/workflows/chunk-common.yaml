@@ -18,6 +18,7 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/build/**'
       - 'java/common/dynamodb-tools/**'
+      - 'java/common/dynamodb-test/**'
 
 jobs:
   chunk-workflow:
