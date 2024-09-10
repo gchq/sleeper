@@ -29,6 +29,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -84,17 +85,21 @@ public class CompactionJobTestDataHelper {
     }
 
     public CompactionJob singleFileCompaction() {
-        return singleFileCompaction(singlePartition());
+        return singleFileCompaction(UUID.randomUUID().toString(), singlePartition());
     }
 
-    public CompactionJob singleFileCompaction(String partitionId) {
-        return singleFileCompaction(partitionTree.getPartition(partitionId));
+    public CompactionJob singleFileCompaction(String jobId) {
+        return singleFileCompaction(jobId, singlePartition());
     }
 
-    public CompactionJob singleFileCompaction(Partition partition) {
+    public CompactionJob singleFileCompaction(String jobId, String partitionId) {
+        return singleFileCompaction(jobId, partitionTree.getPartition(partitionId));
+    }
+
+    public CompactionJob singleFileCompaction(String jobId, Partition partition) {
         validatePartitionSpecified(partition);
-        return jobFactory.createCompactionJob(
-                Collections.singletonList(fileInPartition(partition)),
+        return jobFactory.createCompactionJob(jobId,
+                List.of(fileInPartition(partition)),
                 partition.getId());
     }
 

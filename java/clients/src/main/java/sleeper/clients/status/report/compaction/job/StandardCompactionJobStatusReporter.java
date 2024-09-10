@@ -17,7 +17,6 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.DelayStatistics;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
@@ -30,10 +29,10 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +44,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private final TableField stateField;
     private final TableField createTimeField;
+    private final TableField filesAssignedTimeField;
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField inputFilesCount;
@@ -64,6 +64,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         createTimeField = tableFactoryBuilder.addField("CREATE_TIME");
+        filesAssignedTimeField = tableFactoryBuilder.addField("FILES_ASSIGNED_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
@@ -119,8 +120,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {
         out.printf("Details for job %s:%n", jobStatus.getJobId());
-        out.printf("State: %s%n", jobStatus.getFurthestRunStatusType());
+        out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
+        jobStatus.getInputFilesAssignedUpdateTime().ifPresentOrElse(
+                filesAssignedTime -> out.printf("Input files assigned to job at time: %s%n", filesAssignedTime),
+                () -> out.printf("Input files not yet assigned to job%n"));
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         jobStatus.getJobRuns().forEach(this::printJobRun);
         out.println("--------------------------");
@@ -148,6 +152,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
         printUnfinishedStatusCounts(jobStatusList);
+        printUnfinishedDelayStatistics(jobStatusList);
     }
 
     private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
@@ -173,10 +178,18 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
         AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
-        if (jobs.stream().anyMatch(CompactionJobStatus::isAnyRunSuccessful)) {
-            out.println("Statistics for delays between all finish and commit times:");
-            out.println("  " + delayStatistics(jobs));
-        }
+        printUnfinishedDelayStatistics(jobs);
+        out.println("Statistics for delay between finish and commit time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs committed"));
+    }
+
+    private void printUnfinishedDelayStatistics(List<CompactionJobStatus> jobs) {
+        out.println("Statistics for delay between creation and input files assignment time:");
+        out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(jobs)
+                .map(DurationStatistics::toString)
+                .orElse("no jobs assigned to input files"));
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
@@ -184,31 +197,18 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .flatMap(job -> job.getJobRuns().stream()));
     }
 
-    private static DelayStatistics delayStatistics(List<CompactionJobStatus> jobs) {
-        DelayStatistics.Builder builder = DelayStatistics.builder();
-        jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream())
-                .filter(ProcessRun::isFinishedSuccessfully)
-                .forEach(jobRun -> {
-                    jobRun.getLastStatusOfType(CompactionJobCommittedStatus.class).ifPresent(commitStatus -> {
-                        Instant finishTime = jobRun.getFinishedStatus().getSummary().getFinishTime();
-                        Instant commitTime = commitStatus.getCommitTime();
-                        builder.add(Duration.between(finishTime, commitTime));
-                    });
-                });
-        return builder.build();
-    }
-
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
         if (job.getJobRuns().isEmpty()) {
             table.row(row -> {
-                row.value(stateField, CompactionJobStatusType.PENDING);
+                row.value(stateField, job.getFurthestStatusType());
+                row.value(filesAssignedTimeField, job.getInputFilesAssignedUpdateTime().orElse(null));
                 writeJobFields(job, row);
             });
         } else {
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
                 row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
+                row.value(filesAssignedTimeField, job.getInputFilesAssignedUpdateTime().orElse(null));
                 row.value(commitTimeField, run.getLastStatusOfType(CompactionJobCommittedStatus.class)
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));

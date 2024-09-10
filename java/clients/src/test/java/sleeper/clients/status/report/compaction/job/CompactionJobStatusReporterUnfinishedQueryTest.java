@@ -24,7 +24,6 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import java.util.Collections;
 import java.util.List;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
@@ -37,11 +36,9 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
-                .isEqualTo(replaceStandardJobIds(statusList,
-                        example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
-                .isEqualTo(replaceBracketedJobIds(statusList,
-                        example("reports/compaction/job/json/mixedUnfinishedJobs.json")));
+                .isEqualTo(example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+                .isEqualTo(example("reports/compaction/job/json/mixedUnfinishedJobs.json"));
     }
 
     @Test
@@ -52,7 +49,7 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/standard/unfinished/noJobs.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }

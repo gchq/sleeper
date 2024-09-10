@@ -20,7 +20,9 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.util.DurationStatistics;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +35,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static sleeper.compaction.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.job.status.CompactionJobStatusType.FILES_ASSIGNED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.job.status.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.compaction.job.status.CompactionJobStatusType.UNCOMMITTED;
@@ -55,7 +59,9 @@ public class CompactionJobStatus {
         jobRuns = builder.jobRuns;
         runsByStatusType = jobRuns.getRunsLatestFirst().stream()
                 .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
-        furthestRunStatusType = CompactionJobStatusType.statusTypeOfFurthestRunOfJob(runsByStatusType.keySet());
+        furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(
+                filesAssignedStatus == null ? CREATED : FILES_ASSIGNED,
+                runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
 
@@ -83,6 +89,16 @@ public class CompactionJobStatus {
                         .jobRuns(updates.getRuns())
                         .expiryDate(updates.getFirstRecord().getExpiryDate())
                         .build());
+    }
+
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(job -> job.getDelayBetweenCreatedAndFilesAssigned().stream()));
+    }
+
+    public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
+        return DurationStatistics.fromIfAny(jobs.stream()
+                .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
     }
 
     public Instant getCreateUpdateTime() {
@@ -142,6 +158,25 @@ public class CompactionJobStatus {
         return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
     }
 
+    public Optional<Duration> getDelayBetweenCreatedAndFilesAssigned() {
+        return Optional.ofNullable(filesAssignedStatus)
+                .map(filesAssignedStatus -> Duration.between(
+                        createdStatus.getUpdateTime(), filesAssignedStatus.getUpdateTime()));
+    }
+
+    public Stream<Duration> runDelaysBetweenFinishAndCommit() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
+    }
+
+    private Optional<Duration> delayBetweenFinishAndCommit(ProcessRun run) {
+        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+                        .map(finishedStatus -> Duration.between(
+                                finishedStatus.getSummary().getFinishTime(),
+                                committedStatus.getCommitTime())));
+    }
+
     private Set<CompactionJobStatusType> runStatusTypes() {
         return runsByStatusType.keySet();
     }
@@ -180,7 +215,7 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public CompactionJobStatusType getFurthestRunStatusType() {
+    public CompactionJobStatusType getFurthestStatusType() {
         return furthestRunStatusType;
     }
 

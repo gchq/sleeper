@@ -1,7 +1,7 @@
 
 Ingest Job Status Report
 ------------------------
-Details for job $(jobId4):
+Details for job job44444-4444-4444-4444-444444444444:
 State: FINISHED
 Number of input files: 1
 
@@ -16,7 +16,7 @@ Records written: 1,234,000
 Read rate (reads per second): 9,995.46
 Write rate (writes per second): 9,995.46
 ------------------------
-Details for job $(jobId3):
+Details for job job33333-3333-3333-3333-333333333333:
 State: FINISHED
 Number of input files: 1
 
@@ -31,7 +31,7 @@ Records written: 500,300
 Read rate (reads per second): 16,676.67
 Write rate (writes per second): 8,338.33
 ------------------------
-Details for job $(jobId2):
+Details for job job22222-2222-2222-2222-222222222222:
 State: FINISHED
 Number of input files: 1
 
@@ -46,7 +46,7 @@ Records written: 500,300
 Read rate (reads per second): 138.97
 Write rate (writes per second): 69.49
 ------------------------
-Details for job $(jobId1):
+Details for job job11111-1111-1111-1111-111111111111:
 State: FINISHED
 Number of input files: 1
 
