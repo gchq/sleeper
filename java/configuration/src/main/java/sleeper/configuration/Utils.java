@@ -51,7 +51,7 @@ public class Utils {
     }
 
     public static boolean isPositiveIntegerOrNull(String integer) {
-        return (isPositiveInteger(integer)) || (integer == null);
+        return (integer == null) || (isPositiveInteger(integer));
     }
 
     public static boolean isPositiveIntegerLtEq10(String integer) {
