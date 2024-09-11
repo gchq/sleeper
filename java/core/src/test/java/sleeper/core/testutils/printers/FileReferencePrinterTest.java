@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
@@ -126,6 +127,24 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.partitionFile("RLR", 13),
                     fileReferenceFactory.partitionFile("RRL", 12),
                     fileReferenceFactory.partitionFile("RRR", 13)));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        void shouldPrintFilesAssignedToJobs() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+
+            // When
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    withJobId("left-job", fileReferenceFactory.partitionFile("L", "l1.parquet", 12)),
+                    withJobId("left-job", fileReferenceFactory.partitionFile("L", "l2.parquet", 34)),
+                    withJobId("right-job", fileReferenceFactory.partitionFile("R", "r1.parquet", 56)),
+                    withJobId("right-job", fileReferenceFactory.partitionFile("R", "r2.parquet", 78))));
 
             // Then see approved output
             Approvals.verify(printed);
