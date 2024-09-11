@@ -336,17 +336,15 @@ public interface DefaultProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
             .description("Default value for the concurrency assigned to the lambdas across the entire of the sleeper instance. Each lambda also has its own " +
-                    "implementation of the property which will override the value found here.\n Default to value of 1.\n" +
+                    "implementation of the property which will override the value found here.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
             .description("Default value for the maximum concurrency assigned to the lambdas across the entire of the sleeper instance. Each lambda " +
-                    "has its own property that overrides the value found here.\n Default value is set to 1000\n" +
+                    "has its own property that overrides the value found here.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .defaultValue("1000")
-            .validationPredicate(Utils::isPositiveIntegerLtEq1000)
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
