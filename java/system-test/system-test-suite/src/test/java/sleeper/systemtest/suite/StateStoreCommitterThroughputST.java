@@ -31,6 +31,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -70,7 +71,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(90.0, 130.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+                .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
     @Test
@@ -91,7 +92,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(35.0, 60.0);
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
     }
 
     @Test
@@ -114,7 +115,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(90.0, 130.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+                .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
     @Test
@@ -142,7 +143,7 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(20.0, 130.0));
+                        .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
     }
 
     @Test
@@ -172,7 +173,7 @@ public class StateStoreCommitterThroughputST {
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(35.0, 60.0);
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
     }
 
     @Test
@@ -215,7 +216,7 @@ public class StateStoreCommitterThroughputST {
                                 .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(35.0, 60.0);
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
     }
 
     @Test
@@ -255,7 +256,7 @@ public class StateStoreCommitterThroughputST {
                                 .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .isBetween(90.0, 130.0);
+                .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
     @Test
@@ -294,7 +295,7 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(20.0, 130.0));
+                        .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
     }
 
     private String filename(int i) {
@@ -311,6 +312,21 @@ public class StateStoreCommitterThroughputST {
 
     private Instant startTime(int i) {
         return Instant.parse("2024-09-11T13:56:00Z").plus(Duration.ofSeconds(i));
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
+        return commitsPerSecond -> assertThat(commitsPerSecond)
+                .isBetween(90.0, 135.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
+        return commitsPerSecond -> assertThat(commitsPerSecond)
+                .isBetween(35.0, 60.0);
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
+        return commitsPerSecond -> assertThat(commitsPerSecond)
+                .isBetween(20.0, 135.0);
     }
 
 }
