@@ -30,12 +30,12 @@ public class StaticRateLimitTest {
     @Test
     void shouldRequestOnce() {
         // Given
-        AtomicInteger integer = new AtomicInteger();
+        AtomicInteger count = new AtomicInteger();
         Iterator<Instant> times = List.of(Instant.parse("2024-09-11T10:41:00Z")).iterator(); // Result time
         StaticRateLimit<Integer> limit = StaticRateLimit.withWaitBetweenRequests(Duration.ofSeconds(1), times::next);
 
         // When
-        Integer result = limit.requestOrGetLast(integer::incrementAndGet);
+        Integer result = limit.requestOrGetLast(count::incrementAndGet);
 
         // Then
         assertThat(result).isOne();
@@ -45,7 +45,7 @@ public class StaticRateLimitTest {
     @Test
     void shouldRequestTwiceWithExpectedWait() {
         // Given
-        AtomicInteger integer = new AtomicInteger();
+        AtomicInteger count = new AtomicInteger();
         Iterator<Instant> times = List.of(
                 Instant.parse("2024-09-11T10:41:00Z"), // First result time
                 Instant.parse("2024-09-11T10:41:01Z"), // Second check time
@@ -54,8 +54,8 @@ public class StaticRateLimitTest {
         StaticRateLimit<Integer> limit = StaticRateLimit.withWaitBetweenRequests(Duration.ofSeconds(1), times::next);
 
         // When
-        limit.requestOrGetLast(integer::incrementAndGet);
-        Integer result = limit.requestOrGetLast(integer::incrementAndGet);
+        limit.requestOrGetLast(count::incrementAndGet);
+        Integer result = limit.requestOrGetLast(count::incrementAndGet);
 
         // Then
         assertThat(result).isEqualTo(2);
@@ -65,7 +65,7 @@ public class StaticRateLimitTest {
     @Test
     void shouldRequestOnceWhenRepeatedWithinWaitTime() {
         // Given
-        AtomicInteger integer = new AtomicInteger();
+        AtomicInteger count = new AtomicInteger();
         Iterator<Instant> times = List.of(
                 Instant.parse("2024-09-11T10:41:00Z"), // First result time
                 Instant.parse("2024-09-11T10:41:00.900Z")) // Second check time
@@ -73,8 +73,8 @@ public class StaticRateLimitTest {
         StaticRateLimit<Integer> limit = StaticRateLimit.withWaitBetweenRequests(Duration.ofSeconds(1), times::next);
 
         // When
-        limit.requestOrGetLast(integer::incrementAndGet);
-        Integer result = limit.requestOrGetLast(integer::incrementAndGet);
+        limit.requestOrGetLast(count::incrementAndGet);
+        Integer result = limit.requestOrGetLast(count::incrementAndGet);
 
         // Then
         assertThat(result).isEqualTo(1);
