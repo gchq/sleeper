@@ -21,11 +21,9 @@ import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 public class DummyInstanceProperty implements InstanceProperty {
     private final String propertyName;
-    private final SleeperProperty defaultProperty;
 
     public DummyInstanceProperty(String propertyName) {
         this.propertyName = propertyName;
-        this.defaultProperty = null;
     }
 
     @Override
@@ -55,6 +53,6 @@ public class DummyInstanceProperty implements InstanceProperty {
 
     @Override
     public SleeperProperty getDefaultProperty() {
-        return this.defaultProperty;
+        throw new UnsupportedOperationException("DefaultProperty not implemented");
     }
 }
