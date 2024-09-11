@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -28,11 +29,13 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
     private final String propertyName;
     private final String description;
     private final PropertyGroup group;
+    private final SleeperProperty defaultProperty;
 
     private CdkDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         group = Objects.requireNonNull(builder.group, "group must not be null");
+        defaultProperty = builder.defaultProperty;
     }
 
     public static Builder builder() {
@@ -51,6 +54,11 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
     @Override
     public String getDefaultValue() {
         return null;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
     }
 
     public String toString() {
@@ -77,6 +85,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
         private String description;
         private PropertyGroup group;
         private Consumer<CdkDefinedInstanceProperty> addToIndex;
+        private SleeperProperty defaultProperty;
 
         private Builder() {
         }
@@ -93,6 +102,11 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
 
         public Builder propertyGroup(PropertyGroup group) {
             this.group = group;
+            return this;
+        }
+
+        public Builder defaultProperty(SleeperProperty property) {
+            this.defaultProperty = property;
             return this;
         }
 
