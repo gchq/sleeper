@@ -53,11 +53,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-data-generation</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>bulk-import-starter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
