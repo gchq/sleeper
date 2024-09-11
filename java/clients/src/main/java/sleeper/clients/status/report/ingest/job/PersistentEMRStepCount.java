@@ -18,10 +18,13 @@ package sleeper.clients.status.report.ingest.job;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import com.amazonaws.services.elasticmapreduce.model.ListStepsRequest;
 import com.amazonaws.services.elasticmapreduce.model.StepSummary;
 
+import sleeper.clients.util.EmrUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.StaticRateLimit;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +41,12 @@ public class PersistentEMRStepCount {
 
     public static Map<String, Integer> byStatus(
             InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient) {
-        return getPersistentClusterId(instanceProperties, emrClient)
+        return byStatus(instanceProperties, emrClient, EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
+    }
+
+    public static Map<String, Integer> byStatus(
+            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+        return getPersistentClusterId(instanceProperties, emrClient, listActiveClustersLimit)
                 .map(id -> emrClient.listSteps(new ListStepsRequest()
                         .withClusterId(id)).getSteps())
                 .map(PersistentEMRStepCount::countStepsByState)
@@ -46,12 +54,12 @@ public class PersistentEMRStepCount {
     }
 
     private static Optional<String> getPersistentClusterId(
-            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient) {
+            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
         String clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         if (clusterName == null) {
             return Optional.empty();
         }
-        return listActiveClusters(emrClient).getClusters().stream()
+        return listActiveClusters(emrClient, listActiveClustersLimit).getClusters().stream()
                 .filter(cluster -> clusterName.equals(cluster.getName()))
                 .map(ClusterSummary::getId)
                 .findAny();
