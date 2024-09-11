@@ -11,15 +11,17 @@ on:
       - 'java/statestore/**'
       - 'java/statestore-commit/**'
       - 'java/statestore-lambda/**'
+      - 'java/statestore/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-core/**'
-      - 'java/common/common-invoke-tables/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
 
 jobs:
   chunk-workflow:

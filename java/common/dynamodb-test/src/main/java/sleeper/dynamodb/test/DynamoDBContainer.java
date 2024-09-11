@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package sleeper.statestore.dynamodb;
+package sleeper.dynamodb.test;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.testcontainers.containers.GenericContainer;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import java.util.List;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
 
-public class DynamoDBStateStoreTestBase extends DynamoDBTestBase {
+    private static final String DYNAMO_CONTAINER_IMAGE = "amazon/dynamodb-local:1.21.0";
+    private static final int DYNAMO_PORT = 8000;
 
-    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    public DynamoDBContainer() {
+        super(DYNAMO_CONTAINER_IMAGE);
+        setExposedPorts(List.of(DYNAMO_PORT));
+    }
 
-    @BeforeEach
-    void setUpBase() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+    public int getDynamoPort() {
+        return DYNAMO_PORT;
     }
 }

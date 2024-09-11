@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.dsl.sourcedata;
 
-package sleeper.dynamodb.tools;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
 
-import org.testcontainers.containers.GenericContainer;
+import java.nio.file.Path;
+import java.util.Iterator;
 
-import sleeper.core.CommonTestConstants;
+public interface IngestLocalFilesDriver {
 
-import java.util.List;
+    void writeFile(TableProperties tableProperties, Path filePath, Iterator<Record> records);
 
-public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
-
-    private static final int DYNAMO_PORT = 8000;
-
-    public DynamoDBContainer() {
-        super(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER);
-        setExposedPorts(List.of(DYNAMO_PORT));
-    }
-
-    public int getDynamoPort() {
-        return DYNAMO_PORT;
-    }
 }

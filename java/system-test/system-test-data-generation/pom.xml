@@ -30,17 +30,12 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-dsl</artifactId>
+            <artifactId>system-test-configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

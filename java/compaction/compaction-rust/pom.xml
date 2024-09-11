@@ -15,219 +15,187 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<parent>
-		<artifactId>compaction</artifactId>
-		<groupId>sleeper</groupId>
-		<version>0.25.0-SNAPSHOT</version>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
-	<artifactId>compaction-rust</artifactId>
-	<dependencies>
-		<!-- Sleeper dependencies -->
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>compaction-job-creation</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>common-job</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>core</artifactId>
-			<version>${project.parent.version}</version>
-		</dependency>
-		<dependency>
-			<!-- Native code loading and linking -->
-			<groupId>com.github.jnr</groupId>
-			<artifactId>jnr-ffi</artifactId>
-			<version>${jnr.ffi.version}</version>
-		</dependency>
-		<dependency>
-			<!-- JAR extraction -->
-			<groupId>org.scijava</groupId>
-			<artifactId>native-lib-loader</artifactId>
-			<version>${scijava.native.version}</version>
-		</dependency>
-		<!-- Test dependencies -->
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>core</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>configuration</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>dynamodb-tools</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>statestore</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>parquet</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>sleeper</groupId>
-			<artifactId>sketches</artifactId>
-			<version>${project.parent.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>compaction</artifactId>
+        <groupId>sleeper</groupId>
+        <version>0.25.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>compaction-rust</artifactId>
+    <dependencies>
+        <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-runner</artifactId>
+            <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <!-- Native code loading and linking -->
+            <groupId>com.github.jnr</groupId>
+            <artifactId>jnr-ffi</artifactId>
+            <version>${jnr.ffi.version}</version>
+        </dependency>
+        <dependency>
+            <!-- JAR extraction -->
+            <groupId>org.scijava</groupId>
+            <artifactId>native-lib-loader</artifactId>
+            <version>${scijava.native.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>parquet</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
-			<type>test-jar</type>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>localstack</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-	<build>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
        <plugins>
-        	<!-- Resources plugin to copy all built native libs into JAR file -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>${resources.plugin.version}</version>
-				<goals>
-					<goal>copy-resources</goal>
-				</goals>
-				<configuration>
-					<outputDirectory>${project.build.outputDirectory}/natives/</outputDirectory>
-					<resources>
-						<resource>
-							<directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
-							<includes>
-								<include>release/*.dylib</include>
-								<include>release/*.dll</include>
-								<include>release/*.so</include>
-								<include>*/release/*.dylib</include>
-								<include>*/release/*.dll</include>
-								<include>*/release/*.so</include>
-								<include>debug/*.dylib</include>
-								<include>debug/*.dll</include>
-								<include>debug/*.so</include>
-								<include>*/debug/*.dylib</include>
-								<include>*/debug/*.dll</include>
-								<include>*/debug/*.so</include>
-							</includes>
-							<filtering>false</filtering>
-						</resource>
-					</resources>
-					<encoding>UTF-8</encoding>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<profiles>
-		<profile>
+            <!-- Resources plugin to copy all built native libs into JAR file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${resources.plugin.version}</version>
+                <goals>
+                    <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.outputDirectory}/natives/</outputDirectory>
+                    <resources>
+                        <resource>
+                            <directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
+                            <includes>
+                                <include>release/*.dylib</include>
+                                <include>release/*.dll</include>
+                                <include>release/*.so</include>
+                                <include>*/release/*.dylib</include>
+                                <include>*/release/*.dll</include>
+                                <include>*/release/*.so</include>
+                                <include>debug/*.dylib</include>
+                                <include>debug/*.dll</include>
+                                <include>debug/*.so</include>
+                                <include>*/debug/*.dylib</include>
+                                <include>*/debug/*.dll</include>
+                                <include>*/debug/*.so</include>
+                            </includes>
+                            <filtering>false</filtering>
+                        </resource>
+                    </resources>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
         <activation>
             <property>
                 <name>skipRust</name>
                 <value>!true</value>
             </property>
         </activation>
-			<id>rust</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>${exec.plugin.version}</version>
-						<executions>
-							<!-- You need one execution per cross target you are building. Make sure you add
+            <id>rust</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec.plugin.version}</version>
+                        <executions>
+                            <!-- You need one execution per cross target you are building. Make sure you add
                             the appropriate resources plugin execution below! -->
-							<execution>
-								<id>Invoke Rust Cargo build (Linux x86_64)</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>cross</executable>
-									<workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
-									<arguments>
-										<argument>build</argument>
-										<argument>--release</argument>
-										<argument>--target</argument>
-										<argument>x86_64-unknown-linux-gnu</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>Invoke Rust Cargo build (Linux Aarch64)</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>cross</executable>
-									<workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
-									<arguments>
-										<argument>build</argument>
-										<argument>--release</argument>
-										<argument>--target</argument>
-										<argument>aarch64-unknown-linux-gnu</argument>
-									</arguments>
-									<environmentVariables>
-										<RUSTFLAGS>-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1</RUSTFLAGS>
-									</environmentVariables>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
-
-    
+                            <execution>
+                                <id>Invoke Rust Cargo build (Linux x86_64)</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>cross</executable>
+                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>--release</argument>
+                                        <argument>--target</argument>
+                                        <argument>x86_64-unknown-linux-gnu</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>Invoke Rust Cargo build (Linux Aarch64)</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>cross</executable>
+                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>--release</argument>
+                                        <argument>--target</argument>
+                                        <argument>aarch64-unknown-linux-gnu</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <RUSTFLAGS>-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1</RUSTFLAGS>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

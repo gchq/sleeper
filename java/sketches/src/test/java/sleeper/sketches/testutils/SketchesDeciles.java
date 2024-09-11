@@ -15,7 +15,7 @@
  */
 package sleeper.sketches.testutils;
 
-import org.apache.hadoop.thirdparty.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 
 import sleeper.sketches.Sketches;
 

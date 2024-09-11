@@ -23,6 +23,8 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import sleeper.dynamodb.test.DynamoDBTestBase;
+
 import java.util.List;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
@@ -42,7 +44,7 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(TEST_TABLE_NAME);
     }
 
-    public static void createTable() {
+    public void createTable() {
         initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
                 List.of(
                         new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),

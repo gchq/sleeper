@@ -18,7 +18,7 @@ chunks:
   common:
     name: Common
     workflow: chunk-common.yaml
-    modules: [ core, configuration, sketches, parquet, common/common-job, common/common-task, common/common-invoke-tables, build, common/dynamodb-tools ]
+    modules: [ core, configuration, sketches, parquet, common/common-job, common/common-task, common/common-invoke-tables, build, common/dynamodb-tools, common/dynamodb-test ]
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
