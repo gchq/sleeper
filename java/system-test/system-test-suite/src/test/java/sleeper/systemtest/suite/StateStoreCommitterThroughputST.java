@@ -95,6 +95,29 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTableWithPauseAndResume(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits()
+                .pauseReceivingCommitMessages()
+                .sendBatched(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
+                        .map(StateStoreCommitMessage::addFile))
+                .resumeReceivingCommitMessages()
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        assertThat(sleeper.tableFiles().references()).hasSize(1000);
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .isBetween(90.0, 130.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+    }
+
+    @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
@@ -109,8 +132,8 @@ public class StateStoreCommitterThroughputST {
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .resumeReceivingCommitMessages().waitForCommitLogs(
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .resumeReceivingCommitMessages()
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())
