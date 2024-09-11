@@ -81,4 +81,49 @@ public class StaticRateLimitTest {
         assertThat(times).isExhausted();
     }
 
+    @Test
+    void shouldWaitThenRepeat() {
+        // Given
+        AtomicInteger count = new AtomicInteger();
+        Iterator<Instant> times = List.of(
+                Instant.parse("2024-09-11T10:41:00Z"), // First result time
+                Instant.parse("2024-09-11T10:41:01Z"), // Second check time
+                Instant.parse("2024-09-11T10:41:02Z"), // Second result time
+                Instant.parse("2024-09-11T10:41:02.900Z")) // Third check time
+                .iterator();
+        StaticRateLimit<Integer> limit = StaticRateLimit.withWaitBetweenRequests(Duration.ofSeconds(1), times::next);
+
+        // When
+        Integer result1 = limit.requestOrGetLast(count::incrementAndGet);
+        Integer result2 = limit.requestOrGetLast(count::incrementAndGet);
+        Integer result3 = limit.requestOrGetLast(count::incrementAndGet);
+
+        // Then
+        assertThat(List.of(result1, result2, result3))
+                .containsExactly(1, 2, 2);
+        assertThat(times).isExhausted();
+    }
+
+    @Test
+    void shouldRepeatThenWait() {
+        // Given
+        AtomicInteger count = new AtomicInteger();
+        Iterator<Instant> times = List.of(
+                Instant.parse("2024-09-11T10:41:00Z"), // First result time
+                Instant.parse("2024-09-11T10:41:00.900Z"), // Second check time
+                Instant.parse("2024-09-11T10:41:02Z"), // Third check time
+                Instant.parse("2024-09-11T10:41:03Z")) // Second result time
+                .iterator();
+        StaticRateLimit<Integer> limit = StaticRateLimit.withWaitBetweenRequests(Duration.ofSeconds(1), times::next);
+
+        // When
+        Integer result1 = limit.requestOrGetLast(count::incrementAndGet);
+        Integer result2 = limit.requestOrGetLast(count::incrementAndGet);
+        Integer result3 = limit.requestOrGetLast(count::incrementAndGet);
+
+        // Then
+        assertThat(List.of(result1, result2, result3))
+                .containsExactly(1, 1, 2);
+        assertThat(times).isExhausted();
+    }
 }
