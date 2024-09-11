@@ -25,11 +25,12 @@ import java.util.Collection;
  * any failed runs will be ignored for computing the status of the job.
  */
 public enum CompactionJobStatusType {
-    PENDING(1),
-    FAILED(2),
-    IN_PROGRESS(3),
-    UNCOMMITTED(4),
-    FINISHED(5);
+    CREATED(1),
+    FILES_ASSIGNED(2),
+    FAILED(3),
+    IN_PROGRESS(4),
+    UNCOMMITTED(5),
+    FINISHED(6);
 
     private final int order;
 
@@ -43,8 +44,9 @@ public enum CompactionJobStatusType {
      * @param  runStatusTypes the status types of runs in the job
      * @return                the status type
      */
-    public static CompactionJobStatusType statusTypeOfFurthestRunOfJob(Collection<CompactionJobStatusType> runStatusTypes) {
-        FurthestStatusTracker furthestStatus = new FurthestStatusTracker();
+    public static CompactionJobStatusType furthestStatusTypeOfJob(
+            CompactionJobStatusType jobStatusType, Collection<CompactionJobStatusType> runStatusTypes) {
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker(jobStatusType);
         for (CompactionJobStatusType runStatusType : runStatusTypes) {
             furthestStatus.setIfFurther(runStatusType);
         }
@@ -65,7 +67,11 @@ public enum CompactionJobStatusType {
      * Tracks the furthest status in a job. An in progress or finished run will supersede a failed one.
      */
     private static class FurthestStatusTracker {
-        private CompactionJobStatusType furthestStatus = PENDING;
+        private CompactionJobStatusType furthestStatus;
+
+        FurthestStatusTracker(CompactionJobStatusType jobStatusType) {
+            furthestStatus = jobStatusType;
+        }
 
         public void setIfFurther(CompactionJobStatusType newStatus) {
             if (furthestStatus == null || furthestStatus.order < newStatus.order) {

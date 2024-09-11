@@ -34,8 +34,13 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         return Boolean.parseBoolean(get(property));
     }
 
-    default int getInt(T property) {
-        return Integer.parseInt(get(property));
+    default Integer getInt(T property) {
+        String val = get(property);
+        if (val != null) {
+            return Integer.parseInt(val);
+        } else {
+            return null;
+        }
     }
 
     default long getLong(T property) {
@@ -68,11 +73,10 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     static List<String> readList(String value) {
-        if (value == null) {
+        if (value == null || value.length() < 1) {
             return List.of();
         } else {
             return Lists.newArrayList(value.split(","));
         }
     }
-
 }

@@ -38,15 +38,19 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -75,11 +79,10 @@ public class CreateCompactionJobsTest {
             // Given
             tableProperties.set(COMPACTION_STRATEGY_CLASS, SizeRatioCompactionStrategy.class.getName());
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.rootFile("file1", 200L);
-            FileReference fileReference2 = factory.rootFile("file2", 200L);
-            FileReference fileReference3 = factory.rootFile("file3", 200L);
-            FileReference fileReference4 = factory.rootFile("file4", 200L);
+            FileReference fileReference1 = fileFactory().rootFile("file1", 200L);
+            FileReference fileReference2 = fileFactory().rootFile("file2", 200L);
+            FileReference fileReference3 = fileFactory().rootFile("file3", 200L);
+            FileReference fileReference4 = fileFactory().rootFile("file4", 200L);
             List<FileReference> fileReferences = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
             stateStore.addFiles(fileReferences);
 
@@ -87,9 +90,8 @@ public class CreateCompactionJobsTest {
             createJobs(Mode.STRATEGY, fixJobIds("test-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", fileReferences, "root"));
+                    compactionFactory().createCompactionJob("test-job", fileReferences, "root"));
         }
 
         @Test
@@ -100,21 +102,19 @@ public class CreateCompactionJobsTest {
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", "ddd")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.partitionFile("B", "file1", 200L);
-            FileReference fileReference2 = factory.partitionFile("B", "file2", 200L);
-            FileReference fileReference3 = factory.partitionFile("C", "file3", 200L);
-            FileReference fileReference4 = factory.partitionFile("C", "file4", 200L);
+            FileReference fileReference1 = fileFactory().partitionFile("B", "file1", 200L);
+            FileReference fileReference2 = fileFactory().partitionFile("B", "file2", 200L);
+            FileReference fileReference3 = fileFactory().partitionFile("C", "file3", 200L);
+            FileReference fileReference4 = fileFactory().partitionFile("C", "file4", 200L);
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
             createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("partition-b-job", List.of(fileReference1, fileReference2), "B"),
-                    jobFactory.createCompactionJob("partition-c-job", List.of(fileReference3, fileReference4), "C"));
+                    compactionFactory().createCompactionJob("partition-b-job", List.of(fileReference1, fileReference2), "B"),
+                    compactionFactory().createCompactionJob("partition-c-job", List.of(fileReference3, fileReference4), "C"));
         }
     }
 
@@ -132,9 +132,8 @@ public class CreateCompactionJobsTest {
                     .splitToNewChildren("B", "B1", "B2", "aaa")
                     .splitToNewChildren("C", "C1", "C2", "fff")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.partitionFile("A", "file1", 200L);
-            FileReference fileReference2 = factory.partitionFile("A", "file2", 200L);
+            FileReference fileReference1 = fileFactory().partitionFile("A", "file1", 200L);
+            FileReference fileReference2 = fileFactory().partitionFile("A", "file2", 200L);
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
@@ -157,19 +156,17 @@ public class CreateCompactionJobsTest {
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", "ddd")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.partitionFile("A", "file1", 200L);
-            FileReference fileReference2 = factory.partitionFile("A", "file2", 200L);
+            FileReference fileReference1 = fileFactory().partitionFile("A", "file1", 200L);
+            FileReference fileReference2 = fileFactory().partitionFile("A", "file2", 200L);
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
             createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file1", "file2"), "B"),
-                    jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file1", "file2"), "C"));
+                    compactionFactory().createCompactionJobWithFilenames("partition-b-job", List.of("file1", "file2"), "B"),
+                    compactionFactory().createCompactionJobWithFilenames("partition-c-job", List.of("file1", "file2"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId("partition-b-job", splitFile(fileReference1, "B")),
                     withJobId("partition-b-job", splitFile(fileReference2, "B")),
@@ -186,8 +183,7 @@ public class CreateCompactionJobsTest {
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", "ddd")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference = factory.partitionFile("A", "file", 200L);
+            FileReference fileReference = fileFactory().partitionFile("A", "file", 200L);
             FileReference leftReference = splitFile(fileReference, "B");
             FileReference rightReference = splitFile(fileReference, "C");
             stateStore.addFiles(List.of(leftReference, rightReference));
@@ -196,10 +192,9 @@ public class CreateCompactionJobsTest {
             createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJobWithFilenames("partition-b-job", List.of("file"), "B"),
-                    jobFactory.createCompactionJobWithFilenames("partition-c-job", List.of("file"), "C"));
+                    compactionFactory().createCompactionJobWithFilenames("partition-b-job", List.of("file"), "B"),
+                    compactionFactory().createCompactionJobWithFilenames("partition-c-job", List.of("file"), "C"));
             assertThat(stateStore.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId("partition-b-job", leftReference),
                     withJobId("partition-c-job", rightReference));
@@ -223,20 +218,18 @@ public class CreateCompactionJobsTest {
                     .splitToNewChildren("L", "LL", "LR", "aaa")
                     .buildList());
 
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileReference1 = factory.partitionFile("R", "file1", 200L);
-            FileReference fileReference2 = factory.partitionFile("LL", "file2", 200L);
-            FileReference fileReference3 = factory.partitionFile("LR", "file3", 200L);
+            FileReference fileReference1 = fileFactory().partitionFile("R", "file1", 200L);
+            FileReference fileReference2 = fileFactory().partitionFile("LL", "file2", 200L);
+            FileReference fileReference3 = fileFactory().partitionFile("LR", "file3", 200L);
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
-                    jobFactory.createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
+                    compactionFactory().createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
+                    compactionFactory().createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
         }
     }
 
@@ -250,20 +243,18 @@ public class CreateCompactionJobsTest {
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
             stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
             // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
             // as it does not create jobs with fewer files than the batch size)
-            FileReference fileReference1 = factory.rootFile("file1", 200L);
-            FileReference fileReference2 = factory.rootFile("file2", 200L);
+            FileReference fileReference1 = fileFactory().rootFile("file1", 200L);
+            FileReference fileReference2 = fileFactory().rootFile("file2", 200L);
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When we force create jobs
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileReference1, fileReference2), "root"));
+                    compactionFactory().createCompactionJob("test-job", List.of(fileReference1, fileReference2), "root"));
         }
 
         @Test
@@ -275,10 +266,9 @@ public class CreateCompactionJobsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
             // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
             // will skip as it does not create jobs with fewer files than the batch size)
-            FileReference rootFile = factory.rootFile("file1", 2L);
+            FileReference rootFile = fileFactory().rootFile("file1", 2L);
             FileReference fileReference1 = referenceForChildPartition(rootFile, "L");
             stateStore.addFile(fileReference1);
 
@@ -286,9 +276,8 @@ public class CreateCompactionJobsTest {
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
             assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileReference1), "L"));
+                    compactionFactory().createCompactionJob("test-job", List.of(fileReference1), "L"));
         }
     }
 
@@ -303,18 +292,16 @@ public class CreateCompactionJobsTest {
                     .singlePartition("1")
                     .buildList());
 
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference fileOne = factory.rootFile("fileOne", 1L);
-            FileReference fileTwo = factory.rootFile("fileTwo", 2L);
+            FileReference fileOne = fileFactory().rootFile("fileOne", 1L);
+            FileReference fileTwo = fileFactory().rootFile("fileTwo", 2L);
             stateStore.addFiles(List.of(fileOne, fileTwo));
 
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("test-job", List.of(fileOne, fileTwo), "1"));
+            CompactionJob expectedJob = compactionFactory().createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
+            assertThat(jobs).containsExactly(expectedJob);
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
                             withJobId("test-job", fileOne),
@@ -329,19 +316,17 @@ public class CreateCompactionJobsTest {
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .buildList());
 
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference leftFile = factory.partitionFile("L", "leftFile", 1L);
-            FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
+            FileReference leftFile = fileFactory().partitionFile("L", "leftFile", 1L);
+            FileReference rightFile = fileFactory().partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
 
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            assertThat(jobs).containsExactly(
-                    jobFactory.createCompactionJob("left-job", List.of(leftFile), "L"),
-                    jobFactory.createCompactionJob("right-job", List.of(rightFile), "R"));
+            CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = compactionFactory().createCompactionJob("right-job", List.of(rightFile), "R");
+            assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(stateStore.getFileReferences())
                     .containsExactly(
                             withJobId("left-job", leftFile),
@@ -361,23 +346,26 @@ public class CreateCompactionJobsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference leftFile = factory.partitionFile("L", "leftFile", 1L);
-            FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
+            FileReference leftFile = fileFactory().partitionFile("L", "leftFile", 1L);
+            FileReference rightFile = fileFactory().partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
-            jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
+
+            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
+            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
+            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
+            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, filesAssignedTime1, createdTime2, filesAssignedTime2).iterator()::next);
 
             // When we create compaction jobs
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
-            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
+            CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = compactionFactory().createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobCreated(rightJob, DEFAULT_UPDATE_TIME),
-                    jobCreated(leftJob, DEFAULT_UPDATE_TIME));
+                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2),
+                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1));
         }
 
         @Test
@@ -390,24 +378,60 @@ public class CreateCompactionJobsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .buildList());
-            FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
-            FileReference leftFile = factory.partitionFile("L", "leftFile", 1L);
-            FileReference rightFile = factory.partitionFile("R", "rightFile", 2L);
+            FileReference leftFile = fileFactory().partitionFile("L", "leftFile", 1L);
+            FileReference rightFile = fileFactory().partitionFile("R", "rightFile", 2L);
             stateStore.addFiles(List.of(leftFile, rightFile));
             jobStatusStore.fixUpdateTime(DEFAULT_UPDATE_TIME);
+
+            Instant createdTime1 = Instant.parse("2024-09-06T10:11:00Z");
+            Instant filesAssignedTime1 = Instant.parse("2024-09-06T10:11:02Z");
+            Instant createdTime2 = Instant.parse("2024-09-06T10:11:01Z");
+            Instant filesAssignedTime2 = Instant.parse("2024-09-06T10:11:03Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime1, filesAssignedTime1, createdTime2, filesAssignedTime2).iterator()::next);
 
             // When we create compaction jobs
             createJobs(Mode.STRATEGY, fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
-            CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-            CompactionJob leftJob = jobFactory.createCompactionJob("left-job", List.of(leftFile), "L");
-            CompactionJob rightJob = jobFactory.createCompactionJob("right-job", List.of(rightFile), "R");
+            CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
+            CompactionJob rightJob = compactionFactory().createCompactionJob("right-job", List.of(rightFile), "R");
             assertThat(jobs).containsExactly(leftJob, rightJob);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                    jobCreated(rightJob, DEFAULT_UPDATE_TIME),
-                    jobCreated(leftJob, DEFAULT_UPDATE_TIME));
+                    jobFilesAssigned(rightJob, createdTime2, filesAssignedTime2),
+                    jobFilesAssigned(leftJob, createdTime1, filesAssignedTime1));
         }
+
+        @Test
+        void shouldNotSaveFilesAssignedUpdateWithAsynchronousCommit() throws Exception {
+            // Given
+            tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 1);
+            tableProperties.set(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC, "true");
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .singlePartition("root")
+                    .buildList());
+            FileReference file = fileFactory().rootFile("test.parquet", 100L);
+            stateStore.addFiles(List.of(file));
+
+            Instant createdTime = Instant.parse("2024-09-06T10:11:00Z");
+            jobStatusStore.setTimeSupplier(Stream.of(createdTime).iterator()::next);
+
+            // When
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+
+            // Then
+            CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file), "root");
+            assertThat(jobs).containsExactly(job);
+            assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobCreated(job, createdTime));
+        }
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.fromUpdatedAt(stateStore, DEFAULT_UPDATE_TIME);
+    }
+
+    private CompactionJobFactory compactionFactory() {
+        return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     private void createJobs(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {

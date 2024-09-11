@@ -132,6 +132,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -292,12 +294,14 @@ public class CompactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
                 .environment(environmentVariables)
+                .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
         // Grant permissions

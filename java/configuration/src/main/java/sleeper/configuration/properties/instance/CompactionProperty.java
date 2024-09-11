@@ -23,6 +23,8 @@ import sleeper.configuration.properties.validation.CompactionMethod;
 
 import java.util.List;
 
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
+
 public interface CompactionProperty {
     UserDefinedInstanceProperty ECR_COMPACTION_REPO = Index.propertyBuilder("sleeper.compaction.repo")
             .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
@@ -118,6 +120,16 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.reserved")
+            .description("The reserved concurrency for the lambda used to create compaction jobs.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
+            .description("The maximum given concurrency allowed for the lambda used to create compaction jobs.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .validationPredicate(Utils::isPositiveIntegerOrNull)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -285,8 +297,9 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select what compaction method to use on a table. Current options are JAVA, RUST and GPU. Rust and GPU compaction support are " +
-                    "experimental.")
+            .description("Select which compaction method to use if not configured against a Sleeper table. DataFusion " +
+                    "and GPU compaction support are experimental.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
             .defaultValue(CompactionMethod.JAVA.toString())
             .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

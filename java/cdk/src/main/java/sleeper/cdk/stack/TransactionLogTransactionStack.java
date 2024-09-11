@@ -52,6 +52,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.CommonProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
 
 public class TransactionLogTransactionStack extends NestedStack {
@@ -89,6 +91,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(createLambdaLogGroup(this, "TransactionLogTransactionDeletionLogGroup", deletionFunctionName, instanceProperties)));
@@ -128,7 +131,8 @@ public class TransactionLogTransactionStack extends NestedStack {
         queue.grantSendMessages(transactionDeletionTrigger);
 
         transactionDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
-                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE)).build());
+                .batchSize(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
 
         coreStacks.grantReadTablesStatus(transactionDeletionTrigger);
         coreStacks.grantInvokeScheduled(transactionDeletionTrigger, queue);

@@ -18,6 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
@@ -36,8 +37,31 @@ import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compacti
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
+
+    @Test
+    void shouldReportCompactionInputFilesAssigned() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob("test-job",
+                List.of(fileFactory.rootFile("test.parquet", 100L)),
+                partition.getId());
+        Instant createdTime = Instant.parse("2024-09-06T09:48:00Z");
+        Instant filesAssignedTime = Instant.parse("2024-09-06T09:48:05Z");
+
+        // When
+        storeWithUpdateTime(createdTime).jobCreated(job);
+        storeWithUpdateTime(filesAssignedTime).jobInputFilesAssigned(tableId, List.of(
+                assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
+                .containsExactly(CompactionJobStatusTestData.jobFilesAssigned(job, createdTime, filesAssignedTime));
+    }
 
     @Test
     public void shouldReportCompactionJobStarted() {

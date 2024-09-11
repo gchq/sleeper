@@ -59,6 +59,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES;
@@ -222,12 +224,14 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
                 .environment(environmentVariables)
+                .reservedConcurrentExecutions(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
         findPartitionsToSplitLambda.addEventSource(SqsEventSource.Builder.create(findPartitionsToSplitQueue)
                 .batchSize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
     }
 

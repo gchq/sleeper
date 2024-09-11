@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
@@ -36,6 +37,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.FilesReportTestHelper;
@@ -51,7 +53,6 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
@@ -65,7 +66,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -80,6 +80,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFaile
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -124,16 +125,19 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
-            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
 
             // When
             apply(committerWithTimes(List.of(commitTime)), StateStoreCommitRequest.forCompactionJob(request));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
-                    fileFactory.rootFile("output.parquet", 123L));
+                    fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(request.getJob(), createdTime,
+                    jobFilesAssigned(job, createdTime, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary))
@@ -150,7 +154,10 @@ public class StateStoreCommitterTest {
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
-            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
             stateStore.clearFileData();
 
             // When
@@ -164,7 +171,7 @@ public class StateStoreCommitterTest {
                     .cause().isInstanceOf(FileNotFoundException.class));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(request.getJob(), createdTime,
+                    jobFilesAssigned(job, createdTime, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
@@ -184,7 +191,9 @@ public class StateStoreCommitterTest {
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
-            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
             RuntimeException failure = new RuntimeException("Unexpected failure");
             doThrow(failure).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     CompactionJobCommitter.replaceFileReferencesRequest(request.getJob(), request.getRecordsWritten())));
@@ -196,7 +205,7 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(failures).singleElement().isSameAs(failure);
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(request.getJob(), createdTime,
+                    jobFilesAssigned(request.getJob(), createdTime, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
@@ -216,7 +225,9 @@ public class StateStoreCommitterTest {
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
-            CompactionJobCommitRequest request = createFinishedCompactionForTable("test-table", createdTime, startTime, summary);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
             ReplaceFileReferencesRequest expectedRequest = CompactionJobCommitter.replaceFileReferencesRequest(request.getJob(), request.getRecordsWritten());
             RuntimeException cause = new RuntimeException("Unexpected failure");
             ReplaceRequestsFailedException failure = new ReplaceRequestsFailedException(List.of(expectedRequest), cause);
@@ -231,7 +242,7 @@ public class StateStoreCommitterTest {
                     .isInstanceOf(RuntimeException.class)
                     .cause().isSameAs(failure));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(request.getJob(), createdTime,
+                    jobFilesAssigned(job, createdTime, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
@@ -249,26 +260,36 @@ public class StateStoreCommitterTest {
         void shouldApplyCompactionJobIdAssignmentCommitRequest() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
+            CompactionJob job = compactionFactoryForTable("test-table")
+                    .createCompactionJobWithFilenames("test-job", List.of("input.parquet"), "root");
+            Instant createdTime = Instant.parse("2024-09-06T11:44:00Z");
+            Instant filesAssignedTime = Instant.parse("2024-09-06T11:44:00Z");
+            compactionJobStatusStore.jobCreated(job, createdTime);
+            compactionJobStatusStore.fixUpdateTime(filesAssignedTime);
 
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))), "test-table");
+                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
-                    withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
+                    withJobId("test-job", fileFactory.rootFile("input.parquet", 123L)));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
+                    jobFilesAssigned(job, createdTime, filesAssignedTime));
         }
 
         @Test
         void shouldFailToApplyJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
+            CompactionJob job2 = compactionFactoryForTable("test-table")
+                    .createCompactionJobWithFilenames("job2", List.of("input.parquet"), "root");
+            Instant createdTime = Instant.parse("2024-09-06T11:44:00Z");
+            compactionJobStatusStore.jobCreated(job2, createdTime);
 
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
@@ -281,16 +302,22 @@ public class StateStoreCommitterTest {
                     .cause().isInstanceOf(FileReferenceAssignedToJobException.class));
             assertThat(stateStore.getFileReferences()).containsExactly(
                     withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
+                    jobCreated(job2, createdTime));
         }
 
         @Test
         void shouldFailToApplyJobIdAssignmentIfFileReferenceDoesNotExist() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
+            CompactionJob job = compactionFactoryForTable("test-table")
+                    .createCompactionJobWithFilenames("test-job", List.of("input.parquet"), "root");
+            Instant createdTime = Instant.parse("2024-09-06T11:44:00Z");
+            compactionJobStatusStore.jobCreated(job, createdTime);
 
             // When
             CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
@@ -298,6 +325,8 @@ public class StateStoreCommitterTest {
                     .isInstanceOf(RuntimeException.class)
                     .cause().isInstanceOf(FileReferenceNotFoundException.class));
             assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
+                    jobCreated(job, createdTime));
         }
     }
 
@@ -598,7 +627,7 @@ public class StateStoreCommitterTest {
     }
 
     private void apply(StateStoreCommitter committer, StateStoreCommitRequest... requests) {
-        committer.applyBatch(PollWithRetries.noRetries(),
+        committer.applyBatch(operation -> operation.run(),
                 Stream.of(requests)
                         .map(this::message)
                         .collect(toUnmodifiableList()));
@@ -681,25 +710,22 @@ public class StateStoreCommitterTest {
         return stateStore(propertiesByTableId.get(tableId));
     }
 
-    private CompactionJobCommitRequest createFinishedCompactionForTable(
-            String tableId, Instant createTime, Instant startTime, RecordsProcessedSummary summary) throws Exception {
-        CompactionJob job = CompactionJob.builder()
-                .tableId(tableId)
-                .jobId(UUID.randomUUID().toString())
-                .inputFiles(List.of("input.parquet"))
-                .outputFile("output.parquet")
-                .partitionId("root")
-                .build();
-        StateStore stateStore = stateStore(tableId);
-        stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(
-                job.getId(), "root", List.of("input.parquet"))));
+    private CompactionJobCommitRequest createAndFinishCompaction(
+            CompactionJob job, Instant createTime, Instant startTime, RecordsProcessedSummary summary) throws Exception {
         compactionJobStatusStore.jobCreated(job, createTime);
+        List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
+                job.getId(), job.getPartitionId(), job.getInputFiles()));
+        stateStore(job.getTableId()).assignJobIds(assignIdRequests);
+        compactionJobStatusStore.jobInputFilesAssigned(job.getTableId(), assignIdRequests, createTime);
         compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
         compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
+    }
+
+    private CompactionJobFactory compactionFactoryForTable(String tableId) {
+        return new CompactionJobFactory(instanceProperties, propertiesByTableId.get(tableId));
     }
 
     private RequestHandle message(StateStoreCommitRequest request) {

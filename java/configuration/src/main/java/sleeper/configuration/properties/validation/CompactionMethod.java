@@ -24,17 +24,12 @@ import org.apache.commons.lang3.EnumUtils;
 public enum CompactionMethod {
     /** Pure Java compaction implementation. */
     JAVA,
-    /**
-     * Rust compaction method. This uses a native library written in Rust to perform a
-     * compaction.
-     */
-    RUST,
+    /** Uses a native library written in Rust to perform a compaction with Apache DataFusion. */
+    DATAFUSION,
     /**
      * GPU compaction method. This uses a separate GPU process to perform a compaction.
      */
     GPU;
-
-    public static final CompactionMethod DEFAULT = CompactionMethod.JAVA;
 
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
