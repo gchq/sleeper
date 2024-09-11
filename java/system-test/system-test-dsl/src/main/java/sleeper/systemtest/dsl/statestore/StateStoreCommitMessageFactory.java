@@ -23,6 +23,8 @@ import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -71,6 +73,12 @@ public class StateStoreCommitMessageFactory {
         CompactionJobCommitRequest request = new CompactionJobCommitRequest(job, taskId, jobRunId, recordsProcessed);
         return StateStoreCommitMessage.tableIdAndBody(tableId,
                 new CompactionJobCommitRequestSerDe().toJson(request));
+    }
+
+    public StateStoreCommitMessage filesDeleted(List<String> filenames) {
+        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(tableId, filenames);
+        return StateStoreCommitMessage.tableIdAndBody(tableId,
+                new GarbageCollectionCommitRequestSerDe().toJson(request));
     }
 
     private StateStoreCommitMessage ingest(Consumer<IngestAddFilesCommitRequest.Builder> config) {

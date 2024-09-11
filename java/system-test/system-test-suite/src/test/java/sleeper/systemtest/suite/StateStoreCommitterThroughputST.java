@@ -40,7 +40,9 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
@@ -185,14 +187,61 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().filesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
-                        .isEqualTo(printFiles(partitions, activeFiles(
+                        .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
                                 IntStream.rangeClosed(1, 1000)
                                         .mapToObj(i -> fileFactory.rootFile(filename(i), i * 2))
+                                        .collect(toUnmodifiableList()),
+                                IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                                        .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                         .collect(toUnmodifiableList())))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
                         .isBetween(35.0, 60.0));
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits()
+                .setupStateStore(store -> {
+                    store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                            .flatMap(i -> Stream.of(
+                                    fileFactory.rootFile(filename(i), i),
+                                    fileFactory.rootFile(filename(i + 1000), i)))
+                            .collect(toUnmodifiableList()));
+                    store.assignJobIds(IntStream.rangeClosed(1, 1000)
+                            .mapToObj(i -> assignJobOnPartitionToFiles(
+                                    jobId(i), "root", List.of(filename(i), filename(i + 1000))))
+                            .collect(toUnmodifiableList()));
+                    store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
+                            .mapToObj(i -> replaceJobFileReferences(
+                                    jobId(i), "root", List.of(filename(i), filename(i + 1000)),
+                                    fileFactory.rootFile(filename(i + 2000), i * 2)))
+                            .collect(toUnmodifiableList()));
+                })
+                .sendBatched(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000)))))
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        assertThat(sleeper.tableFiles().filesByTable())
+                .hasSize(10)
+                .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
+                        .isEqualTo(printFiles(partitions, activeFiles(
+                                IntStream.rangeClosed(1, 1000)
+                                        .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
+                                        .collect(toUnmodifiableList())))));
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
+                .hasSize(10)
+                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
+                        .isBetween(90.0, 130.0));
     }
 
     private String filename(int i) {
