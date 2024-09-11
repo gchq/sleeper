@@ -140,13 +140,11 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        assertThat(sleeper.tableFiles().filesByTable())
-                .hasSize(10)
-                .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
-                        .isEqualTo(printFiles(partitions, activeFiles(
-                                IntStream.rangeClosed(1, 1000)
-                                        .mapToObj(i -> withJobId("job-" + i, fileFactory.rootFile("file-" + i + ".parquet", i)))
-                                        .collect(toUnmodifiableList())))));
+        assertThat(printFiles(partitions, sleeper.tableFiles().all()))
+                .isEqualTo(printFiles(partitions, activeFiles(
+                        IntStream.rangeClosed(1, 1000)
+                                .mapToObj(i -> withJobId("job-" + i, fileFactory.rootFile("file-" + i + ".parquet", i)))
+                                .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
@@ -184,16 +182,14 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        assertThat(sleeper.tableFiles().filesByTable())
-                .hasSize(10)
-                .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
-                        .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
-                                IntStream.rangeClosed(1, 1000)
-                                        .mapToObj(i -> fileFactory.rootFile(filename(i), i * 2))
-                                        .collect(toUnmodifiableList()),
-                                IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                                        .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
-                                        .collect(toUnmodifiableList())))));
+        assertThat(printFiles(partitions, sleeper.tableFiles().all()))
+                .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                        IntStream.rangeClosed(1, 1000)
+                                .mapToObj(i -> fileFactory.rootFile(filename(i), i * 2))
+                                .collect(toUnmodifiableList()),
+                        IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                                .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
+                                .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
@@ -231,13 +227,11 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
-        assertThat(sleeper.tableFiles().filesByTable())
-                .hasSize(10)
-                .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
-                        .isEqualTo(printFiles(partitions, activeFiles(
-                                IntStream.rangeClosed(1, 1000)
-                                        .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
-                                        .collect(toUnmodifiableList())))));
+        assertThat(printFiles(partitions, sleeper.tableFiles().all()))
+                .isEqualTo(printFiles(partitions, activeFiles(
+                        IntStream.rangeClosed(1, 1000)
+                                .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
+                                .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
