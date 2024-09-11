@@ -17,7 +17,6 @@ package sleeper.core.util;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -29,8 +28,8 @@ import java.util.function.Supplier;
 public class StaticRateLimit<T> {
 
     private final Duration waitBetweenRequests;
-    private final AtomicReference<LastResult> lastResult = new AtomicReference<>();
     private final Supplier<Instant> timeSupplier;
+    private LastResult lastResult;
 
     private StaticRateLimit(Duration waitBetweenRequests, Supplier<Instant> timeSupplier) {
         this.waitBetweenRequests = waitBetweenRequests;
@@ -75,14 +74,11 @@ public class StaticRateLimit<T> {
      * @param  request the request
      * @return         the result, or the last result if the time has not passed
      */
-    public T requestOrGetLast(Supplier<T> request) {
-        return lastResult.updateAndGet(last -> {
-            if (last == null || last.isRequestAgainAt(timeSupplier.get())) {
-                return new LastResult(request.get(), timeSupplier.get());
-            } else {
-                return last;
-            }
-        }).result;
+    public synchronized T requestOrGetLast(Supplier<T> request) {
+        if (lastResult == null || lastResult.isRequestAgainAt(timeSupplier.get())) {
+            lastResult = new LastResult(request.get(), timeSupplier.get());
+        }
+        return lastResult.result;
     }
 
     /**
