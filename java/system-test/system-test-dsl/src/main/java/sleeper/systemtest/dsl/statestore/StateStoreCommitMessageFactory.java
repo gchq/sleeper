@@ -15,8 +15,12 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
@@ -60,6 +64,13 @@ public class StateStoreCommitMessageFactory {
                 List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)), tableId);
         return StateStoreCommitMessage.tableIdAndBody(tableId,
                 new CompactionJobIdAssignmentCommitRequestSerDe().toJson(request));
+    }
+
+    public StateStoreCommitMessage commitCompactionOnTaskInRun(
+            CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary recordsProcessed) {
+        CompactionJobCommitRequest request = new CompactionJobCommitRequest(job, taskId, jobRunId, recordsProcessed);
+        return StateStoreCommitMessage.tableIdAndBody(tableId,
+                new CompactionJobCommitRequestSerDe().toJson(request));
     }
 
     private StateStoreCommitMessage ingest(Consumer<IngestAddFilesCommitRequest.Builder> config) {
