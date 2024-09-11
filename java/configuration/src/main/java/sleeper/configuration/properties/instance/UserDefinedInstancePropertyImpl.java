@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +37,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final boolean includedInTemplate;
     private final boolean includedInBasicTemplate;
     private final boolean ignoreEmptyValue;
+    private final SleeperProperty defaultProperty;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -49,6 +51,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
                 .orElseGet(UserDefinedInstanceProperty.super::isIncludedInBasicTemplate);
         ignoreEmptyValue = builder.ignoreEmptyValue;
+        defaultProperty = builder.defaultProperty;
     }
 
     public static Builder builder() {
@@ -113,6 +116,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return ignoreEmptyValue;
     }
 
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -125,6 +133,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private Boolean includedInBasicTemplate;
         private boolean ignoreEmptyValue = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
+        private SleeperProperty defaultProperty;
 
         private Builder() {
         }
@@ -151,6 +160,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder propertyGroup(PropertyGroup propertyGroup) {
             this.propertyGroup = propertyGroup;
+            return this;
+        }
+
+        public Builder defafultProperty(SleeperProperty property) {
+            this.defaultProperty = property;
             return this;
         }
 

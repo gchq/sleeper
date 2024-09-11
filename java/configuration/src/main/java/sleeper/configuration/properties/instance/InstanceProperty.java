@@ -35,6 +35,8 @@ public interface InstanceProperty extends SleeperProperty {
         return Index.INSTANCE.getByName(propertyName);
     }
 
+    SleeperProperty getDefaultProperty();
+
     class Index {
         private Index() {
         }

@@ -21,6 +21,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+
 public interface PartitionSplittingProperty {
     UserDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda runs to find partitions that need splitting " +
@@ -52,11 +55,13 @@ public interface PartitionSplittingProperty {
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.reserved")
+            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the find partitions to split lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.partition.splitting.finder.concurrency.max")
+            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the find partitions to split lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
