@@ -63,7 +63,7 @@ public class StateStoreCommitterThroughputST {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
@@ -84,7 +84,7 @@ public class StateStoreCommitterThroughputST {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFileWithJob))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
@@ -107,7 +107,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.stateStore().fakeCommits()
                 .pauseReceivingCommitMessages()
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
                 .resumeReceivingCommitMessages().waitForCommitLogs(
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
@@ -133,17 +133,17 @@ public class StateStoreCommitterThroughputST {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .setupStateStore(store -> store.addFiles(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .collect(toUnmodifiableList())))
                 .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles("job-" + i, "root", List.of("file-" + i + ".parquet"))))
+                        .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root", List.of(filename(i)))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, activeFiles(
                         IntStream.rangeClosed(1, 1000)
-                                .mapToObj(i -> withJobId("job-" + i, fileFactory.rootFile("file-" + i + ".parquet", i)))
+                                .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
