@@ -29,7 +29,7 @@ use datafusion::{
         tree_node::{Transformed, TreeNode},
         DFSchema, DFSchemaRef,
     },
-    config::FormatOptions,
+    datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
@@ -230,7 +230,7 @@ async fn collect_stats(
     let mut logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
         output_path.as_str().into(),
-        FormatOptions::PARQUET(pqo),
+        format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
         HashMap::default(),
         Vec::new(),
     )?
