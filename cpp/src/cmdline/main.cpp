@@ -18,15 +18,15 @@
 #include <utility>
 #include <vector>
 
-using gpu_compact::cudf_compact::PartitionBound;
-using gpu_compact::cudf_compact::ColRange;
-using gpu_compact::cudf_compact::CompactionInput;
-using gpu_compact::cudf_compact::CompactionResult;
-
 // This file will be generated automatically when cur_you run the CMake
 // configuration step. It creates a namespace called `gpu_compact`. You can modify
 // the source template at `configured_files/config.hpp.in`.
 #include <internal_use_only/config.hpp>
+
+using gpu_compact::cudf_compact::PartitionBound;
+using gpu_compact::cudf_compact::ColRange;
+using gpu_compact::cudf_compact::CompactionInput;
+using gpu_compact::cudf_compact::CompactionResult;
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, const char **argv) {
@@ -68,6 +68,8 @@ int main(int argc, const char **argv) {
             "Partition region maximum keys (exclusive). Must be one per row key specified.")
           ->required()
           ->expected(1, -1);
+        std::size_t gpuChunk{ 200 };
+        app.add_option("-c,--chunk-size", gpuChunk, "RAPIDS chunk size in MiB");
         CLI11_PARSE(app, argc, argv);// NOLINT
 
         auto urlCheck = [](auto &s) noexcept {
@@ -122,7 +124,7 @@ int main(int argc, const char **argv) {
             .dictEncValues = true,
             .region = std::move(region) };
 
-        auto [rowsRead, rowsWritten] = gpu_compact::cudf_compact::merge_sorted_files(details);
+        auto [rowsRead, rowsWritten] = gpu_compact::cudf_compact::merge_sorted_files(details, gpuChunk);
 
         SPDLOG_INFO(ff("Compaction finished, rows read = {:Ld}, rows written = {:Ld}", rowsRead, rowsWritten));
     } catch (std::exception const &e) { SPDLOG_ERROR(ff("Unhandled exception in main: {}", e.what())); }

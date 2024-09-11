@@ -51,13 +51,14 @@ cudf::io::table_with_metadata
     auto si = cudf::io::source_info(details.inputFiles);
 
     try {
+        std::cout << ff("read table...\n");
         auto builder = cudf::io::parquet_reader_options::builder(si).filter(expr_3);
         auto table_with_metadata = cudf::io::read_parquet(builder.build());
         SPDLOG_INFO(ff("read {:Ld} rows", table_with_metadata.tbl->num_rows()));
         auto result = std::move(table_with_metadata.tbl);
 
         result = filter_table_by_range(result->view(), range_col, low, high);
-
+        std::cout << ff("filter by range\n");
         if (result->num_rows() == 0)
             return { nullptr, {} };
 
@@ -66,7 +67,7 @@ cudf::io::table_with_metadata
         std::vector<cudf::order> sort_order(sort_cols.size(), cudf::order::ASCENDING);
         std::vector<cudf::null_order> null_precedence(sort_cols.size(), cudf::null_order::BEFORE);
         result = cudf::sort_by_key(result->view(), result->view().select(sort_cols), sort_order, null_precedence);
-
+        std::cout << ff("sort by key\n");
         return { std::move(result), std::move(table_with_metadata.metadata) };
     } catch (std::bad_alloc const &e) {
         SPDLOG_ERROR(ff("Caught error {}", e.what()));
@@ -219,7 +220,7 @@ std::optional<size_t> page_size(col_schema const &schema,
     }
 }
 
-CompactionResult mergeSortedS3Files(CompactionInput const &details) {
+CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t gpuChunk) {
     auto s3client = gpu_compact::cudf_compact::s3::makeClient();
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges
@@ -318,11 +319,11 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
         schema_idx++;
     }
 
-    cudf::logger().set_level(spdlog::level::info);
+    cudf::logger().set_level(spdlog::level::debug);
 
     // chunk-size is in GB
     // TODO read from config/options
-    size_t const chunk_size = 700 * 1024ul * 1024ul;
+    size_t const chunk_size = gpuChunk * 1024ul * 1024ul;
     // calculate input ranges
     auto ranges = getRanges(pages, range_col, col_type, conv_type, chunk_size, indexes_per_file);
 
@@ -357,9 +358,9 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details) {
     return { count, count };
 }
 
-CompactionResult merge_sorted_files(CompactionInput const &details) {
+CompactionResult merge_sorted_files(CompactionInput const &details, std::size_t gpuChunk) {
     gpu_compact::cudf_compact::s3::initialiseAWS();
-    auto result = mergeSortedS3Files(details);
+    auto result = mergeSortedS3Files(details, gpuChunk);
     gpu_compact::cudf_compact::s3::shutdownAWS();
     return result;
 }

@@ -22,6 +22,7 @@
 
 #include <algorithm>// std::ranges::equal
 #include <chrono>
+#include <cstddef>
 #include <locale>
 #include <memory>
 #include <string_view>
@@ -31,7 +32,7 @@
 namespace gpu_compact::cudf_compact
 {
 
-CompactionResult merge_sorted_files(CompactionInput const &inputData);
+CompactionResult merge_sorted_files(CompactionInput const &inputData, std::size_t gpuChunk);
 
 template<typename CharT>
 [[nodiscard]] bool iequals(std::basic_string_view<CharT> lhs, std::basic_string_view<CharT> rhs) noexcept {
@@ -121,7 +122,7 @@ struct literal_converter
 [[nodiscard]] inline auto make_pooled_mr() {
     auto cuda_mr = std::make_shared<rmm::mr::cuda_memory_resource>();
     auto mr =
-      rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, rmm::percent_of_free_device_memory(80));
+      rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, rmm::percent_of_free_device_memory(95));
     rmm::mr::set_current_device_resource(mr.get());
     return mr;
 }

@@ -25,7 +25,7 @@ Aws::String createUploadRequest(Aws::S3::S3Client &client, Aws::String const &bu
 
 void S3Sink::uploadBuffer() {
     if (buffer.view().size() > 0) {
-        SPDLOG_INFO(ff("Uploading {:Ld} bytes in part number {:Ld}", buffer.view().size(), partNo));
+        SPDLOG_DEBUG(ff("Uploading {:Ld} bytes in part number {:Ld}", buffer.view().size(), partNo));
         auto const stream = Aws::MakeShared<Aws::StringStream>("");
         stream->swap(buffer);
         auto request =
@@ -48,7 +48,7 @@ void S3Sink::uploadBuffer() {
               }
               activeUploadCount--;
               activeUploadCount.notify_all();
-              SPDLOG_INFO(ff("Finished uploading part number {:Ld}", startedPartNo));
+              SPDLOG_DEBUG(ff("Finished uploading part number {:Ld}", startedPartNo));
           });
         partNo++;
     }// endif
@@ -58,20 +58,20 @@ S3Sink::S3Sink(std::shared_ptr<Aws::S3::S3Client> s3client, std::string_view s3p
   : client(s3client), bucket(getBucket(s3path)), key(getKey(s3path)),
     uploadId(createUploadRequest(*s3client, bucket, key)), eTags(), activeUploadCount(0), tagsLock(),
     uploadSize(uploadPartSize), bytesWritten(0), partNo(1) {
-    SPDLOG_INFO(ff("Creating an S3Sink to {}/{}", bucket, key));
+    SPDLOG_DEBUG(ff("Creating an S3Sink to {}/{}", bucket, key));
 }
 
 S3Sink::~S3Sink() noexcept {
     try {
         finish();
     } catch (std::exception const &e) { SPDLOG_ERROR(ff("Completing upload failed due to {}", e.what())); }
-    SPDLOG_INFO(ff("Destroying an S3Sink to {}/{}", bucket, key));
+    SPDLOG_DEBUG(ff("Destroying an S3Sink to {}/{}", bucket, key));
 }
 
 void S3Sink::host_write(void const *data, std::size_t size) {
     buffer.write(reinterpret_cast<char const *>(data), static_cast<std::streamsize>(size));
     if (buffer.view().size() > uploadSize) {
-        SPDLOG_INFO(
+        SPDLOG_DEBUG(
           ff("Upload buffer of {:Ld} bytes exceeded upload size of {:Ld} bytes", buffer.view().size(), uploadSize));
         uploadBuffer();
     }
@@ -89,15 +89,15 @@ void S3Sink::host_write(void const *data, std::size_t size) {
 void S3Sink::flush() {}
 
 void S3Sink::finish() {
-    SPDLOG_INFO(ff("Finishing multipart load"));
+    SPDLOG_DEBUG(ff("Finishing multipart load"));
     uploadBuffer();
-    SPDLOG_INFO(ff("Awaiting completion of uploads..."));
+    SPDLOG_DEBUG(ff("Awaiting completion of uploads..."));
     std::size_t count;
     while ((count = activeUploadCount.load()) != 0) {
-        SPDLOG_INFO(ff("Awaiting {:Ld} pending uploads", count));
+        SPDLOG_DEBUG(ff("Awaiting {:Ld} pending uploads", count));
         activeUploadCount.wait(count);
     }
-    SPDLOG_INFO(ff("Completing multipart upload"));
+    SPDLOG_DEBUG(ff("Completing multipart upload"));
     auto parts = Aws::S3::Model::CompletedMultipartUpload();
     {
         std::lock_guard<std::mutex> guard{ tagsLock };
@@ -112,7 +112,7 @@ void S3Sink::finish() {
                            .WithUploadId(uploadId)
                            .WithMultipartUpload(parts);
     auto const result = unwrap(client->CompleteMultipartUpload(request));
-    SPDLOG_INFO(ff("Multipart upload completed"));
+    SPDLOG_DEBUG(ff("Multipart upload completed"));
 }
 
 std::size_t S3Sink::bytes_written() noexcept {
