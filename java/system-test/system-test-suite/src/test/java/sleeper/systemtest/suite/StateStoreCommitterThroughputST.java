@@ -171,10 +171,8 @@ public class StateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
-        assertThat(sleeper.stateStore().commitsPerSecondByTable())
-                .hasSize(10)
-                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(35.0, 60.0));
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .isBetween(35.0, 60.0);
     }
 
     @Test
@@ -216,10 +214,8 @@ public class StateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                                 .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                 .collect(toUnmodifiableList()))));
-        assertThat(sleeper.stateStore().commitsPerSecondByTable())
-                .hasSize(10)
-                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(35.0, 60.0));
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .isBetween(35.0, 60.0);
     }
 
     @Test
@@ -258,10 +254,8 @@ public class StateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
                                 .collect(toUnmodifiableList()))));
-        assertThat(sleeper.stateStore().commitsPerSecondByTable())
-                .hasSize(10)
-                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(90.0, 130.0));
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .isBetween(90.0, 130.0);
     }
 
     @Test
