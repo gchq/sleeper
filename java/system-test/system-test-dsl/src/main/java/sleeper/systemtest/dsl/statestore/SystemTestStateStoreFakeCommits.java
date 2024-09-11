@@ -58,22 +58,22 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
-        StateStoreCommitMessageFactory factory = messageFactory();
-        send(commits.map(commit -> commit.createMessage(factory)));
+        sendParallelBatches(forCurrentTable(commits));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits sendBatchedForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
-        List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
-                .map(table -> table.get(TABLE_ID))
-                .map(StateStoreCommitMessageFactory::new)
-                .collect(toUnmodifiableList());
-        send(commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory))));
+        sendParallelBatches(forEachTable(commits));
+        return this;
+    }
+
+    public SystemTestStateStoreFakeCommits sendBatchedInOrderForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        sendSequentialBatches(forEachTable(commits));
         return this;
     }
 
     public SystemTestStateStoreFakeCommits send(StateStoreCommitMessage.Commit commit) {
-        send(Stream.of(commit.createMessage(messageFactory())));
+        sendSequentialBatches(forCurrentTable(Stream.of(commit)));
         return this;
     }
 
@@ -92,11 +92,32 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
-    private void send(Stream<StateStoreCommitMessage> messages) {
-        driver.sendCommitMessages(messages
+    private void sendParallelBatches(Stream<StateStoreCommitMessage> messages) {
+        driver.sendCommitMessagesInParallelBatches(countCommits(messages));
+    }
+
+    private void sendSequentialBatches(Stream<StateStoreCommitMessage> messages) {
+        driver.sendCommitMessagesInSequentialBatches(countCommits(messages));
+    }
+
+    private Stream<StateStoreCommitMessage> forCurrentTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        StateStoreCommitMessageFactory factory = messageFactory();
+        return commits.map(commit -> commit.createMessage(factory));
+    }
+
+    private Stream<StateStoreCommitMessage> forEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
+                .map(table -> table.get(TABLE_ID))
+                .map(StateStoreCommitMessageFactory::new)
+                .collect(toUnmodifiableList());
+        return commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory)));
+    }
+
+    private Stream<StateStoreCommitMessage> countCommits(Stream<StateStoreCommitMessage> messages) {
+        return messages
                 .peek(message -> waitForNumCommitsByTableId.compute(
                         message.getTableId(),
-                        (id, count) -> count == null ? 1 : count + 1)));
+                        (id, count) -> count == null ? 1 : count + 1));
     }
 
     private StateStoreCommitMessageFactory messageFactory() {

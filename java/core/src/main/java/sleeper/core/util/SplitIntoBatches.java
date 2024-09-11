@@ -85,6 +85,30 @@ public class SplitIntoBatches {
      * @param operation an operation to perform on a batch of items
      */
     public static <T> void inParallelBatchesOf(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
+        inBatchesOf(batchSize, items, operation, true);
+    }
+
+    /**
+     * Performs an operation on each batch of a given size. A new list will be created for each batch.
+     *
+     * @param <T>       the item type
+     * @param batchSize the number of items to process in a batch
+     * @param items     a stream of items to split into batches
+     * @param operation an operation to perform on a batch of items
+     */
+    public static <T> void inSequentialBatchesOf(int batchSize, Stream<T> items, Consumer<List<T>> operation) {
+        inBatchesOf(batchSize, items, operation, false);
+    }
+
+    /**
+     * Performs an operation on each batch of a given size. A new list will be created for each batch.
+     *
+     * @param <T>       the item type
+     * @param batchSize the number of items to process in a batch
+     * @param items     a stream of items to split into batches
+     * @param operation an operation to perform on a batch of items
+     */
+    private static <T> void inBatchesOf(int batchSize, Stream<T> items, Consumer<List<T>> operation, boolean parallel) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
         }
@@ -93,7 +117,7 @@ public class SplitIntoBatches {
             batcher.add(item);
             return batcher.takeBatchIfFull().stream();
         });
-        StreamSupport.stream(fullBatches.spliterator(), true).forEach(operation);
+        StreamSupport.stream(fullBatches.spliterator(), parallel).forEach(operation);
         batcher.takeBatchIfNotEmpty().ifPresent(operation);
     }
 

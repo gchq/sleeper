@@ -97,7 +97,12 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public void sendCommitMessages(Stream<StateStoreCommitMessage> messages) {
+        public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitMessage> messages) {
+            sendCommitMessagesInSequentialBatches(messages);
+        }
+
+        @Override
+        public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitMessage> messages) {
             messages.forEach(queue::add);
             if (!committerPaused && isRunCommitterOnSend()) {
                 runCommitter();

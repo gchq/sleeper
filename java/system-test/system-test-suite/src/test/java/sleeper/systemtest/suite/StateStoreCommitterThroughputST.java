@@ -204,7 +204,7 @@ public class StateStoreCommitterThroughputST {
                                 compactionFactory.createCompactionJobWithFilenames(
                                         jobId(i), List.of(filename(i), filename(i + 1000)), "root"),
                                 "test-task", jobRunId(i),
-                                summary(startTime(i), Duration.ofMinutes(1), i, i))))
+                                summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
@@ -262,6 +262,45 @@ public class StateStoreCommitterThroughputST {
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
                         .isBetween(90.0, 130.0));
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
+        sleeper.tables().createMany(10, DEFAULT_SCHEMA);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.tableProperties());
+        sleeper.stateStore().fakeCommits()
+                .pauseReceivingCommitMessages()
+                .sendBatchedInOrderForEachTable(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                        .flatMap(i -> Stream.of(
+                                factory -> factory.addFilesWithJob(List.of(
+                                        fileFactory.rootFile(filename(i), i),
+                                        fileFactory.rootFile(filename(i + 1000), i))),
+                                factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root",
+                                        List.of(filename(i), filename(i + 1000))),
+                                factory -> factory.commitCompactionOnTaskInRun(
+                                        compactionFactory.createCompactionJobWithFilenames(jobId(i),
+                                                List.of(filename(i), filename(i + 1000)), "root"),
+                                        "test-task", jobRunId(i),
+                                        summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
+                                factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
+                .resumeReceivingCommitMessages()
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(10)
+                .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
+                .hasSize(10)
+                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
+                        .isBetween(20.0, 130.0));
     }
 
     private String filename(int i) {

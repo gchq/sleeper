@@ -47,6 +47,10 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitMessage addFileWithJob(FileReference file) {
+        return addFilesWithJob(List.of(file));
+    }
+
+    public StateStoreCommitMessage addFilesWithJob(List<FileReference> files) {
         String jobId = UUID.randomUUID().toString();
         IngestJob job = IngestJob.builder()
                 .id(jobId)
@@ -54,7 +58,7 @@ public class StateStoreCommitMessageFactory {
                 .files(List.of("test-file-" + jobId + ".parquet"))
                 .build();
         return ingest(builder -> builder
-                .fileReferences(List.of(file))
+                .fileReferences(files)
                 .ingestJob(job)
                 .taskId(jobId)
                 .jobRunId(jobId)
