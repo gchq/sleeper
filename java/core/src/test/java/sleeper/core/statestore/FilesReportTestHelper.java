@@ -56,7 +56,17 @@ public class FilesReportTestHelper {
      * @return       the report
      */
     public static AllReferencesToAllFiles activeFiles(FileReference... files) {
-        return activeFilesReport(DEFAULT_UPDATE_TIME, List.of(files));
+        return activeFiles(List.of(files));
+    }
+
+    /**
+     * Creates a report with the specified files referenced in partitions.
+     *
+     * @param  files the file references
+     * @return       the report
+     */
+    public static AllReferencesToAllFiles activeFiles(List<FileReference> files) {
+        return activeFilesReport(DEFAULT_UPDATE_TIME, files);
     }
 
     /**

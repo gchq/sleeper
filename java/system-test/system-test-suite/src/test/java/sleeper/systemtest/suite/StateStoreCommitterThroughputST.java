@@ -35,7 +35,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
@@ -136,15 +136,14 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().filesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
-                        .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                        .isEqualTo(printFiles(partitions, activeFiles(
                                 IntStream.rangeClosed(1, 1000)
                                         .mapToObj(i -> withJobId("job-" + i, fileFactory.rootFile("file-" + i + ".parquet", i)))
-                                        .collect(toUnmodifiableList()),
-                                List.of()))));
+                                        .collect(toUnmodifiableList())))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-                        .isBetween(20.0, 130.0));
+                        .isBetween(35.0, 60.0));
     }
 
 }
