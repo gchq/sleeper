@@ -160,13 +160,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.metrics.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the table metrics lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the table metrics lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
@@ -230,13 +230,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the snapshot creation lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the snapshot creation lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
@@ -255,13 +255,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the snapshot deletion lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the snapshot deletion lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
@@ -280,13 +280,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the transaction deletion lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the transaction deletion lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
@@ -344,13 +344,13 @@ public interface CommonProperty {
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.committer.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the state store committer lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.committer.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the state store committer lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)

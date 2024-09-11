@@ -42,13 +42,13 @@ public interface GarbageCollectionProperty {
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.gc.concurrency.reserved")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the garbage collection lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.gc.concurrency.max")
-            .defafultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the garbage collection lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(Utils::isPositiveIntegerOrNull)
