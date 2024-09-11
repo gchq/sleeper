@@ -53,6 +53,17 @@ class UtilsTest {
             assertThat(Utils.isPositiveDouble("ABC"))
                     .isFalse();
         }
+
+        @Test
+        void shouldValidAllCorrectVariantsForIsPositiveIntegerOrNull() {
+            // When/Then
+            assertThat(Utils.isPositiveIntegerOrNull(null))
+                    .isTrue();
+            assertThat(Utils.isPositiveIntegerOrNull("24"))
+                    .isTrue();
+            assertThat(Utils.isPositiveIntegerOrNull("-7"))
+                    .isFalse();
+        }
     }
 
     @Nested
