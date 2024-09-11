@@ -128,13 +128,16 @@ public class StateStoreCommitterThroughputST {
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+            store.addFiles(
+                    IntStream.rangeClosed(1, 1000)
+                            .mapToObj(i -> fileFactory.rootFile(filename(i), i))
+                            .collect(toUnmodifiableList()));
+        });
 
         // When
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
-                .setupStateStore(store -> store.addFiles(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
-                        .collect(toUnmodifiableList())))
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root", List.of(filename(i)))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
@@ -157,22 +160,22 @@ public class StateStoreCommitterThroughputST {
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+            store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                    .flatMap(i -> Stream.of(
+                            fileFactory.rootFile(filename(i), i),
+                            fileFactory.rootFile(filename(i + 1000), i)))
+                    .collect(toUnmodifiableList()));
+            store.assignJobIds(IntStream.rangeClosed(1, 1000)
+                    .mapToObj(i -> assignJobOnPartitionToFiles(
+                            jobId(i), "root", List.of(filename(i), filename(i + 1000))))
+                    .collect(toUnmodifiableList()));
+        });
 
         // When
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.tableProperties());
         sleeper.stateStore().fakeCommits()
-                .setupStateStore(store -> {
-                    store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                            .flatMap(i -> Stream.of(
-                                    fileFactory.rootFile(filename(i), i),
-                                    fileFactory.rootFile(filename(i + 1000), i)))
-                            .collect(toUnmodifiableList()));
-                    store.assignJobIds(IntStream.rangeClosed(1, 1000)
-                            .mapToObj(i -> assignJobOnPartitionToFiles(
-                                    jobId(i), "root", List.of(filename(i), filename(i + 1000))))
-                            .collect(toUnmodifiableList()));
-                })
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionOnTaskInRun(
                                 compactionFactory.createCompactionJobWithFilenames(
@@ -202,26 +205,26 @@ public class StateStoreCommitterThroughputST {
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+            store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+                    .flatMap(i -> Stream.of(
+                            fileFactory.rootFile(filename(i), i),
+                            fileFactory.rootFile(filename(i + 1000), i)))
+                    .collect(toUnmodifiableList()));
+            store.assignJobIds(IntStream.rangeClosed(1, 1000)
+                    .mapToObj(i -> assignJobOnPartitionToFiles(
+                            jobId(i), "root", List.of(filename(i), filename(i + 1000))))
+                    .collect(toUnmodifiableList()));
+            store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
+                    .mapToObj(i -> replaceJobFileReferences(
+                            jobId(i), "root", List.of(filename(i), filename(i + 1000)),
+                            fileFactory.rootFile(filename(i + 2000), i * 2)))
+                    .collect(toUnmodifiableList()));
+        });
 
         // When
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
-                .setupStateStore(store -> {
-                    store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                            .flatMap(i -> Stream.of(
-                                    fileFactory.rootFile(filename(i), i),
-                                    fileFactory.rootFile(filename(i + 1000), i)))
-                            .collect(toUnmodifiableList()));
-                    store.assignJobIds(IntStream.rangeClosed(1, 1000)
-                            .mapToObj(i -> assignJobOnPartitionToFiles(
-                                    jobId(i), "root", List.of(filename(i), filename(i + 1000))))
-                            .collect(toUnmodifiableList()));
-                    store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
-                            .mapToObj(i -> replaceJobFileReferences(
-                                    jobId(i), "root", List.of(filename(i), filename(i + 1000)),
-                                    fileFactory.rootFile(filename(i + 2000), i * 2)))
-                            .collect(toUnmodifiableList()));
-                })
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000)))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
