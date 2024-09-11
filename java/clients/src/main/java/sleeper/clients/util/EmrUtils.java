@@ -20,6 +20,8 @@ import com.amazonaws.services.elasticmapreduce.model.ClusterState;
 import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
 import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 
+import sleeper.core.util.StaticRateLimit;
+
 import java.util.List;
 
 public class EmrUtils {
@@ -28,9 +30,10 @@ public class EmrUtils {
 
     private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
             ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
+    private static final StaticRateLimit<ListClustersResult> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.2);
 
     public static ListClustersResult listActiveClusters(AmazonElasticMapReduce emrClient) {
-        return emrClient.listClusters(new ListClustersRequest()
-                .withClusterStates(ACTIVE_STATES));
+        return LIST_ACTIVE_CLUSTERS_LIMIT.requestOrGetLast(() -> emrClient.listClusters(
+                new ListClustersRequest().withClusterStates(ACTIVE_STATES)));
     }
 }
