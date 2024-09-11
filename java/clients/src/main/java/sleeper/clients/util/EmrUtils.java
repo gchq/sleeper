@@ -30,10 +30,10 @@ public class EmrUtils {
 
     private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
             ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
-    private static final StaticRateLimit<ListClustersResult> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.5);
+    public static final StaticRateLimit<ListClustersResult> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.5);
 
-    public static ListClustersResult listActiveClusters(AmazonElasticMapReduce emrClient) {
-        return LIST_ACTIVE_CLUSTERS_LIMIT.requestOrGetLast(() -> emrClient.listClusters(
+    public static ListClustersResult listActiveClusters(AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> rateLimit) {
+        return rateLimit.requestOrGetLast(() -> emrClient.listClusters(
                 new ListClustersRequest().withClusterStates(ACTIVE_STATES)));
     }
 }

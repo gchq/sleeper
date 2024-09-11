@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 
 /**
  * Avoids a rate limit by tracking the last result for a request. Will only repeat the request within the rate limit.
+ * This can be used thread safely as a static constant.
  *
  * @param <T> the request result type
  */
@@ -56,6 +57,16 @@ public class StaticRateLimit<T> {
      */
     public static <T> StaticRateLimit<T> withWaitBetweenRequests(Duration waitBetweenRequests, Supplier<Instant> timeSupplier) {
         return new StaticRateLimit<>(waitBetweenRequests, timeSupplier);
+    }
+
+    /**
+     * Creates an instance of this class which will always make the request.
+     *
+     * @param  <T> the request result type
+     * @return     the new instance
+     */
+    public static <T> StaticRateLimit<T> none() {
+        return withWaitBetweenRequests(Duration.ZERO, () -> Instant.MIN);
     }
 
     /**
