@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.gpu.GPUCompaction;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner;

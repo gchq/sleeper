@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.execution;
+package sleeper.compaction.gpu;
 
 import com.google.protobuf.ByteString;
 import io.grpc.Channel;
@@ -23,14 +23,15 @@ import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.gpu.ProtoCompaction.CompactionParams;
+import sleeper.compaction.gpu.ProtoCompaction.CompactionResult;
+import sleeper.compaction.gpu.ProtoCompaction.OptBytes;
+import sleeper.compaction.gpu.ProtoCompaction.ReturnCode;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.compaction.job.execution.ProtoCompaction.CompactionParams;
-import sleeper.compaction.job.execution.ProtoCompaction.CompactionResult;
-import sleeper.compaction.job.execution.ProtoCompaction.OptBytes;
-import sleeper.compaction.job.execution.ProtoCompaction.ReturnCode;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
@@ -41,7 +42,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
