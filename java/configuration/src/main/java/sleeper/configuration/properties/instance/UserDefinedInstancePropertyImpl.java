@@ -163,7 +163,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder defafultProperty(SleeperProperty property) {
+        public Builder defaultProperty(SleeperProperty property) {
             this.defaultProperty = property;
             return this;
         }
