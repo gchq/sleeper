@@ -28,10 +28,15 @@ import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
@@ -104,6 +109,38 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
+                .hasSize(10)
+                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
+                        .isBetween(20.0, 130.0));
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits()
+                .setupStateStore(store -> store.addFiles(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
+                        .collect(toUnmodifiableList())))
+                .sendBatched(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles("job-" + i, "root", List.of("file-" + i + ".parquet"))))
+                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+
+        // Then
+        assertThat(sleeper.tableFiles().filesByTable())
+                .hasSize(10)
+                .allSatisfy((table, files) -> assertThat(printFiles(partitions, files))
+                        .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                                IntStream.rangeClosed(1, 1000)
+                                        .mapToObj(i -> withJobId("job-" + i, fileFactory.rootFile("file-" + i + ".parquet", i)))
+                                        .collect(toUnmodifiableList()),
+                                List.of()))));
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)

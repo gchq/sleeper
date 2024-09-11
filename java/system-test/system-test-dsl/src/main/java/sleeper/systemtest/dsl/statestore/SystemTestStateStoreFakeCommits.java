@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -44,6 +46,15 @@ public class SystemTestStateStoreFakeCommits {
         instance = context.instance();
         waiter = new WaitForStateStoreCommitLogs(logsDriver);
         getRunsAfterTime = context.reporting().getRecordingStartTime();
+    }
+
+    public SystemTestStateStoreFakeCommits setupStateStore(StateStoreSetup setup) {
+        try {
+            setup.setup(instance.getStateStore());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
     }
 
     public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
@@ -90,5 +101,11 @@ public class SystemTestStateStoreFakeCommits {
 
     private StateStoreCommitMessageFactory messageFactory() {
         return new StateStoreCommitMessageFactory(instance.getTableStatus().getTableUniqueId());
+    }
+
+    @FunctionalInterface
+    public interface StateStoreSetup {
+
+        void setup(StateStore stateStore) throws StateStoreException;
     }
 }

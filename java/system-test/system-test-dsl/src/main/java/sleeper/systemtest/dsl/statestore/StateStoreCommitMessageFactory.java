@@ -15,6 +15,9 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
@@ -50,6 +53,13 @@ public class StateStoreCommitMessageFactory {
                 .taskId(jobId)
                 .jobRunId(jobId)
                 .writtenTime(Instant.now()));
+    }
+
+    public StateStoreCommitMessage assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
+        CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(
+                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)), tableId);
+        return StateStoreCommitMessage.tableIdAndBody(tableId,
+                new CompactionJobIdAssignmentCommitRequestSerDe().toJson(request));
     }
 
     private StateStoreCommitMessage ingest(Consumer<IngestAddFilesCommitRequest.Builder> config) {
