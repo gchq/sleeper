@@ -69,7 +69,8 @@ public class StaticRateLimit<T> {
     }
 
     /**
-     * Makes the request if the expected amount of time has passed since the last request.
+     * Makes the request if the expected amount of time has passed since the last request. If a request is ongoing,
+     * wait for that first.
      *
      * @param  request the request
      * @return         the result, or the last result if the time has not passed
