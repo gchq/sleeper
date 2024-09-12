@@ -96,29 +96,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTableWithPauseAndResume(SleeperSystemTest sleeper) throws Exception {
-        // Given
-        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
-        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-        sleeper.partitioning().setPartitions(partitions);
-
-        // When
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        sleeper.stateStore().fakeCommits()
-                .pauseReceivingCommitMessages()
-                .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
-                        .map(StateStoreCommitMessage::addFile))
-                .resumeReceivingCommitMessages()
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
-
-        // Then
-        assertThat(sleeper.tableFiles().references()).hasSize(1000);
-        assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
-    }
-
-    @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
@@ -129,11 +106,9 @@ public class StateStoreCommitterThroughputST {
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
-                .pauseReceivingCommitMessages()
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .resumeReceivingCommitMessages()
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
@@ -271,7 +246,6 @@ public class StateStoreCommitterThroughputST {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.defaultTableProperties());
         sleeper.stateStore().fakeCommits()
-                .pauseReceivingCommitMessages()
                 .sendBatchedInOrderForEachTable(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .flatMap(i -> Stream.of(
                                 factory -> factory.addFilesWithJob(List.of(
@@ -285,7 +259,6 @@ public class StateStoreCommitterThroughputST {
                                         "test-task", jobRunId(i),
                                         summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
                                 factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
-                .resumeReceivingCommitMessages()
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
