@@ -7,7 +7,27 @@ on:
         type: boolean
 
 jobs:
-  build:
+  dep-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache VDB home
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vdb
+          key: ${{ runner.os }}-dep-scan-${{ steps.date.outputs.date }}
+          restore-keys: |
+            ${{ runner.os }}-dep-scan-
+      - uses: AppThreat/dep-scan-action@master
+        env:
+          VDB_HOME: ${{ github.workspace }}/vdb
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Upload reports
+          path: reports
+
+  maven:
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +65,7 @@ jobs:
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
       - name: Upload dependency check report
         if: ${{ always() }}
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: Dependency check report
           path: java/target/dependency-check-report.html
