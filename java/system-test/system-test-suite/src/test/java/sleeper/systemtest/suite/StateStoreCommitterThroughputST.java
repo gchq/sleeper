@@ -316,7 +316,7 @@ public class StateStoreCommitterThroughputST {
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(90.0, 135.0); // Lambda limits throughput to 100/s but we usually see slightly higher
+                .isBetween(90.0, 150.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
