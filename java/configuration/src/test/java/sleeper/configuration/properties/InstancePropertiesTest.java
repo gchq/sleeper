@@ -243,11 +243,13 @@ class InstancePropertiesTest {
     @Test
     void shouldValidatePredicateOfTheDefaultPropertyVersusWhatIsSet() {
         // Given
-        InstanceProperties properties = new InstanceProperties();
-        properties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "-1");
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "-62");
 
         // When / Then
-        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class);
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("-62");
     }
 
     private static InstanceProperties getSleeperProperties() {
