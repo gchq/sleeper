@@ -52,7 +52,7 @@ public class DummyInstanceProperty implements InstanceProperty {
     }
 
     @Override
-    public SleeperProperty getDefaultProperty() {
+    public InstanceProperty getDefaultProperty() {
         throw new UnsupportedOperationException("DefaultProperty not implemented");
     }
 }
