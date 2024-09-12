@@ -19,7 +19,6 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -29,7 +28,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
     private final String propertyName;
     private final String description;
     private final PropertyGroup group;
-    private final SleeperProperty defaultProperty;
+    private final InstanceProperty defaultProperty;
 
     private CdkDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -57,7 +56,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
     }
 
     @Override
-    public SleeperProperty getDefaultProperty() {
+    public InstanceProperty getDefaultProperty() {
         return defaultProperty;
     }
 
@@ -85,7 +84,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
         private String description;
         private PropertyGroup group;
         private Consumer<CdkDefinedInstanceProperty> addToIndex;
-        private SleeperProperty defaultProperty;
+        private InstanceProperty defaultProperty;
 
         private Builder() {
         }
@@ -105,7 +104,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
             return this;
         }
 
-        public Builder defaultProperty(SleeperProperty defaultProperty) {
+        public Builder defaultProperty(InstanceProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
             return this;
         }

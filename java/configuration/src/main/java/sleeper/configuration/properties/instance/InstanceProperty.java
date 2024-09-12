@@ -35,7 +35,7 @@ public interface InstanceProperty extends SleeperProperty {
         return Index.INSTANCE.getByName(propertyName);
     }
 
-    SleeperProperty getDefaultProperty();
+    InstanceProperty getDefaultProperty();
 
     class Index {
         private Index() {
@@ -49,5 +49,9 @@ public interface InstanceProperty extends SleeperProperty {
             index.addAll(CdkDefinedInstanceProperty.getAll());
             return index;
         }
+    }
+
+    default String computeValue(String value, InstanceProperties instanceProperties) {
+        return value;
     }
 }

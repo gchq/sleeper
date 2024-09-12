@@ -82,6 +82,11 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         }
     }
 
+    @Override
+    public String get(InstanceProperty property) {
+        return compute(property, value -> property.computeValue(value, this));
+    }
+
     public Properties getTagsProperties() {
         Properties tagsProperties = new Properties();
         tags.forEach(tagsProperties::setProperty);

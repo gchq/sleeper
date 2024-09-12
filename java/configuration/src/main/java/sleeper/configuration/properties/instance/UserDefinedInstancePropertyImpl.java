@@ -19,7 +19,6 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +36,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final boolean includedInTemplate;
     private final boolean includedInBasicTemplate;
     private final boolean ignoreEmptyValue;
-    private final SleeperProperty defaultProperty;
+    private final InstanceProperty defaultProperty;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -117,8 +116,22 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public SleeperProperty getDefaultProperty() {
+    public InstanceProperty getDefaultProperty() {
         return defaultProperty;
+    }
+
+    @Override
+    public String computeValue(String value, InstanceProperties instanceProperties) {
+        if (value != null) {
+            return value;
+        } else {
+            InstanceProperty tempProperty = getDefaultProperty();
+            if (tempProperty != null) {
+                return instanceProperties.get(tempProperty);
+            } else {
+                return getDefaultValue();
+            }
+        }
     }
 
     static final class Builder {
@@ -133,7 +146,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private Boolean includedInBasicTemplate;
         private boolean ignoreEmptyValue = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
-        private SleeperProperty defaultProperty;
+        private InstanceProperty defaultProperty;
 
         private Builder() {
         }
@@ -163,8 +176,9 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder defaultProperty(SleeperProperty defaultProperty) {
+        public Builder defaultProperty(InstanceProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
+            this.validationPredicate = defaultProperty.getValidationPredicate();
             return this;
         }
 
