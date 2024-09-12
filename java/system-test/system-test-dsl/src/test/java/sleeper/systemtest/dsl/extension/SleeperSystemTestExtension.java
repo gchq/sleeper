@@ -23,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -38,6 +40,7 @@ import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperSystemTestExtension.class);
     private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
             SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class,
             SystemTestParameters.class, SystemTestDrivers.class,
@@ -98,6 +101,8 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        LOGGER.info("Beginning system test: {}",
+                TestContextFactory.testContext(context).getTestClassAndMethod());
         deployedResources.resetProperties();
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
         testContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances);
@@ -118,5 +123,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         dsl = null;
         reporting = null;
         queuePurging = null;
+        LOGGER.info("Finished system test: {}",
+                TestContextFactory.testContext(context).getTestClassAndMethod());
     }
 }
