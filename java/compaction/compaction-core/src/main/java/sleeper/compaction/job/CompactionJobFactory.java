@@ -72,11 +72,7 @@ public class CompactionJobFactory {
     }
 
     public CompactionJob createCompactionJobWithFilenames(
-            String jobId, List<String> filenames, String partition) {
-        return createCompactionJobBuilder(jobId, filenames, partition).build();
-    }
-
-    private CompactionJob.Builder createCompactionJobBuilder(String jobId, List<String> filenames, String partitionId) {
+            String jobId, List<String> filenames, String partitionId) {
         String outputFile = TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
@@ -85,6 +81,7 @@ public class CompactionJobFactory {
                 .outputFile(outputFile)
                 .partitionId(partitionId)
                 .iteratorClassName(iteratorClassName)
-                .iteratorConfig(iteratorConfig);
+                .iteratorConfig(iteratorConfig)
+                .build();
     }
 }
