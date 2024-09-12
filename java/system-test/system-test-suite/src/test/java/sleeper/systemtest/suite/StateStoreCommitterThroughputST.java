@@ -269,7 +269,7 @@ public class StateStoreCommitterThroughputST {
 
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.tableProperties());
+        CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.defaultTableProperties());
         sleeper.stateStore().fakeCommits()
                 .pauseReceivingCommitMessages()
                 .sendBatchedInOrderForEachTable(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
