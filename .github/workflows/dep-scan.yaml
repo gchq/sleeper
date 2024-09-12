@@ -29,7 +29,8 @@ jobs:
           key: ${{ runner.os }}-dep-scan-${{ steps.date.outputs.date }}
           restore-keys: |
             ${{ runner.os }}-dep-scan-
-      - uses: ./.github/actions/dep-scan
+      - name: Run dep-scan
+        uses: ./.github/actions/dep-scan
         with:
           src: /github/workspace/${{ inputs.path }}
           projectType: ${{ inputs.projectType }}
