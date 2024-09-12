@@ -1,0 +1,29 @@
+name: "owasp-dep-scan"
+description: "dep-scan is a fully open-source security audit tool for project dependencies based on known vulnerabilities and advisories."
+inputs:
+  src:
+    description: "Source directory to scan. Defaults to workspace"
+    required: false
+    default: "/github/workspace"
+  report_file:
+    description: "Output file for the generated report. Defaults to reports/depscan.json"
+    required: false
+    default: "/github/workspace/reports/depscan.json"
+  profile:
+    description: "Name of the profile to use (appsec, research, operational, threat-modeling, license-compliance, generic)"
+    required: false
+    default: "generic"
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/owasp-dep-scan/dep-scan:release-5.x"
+  args:
+    - "--src"
+    - ${{ inputs.src }}
+    - "--report_file"
+    - ${{ inputs.report_file }}
+    - "--profile"
+    - ${{ inputs.profile }}
+branding:
+  icon: "check"
+  color: "blue"

@@ -18,7 +18,7 @@ jobs:
           key: ${{ runner.os }}-dep-scan-${{ steps.date.outputs.date }}
           restore-keys: |
             ${{ runner.os }}-dep-scan-
-      - uses: AppThreat/dep-scan-action@master
+      - uses: ./.github/actions/dep-scan
         env:
           VDB_HOME: ${{ github.workspace }}/vdb
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
