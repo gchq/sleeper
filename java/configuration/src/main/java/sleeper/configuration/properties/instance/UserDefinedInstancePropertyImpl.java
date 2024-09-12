@@ -115,7 +115,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return ignoreEmptyValue;
     }
 
-    @Override
     public InstanceProperty getDefaultProperty() {
         return defaultProperty;
     }

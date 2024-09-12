@@ -53,12 +53,6 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
         return null;
     }
 
-    @Override
-    public InstanceProperty getDefaultProperty() {
-        throw new UnsupportedOperationException("Default property not a valid option for CDKDefinedInstanceProperty. " +
-                "Artefact from InstanceProperty inheritance");
-    }
-
     public String toString() {
         return propertyName;
     }

@@ -50,9 +50,4 @@ public class DummyInstanceProperty implements InstanceProperty {
     public boolean isRunCdkDeployWhenChanged() {
         return false;
     }
-
-    @Override
-    public InstanceProperty getDefaultProperty() {
-        throw new UnsupportedOperationException("DefaultProperty not implemented");
-    }
 }

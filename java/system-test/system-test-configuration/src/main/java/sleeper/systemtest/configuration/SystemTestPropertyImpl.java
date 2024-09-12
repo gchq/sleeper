@@ -19,7 +19,6 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 import java.util.Objects;
@@ -34,7 +33,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final boolean runCdkDeployWhenChanged;
     private final boolean setByCdk;
     private final boolean editable;
-    private final InstanceProperty defaultProperty;
 
     private SystemTestPropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -44,7 +42,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         runCdkDeployWhenChanged = builder.runCdkDeployWhenChanged;
         setByCdk = builder.setByCdk;
         editable = builder.editable;
-        defaultProperty = builder.defaultProperty;
     }
 
     public static Builder builder() {
@@ -81,11 +78,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
-    public InstanceProperty getDefaultProperty() {
-        return defaultProperty;
-    }
-
-    @Override
     public boolean isRunCdkDeployWhenChanged() {
         return runCdkDeployWhenChanged;
     }
@@ -113,7 +105,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private boolean setByCdk;
         private boolean editable;
         private Consumer<SystemTestProperty> addToIndex;
-        private InstanceProperty defaultProperty;
 
         private Builder() {
         }
@@ -135,11 +126,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
         public Builder description(String description) {
             this.description = description;
-            return this;
-        }
-
-        public Builder defaultProperty(InstanceProperty property) {
-            this.defaultProperty = property;
             return this;
         }
 
