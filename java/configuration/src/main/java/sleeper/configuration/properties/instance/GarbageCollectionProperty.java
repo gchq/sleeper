@@ -50,7 +50,6 @@ public interface GarbageCollectionProperty {
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the garbage collection lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .validationPredicate(Utils::isPositiveIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
             .description("The number of tables to perform garbage collection for in a single invocation. " +
