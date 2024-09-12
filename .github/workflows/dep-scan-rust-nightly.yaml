@@ -1,11 +1,11 @@
-name: Dependency Check Nightly
+name: Depscan Rust Nightly
 on:
   workflow_dispatch: # Allow manual running to refresh/check cache
   schedule:
     - cron: '0 2 * * *'
 
 jobs:
-  check:
+  scan:
     uses: ./.github/workflows/dependency-check.yaml
     with:
-      failOnCacheMiss: false
+      path: rust

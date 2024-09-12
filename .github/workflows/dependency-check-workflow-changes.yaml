@@ -6,7 +6,7 @@ on:
       - '.github/workflows/dependency-check.yaml'
 
 jobs:
-  build-cli:
+  check:
     uses: ./.github/workflows/dependency-check.yaml
     with:
       failOnCacheMiss: false
