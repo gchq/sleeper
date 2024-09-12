@@ -8,7 +8,7 @@ on:
 
 jobs:
   scan:
-    uses: ./.github/workflows/dependency-check.yaml
+    uses: ./.github/workflows/dep-scan.yaml
     with:
       path: rust
       projectType: rust
