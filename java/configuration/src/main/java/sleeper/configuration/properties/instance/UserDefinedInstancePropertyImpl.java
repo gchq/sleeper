@@ -63,7 +63,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public Predicate<String> validationPredicate() {
+    public Predicate<String> getValidationPredicate() {
         return validationPredicate;
     }
 

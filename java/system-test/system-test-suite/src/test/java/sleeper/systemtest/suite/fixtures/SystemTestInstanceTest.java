@@ -47,7 +47,7 @@ public class SystemTestInstanceTest {
                 .build();
         assertThat(instances)
                 .extracting(instance -> parameters.buildInstanceId(instance.getShortName()))
-                .allMatch(CommonProperty.ID.validationPredicate());
+                .allMatch(CommonProperty.ID.getValidationPredicate());
     }
 
     @Test
