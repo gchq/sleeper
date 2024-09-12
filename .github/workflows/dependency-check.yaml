@@ -26,6 +26,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dep-scan-
       - uses: ./.github/actions/dep-scan
+        with:
+          src: ./rust
         env:
           VDB_HOME: ${{ github.workspace }}/vdb
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
