@@ -48,8 +48,8 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
-import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClientBuilder;
+import static sleeper.dynamodb.test.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
+import static sleeper.dynamodb.test.DynamoDBWiremockTestHelper.wiremockDynamoDBClientBuilder;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {

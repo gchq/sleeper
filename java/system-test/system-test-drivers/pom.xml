@@ -45,20 +45,10 @@
             <artifactId>apache-client</artifactId>
             <version>${aws-java-sdk-v2.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-cloudformation</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>system-test-dsl</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>system-test-data-generation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -69,11 +59,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>cdk</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>system-test-cdk</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -98,7 +83,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter-core</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -125,11 +110,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>localstack</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

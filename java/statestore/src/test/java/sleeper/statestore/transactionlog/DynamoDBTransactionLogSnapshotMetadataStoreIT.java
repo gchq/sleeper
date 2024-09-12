@@ -15,20 +15,15 @@
  */
 package sleeper.statestore.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.dynamodb.tools.DynamoDBContainer;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,22 +35,13 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DynamoDBTransactionLogSnapshotMetadataStoreIT {
-    @Container
-    private static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private static AmazonDynamoDB dynamoDBClient;
+public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestBase {
+
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final DynamoDBTransactionLogSnapshotMetadataStore store = snapshotStore();
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
 
     @BeforeEach
     void setup() {

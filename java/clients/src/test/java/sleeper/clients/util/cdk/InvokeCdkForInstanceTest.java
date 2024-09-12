@@ -62,7 +62,7 @@ class InvokeCdkForInstanceTest {
             assertThat(commandRunOn(runner -> cdk.invoke(
                     InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(), runner)))
                     .containsExactly("cdk",
-                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "deploy",
                             "--require-approval", "never",
                             "-c", "propertiesfile=instance.properties",
@@ -103,7 +103,7 @@ class InvokeCdkForInstanceTest {
             assertThat(commandRunOn(runner -> cdk.invoke(
                     InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployNewPaused(), runner)))
                     .containsExactly("cdk",
-                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "deploy",
                             "--require-approval", "never",
                             "-c", "propertiesfile=instance.properties",
@@ -147,7 +147,7 @@ class InvokeCdkForInstanceTest {
             assertThat(commandRunOn(runner -> cdk.invoke(
                     InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.destroy(), runner)))
                     .containsExactly("cdk",
-                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "destroy", "--force",
                             "-c", "propertiesfile=instance.properties",
                             "-c", "validate=false",
@@ -191,7 +191,7 @@ class InvokeCdkForInstanceTest {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkCommand.deployExisting(), runner)))
                     .startsWith("cdk",
-                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp");
+                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp");
         }
     }
 }

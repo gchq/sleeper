@@ -29,3 +29,4 @@ VERSION=$(cat "$VERSION_FILE")
 cp -r "$MAVEN_DIR/system-test/system-test-data-generation/docker" "$DOCKER_DIR/system-test"
 cp -r "$MAVEN_DIR/system-test/system-test-data-generation/target/system-test-data-generation-${VERSION}-utility.jar" "$DOCKER_DIR/system-test/system-test.jar"
 cp -r "$MAVEN_DIR/system-test/system-test-drivers/target/system-test-drivers-${VERSION}-utility.jar" "$JARS_DIR/system-test-${VERSION}-utility.jar"
+cp -r "$MAVEN_DIR/system-test/system-test-cdk/target/system-test-cdk-${VERSION}-utility.jar" "$JARS_DIR/system-test-cdk-${VERSION}.jar"

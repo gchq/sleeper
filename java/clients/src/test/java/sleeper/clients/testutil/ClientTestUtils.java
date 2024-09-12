@@ -15,15 +15,12 @@
  */
 package sleeper.clients.testutil;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.apache.commons.lang3.StringUtils;
 
-import sleeper.clients.status.report.filestatus.FilesStatusReportTest;
-
 import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.Objects;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -33,8 +30,9 @@ public class ClientTestUtils {
     }
 
     public static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+        try (Reader reader = new InputStreamReader(ClientTestUtils.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        }
     }
 
     public static String exampleUUID(String start, Object uuidChar) {

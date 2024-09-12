@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.StaticRateLimit;
 
 import java.util.Collections;
 import java.util.Map;
@@ -168,6 +169,6 @@ class PersistentEMRStepCountIT {
     }
 
     private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo) {
-        return PersistentEMRStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo));
+        return PersistentEMRStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo), StaticRateLimit.none());
     }
 }

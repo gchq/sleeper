@@ -231,7 +231,7 @@
         <module name="IllegalImport">
             <property name="regexp" value="true"/>
             <property name="illegalClasses"
-                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+"/>
+                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+, ^org\.apache\.hadoop\.thirdparty.+"/>
         </module>
         <module name="Indentation">
             <property name="id" value="indentation"/>

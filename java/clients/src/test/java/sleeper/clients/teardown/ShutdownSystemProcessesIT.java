@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
 
@@ -94,7 +95,7 @@ class ShutdownSystemProcessesIT {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
-                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo));
+                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none());
     }
 
     private void shutdown() throws Exception {
