@@ -29,6 +29,7 @@ import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
@@ -231,13 +232,22 @@ class InstancePropertiesTest {
 
     @Test
     void shouldGetTheDefaultPropertyWhenPropertyHasNotBeenSet() {
-        InstanceProperties properties = new InstanceProperties();
-
         // Given
+        InstanceProperties properties = new InstanceProperties();
         properties.set(DEFAULT_LAMBDA_CONCURRENCY_RESERVED, "10");
 
         // When / Then
         assertThat(properties.get(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED)).isEqualTo("10");
+    }
+
+    @Test
+    void shouldValidatePredicateOfTheDefaultPropertyVersusWhatIsSet() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "-1");
+
+        // When / Then
+        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     private static InstanceProperties getSleeperProperties() {
