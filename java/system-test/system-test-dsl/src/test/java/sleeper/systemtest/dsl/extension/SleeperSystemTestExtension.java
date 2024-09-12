@@ -33,10 +33,9 @@ import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.util.TestContext;
 
 import java.util.Set;
-
-import static sleeper.systemtest.dsl.extension.TestContextFactory.testContext;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 
@@ -113,17 +112,18 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void afterEach(ExtensionContext context) {
-        if (context.getExecutionException().isPresent()) {
-            reporting.afterTestFailed(testContext(context));
+        TestContext testContext = TestContextFactory.testContext(context);
+        context.getExecutionException().ifPresentOrElse(failure -> {
+            reporting.afterTestFailed(testContext);
             queuePurging.testFailed();
-        } else {
-            reporting.afterTestPassed(testContext(context));
+            LOGGER.error("Failed system test: {}", testContext.getTestClassAndMethod(), failure);
+        }, () -> {
+            reporting.afterTestPassed(testContext);
             queuePurging.testPassed();
-        }
+            LOGGER.info("Passed system test: {}", testContext.getTestClassAndMethod());
+        });
         dsl = null;
         reporting = null;
         queuePurging = null;
-        LOGGER.info("Finished system test: {}",
-                TestContextFactory.testContext(context).getTestClassAndMethod());
     }
 }
