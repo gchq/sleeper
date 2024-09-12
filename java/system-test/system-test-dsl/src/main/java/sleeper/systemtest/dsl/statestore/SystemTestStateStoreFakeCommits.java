@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
@@ -28,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestStateStoreFakeCommits {
 
@@ -101,14 +101,15 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     private Stream<StateStoreCommitMessage> forCurrentTable(Stream<StateStoreCommitMessage.Commit> commits) {
-        StateStoreCommitMessageFactory factory = messageFactory();
+        StateStoreCommitMessageFactory factory = new StateStoreCommitMessageFactory(
+                instance.getInstanceProperties(), instance.getTableProperties());
         return commits.map(commit -> commit.createMessage(factory));
     }
 
     private Stream<StateStoreCommitMessage> forEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
         List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
-                .map(table -> table.get(TABLE_ID))
-                .map(StateStoreCommitMessageFactory::new)
+                .map(tableProperties -> new StateStoreCommitMessageFactory(instanceProperties, tableProperties))
                 .collect(toUnmodifiableList());
         return commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory)));
     }
@@ -118,10 +119,6 @@ public class SystemTestStateStoreFakeCommits {
                 .peek(message -> waitForNumCommitsByTableId.compute(
                         message.getTableId(),
                         (id, count) -> count == null ? 1 : count + 1));
-    }
-
-    private StateStoreCommitMessageFactory messageFactory() {
-        return new StateStoreCommitMessageFactory(instance.getTableStatus().getTableUniqueId());
     }
 
     @FunctionalInterface

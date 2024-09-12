@@ -18,7 +18,6 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
-import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -171,14 +170,11 @@ public class StateStoreCommitterThroughputST {
         });
 
         // When
-        CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.tableProperties());
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> factory -> factory.commitCompactionOnTaskInRun(
-                                compactionFactory.createCompactionJobWithFilenames(
-                                        jobId(i), List.of(filename(i), filename(i + 1000)), "root"),
-                                "test-task", jobRunId(i),
-                                summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
+                        .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
+                                jobId(i), "root", List.of(filename(i), filename(i + 1000)),
+                                "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then
@@ -244,7 +240,6 @@ public class StateStoreCommitterThroughputST {
 
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        CompactionJobFactory compactionFactory = new CompactionJobFactory(sleeper.instanceProperties(), sleeper.defaultTableProperties());
         sleeper.stateStore().fakeCommits()
                 .sendBatchedInOrderForEachTable(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .flatMap(i -> Stream.of(
@@ -253,11 +248,9 @@ public class StateStoreCommitterThroughputST {
                                         fileFactory.rootFile(filename(i + 1000), i))),
                                 factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root",
                                         List.of(filename(i), filename(i + 1000))),
-                                factory -> factory.commitCompactionOnTaskInRun(
-                                        compactionFactory.createCompactionJobWithFilenames(jobId(i),
-                                                List.of(filename(i), filename(i + 1000)), "root"),
-                                        "test-task", jobRunId(i),
-                                        summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
+                                factory -> factory.commitCompactionForPartitionOnTaskInRun(
+                                        jobId(i), "root", List.of(filename(i), filename(i + 1000)),
+                                        "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
                                 factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 

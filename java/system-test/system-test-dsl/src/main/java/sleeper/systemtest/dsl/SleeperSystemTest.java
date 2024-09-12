@@ -93,10 +93,6 @@ public class SleeperSystemTest {
         return context.instance().getTableProperties();
     }
 
-    public TableProperties defaultTableProperties() {
-        return new TableProperties(instanceProperties());
-    }
-
     public void updateTableProperties(Map<TableProperty, String> values) {
         context.instance().updateTableProperties(values);
     }
