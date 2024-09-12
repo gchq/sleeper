@@ -5,6 +5,10 @@ on:
       path:
         required: true
         type: string
+      projectType:
+        required: false
+        type: string
+        default: "unknown"
 
 jobs:
   dep-scan:
@@ -28,6 +32,7 @@ jobs:
       - uses: ./.github/actions/dep-scan
         with:
           src: /github/workspace/${{ inputs.path }}
+          projectType: ${{ inputs.projectType }}
         env:
           VDB_HOME: ${{ github.workspace }}/vdb
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

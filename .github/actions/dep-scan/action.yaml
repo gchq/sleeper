@@ -13,6 +13,10 @@ inputs:
     description: "Name of the profile to use (appsec, research, operational, threat-modeling, license-compliance, generic)"
     required: false
     default: "generic"
+  projectType:
+    description: "Type of project"
+    required: false
+    default: "unknown"
 
 runs:
   using: "docker"
@@ -24,6 +28,8 @@ runs:
     - ${{ inputs.reportsDir }}
     - "--profile"
     - ${{ inputs.profile }}
+    - "--type"
+    - ${{ inputs.projectType }}
     - "--debug"
     - "--explain"
 branding:
