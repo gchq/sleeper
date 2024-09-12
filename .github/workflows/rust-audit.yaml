@@ -1,0 +1,27 @@
+name: Rust Audit
+on:
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule:
+    - cron: '0 2 * * *'
+  pull_request:
+    paths:
+      - 'rust/**/Cargo.toml'
+      - '.github/workflows/rust-audit.yaml'
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  SSCACHE_CACHE_SIZE: "2G"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.79.0
+      - uses: mozilla-actions/sccache-action@v0.0.5
+      - name: Install cargo audit
+        run: cargo install cargo-audit
+      - name: Audit
+        working-directory: ./rust
+        run: cargo audit
