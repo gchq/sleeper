@@ -5,10 +5,10 @@ inputs:
     description: "Source directory to scan. Defaults to workspace"
     required: false
     default: "/github/workspace"
-  report_file:
-    description: "Output file for the generated report. Defaults to reports/depscan.json"
+  reportsDir:
+    description: "Output directory for the generated reports. Defaults to ./reports"
     required: false
-    default: "/github/workspace/reports/depscan.json"
+    default: "/github/workspace/reports"
   profile:
     description: "Name of the profile to use (appsec, research, operational, threat-modeling, license-compliance, generic)"
     required: false
@@ -20,10 +20,12 @@ runs:
   args:
     - "--src"
     - ${{ inputs.src }}
-    - "--report_file"
-    - ${{ inputs.report_file }}
+    - "--reports-dir"
+    - ${{ inputs.reportsDir }}
     - "--profile"
     - ${{ inputs.profile }}
+    - "--debug"
+    - "--explain"
 branding:
   icon: "check"
   color: "blue"
