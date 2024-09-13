@@ -18,28 +18,15 @@ package sleeper.systemtest.configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.SleeperPropertiesInvalidException;
-import sleeper.configuration.properties.validation.IngestQueue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 class SystemTestPropertiesTest {
@@ -101,19 +88,6 @@ class SystemTestPropertiesTest {
         SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
         properties.setNumber(NUMBER_OF_WRITERS, 1);
         properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1);
-        properties.setEnum(INGEST_MODE, DIRECT);
-        properties.set(SYSTEM_TEST_REPO, "test-repo");
-        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, "false");
-        properties.set(INGEST_QUEUE, IngestQueue.STANDARD_INGEST.toString());
-        properties.setNumber(NUMBER_OF_INGESTS_PER_WRITER, 1);
-        properties.setNumber(MIN_RANDOM_INT, 0);
-        properties.setNumber(MAX_RANDOM_INT, 100000000);
-        properties.setNumber(MIN_RANDOM_LONG, 0);
-        properties.setNumber(MAX_RANDOM_LONG, 100000000);
-        properties.setNumber(RANDOM_STRING_LENGTH, 10);
-        properties.setNumber(RANDOM_BYTE_ARRAY_LENGTH, 10);
-        properties.setNumber(MAX_ENTRIES_RANDOM_MAP, 10);
-        properties.setNumber(MAX_ENTRIES_RANDOM_LIST, 10);
         return properties;
     }
 }
