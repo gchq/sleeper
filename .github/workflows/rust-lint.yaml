@@ -25,4 +25,4 @@ jobs:
       - name: Clippy
         if: ${{ always() }}
         working-directory: ./rust
-        run: cargo clippy -- -Dwarnings
+        run: cargo clippy -- -Dwarnings -Dclippy::pedantic -Dclippy::restriction
