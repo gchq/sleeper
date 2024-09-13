@@ -23,5 +23,6 @@ jobs:
         working-directory: ./rust
         run: cargo fmt --all -- --check
       - name: Clippy
+        if: ${{ always() }}
         working-directory: ./rust
         run: cargo clippy -- -Dwarnings
