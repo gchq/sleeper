@@ -159,7 +159,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
 }
 
 fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
-    Ok(if params.override_aws_config {
+    Ok(if !!params.override_aws_config {
         Some(AwsConfig {
             region: unsafe { CStr::from_ptr(params.aws_region) }
                 .to_str()?

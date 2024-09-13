@@ -63,7 +63,7 @@ pub async fn compact(
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
-      info!(
+    info!(
         "DataFusion compaction of files {:?}",
         input_paths.iter().map(Url::as_str).collect::<Vec<_>>()
     );
