@@ -1,0 +1,27 @@
+name: Rust Lint
+on:
+  pull_request:
+    paths:
+      - 'rust/**/Cargo.toml'
+      - '.github/workflows/rust-lint.yaml'
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  SSCACHE_CACHE_SIZE: "2G"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.79.0
+        with:
+          components: clippy,rustfmt
+      - uses: mozilla-actions/sccache-action@v0.0.5
+      - name: Check formatting
+        working-directory: ./rust
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        working-directory: ./rust
+        run: cargo clippy -- -Dwarnings
