@@ -1,0 +1,9 @@
+Unreferenced files: 0
+Referenced files: 4
+File references: 4
+Partition at L:
+34 records in file 1 assigned to job 1
+12 records in file 2 assigned to job 1
+Partition at R:
+78 records in file 3 assigned to job 2
+56 records in file 4 assigned to job 2

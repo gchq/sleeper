@@ -76,7 +76,9 @@ public class FileReferencePrinter {
         Map<String, List<FileReference>> filesByPartition = references.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId));
         AtomicInteger nextFileNumber = new AtomicInteger();
+        AtomicInteger nextJobNumber = new AtomicInteger();
         Map<String, Integer> numberByFilename = new HashMap<>();
+        Map<String, Integer> numberByJobId = new HashMap<>();
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             List<FileReference> partitionFiles = filesByPartition.get(partition.getId());
             if (partitionFiles == null) {
@@ -97,10 +99,16 @@ public class FileReferencePrinter {
                 int fileNumber = numberByFilename.computeIfAbsent(
                         file.getFilename(), name -> nextFileNumber.incrementAndGet());
                 if (file.onlyContainsDataForThisPartition()) {
-                    out.println("in file " + fileNumber);
+                    out.print("in file " + fileNumber);
                 } else {
-                    out.println("in partial file " + fileNumber);
+                    out.print("in partial file " + fileNumber);
                 }
+                if (file.getJobId() != null) {
+                    int jobNumber = numberByJobId.computeIfAbsent(
+                            file.getJobId(), id -> nextJobNumber.incrementAndGet());
+                    out.print(" assigned to job " + jobNumber);
+                }
+                out.println();
             }
         });
     }
