@@ -24,15 +24,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -175,13 +179,34 @@ public class SplitIntoBatchesTest {
 
         @Test
         void shouldTakeConsistentFullBatchesOverManyValues() throws Exception {
-            List<Integer> input = IntStream.range(1, 1000)
+            // Given
+            List<Integer> input = IntStream.rangeClosed(1, 10_000)
                     .mapToObj(i -> i).collect(toUnmodifiableList());
-            List<List<Integer>> output = trackParallelBatchesOf(10, input.stream());
-            assertThat(flattenBatches(output)).containsExactlyInAnyOrderElementsOf(input);
-            // TODO decide how to handle this
-            // assertThat(countBatchesBySize(output))
-            //         .isEqualTo(Map.of(2, 6, 1, 1));
+
+            // When
+            List<List<Integer>> batches = trackParallelBatchesOf(10, input.stream());
+
+            // Then
+            assertThat(distinctValuesInBatches(batches)).isEqualTo(new TreeSet<>(input));
+            assertThat(countByBatchSize(batches)).matches(
+                    countByBatchSizeMeetsMaximumTotalBatches(1024),
+                    "meets a maximum number of batches");
+        }
+
+        @Test
+        void shouldTakeConsistentFullBatchesOverMoreValues() throws Exception {
+            // Given
+            List<Integer> input = IntStream.rangeClosed(1, 10_500)
+                    .mapToObj(i -> i).collect(toUnmodifiableList());
+
+            // When
+            List<List<Integer>> batches = trackParallelBatchesOf(10, input.stream());
+
+            // Then
+            assertThat(distinctValuesInBatches(batches)).isEqualTo(new TreeSet<>(input));
+            assertThat(countByBatchSize(batches)).matches(
+                    countByBatchSizeMeetsMaximumTotalBatches(1152),
+                    "meets a maximum number of batches");
         }
 
         @Test
@@ -195,13 +220,20 @@ public class SplitIntoBatchesTest {
                     .flatMap(List::stream).collect(toUnmodifiableList());
         }
 
-        private <T> List<T> flattenBatches(List<List<T>> output) throws Exception {
-            return output.stream().flatMap(List::stream).collect(toUnmodifiableList());
+        private <T> Set<T> distinctValuesInBatches(List<List<T>> output) throws Exception {
+            return output.stream().flatMap(List::stream).collect(toSet());
         }
 
-        private <T> Map<Integer, Integer> countBatchesBySize(List<List<T>> output) throws Exception {
+        private <T> Map<Integer, Integer> countByBatchSize(List<List<T>> output) throws Exception {
             return output.stream()
                     .collect(groupingBy(batch -> batch.size(), summingInt(batch -> 1)));
+        }
+
+        private Predicate<Map<Integer, Integer>> countByBatchSizeMeetsMaximumTotalBatches(int maximumTotal) {
+            return countByBatchSize -> {
+                int total = countByBatchSize.values().stream().collect(summingInt(i -> i));
+                return total <= maximumTotal;
+            };
         }
 
         private <T> List<List<T>> trackParallelBatchesOf(int batchSize, Stream<T> stream) throws Exception {

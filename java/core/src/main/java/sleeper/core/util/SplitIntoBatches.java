@@ -123,7 +123,7 @@ public class SplitIntoBatches {
         @Override
         public Spliterator<List<T>> trySplit() {
             // Multiple here aims to limit the number of incomplete batches
-            int minSplitSize = batchSize * 4;
+            int minSplitSize = batchSize * 8;
             if (source.estimateSize() <= minSplitSize) {
                 return null;
             }
