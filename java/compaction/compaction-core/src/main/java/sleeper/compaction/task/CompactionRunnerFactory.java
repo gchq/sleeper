@@ -17,18 +17,32 @@ package sleeper.compaction.task;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
+import sleeper.configuration.properties.table.TableProperties;
 
 /**
  * Interface for classes that implement logic for choosing which compaction method should be chosen.
  */
 @FunctionalInterface
 public interface CompactionRunnerFactory {
+
     /**
      * Picks a CompactionRunner implementation that is capable
      * of running a compaction on the given job.
      *
-     * @param  job compaction job
-     * @return     a compactor object
+     * @param  job             the job
+     * @param  tableProperties the Sleeper table properties
+     * @return                 a compaction runner
+     */
+    default CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
+        return createCompactor(job);
+    }
+
+    /**
+     * Picks a CompactionRunner implementation that is capable
+     * of running a compaction on the given job.
+     *
+     * @param  job the job
+     * @return     a compaction runner
      */
     CompactionRunner createCompactor(CompactionJob job);
 }

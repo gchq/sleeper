@@ -460,8 +460,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
-        CompactionTask task = new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
+        CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
+                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
                 waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
                 committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {

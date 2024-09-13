@@ -257,7 +257,7 @@ public class RustCompactionRunnerIT {
         CompactionRunner runner = new RustCompactionRunner(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore));
-        return runner.compact(job);
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 
     private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {

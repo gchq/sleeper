@@ -126,7 +126,7 @@ public class RustCompactionRunnerLocalStackIT {
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 createAwsConfig());
-        return runner.compact(job);
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 
     private static AwsConfig createAwsConfig() {

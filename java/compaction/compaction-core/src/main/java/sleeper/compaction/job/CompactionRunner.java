@@ -15,9 +15,16 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 
 @FunctionalInterface
 public interface CompactionRunner extends CompactionRunnerDetails {
+
+    default RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws Exception {
+        return compact(job);
+    }
+
     RecordsProcessed compact(CompactionJob job) throws Exception;
 }

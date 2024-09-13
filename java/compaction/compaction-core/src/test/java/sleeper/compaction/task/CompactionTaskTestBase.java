@@ -142,8 +142,8 @@ public class CompactionTaskTestBase {
                 new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId),
                 jobStore, commitRequestsOnQueue::add, timeSupplier);
         CompactionRunnerFactory selector = job -> compactor;
-        new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
+        new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tables), PropertiesReloader.neverReload(),
+                FixedStateStoreProvider.byTableId(stateStoreByTableId), messageReceiver, fileAssignmentCheck,
                 committer, jobStore, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }

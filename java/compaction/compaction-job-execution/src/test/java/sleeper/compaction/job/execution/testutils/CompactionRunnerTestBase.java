@@ -82,8 +82,8 @@ public class CompactionRunnerTestBase {
 
     protected RecordsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
         DefaultCompactionRunnerFactory selector = createCompactionSelector(conf);
-        CompactionRunner runner = selector.createCompactor(job);
-        return runner.compact(job);
+        CompactionRunner runner = selector.createCompactor(job, tableProperties);
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 
     private DefaultCompactionRunnerFactory createCompactionSelector(Configuration conf) throws Exception {
