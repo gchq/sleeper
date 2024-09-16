@@ -33,6 +33,7 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -163,6 +164,8 @@ public class CompactionTask {
                 } catch (InterruptedException e) {
                     LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
                     throw e;
+                } catch (TableNotFoundException e) {
+                    LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
