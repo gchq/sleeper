@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionTree;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Stores information about the partitions holding records in a Sleeper table.
@@ -54,6 +55,19 @@ public interface PartitionStore {
      * @throws StateStoreException if query fails
      */
     List<Partition> getLeafPartitions() throws StateStoreException;
+
+    /**
+     * Returns a partition by its ID.
+     *
+     * @param  partitionId         the ID of the partition to be retrieved
+     * @return                     the {@link Partition}
+     * @throws StateStoreException if query fails
+     */
+    default Partition getPartition(String partitionId) throws StateStoreException {
+        return getAllPartitions().stream()
+                .filter(p -> Objects.equals(partitionId, p.getId()))
+                .findFirst().orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
+    }
 
     /**
      * Initialises the store with a single partition covering all keys. This is the root partition which may be split
