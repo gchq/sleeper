@@ -19,7 +19,9 @@ import java.util.stream.Stream;
 
 public interface StateStoreCommitterDriver {
 
-    void sendCommitMessages(Stream<StateStoreCommitMessage> messages);
+    void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitMessage> messages);
+
+    void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitMessage> messages);
 
     void pauseReceivingMessages();
 
