@@ -19,8 +19,10 @@ package sleeper.compaction.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class CompactionTaskTest extends CompactionTaskTestBase {
 
@@ -64,6 +66,22 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         // Then
         assertThat(successfulJobs).containsExactly(job1);
         assertThat(failedJobs).containsExactly(job2);
+        assertThat(jobsOnQueue).isEmpty();
+    }
+
+    @Test
+    void shouldDiscardJobsForNonExistentTable() throws Exception {
+        // Given
+        TableProperties table = createTestTableProperties(instanceProperties, schema);
+        jobsOnQueue.add(createJobNotInStateStore("job1", table));
+        jobsOnQueue.add(createJobNotInStateStore("job2", table));
+
+        // When
+        runTask(processNoJobs());
+
+        // Then
+        assertThat(successfulJobs).isEmpty();
+        assertThat(failedJobs).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
     }
 }
