@@ -5,7 +5,7 @@ on:
     - cron: '0 2 * * *'
 
 jobs:
-  build-cli:
+  check:
     uses: ./.github/workflows/dependency-check.yaml
     with:
       failOnCacheMiss: false

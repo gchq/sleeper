@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;

@@ -15,15 +15,10 @@
  */
 package sleeper.query.runner.tracker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.range.Range;
@@ -32,7 +27,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.dynamodb.tools.DynamoDBContainer;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.output.ResultsOutputInfo;
@@ -48,24 +43,13 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.FAILED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.PARTIALLY_FAILED;
 import static sleeper.query.tracker.QueryState.QUEUED;
 
-@Testcontainers
-public class DynamoDBQueryTrackerIT {
-    private static AmazonDynamoDB dynamoDBClient;
-
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
+public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
 

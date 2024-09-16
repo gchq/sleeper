@@ -28,6 +28,7 @@ import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
+import sleeper.systemtest.drivers.ingest.HadoopLocalFilesDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
@@ -75,6 +76,7 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
@@ -130,6 +132,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
         return new AwsIngestSourceFilesDriver(clients);
+    }
+
+    @Override
+    public IngestLocalFilesDriver localFiles(SystemTestContext context) {
+        return new HadoopLocalFilesDriver();
     }
 
     @Override

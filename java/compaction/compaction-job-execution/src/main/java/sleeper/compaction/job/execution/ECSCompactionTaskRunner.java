@@ -99,15 +99,15 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(tablePropertiesProvider, stateStoreProvider, objectFactory,
+            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
             WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
-            CompactionTask task = new CompactionTask(instanceProperties, propertiesReloader,
-                    new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+            CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
+                    stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                     waitForFiles, committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {

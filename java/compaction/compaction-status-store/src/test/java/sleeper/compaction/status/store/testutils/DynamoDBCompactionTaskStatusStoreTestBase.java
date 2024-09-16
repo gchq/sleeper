@@ -28,7 +28,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

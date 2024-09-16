@@ -11,13 +11,14 @@ on:
       - 'java/ingest/pom.xml'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
-      - 'java/sketches/**'
       - 'java/ingest/ingest-status-store/**'
-      - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
+      - 'java/ingest/ingest-core/**'
       - 'java/parquet/**'
-      - 'java/common/dynamodb-tools/**'
       - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/common/dynamodb-test/**'
+      - 'java/sketches/**'
       - 'java/core/**'
 
 jobs:

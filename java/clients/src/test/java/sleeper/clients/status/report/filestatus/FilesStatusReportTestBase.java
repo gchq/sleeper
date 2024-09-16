@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.filestatus;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.status.report.FilesStatusReport;
@@ -27,12 +27,11 @@ import sleeper.core.statestore.StateStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
@@ -48,8 +47,9 @@ public class FilesStatusReportTestBase {
     }
 
     protected static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+        try (Reader reader = new InputStreamReader(FilesStatusReportTestBase.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        }
     }
 
     protected String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws Exception {

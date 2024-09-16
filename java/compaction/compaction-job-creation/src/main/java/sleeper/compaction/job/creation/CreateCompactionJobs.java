@@ -144,6 +144,8 @@ public class CreateCompactionJobs {
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
+        LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
+                table, jobFactory.getOutputFilePrefix());
 
         Instant indexCreationStartTime = Instant.now();
         CompactionStrategyIndex index = new CompactionStrategyIndex(tableProperties.getStatus(), fileReferences, allPartitions);

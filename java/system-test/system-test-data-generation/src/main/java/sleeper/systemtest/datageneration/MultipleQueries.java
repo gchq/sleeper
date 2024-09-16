@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.query;
+package sleeper.systemtest.datageneration;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -40,8 +40,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.datageneration.RandomRecordSupplier;
-import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
 
 import java.time.Instant;
 import java.util.ArrayList;

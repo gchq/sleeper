@@ -141,9 +141,9 @@ public class CompactionTaskTestBase {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId),
                 jobStore, commitRequestsOnQueue::add, timeSupplier);
-        CompactionRunnerFactory selector = job -> compactor;
-        new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), messageReceiver, fileAssignmentCheck,
+        CompactionRunnerFactory selector = (job, properties) -> compactor;
+        new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tables), PropertiesReloader.neverReload(),
+                FixedStateStoreProvider.byTableId(stateStoreByTableId), messageReceiver, fileAssignmentCheck,
                 committer, jobStore, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
@@ -283,7 +283,7 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return job -> {
+        return (job, table, partition) -> {
             if (getAction.hasNext()) {
                 ProcessJob action = getAction.next();
                 if (action.failure != null) {

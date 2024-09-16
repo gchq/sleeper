@@ -15,9 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
@@ -32,10 +30,9 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
     private final String tableId;
-    private final CompactionOutputFileNameFactory fileNameFactory;
+    private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
@@ -46,12 +43,14 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
+        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
-        LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
-                tableProperties.getStatus(), fileNameFactory.getOutputFilePrefix());
+    }
+
+    public String getOutputFilePrefix() {
+        return outputFilePrefix;
     }
 
     public CompactionJob createCompactionJob(
@@ -73,24 +72,16 @@ public class CompactionJobFactory {
     }
 
     public CompactionJob createCompactionJobWithFilenames(
-            String jobId, List<String> filenames, String partition) {
-        CompactionJob job = createCompactionJobBuilder(jobId, filenames, partition).build();
-
-        LOGGER.info("Created compaction job of id {} to compact {} files in partition {} to output file {}",
-                job.getId(), filenames.size(), partition, job.getOutputFile());
-
-        return job;
-    }
-
-    private CompactionJob.Builder createCompactionJobBuilder(String jobId, List<String> filenames, String partition) {
-        String outputFile = fileNameFactory.jobPartitionFile(jobId, partition);
+            String jobId, List<String> filenames, String partitionId) {
+        String outputFile = TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
                 .inputFiles(filenames)
                 .outputFile(outputFile)
-                .partitionId(partition)
+                .partitionId(partitionId)
                 .iteratorClassName(iteratorClassName)
-                .iteratorConfig(iteratorConfig);
+                .iteratorConfig(iteratorConfig)
+                .build();
     }
 }

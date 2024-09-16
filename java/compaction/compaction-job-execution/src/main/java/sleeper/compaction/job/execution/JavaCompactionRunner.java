@@ -29,8 +29,6 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
@@ -39,8 +37,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -51,8 +47,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
@@ -60,29 +54,19 @@ import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
  * Executes a compaction job. Compacts N input files into a single output file.
  */
 public class JavaCompactionRunner implements CompactionRunner {
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
-    private final StateStoreProvider stateStoreProvider;
     private final Configuration configuration;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaCompactionRunner.class);
 
-    public JavaCompactionRunner(
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ObjectFactory objectFactory, Configuration configuration) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
+    public JavaCompactionRunner(ObjectFactory objectFactory, Configuration configuration) {
         this.objectFactory = objectFactory;
-        this.stateStoreProvider = stateStoreProvider;
         this.configuration = configuration;
     }
 
-    public RecordsProcessed compact(CompactionJob compactionJob) throws IOException, IteratorCreationException, StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider.getById(compactionJob.getTableId());
+    @Override
+    public RecordsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
         Schema schema = tableProperties.getSchema();
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        Partition partition = stateStore.getAllPartitions().stream()
-                .filter(p -> Objects.equals(compactionJob.getPartitionId(), p.getId()))
-                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"));
 
         // Create a reader for each file
         List<CloseableIterator<Record>> inputIterators = createInputIterators(compactionJob, partition, schema);

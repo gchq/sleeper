@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
@@ -104,6 +105,57 @@ public class FileReferencePrinterTest {
         }
 
         @Test
+        void shouldPrintFilesOnLeaves() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50")
+                    .splitToNewChildren("L", "LL", "LR", "row-25")
+                    .splitToNewChildren("R", "RL", "RR", "row-75")
+                    .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                    .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                    .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                    .splitToNewChildren("RR", "RRL", "RRR", "row-87");
+
+            // When
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    fileReferenceFactory.partitionFile("LLL", 12),
+                    fileReferenceFactory.partitionFile("LLR", 13),
+                    fileReferenceFactory.partitionFile("LRL", 12),
+                    fileReferenceFactory.partitionFile("LRR", 13),
+                    fileReferenceFactory.partitionFile("RLL", 12),
+                    fileReferenceFactory.partitionFile("RLR", 13),
+                    fileReferenceFactory.partitionFile("RRL", 12),
+                    fileReferenceFactory.partitionFile("RRR", 13)));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+
+        @Test
+        void shouldPrintFilesAssignedToJobs() {
+            // Given
+            partitions.rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50");
+
+            // When
+            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+                    withJobId("left-job", fileReferenceFactory.partitionFile("L", "l1.parquet", 12)),
+                    withJobId("left-job", fileReferenceFactory.partitionFile("L", "l2.parquet", 34)),
+                    withJobId("right-job", fileReferenceFactory.partitionFile("R", "r1.parquet", 56)),
+                    withJobId("right-job", fileReferenceFactory.partitionFile("R", "r2.parquet", 78))));
+
+            // Then see approved output
+            Approvals.verify(printed);
+        }
+    }
+
+    @Nested
+    @DisplayName("Display active files by their location in the partition tree")
+    class DisplayActiveFilesByPartition {
+
+        @Test
         void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRecordsInSamePartition() {
             // Given
             partitions.rootFirst("root")
@@ -156,34 +208,6 @@ public class FileReferencePrinterTest {
                             referenceForChildPartition(splitFile2, "L", 50),
                             referenceForChildPartition(splitFile2, "R", 50),
                             referenceForChildPartition(splitFile1, "R", 25)));
-
-            // Then see approved output
-            Approvals.verify(printed);
-        }
-
-        @Test
-        void shouldPrintFilesOnLeaves() {
-            // Given
-            partitions.rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "row-50")
-                    .splitToNewChildren("L", "LL", "LR", "row-25")
-                    .splitToNewChildren("R", "RL", "RR", "row-75")
-                    .splitToNewChildren("LL", "LLL", "LLR", "row-12")
-                    .splitToNewChildren("LR", "LRL", "LRR", "row-37")
-                    .splitToNewChildren("RL", "RLL", "RLR", "row-62")
-                    .splitToNewChildren("RR", "RRL", "RRR", "row-87");
-
-            // When
-            FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
-                    fileReferenceFactory.partitionFile("LLL", 12),
-                    fileReferenceFactory.partitionFile("LLR", 13),
-                    fileReferenceFactory.partitionFile("LRL", 12),
-                    fileReferenceFactory.partitionFile("LRR", 13),
-                    fileReferenceFactory.partitionFile("RLL", 12),
-                    fileReferenceFactory.partitionFile("RLR", 13),
-                    fileReferenceFactory.partitionFile("RRL", 12),
-                    fileReferenceFactory.partitionFile("RRR", 13)));
 
             // Then see approved output
             Approvals.verify(printed);

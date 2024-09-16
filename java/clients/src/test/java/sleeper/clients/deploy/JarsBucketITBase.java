@@ -16,7 +16,7 @@
 
 package sleeper.clients.deploy;
 
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
@@ -84,6 +84,6 @@ public abstract class JarsBucketITBase {
 
     protected String getObjectContents(String key) {
         return s3.getObject(builder -> builder.bucket(bucketName).key(key),
-                (metadata, inputStream) -> IOUtils.toString(inputStream, Charset.defaultCharset()));
+                (metadata, inputStream) -> CharStreams.toString(new InputStreamReader(inputStream)));
     }
 }

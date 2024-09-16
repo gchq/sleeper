@@ -17,11 +17,11 @@ on:
       - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/ingest/ingest-batcher-job-creator/**'
       - 'java/common/common-task/**'
-      - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
 
 jobs:
   chunk-workflow:

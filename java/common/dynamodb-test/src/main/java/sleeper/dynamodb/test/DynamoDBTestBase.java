@@ -13,32 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.dynamodb.tools;
+package sleeper.dynamodb.test;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.dynamodb.test.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class DynamoDBTestBase {
 
-    protected static AmazonDynamoDB dynamoDBClient;
+    private static AmazonDynamoDB dynamoDBClientShared;
 
     @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
+    public static final DynamoDBContainer CONTAINER = new DynamoDBContainer();
+
+    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+    protected final AmazonDynamoDB dynamoDBClient = dynamoDBClientShared;
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClientShared = buildAwsV1Client(CONTAINER, CONTAINER.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
     public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
+        dynamoDBClientShared.shutdown();
     }
 }
