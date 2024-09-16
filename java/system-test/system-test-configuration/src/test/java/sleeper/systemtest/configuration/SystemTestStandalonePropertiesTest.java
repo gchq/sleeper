@@ -64,10 +64,7 @@ class SystemTestStandalonePropertiesTest {
         // Given
         SystemTestStandaloneProperties properties = validStandaloneProperties();
 
-        // When
-        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, null);
-
-        // Then
+        // When / Then
         assertThat(properties.get(SYSTEM_TEST_CLUSTER_ENABLED)).isEqualTo("true");
     }
 
