@@ -105,6 +105,18 @@ class SystemTestPropertiesTest {
         assertThat(properties.get(SYSTEM_TEST_REGION)).isNull();
     }
 
+    @Test
+    void shouldValidateThatSystemPropertyCanBeSetForStandaloneProperties() {
+        // Given
+        SystemTestProperties properties = validProperties();
+
+        // When
+        properties.setNumber(NUMBER_OF_WRITERS, 10);
+
+        // Then
+        assertThat(properties.getInt(NUMBER_OF_WRITERS)).isEqualTo(10);
+    }
+
     private SystemTestProperties validProperties() {
         SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
         properties.setNumber(NUMBER_OF_WRITERS, 1);
