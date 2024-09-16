@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
@@ -35,6 +36,18 @@ class SystemTestStandalonePropertiesTest {
         // When / Then
         assertThatCode(properties::validate)
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldValidateThatSystemPropertyCanBeSetForStandaloneProperties() {
+        // Given
+        SystemTestStandaloneProperties properties = validStandaloneProperties();
+
+        // When
+        properties.setNumber(NUMBER_OF_WRITERS, 10);
+
+        // Then
+        assertThat(properties.getInt(NUMBER_OF_WRITERS)).isEqualTo(10);
     }
 
     @Test
