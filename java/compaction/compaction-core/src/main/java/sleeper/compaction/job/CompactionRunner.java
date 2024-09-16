@@ -15,9 +15,15 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
+
+import java.io.IOException;
 
 @FunctionalInterface
 public interface CompactionRunner extends CompactionRunnerDetails {
-    RecordsProcessed compact(CompactionJob job) throws Exception;
+
+    RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException;
 }

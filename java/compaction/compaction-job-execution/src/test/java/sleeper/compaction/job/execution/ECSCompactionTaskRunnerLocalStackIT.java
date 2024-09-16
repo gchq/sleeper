@@ -455,13 +455,13 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private CompactionTask createTask(
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
-        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(tablePropertiesProvider, stateStoreProvider,
+        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
                 ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
-        CompactionTask task = new CompactionTask(instanceProperties,
-                PropertiesReloader.neverReload(), new SqsCompactionQueueHandler(sqs, instanceProperties),
+        CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
+                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
                 waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
                 committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {

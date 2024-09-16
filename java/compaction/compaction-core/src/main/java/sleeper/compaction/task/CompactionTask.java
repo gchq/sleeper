@@ -25,9 +25,15 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -53,7 +59,9 @@ public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
+    private final StateStoreProvider stateStoreProvider;
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
     private final CompactionRunnerFactory selector;
@@ -65,23 +73,31 @@ public class CompactionTask {
     private final Supplier<Instant> timeSupplier;
     private final WaitForFileAssignment waitForFiles;
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+    public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, jobCommitter,
-                jobStore, taskStore, selector, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
+        this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
+                messageReceiver, waitForFiles, jobCommitter,
+                jobStore, taskStore, selector, taskId,
+                () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CompactionTask(
             InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
+            StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
+        this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
@@ -148,6 +164,8 @@ public class CompactionTask {
                 } catch (InterruptedException e) {
                     LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
                     throw e;
+                } catch (TableNotFoundException e) {
+                    LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
@@ -164,8 +182,11 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {
-            CompactionRunner compactor = selector.createCompactor(job);
-            RecordsProcessed recordsProcessed = compactor.compact(job);
+            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+            CompactionRunner compactor = selector.createCompactor(job, tableProperties);
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            Partition partition = stateStore.getPartition(job.getPartitionId());
+            RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
             Instant jobFinishTime = timeSupplier.get();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
             jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());

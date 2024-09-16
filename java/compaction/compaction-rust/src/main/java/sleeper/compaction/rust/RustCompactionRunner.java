@@ -22,8 +22,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
@@ -33,14 +32,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -57,37 +52,25 @@ public class RustCompactionRunner implements CompactionRunner {
     /** Maximum number of rows in a Parquet row group. */
     private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
     private final AwsConfig awsConfig;
 
-    public RustCompactionRunner(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        this(tablePropertiesProvider, stateStoreProvider, null);
+    public RustCompactionRunner() {
+        this(null);
     }
 
-    public RustCompactionRunner(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider, AwsConfig awsConfig) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+    public RustCompactionRunner(AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob job) throws IOException, StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        Region region = stateStore.getAllPartitions().stream()
-                .filter(p -> Objects.equals(job.getPartitionId(), p.getId()))
-                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"))
-                .getRegion();
+    public RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
 
         // Obtain native library. This throws an exception if native library can't be
         // loaded and linked
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, region, runtime);
+        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
