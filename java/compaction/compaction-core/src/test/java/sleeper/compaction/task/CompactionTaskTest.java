@@ -16,8 +16,6 @@
 
 package sleeper.compaction.task;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -26,51 +24,46 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class CompactionTaskTest extends CompactionTaskTestBase {
 
-    @Nested
-    @DisplayName("Process jobs")
-    class ProcessJobs {
+    @Test
+    void shouldRunJobFromQueueThenTerminate() throws Exception {
+        // Given
+        CompactionJob job = createJobOnQueue("job1");
 
-        @Test
-        void shouldRunJobFromQueueThenTerminate() throws Exception {
-            // Given
-            CompactionJob job = createJobOnQueue("job1");
+        // When
+        runTask(jobsSucceed(1));
 
-            // When
-            runTask(jobsSucceed(1));
+        // Then
+        assertThat(successfulJobs).containsExactly(job);
+        assertThat(failedJobs).isEmpty();
+        assertThat(jobsOnQueue).isEmpty();
+    }
 
-            // Then
-            assertThat(successfulJobs).containsExactly(job);
-            assertThat(failedJobs).isEmpty();
-            assertThat(jobsOnQueue).isEmpty();
-        }
+    @Test
+    void shouldFailJobFromQueueThenTerminate() throws Exception {
+        // Given
+        CompactionJob job = createJobOnQueue("job1");
 
-        @Test
-        void shouldFailJobFromQueueThenTerminate() throws Exception {
-            // Given
-            CompactionJob job = createJobOnQueue("job1");
+        // When
+        runTask(processJobs(jobFails()));
 
-            // When
-            runTask(processJobs(jobFails()));
+        // Then
+        assertThat(successfulJobs).isEmpty();
+        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsOnQueue).isEmpty();
+    }
 
-            // Then
-            assertThat(successfulJobs).isEmpty();
-            assertThat(failedJobs).containsExactly(job);
-            assertThat(jobsOnQueue).isEmpty();
-        }
+    @Test
+    void shouldProcessTwoJobsFromQueueThenTerminate() throws Exception {
+        // Given
+        CompactionJob job1 = createJobOnQueue("job1");
+        CompactionJob job2 = createJobOnQueue("job2");
 
-        @Test
-        void shouldProcessTwoJobsFromQueueThenTerminate() throws Exception {
-            // Given
-            CompactionJob job1 = createJobOnQueue("job1");
-            CompactionJob job2 = createJobOnQueue("job2");
+        // When
+        runTask(processJobs(jobSucceeds(), jobFails()));
 
-            // When
-            runTask(processJobs(jobSucceeds(), jobFails()));
-
-            // Then
-            assertThat(successfulJobs).containsExactly(job1);
-            assertThat(failedJobs).containsExactly(job2);
-            assertThat(jobsOnQueue).isEmpty();
-        }
+        // Then
+        assertThat(successfulJobs).containsExactly(job1);
+        assertThat(failedJobs).containsExactly(job2);
+        assertThat(jobsOnQueue).isEmpty();
     }
 }
