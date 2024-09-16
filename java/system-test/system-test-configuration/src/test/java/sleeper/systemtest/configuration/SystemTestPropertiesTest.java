@@ -92,10 +92,7 @@ class SystemTestPropertiesTest {
         // Given
         SystemTestProperties properties = validProperties();
 
-        // When
-        properties.set(MIN_RANDOM_INT, null);
-
-        // Then
+        // When / Then
         assertThat(properties.get(MIN_RANDOM_INT)).isEqualTo("0");
     }
 
