@@ -68,6 +68,11 @@ public class SystemTestStandaloneProperties
     }
 
     @Override
+    public String get(SystemTestProperty property) {
+        return compute(property, value -> property.computeValue(value, other -> get((SystemTestProperty) other)));
+    }
+
+    @Override
     public SleeperPropertyIndex<SystemTestProperty> getPropertiesIndex() {
         return SystemTestProperty.Index.INSTANCE;
     }

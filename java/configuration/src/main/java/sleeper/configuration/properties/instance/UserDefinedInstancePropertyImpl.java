@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperPropertyValues;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -120,7 +121,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public String computeValue(String value, InstanceProperties instanceProperties) {
+    public String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
         if (value != null) {
             return value;
         }

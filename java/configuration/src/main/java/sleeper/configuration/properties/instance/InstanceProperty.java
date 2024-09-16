@@ -17,6 +17,7 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.SleeperPropertyValues;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +50,7 @@ public interface InstanceProperty extends SleeperProperty {
         }
     }
 
-    default String computeValue(String value, InstanceProperties instanceProperties) {
+    default String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
         return value;
     }
 }

@@ -19,7 +19,8 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.SleeperPropertyValues;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 import java.util.Objects;
@@ -98,7 +99,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
-    public String computeValue(String value, InstanceProperties instanceProperties) {
+    public String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
         if (value != null) {
             return value;
         } else {
