@@ -30,8 +30,7 @@ import sleeper.compaction.gpu.ProtoCompaction.ReturnCode;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
@@ -41,15 +40,12 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,8 +60,6 @@ import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITE
 import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class GPUCompaction implements CompactionRunner {
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GPUCompaction.class);
     public static final int GRPC_PORT = 1430;
@@ -73,10 +67,7 @@ public class GPUCompaction implements CompactionRunner {
     /** Maximum number of rows in a Parquet row group. */
     private static final long GPU_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    public GPUCompaction(TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+    public GPUCompaction() {
     }
 
     protected ManagedChannel createChannel() {
@@ -84,15 +75,9 @@ public class GPUCompaction implements CompactionRunner {
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob job) throws Exception {
-        TableProperties tableProperties = tablePropertiesProvider
-                .getById(job.getTableId());
+    public RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
         Schema schema = tableProperties.getSchema();
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        Region region = stateStore.getAllPartitions().stream()
-                .filter(p -> Objects.equals(job.getPartitionId(), p.getId()))
-                .findFirst().orElseThrow(() -> new NoSuchElementException("Partition not found for compaction job"))
-                .getRegion();
+        Region region = partition.getRegion();
 
         ManagedChannel channel = null;
         try {
@@ -104,7 +89,11 @@ public class GPUCompaction implements CompactionRunner {
             return result;
         } finally {
             if (channel != null) {
-                channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+                try {
+                    channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    throw new IOException(e);
+                }
             }
         }
     }
