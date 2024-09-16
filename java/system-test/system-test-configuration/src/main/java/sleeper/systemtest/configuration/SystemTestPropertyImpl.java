@@ -101,10 +101,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     public String computeValue(String value, InstanceProperties instanceProperties) {
         if (value != null) {
             return value;
-        } else if (getDefaultValue() != null) {
-            return getDefaultValue();
         } else {
-            return null;
+            return getDefaultValue();
         }
     }
 
