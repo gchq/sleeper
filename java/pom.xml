@@ -170,7 +170,7 @@
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
         <apfloat.version>1.14.0</apfloat.version>
-        <joda-time.version>2.12.7</joda-time.version>
+        <joda-time.version>2.13.0</joda-time.version>
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
