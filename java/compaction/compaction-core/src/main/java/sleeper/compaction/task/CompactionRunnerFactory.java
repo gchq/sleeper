@@ -33,16 +33,5 @@ public interface CompactionRunnerFactory {
      * @param  tableProperties the Sleeper table properties
      * @return                 a compaction runner
      */
-    default CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
-        return createCompactor(job);
-    }
-
-    /**
-     * Picks a CompactionRunner implementation that is capable
-     * of running a compaction on the given job.
-     *
-     * @param  job the job
-     * @return     a compaction runner
-     */
-    CompactionRunner createCompactor(CompactionJob job);
+    CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties);
 }

@@ -25,7 +25,6 @@ import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.CompactionMethod;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_METHOD;
@@ -35,23 +34,18 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_ME
  * other environmental information.
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
 
-    public DefaultCompactionRunnerFactory(
-            TablePropertiesProvider tablePropertiesProvider, ObjectFactory objectFactory, Configuration configuration) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
+    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration) {
         this.objectFactory = objectFactory;
         this.configuration = configuration;
     }
 
     @Override
-    public CompactionRunner createCompactor(CompactionJob job) {
-        TableProperties tableProperties = tablePropertiesProvider
-                .getById(job.getTableId());
+    public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
         CompactionRunner runner = createRunnerForMethod(method);
 

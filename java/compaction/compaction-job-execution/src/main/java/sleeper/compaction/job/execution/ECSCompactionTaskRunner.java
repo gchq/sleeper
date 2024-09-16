@@ -99,7 +99,7 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
-            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(tablePropertiesProvider, objectFactory,
+            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
             WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);

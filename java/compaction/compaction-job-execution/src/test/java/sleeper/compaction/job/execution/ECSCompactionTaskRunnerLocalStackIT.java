@@ -455,7 +455,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private CompactionTask createTask(
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
-        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(tablePropertiesProvider,
+        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
                 ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,

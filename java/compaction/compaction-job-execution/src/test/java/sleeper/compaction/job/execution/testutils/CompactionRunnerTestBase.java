@@ -25,7 +25,6 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
@@ -87,8 +86,7 @@ public class CompactionRunnerTestBase {
     }
 
     private DefaultCompactionRunnerFactory createCompactionSelector(Configuration conf) throws Exception {
-        return new DefaultCompactionRunnerFactory(new FixedTablePropertiesProvider(tableProperties),
-                ObjectFactory.noUserJars(), conf);
+        return new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf);
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
