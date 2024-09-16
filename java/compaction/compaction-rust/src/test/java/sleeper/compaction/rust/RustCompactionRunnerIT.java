@@ -30,9 +30,7 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
@@ -254,9 +252,7 @@ public class RustCompactionRunnerIT {
     }
 
     private RecordsProcessed compact(CompactionJob job) throws Exception {
-        CompactionRunner runner = new RustCompactionRunner(
-                new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore));
+        CompactionRunner runner = new RustCompactionRunner();
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 

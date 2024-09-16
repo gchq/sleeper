@@ -88,7 +88,6 @@ public class CompactionRunnerTestBase {
 
     private DefaultCompactionRunnerFactory createCompactionSelector(Configuration conf) throws Exception {
         return new DefaultCompactionRunnerFactory(new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
                 ObjectFactory.noUserJars(), conf);
     }
 

@@ -283,7 +283,7 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return job -> {
+        return (job, table, partition) -> {
             if (getAction.hasNext()) {
                 ProcessJob action = getAction.next();
                 if (action.failure != null) {
