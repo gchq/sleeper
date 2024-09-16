@@ -123,13 +123,13 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     public String computeValue(String value, InstanceProperties instanceProperties) {
         if (value != null) {
             return value;
+        }
+
+        InstanceProperty tempProperty = getDefaultProperty();
+        if (tempProperty != null) {
+            return instanceProperties.get(tempProperty);
         } else {
-            InstanceProperty tempProperty = getDefaultProperty();
-            if (tempProperty != null) {
-                return instanceProperties.get(tempProperty);
-            } else {
-                return getDefaultValue();
-            }
+            return getDefaultValue();
         }
     }
 
