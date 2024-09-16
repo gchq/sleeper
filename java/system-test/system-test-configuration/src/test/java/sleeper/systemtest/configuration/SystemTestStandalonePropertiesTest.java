@@ -1,3 +1,4 @@
+package sleeper.systemtest.configuration;
 /*
  * Copyright 2022-2024 Crown Copyright
  *
@@ -16,13 +17,13 @@
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 class SystemTestStandalonePropertiesTest {
 
@@ -54,12 +55,13 @@ class SystemTestStandalonePropertiesTest {
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, null);
 
         // Then
-        assertThat(properties.get()).isEqualTo();
+        assertThat(properties.get(SYSTEM_TEST_CLUSTER_ENABLED)).isEqualTo("true");
     }
 
     private SystemTestStandaloneProperties validStandaloneProperties() {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties(createTestInstanceProperties().getProperties());
         properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 12);
+        properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;
     }
 }
