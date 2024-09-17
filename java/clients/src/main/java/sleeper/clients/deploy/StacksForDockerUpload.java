@@ -16,8 +16,6 @@
 
 package sleeper.clients.deploy;
 
-import org.apache.commons.lang3.EnumUtils;
-
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.validation.OptionalStack;
 
@@ -26,7 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -64,7 +61,8 @@ public class StacksForDockerUpload {
                 .account(properties.get(ACCOUNT))
                 .region(properties.get(REGION))
                 .version(version)
-                .stacks(properties.getList(OPTIONAL_STACKS)).build();
+                .stacks(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class))
+                .build();
     }
 
     public String getEcrPrefix() {
@@ -149,10 +147,8 @@ public class StacksForDockerUpload {
             return this;
         }
 
-        public Builder stacks(List<String> stacks) {
-            this.stacks = stacks.stream()
-                    .map(str -> EnumUtils.getEnumIgnoreCase(OptionalStack.class, str))
-                    .collect(toUnmodifiableList());
+        public Builder stacks(List<OptionalStack> stacks) {
+            this.stacks = stacks;
             return this;
         }
 
