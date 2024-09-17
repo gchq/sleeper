@@ -335,7 +335,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     class UploadDockerImages {
         @BeforeEach
         void setup() {
-            instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
+            instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
             instanceProperties.saveToS3(s3);
         }
 
