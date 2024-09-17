@@ -16,8 +16,6 @@
 
 package sleeper.clients.deploy;
 
-import org.apache.commons.lang3.EnumUtils;
-
 import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.Collection;
@@ -49,16 +47,10 @@ public class DockerImageConfiguration {
     }
 
     public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks) {
-        return getStacksToDeployFromEnum(stacks, List.of());
+        return getStacksToDeploy(stacks, List.of());
     }
 
-    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks, List<StackDockerImage> extraDockerImages) {
-        return getStacksToDeployFromEnum(stacks.stream()
-                .map(str -> EnumUtils.getEnumIgnoreCase(OptionalStack.class, str))
-                .collect(toUnmodifiableList()), extraDockerImages);
-    }
-
-    public List<StackDockerImage> getStacksToDeployFromEnum(Collection<OptionalStack> stacks, List<StackDockerImage> extraDockerImages) {
+    public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks, List<StackDockerImage> extraDockerImages) {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
