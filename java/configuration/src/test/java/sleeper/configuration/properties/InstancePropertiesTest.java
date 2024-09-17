@@ -29,6 +29,7 @@ import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
@@ -77,6 +78,8 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
@@ -225,6 +228,28 @@ class InstancePropertiesTest {
         // When / Then
         assertThat(properties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
+    }
+
+    @Test
+    void shouldGetTheDefaultPropertyWhenPropertyHasNotBeenSet() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(DEFAULT_LAMBDA_CONCURRENCY_RESERVED, "10");
+
+        // When / Then
+        assertThat(properties.get(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED)).isEqualTo("10");
+    }
+
+    @Test
+    void shouldValidatePredicateOfTheDefaultPropertyVersusWhatIsSet() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "-62");
+
+        // When / Then
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("-62");
     }
 
     private static InstanceProperties getSleeperProperties() {

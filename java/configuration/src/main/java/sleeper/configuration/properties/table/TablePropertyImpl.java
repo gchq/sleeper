@@ -94,7 +94,7 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public Predicate<String> validationPredicate() {
+    public Predicate<String> getValidationPredicate() {
         return validationPredicate;
     }
 
@@ -178,7 +178,7 @@ class TablePropertyImpl implements TableProperty {
             this.defaultProperty = defaultProperty;
             this.defaultValue = defaultProperty.getDefaultValue();
             return computeValue(behaviour.apply(defaultProperty))
-                    .validationPredicate(defaultProperty.validationPredicate());
+                    .validationPredicate(defaultProperty.getValidationPredicate());
         }
 
         public Builder validationPredicate(Predicate<String> validationPredicate) {
