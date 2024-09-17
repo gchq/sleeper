@@ -16,13 +16,17 @@
 
 package sleeper.clients.deploy;
 
+import org.apache.commons.lang3.EnumUtils;
+
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -35,7 +39,7 @@ public class StacksForDockerUpload {
     private final String account;
     private final String region;
     private final String version;
-    private final List<String> stacks;
+    private final List<OptionalStack> stacks;
 
     private StacksForDockerUpload(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
@@ -79,7 +83,7 @@ public class StacksForDockerUpload {
         return version;
     }
 
-    public List<String> getStacks() {
+    public List<OptionalStack> getStacks() {
         return stacks;
     }
 
@@ -120,7 +124,7 @@ public class StacksForDockerUpload {
         private String account;
         private String region;
         private String version;
-        private List<String> stacks;
+        private List<OptionalStack> stacks;
 
         private Builder() {
         }
@@ -146,7 +150,9 @@ public class StacksForDockerUpload {
         }
 
         public Builder stacks(List<String> stacks) {
-            this.stacks = stacks;
+            this.stacks = stacks.stream()
+                    .map(str -> EnumUtils.getEnumIgnoreCase(OptionalStack.class, str))
+                    .collect(toUnmodifiableList());
             return this;
         }
 
