@@ -64,7 +64,7 @@ public class OptionalStackTest {
     @Test
     void shouldValidateWithEmptyProperty() {
         InstanceProperties properties = createTestInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, List.of());
+        properties.setEnumList(OPTIONAL_STACKS, List.<OptionalStack>of());
 
         assertThatCode(properties::validate).doesNotThrowAnyException();
         assertThat(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class))
