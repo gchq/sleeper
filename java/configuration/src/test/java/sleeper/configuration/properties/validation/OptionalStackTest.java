@@ -62,6 +62,16 @@ public class OptionalStackTest {
     }
 
     @Test
+    void shouldValidateWithOneStackNotMatchingCase() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "compactionstack");
+
+        assertThatCode(properties::validate).doesNotThrowAnyException();
+        assertThat(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class))
+                .containsExactly(CompactionStack);
+    }
+
+    @Test
     void shouldValidateWithEmptyProperty() {
         InstanceProperties properties = createTestInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, List.<OptionalStack>of());
