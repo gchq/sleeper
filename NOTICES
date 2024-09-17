@@ -9,11 +9,11 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.12.498):
 
 - Apache License, Version 2.0
 
-AWS Java SDK v2 (software.amazon.awssdk:*:2.26.20):
+AWS Java SDK v2 (software.amazon.awssdk:*:2.28.2):
 
 - Apache License, Version 2.0
 
-AWS CRT (software.amazon.awssdk.crt:aws-crt:0.30.0):
+AWS CRT (software.amazon.awssdk.crt:aws-crt:0.31.1):
 
 - Apache License, Version 2.0
 
@@ -21,7 +21,7 @@ AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.3):
 
 - Apache License, Version 2.0
 
-AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.12.0):
+AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.14.0):
 
 - Apache License, Version 2.0
 
@@ -37,7 +37,7 @@ Apache Ivy (org.apache.ivy:ivy:2.5.2):
 
 - Apache License, Version 2.0
 
-Snappy Java (org.xerial.snappy:snappy-java:1.1.10.5):
+Snappy Java (org.xerial.snappy:snappy-java:1.1.10.7):
 
 - Apache License, Version 2.0
 
@@ -45,15 +45,15 @@ Aircompressor (io.airlift:aircompressor:0.27):
 
 - Apache License, Version 2.0
 
-Protocol Buffers (com.google.protobuf:protobuf-java:4.27.2):
+Protocol Buffers (com.google.protobuf:protobuf-java:4.28.1):
 
 - The 3-Clause BSD License
 
-Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.40):
+Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.41.1):
 
 - Apache License, Version 2.0
 
-Apache Avro (org.apache.avro:*:1.11.3):
+Apache Avro (org.apache.avro:*:1.12.0):
 
 - Apache License, Version 2.0
 
@@ -61,7 +61,7 @@ JSON Small and Fast Parser (net.minidev:json-smart:2.5.1):
 
 - Apache License, Version 2.0
 
-Apache Kerby (org.apache.kerby:*:2.0.3):
+Apache Kerby (org.apache.kerby:*:2.1.0):
 
 - Apache License, Version 2.0
 
@@ -69,7 +69,7 @@ XNIO (org.jboss.xnio:xnio-api:3.8.16.Final):
 
 - Apache License, Version 2.0
 
-dnsjava (dnsjava:dnsjava:3.6.0):
+dnsjava (dnsjava:dnsjava:3.6.1):
 
 - The 3-Clause BSD License
 
@@ -81,15 +81,15 @@ OkHttp (com.squareup.okhttp3:okhttp:4.12.0):
 
 - Apache License, Version 2.0
 
-Okio (com.squareup.okio:*:3.9.0):
+Okio (com.squareup.okio:*:3.9.1):
 
 - Apache License, Version 2.0
 
-Kotlin Stdlib (org.jetbrains.kotlin:*:2.0.0):
+Kotlin Stdlib (org.jetbrains.kotlin:*:2.0.20):
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.5.6):
+Logback (ch.qos.logback:logback-core:1.5.8):
 
 - Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
@@ -99,7 +99,7 @@ Facebook Jcommon collections (com.facebook.jcommon:collections::0.1.32):
 
 - Apache License, Version 2.0
 
-Guava: Google Core Libraries For Java (com.google.guava:guava:33.2.1-jre):
+Guava: Google Core Libraries For Java (com.google.guava:guava:33.3.0-jre):
 
 - Apache License, Version 2.0
 
@@ -115,7 +115,7 @@ GSON (com.google.code.gson:gson:2.11.0):
 
 - Apache License, Version 2.0
 
-Commons Codec (commons-codec:commons-codec:1.17.0):
+Commons Codec (commons-codec:commons-codec:1.17.1):
 
 - Apache License, Version 2.0
 
@@ -127,7 +127,7 @@ Apache Commons Configuration (org.apache.commons:commons-configuration2:2.11.0):
 
 - Apache License, Version 2.0
 
-Apache Commons Compress (org.apache.commons:commons-compress:1.26.2):
+Apache Commons Compress (org.apache.commons:commons-compress:1.27.1):
 
 - Apache License, Version 2.0
 
@@ -139,7 +139,7 @@ Apache Commons Net (commons-net:commons-net:3.11.1):
 
 - Apache License, Version 2.0
 
-Apache Commons Lang (org.apache.commons:commons-lang3:3.14.0):
+Apache Commons Lang (org.apache.commons:commons-lang3:3.17.0):
 
 - Apache License, Version 2.0
 
@@ -155,7 +155,7 @@ Apache Hadoop (org.apache.hadoop:hadoop-aws:3.3.3, org.apache.hadoop:hadoop-clie
 
 - Apache License, Version 2.0
 
-Apache Parquet (org.apache.parquet:parquet-hadoop:1.13.1):
+Apache Parquet (org.apache.parquet:parquet-hadoop:1.14.1):
 
 - Apache License, Version 2.0
 
@@ -175,15 +175,15 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.5.7):
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.10.3):
+JUnit (org.junit.jupiter:junit-jupiter-*:5.11.0, org.junit.platform:junit-platform-suite:1.11.0):
 
 - Eclipse Public License 1.0
 
-Mockito (org.mockito:mockito-core:5.12.0):
+Mockito (org.mockito:mockito-core:5.13.0):
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:24.3.0):
+ApprovalTests.Java (com.approvaltests:approvaltests:24.5.0):
 
 - Apache License, Version 2.0
 
@@ -191,11 +191,11 @@ AssertJ (org.assertj:assertj-core:3.26.3):
 
 - Apache License, Version 2.0
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.4.0):
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.4.1):
 
 - Apache License, Version 2.0
 
-SLF4J (org.slf4j:slf4j-api:2.0.12, org.slf4j:slf4j-reload4j:2.0.13):
+SLF4J (org.slf4j:slf4j-*:2.0.16):
 
 - MIT License
 
@@ -207,11 +207,11 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.78.1):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.19.8, org.testcontainers:testcontainers:1.19.8, org.testcontainers:junit-jupiter:1.19.8):
+Testcontainers (org.testcontainers:*:1.20.1):
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.149.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.158.0):
 
 - Apache License, Version 2.0
 
@@ -227,15 +227,15 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.18.0):
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
-Jersey Client (org.glassfish.jersey.core:jersey-client:2.43):
+Jersey Client (org.glassfish.jersey.core:jersey-client:2.45):
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Netty (io.netty:*:4.1.111.Final):
+Netty (io.netty:*:4.1.113.Final):
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.4.55.v20240627):
+Eclipse Jetty (org.eclipse.jetty:*:9.4.56.v20240826):
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
@@ -259,7 +259,7 @@ Apfloat (org.apfloat:apfloat:1.14.0):
 
 - MIT License
 
-Joda Time (joda-time:joda-time:2.12.7):
+Joda Time (joda-time:joda-time:2.13.0):
 
 - Apache License, Version 2.0
 
@@ -267,7 +267,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:10.0.2):
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:10.0.4):
 
 - Apache License, Version 2.0
 
