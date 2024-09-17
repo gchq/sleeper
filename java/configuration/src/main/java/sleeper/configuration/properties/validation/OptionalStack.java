@@ -34,10 +34,14 @@ public enum OptionalStack {
     TableMetricsStack;
 
     public static boolean isValid(String value) {
-        return EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, value);
+        if (value.isEmpty()) {
+            return true;
+        }
+        return Stream.of(value.split(","))
+                .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));
     }
 
-    public static String getDefaultList() {
+    public static String getDefaultValue() {
         return Stream.of(CompactionStack, GarbageCollectorStack, IngestStack, IngestBatcherStack, PartitionSplittingStack,
                 QueryStack, AthenaStack, EmrServerlessBulkImportStack, EmrStudioStack, DashboardStack, TableMetricsStack)
                 .map(a -> a.toString())

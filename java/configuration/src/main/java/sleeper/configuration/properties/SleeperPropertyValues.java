@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 @FunctionalInterface
 public interface SleeperPropertyValues<T extends SleeperProperty> {
 
@@ -57,6 +59,10 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
 
     default List<String> getList(T property) {
         return SleeperPropertyValues.readList(get(property));
+    }
+
+    default <E extends Enum<E>> List<E> getEnumList(T property, Class<E> enumClass) {
+        return streamEnumList(property, enumClass).collect(toUnmodifiableList());
     }
 
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
