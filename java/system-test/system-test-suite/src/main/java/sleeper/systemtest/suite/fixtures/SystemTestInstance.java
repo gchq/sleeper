@@ -20,6 +20,7 @@ import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
@@ -82,8 +83,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildMainConfiguration() {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
-        properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
-                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,TableMetricsStack");
+        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");

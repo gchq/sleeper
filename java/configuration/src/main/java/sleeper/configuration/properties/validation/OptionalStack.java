@@ -72,6 +72,19 @@ public enum OptionalStack {
             QueryStack,
             WebSocketQueryStack);
 
+    public static final List<OptionalStack> SYSTEM_TEST_STACKS = List.of(
+            IngestStack,
+            EmrBulkImportStack,
+            EmrServerlessBulkImportStack,
+            IngestBatcherStack,
+            CompactionStack,
+            GarbageCollectorStack,
+            PartitionSplittingStack,
+            QueryStack,
+            WebSocketQueryStack,
+            TableMetricsStack,
+            AthenaStack);
+
     public static boolean isValid(String value) {
         return SleeperPropertyValues.readList(value).stream()
                 .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));
@@ -82,6 +95,5 @@ public enum OptionalStack {
                 QueryStack, AthenaStack, EmrServerlessBulkImportStack, EmrStudioStack, DashboardStack, TableMetricsStack)
                 .map(a -> a.toString())
                 .collect(Collectors.joining(","));
-
     }
 }
