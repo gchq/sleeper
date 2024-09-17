@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.deploy;
+package sleeper.configuration.properties.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;

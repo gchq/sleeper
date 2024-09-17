@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.SchemaSerDe;

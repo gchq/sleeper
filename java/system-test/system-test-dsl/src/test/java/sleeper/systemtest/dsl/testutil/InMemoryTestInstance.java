@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;

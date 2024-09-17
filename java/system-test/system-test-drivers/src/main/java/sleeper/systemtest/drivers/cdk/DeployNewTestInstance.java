@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.cdk;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.deploy.DeployInstanceConfigurationFromTemplates;
+import sleeper.configuration.properties.deploy.DeployInstanceConfigurationFromTemplates;
 
 import java.io.IOException;
 import java.nio.file.Path;
