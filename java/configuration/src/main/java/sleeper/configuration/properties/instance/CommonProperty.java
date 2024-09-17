@@ -66,7 +66,8 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
-            .description("The optional stacks to deploy.")
+            .description("The optional stacks to deploy. Not case sensitive.\n" +
+                    "Valid values: " + Utils.describeEnumValues(OptionalStack.class))
             .defaultValue(OptionalStack.getDefaultValue())
             .validationPredicate(OptionalStack::isValid)
             .propertyGroup(InstancePropertyGroup.COMMON)

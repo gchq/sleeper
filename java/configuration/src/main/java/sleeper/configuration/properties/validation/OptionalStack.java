@@ -30,8 +30,8 @@ public enum OptionalStack {
     IngestBatcherStack,
 
     // Bulk import
-    EmrBulkImportStack,
     EmrServerlessBulkImportStack,
+    EmrBulkImportStack,
     PersistentEmrBulkImportStack,
     EksBulkImportStack,
     EmrStudioStack,
