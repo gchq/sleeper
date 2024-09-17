@@ -4,6 +4,59 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.25.0
+
+This includes improvements to the transaction log state store implementation, and stabilisation of accelerated
+compactions with Apache DataFusion.
+
+State store:
+- Asynchronous commit enabled by default for transaction log state store
+  - Routes state store updates to a single lambda instance per Sleeper table
+  - Avoids throughput reduction due to contention
+- Asynchronous commit can be enabled/disabled per table, per update type
+- Added asynchronous commit for remaining state store update types
+  - Assigning input files to a compaction job
+  - Partition splitting
+  - Garbage collection
+- Asynchronous commit of state store updates too big to fit in an SQS message
+  - Stored in S3
+- Removed the need to check transaction log DynamoDB table between every update in the committer lambda
+
+Compaction:
+- Added a limit to the number of compaction jobs created per lambda invocation
+- Improved speed of compaction job creation, the rate at which jobs can be created per Sleeper table
+- Increased the default delay of retrying a failed compaction job
+
+Monitoring:
+- Renamed metrics for files in a Sleeper table to distinguish files from references
+
+Deployment:
+- Added optional limits for concurrency of lambdas that scale per Sleeper table
+- Added optional limits for concurrency of partition splitting
+
+Docker CLI:
+- Removed versions linked to releases of Sleeper
+  - Only latest images are published to GitHub Container Registry
+  - Based on develop branch
+- Converted to use a non-root user in Docker images
+  - Permissions are now preserved in host directories mounted into container
+
+Documentation:
+- Updated design of jobs vs tasks, state store vs status store
+- Explained system test availability zones
+
+Testing:
+- Automated tests of Apache DataFusion accelerated compactions
+- Automated tests of throughput of asynchronous commit to state store through a lambda per Sleeper table
+- Converted performance tests to run on EC2 rather than Fargate
+
+Bugfixes:
+- Closed input files at end of standard ingest
+- Added retries during throttling failures when a DynamoDB table is scaling up
+  - When waiting for compaction job files to be assigned
+  - When committing state store updates
+- Fixed cases where failures were not reported to status store when committing a compaction to the state store
+
 ## Version 0.24.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
