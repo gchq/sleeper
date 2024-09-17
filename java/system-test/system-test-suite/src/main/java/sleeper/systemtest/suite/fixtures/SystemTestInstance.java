@@ -24,6 +24,7 @@ import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -120,7 +121,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildIngestPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "IngestStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
@@ -142,7 +143,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
@@ -163,7 +164,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "EmrBulkImportStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         Map<String, String> tags = new HashMap<>(properties.getTags());
@@ -176,7 +177,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionOnEC2Configuration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
@@ -189,7 +190,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionInParallelConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
@@ -203,8 +204,7 @@ public class SystemTestInstance {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
 
-        // At time of writing, setting an empty list would make it use the default value instead. See issue #3089.
-        properties.set(OPTIONAL_STACKS, "None");
+        properties.setList(OPTIONAL_STACKS, List.of());
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "stateStoreCommitterThroughput");
