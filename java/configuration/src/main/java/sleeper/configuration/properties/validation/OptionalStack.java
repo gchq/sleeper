@@ -17,6 +17,8 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.SleeperPropertyValues;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,10 +36,7 @@ public enum OptionalStack {
     TableMetricsStack;
 
     public static boolean isValid(String value) {
-        if (value.isEmpty()) {
-            return true;
-        }
-        return Stream.of(value.split(","))
+        return SleeperPropertyValues.readList(value).stream()
                 .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));
     }
 
