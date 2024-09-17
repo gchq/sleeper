@@ -68,6 +68,7 @@ public enum OptionalStack {
             EmrServerlessBulkImportStack,
             PersistentEmrBulkImportStack,
             EksBulkImportStack);
+
     public static final List<OptionalStack> QUERY_STACKS = List.of(
             QueryStack,
             WebSocketQueryStack);
@@ -84,6 +85,12 @@ public enum OptionalStack {
             WebSocketQueryStack,
             TableMetricsStack,
             AthenaStack);
+
+    public static final List<OptionalStack> LOCALSTACK_STACKS = List.of(
+            IngestStack,
+            CompactionStack,
+            PartitionSplittingStack,
+            QueryStack);
 
     public static boolean isValid(String value) {
         return SleeperPropertyValues.readList(value).stream()
