@@ -48,11 +48,17 @@ public class DockerImageConfiguration {
         this.imageByStack = imageByStack;
     }
 
-    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks) {
-        return getStacksToDeploy(stacks, List.of());
+    public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks) {
+        return getStacksToDeployFromEnum(stacks, List.of());
     }
 
     public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks, List<StackDockerImage> extraDockerImages) {
+        return getStacksToDeployFromEnum(stacks.stream()
+                .map(str -> EnumUtils.getEnumIgnoreCase(OptionalStack.class, str))
+                .collect(toUnmodifiableList()), extraDockerImages);
+    }
+
+    public List<StackDockerImage> getStacksToDeployFromEnum(Collection<OptionalStack> stacks, List<StackDockerImage> extraDockerImages) {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
@@ -61,8 +67,8 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    private Optional<StackDockerImage> getStackImage(String stack) {
-        return Optional.ofNullable(imageByStack.get(EnumUtils.getEnumIgnoreCase(OptionalStack.class, stack)));
+    private Optional<StackDockerImage> getStackImage(OptionalStack stack) {
+        return Optional.ofNullable(imageByStack.get(stack));
     }
 
     public Optional<String> getInstanceIdFromRepoName(String repositoryName) {

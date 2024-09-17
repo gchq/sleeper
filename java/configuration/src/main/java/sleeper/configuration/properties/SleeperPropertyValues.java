@@ -66,9 +66,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
-        return getList(property).stream()
-                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, value))
-                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value)));
+        return streamEnumList(property, get(property), enumClass);
     }
 
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
@@ -84,5 +82,11 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         } else {
             return Lists.newArrayList(value.split(","));
         }
+    }
+
+    static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
+        return readList(value).stream()
+                .map(item -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, item))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + item)));
     }
 }
