@@ -21,11 +21,18 @@ State store:
 - Asynchronous commit of state store updates too big to fit in an SQS message
   - Stored in S3
 - Removed the need to check transaction log DynamoDB table between every update in the committer lambda
+- Converted state store commit queue to high throughput FIFO
 
 Compaction:
 - Added a limit to the number of compaction jobs created per lambda invocation
 - Improved speed of compaction job creation, the rate at which jobs can be created per Sleeper table
 - Increased the default delay of retrying a failed compaction job
+
+Reporting:
+- Added counts of retries in ingest & compaction jobs report summaries
+- Added input file assignment to compaction jobs reports
+  - Status updates & times
+  - Statistics of delay between creation and file assignment
 
 Monitoring:
 - Renamed metrics for files in a Sleeper table to distinguish files from references
@@ -33,6 +40,8 @@ Monitoring:
 Deployment:
 - Added optional limits for concurrency of lambdas that scale per Sleeper table
 - Added optional limits for concurrency of partition splitting
+- Added property to set timeout for garbage collection
+- Added validation to property setting optional deployment stacks
 
 Docker CLI:
 - Removed versions linked to releases of Sleeper
@@ -43,12 +52,14 @@ Docker CLI:
 
 Documentation:
 - Updated design of jobs vs tasks, state store vs status store
-- Explained system test availability zones
+- Explained system test use of subnets & availability zones
 
 Testing:
 - Automated tests of Apache DataFusion accelerated compactions
 - Automated tests of throughput of asynchronous commit to state store through a lambda per Sleeper table
-- Converted performance tests to run on EC2 rather than Fargate
+- Converted performance tests to run on AWS EC2 rather than Fargate
+- Linting & dependency checks for Rust code
+- Automated checks for unused Maven dependencies
 
 Bugfixes:
 - Closed input files at end of standard ingest
@@ -56,6 +67,8 @@ Bugfixes:
   - When waiting for compaction job files to be assigned
   - When committing state store updates
 - Fixed cases where failures were not reported to status store when committing a compaction to the state store
+- Stopped deploying default optional stacks when property is set to an empty string
+- Stopped reporting failed compaction jobs when Sleeper table was deleted
 
 ## Version 0.24.0
 
