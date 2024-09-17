@@ -16,6 +16,10 @@
 
 package sleeper.clients.deploy;
 
+import org.apache.commons.lang3.EnumUtils;
+
+import sleeper.configuration.properties.validation.OptionalStack;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,19 +32,19 @@ import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 
 public class DockerImageConfiguration {
-    private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            "IngestStack", dockerBuildImage("ingest"),
-            "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
-            "CompactionStack", dockerBuildxImage("compaction-job-execution"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
+    private static final Map<OptionalStack, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
+            OptionalStack.IngestStack, dockerBuildImage("ingest"),
+            OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
+            OptionalStack.CompactionStack, dockerBuildxImage("compaction-job-execution"),
+            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
 
-    private final Map<String, StackDockerImage> imageByStack;
+    private final Map<OptionalStack, StackDockerImage> imageByStack;
 
     public DockerImageConfiguration() {
         this(DEFAULT_DOCKER_IMAGE_BY_STACK);
     }
 
-    public DockerImageConfiguration(Map<String, StackDockerImage> imageByStack) {
+    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack) {
         this.imageByStack = imageByStack;
     }
 
@@ -57,8 +61,8 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    public Optional<StackDockerImage> getStackImage(String stack) {
-        return Optional.ofNullable(imageByStack.get(stack));
+    private Optional<StackDockerImage> getStackImage(String stack) {
+        return Optional.ofNullable(imageByStack.get(EnumUtils.getEnumIgnoreCase(OptionalStack.class, stack)));
     }
 
     public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
