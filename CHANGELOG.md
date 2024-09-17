@@ -29,7 +29,7 @@ Compaction:
 - Increased the default delay of retrying a failed compaction job
 
 Reporting:
-- Added counts of retries in ingest & compaction jobs report summaries
+- Added retry counts in summaries of ingest & compaction job reports
 - Added input file assignment to compaction jobs reports
   - Status updates & times
   - Statistics of delay between creation and file assignment
