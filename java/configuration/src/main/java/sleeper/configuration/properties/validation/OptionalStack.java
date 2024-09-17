@@ -19,21 +19,58 @@ import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperPropertyValues;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public enum OptionalStack {
-    CompactionStack,
-    GarbageCollectorStack,
+
+    // Ingest
     IngestStack,
     IngestBatcherStack,
-    PartitionSplittingStack,
-    QueryStack,
-    AthenaStack,
+
+    // Bulk import
+    EmrBulkImportStack,
     EmrServerlessBulkImportStack,
+    PersistentEmrBulkImportStack,
+    EksBulkImportStack,
     EmrStudioStack,
+
+    // Query
+    QueryStack,
+    WebSocketQueryStack,
+    AthenaStack,
+    KeepLambdaWarmStack,
+
+    // Data maintenance
+    CompactionStack,
+    GarbageCollectorStack,
+    PartitionSplittingStack,
+
+    // Metrics
     DashboardStack,
     TableMetricsStack;
+
+    public static final List<OptionalStack> BULK_IMPORT_STACKS = List.of(
+            EmrBulkImportStack,
+            EmrServerlessBulkImportStack,
+            PersistentEmrBulkImportStack,
+            EksBulkImportStack);
+
+    public static final List<OptionalStack> EMR_BULK_IMPORT_STACKS = List.of(
+            EmrBulkImportStack,
+            EmrServerlessBulkImportStack,
+            PersistentEmrBulkImportStack);
+
+    public static final List<OptionalStack> INGEST_STACKS = List.of(
+            IngestStack,
+            EmrBulkImportStack,
+            EmrServerlessBulkImportStack,
+            PersistentEmrBulkImportStack,
+            EksBulkImportStack);
+    public static final List<OptionalStack> QUERY_STACKS = List.of(
+            QueryStack,
+            WebSocketQueryStack);
 
     public static boolean isValid(String value) {
         return SleeperPropertyValues.readList(value).stream()
