@@ -440,3 +440,27 @@ jwgmeligmeyling/checkstyle-github-action (https://github.com/marketplace/actions
 jwgmeligmeyling/spotbugs-github-action (https://github.com/marketplace/actions/push-spotbugs-report)
 
 - MIT License
+
+dtolnay/rust-toolchain (https://github.com/marketplace/actions/rustup-toolchain-install)
+
+- MIT License
+
+mozilla-actions/sccache-action (https://github.com/marketplace/actions/sccache-action)
+
+- Apache License, Version 2.0
+
+docker/setup-qemu-action (https://github.com/marketplace/actions/docker-setup-qemu)
+
+- Apache License, Version 2.0
+
+docker/setup-buildx-action (https://github.com/marketplace/actions/docker-setup-buildx)
+
+- Apache License, Version 2.0
+
+docker/login-action (https://github.com/marketplace/actions/docker-login)
+
+- Apache License, Version 2.0
+
+docker/build-push-action (https://github.com/marketplace/actions/build-and-push-docker-images)
+
+- Apache License, Version 2.0
