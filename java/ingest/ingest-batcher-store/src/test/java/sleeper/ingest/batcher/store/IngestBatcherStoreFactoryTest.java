@@ -22,6 +22,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.Optional;
@@ -37,7 +38,7 @@ public class IngestBatcherStoreFactoryTest {
     void shouldGetIngestBatcherStoreWhenOptionalStackEnabled() {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "IngestBatcherStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestBatcherStack);
 
         // When/Then
         assertThat(getStore(properties))
@@ -48,7 +49,7 @@ public class IngestBatcherStoreFactoryTest {
     void shouldNotGetIngestBatcherStoreWhenOptionalStackDisabled() {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
         // When/Then
         assertThat(getStore(properties))

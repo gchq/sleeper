@@ -18,6 +18,7 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.List;
 import java.util.Objects;
@@ -65,10 +66,10 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
-            .description("The optional stacks to deploy.")
-            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack," +
-                    "PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack," +
-                    "DashboardStack,TableMetricsStack")
+            .description("The optional stacks to deploy. Not case sensitive.\n" +
+                    "Valid values: " + Utils.describeEnumValues(OptionalStack.class))
+            .defaultValue(OptionalStack.getDefaultValue())
+            .validationPredicate(OptionalStack::isValid)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true)

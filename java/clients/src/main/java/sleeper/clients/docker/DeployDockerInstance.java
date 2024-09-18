@@ -33,6 +33,7 @@ import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.clients.status.update.AddTable;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -129,7 +130,7 @@ public class DeployDockerInstance {
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
-        instanceProperties.set(OPTIONAL_STACKS, "IngestStack,CompactionStack,PartitionSplittingStack,QueryStack");
+        instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
