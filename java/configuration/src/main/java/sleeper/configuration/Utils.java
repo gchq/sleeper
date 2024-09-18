@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility methods for interacting with SQS queues.
+ * Utility methods for validating Sleeper configuration properties.
  */
 public class Utils {
 
@@ -222,6 +222,10 @@ public class Utils {
     public static <T extends Enum<T>> String describeEnumValuesInLowerCase(Class<T> cls) {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString)
                 .map(String::toLowerCase).collect(Collectors.toList()).toString();
+    }
+
+    public static <T extends Enum<T>> String describeEnumValues(Class<T> cls) {
+        return Stream.of(cls.getEnumConstants()).map(Enum::toString).collect(Collectors.toList()).toString();
     }
 
 }

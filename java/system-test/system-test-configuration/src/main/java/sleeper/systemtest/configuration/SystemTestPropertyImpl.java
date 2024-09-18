@@ -19,6 +19,8 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperPropertyValues;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 import java.util.Objects;
@@ -63,7 +65,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
-    public Predicate<String> validationPredicate() {
+    public Predicate<String> getValidationPredicate() {
         return validationPredicate;
     }
 
@@ -94,6 +96,15 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     public String toString() {
         return propertyName;
+    }
+
+    @Override
+    public String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
+        if (value != null) {
+            return value;
+        } else {
+            return getDefaultValue();
+        }
     }
 
     public static final class Builder {

@@ -89,9 +89,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         this.getPrettyPrinter(writer).print(this);
     }
 
-    public String get(T property) {
-        return compute(property, value -> value != null ? value : property.getDefaultValue());
-    }
+    public abstract String get(T property);
 
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());

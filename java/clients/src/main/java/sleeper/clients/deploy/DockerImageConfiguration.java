@@ -16,6 +16,8 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.configuration.properties.validation.OptionalStack;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,27 +30,27 @@ import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 
 public class DockerImageConfiguration {
-    private static final Map<String, List<StackDockerImage>> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            "IngestStack", List.of(dockerBuildImage("ingest")),
-            "EksBulkImportStack", List.of(dockerBuildImage("bulk-import-runner")),
-            "CompactionStack", List.of(dockerBuildxImage("compaction-job-execution"), dockerBuildImage("compaction-gpu", "runner")),
-            "EmrServerlessBulkImportStack", List.of(emrServerlessImage("bulk-import-runner-emr-serverless")));
+    private static final Map<OptionalStack, List<StackDockerImage>> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
+            OptionalStack.IngestStack, List.of(dockerBuildImage("ingest")),
+            OptionalStack.EksBulkImportStack, List.of(dockerBuildImage("bulk-import-runner")),
+            OptionalStack.CompactionStack, List.of(dockerBuildxImage("compaction-job-execution"), dockerBuildImage("compaction-gpu", "runner")),
+            OptionalStack.EmrServerlessBulkImportStack, List.of(emrServerlessImage("bulk-import-runner-emr-serverless")));
 
-    private final Map<String, List<StackDockerImage>> imageByStack;
+    private final Map<OptionalStack, List<StackDockerImage>> imageByStack;
 
     public DockerImageConfiguration() {
         this(DEFAULT_DOCKER_IMAGE_BY_STACK);
     }
 
-    public DockerImageConfiguration(Map<String, List<StackDockerImage>> imageByStack) {
+    public DockerImageConfiguration(Map<OptionalStack, List<StackDockerImage>> imageByStack) {
         this.imageByStack = imageByStack;
     }
 
-    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks) {
+    public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks) {
         return getStacksToDeploy(stacks, List.of());
     }
 
-    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks, List<StackDockerImage> extraDockerImages) {
+    public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks, List<StackDockerImage> extraDockerImages) {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
@@ -58,7 +60,7 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    public Optional<List<StackDockerImage>> getStackImage(String stack) {
+    public Optional<List<StackDockerImage>> getStackImage(OptionalStack stack) {
         return Optional.ofNullable(imageByStack.get(stack));
     }
 

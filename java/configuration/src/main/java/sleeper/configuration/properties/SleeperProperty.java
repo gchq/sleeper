@@ -43,12 +43,12 @@ public interface SleeperProperty {
         return !isSetByCdk();
     }
 
-    default Predicate<String> validationPredicate() {
+    default Predicate<String> getValidationPredicate() {
         return s -> true;
     }
 
     default void validate(String value, SleeperPropertiesValidationReporter reporter) {
-        if (!validationPredicate().test(value)) {
+        if (!getValidationPredicate().test(value)) {
             reporter.invalidProperty(this, value);
         }
     }

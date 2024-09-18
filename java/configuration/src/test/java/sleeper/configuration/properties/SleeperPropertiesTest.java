@@ -460,6 +460,11 @@ class SleeperPropertiesTest {
         }
 
         @Override
+        public String get(SleeperProperty property) {
+            return compute(property, value -> value != null ? value : property.getDefaultValue());
+        }
+
+        @Override
         public SleeperPropertyIndex<SleeperProperty> getPropertiesIndex() {
             return new SleeperPropertyIndex<>();
         }

@@ -81,7 +81,11 @@ sleeper.stack.tag.name=DeploymentStack
 # instance is destroyed.
 sleeper.retain.infra.after.destroy=true
 
-# The optional stacks to deploy.
+# The optional stacks to deploy. Not case sensitive.
+# Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
+# PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, QueryStack, WebSocketQueryStack,
+# AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
+# DashboardStack, TableMetricsStack]
 sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
@@ -1394,3 +1398,15 @@ sleeper.default.statestore.committer.update.every.commit=false
 # When using the transaction log state store, this sets whether to update from the transaction log
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
+
+# Default value for the reserved concurrency for each lambda within the Sleeper instance. Each lambda
+# also has its own implementation of the property which will override the value found here.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.default.lambda.concurrency.reserved=
+
+# Default value for the maximum concurrency assigned to each lambda within the Sleeper instance. Each
+# lambda has its own property that overrides the value found here.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.default.lambda.concurrency.max=

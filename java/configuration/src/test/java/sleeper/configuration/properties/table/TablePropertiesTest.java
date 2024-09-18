@@ -142,7 +142,7 @@ class TablePropertiesTest {
         assertThat(TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultProperty() != null)
                 .filter(property -> property.getDefaultProperty()
-                        .validationPredicate() != property.validationPredicate()))
+                        .getValidationPredicate() != property.getValidationPredicate()))
                 .isEmpty();
     }
 

@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -47,7 +47,7 @@ public class SystemTestInstanceTest {
                 .build();
         assertThat(instances)
                 .extracting(instance -> parameters.buildInstanceId(instance.getShortName()))
-                .allMatch(CommonProperty.ID.validationPredicate());
+                .allMatch(CommonProperty.ID.getValidationPredicate());
     }
 
     @Test
