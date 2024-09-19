@@ -39,3 +39,9 @@ NEW_VERSION_PYTHON="${NEW_VERSION//-SNAPSHOT/.dev1}"
 sed_in_place \
   -e "s|^    version=.*|    version='${NEW_VERSION_PYTHON}',|" \
   "${PROJECT_ROOT}/python/setup.py"
+
+# Update the version number in the Rust code
+pushd "${PROJECT_ROOT}/rust"
+cargo install cargo-edit
+cargo set-version "${NEW_VERSION}"
+popd
