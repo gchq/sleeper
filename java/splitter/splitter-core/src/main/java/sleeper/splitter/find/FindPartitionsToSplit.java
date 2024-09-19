@@ -29,9 +29,11 @@ import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
@@ -96,21 +98,24 @@ public class FindPartitionsToSplit {
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), table);
 
+        Map<String, List<FileReference>> fileReferencesByPartition = fileReferences.stream()
+                .collect(groupingBy(FileReference::getPartitionId));
+
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(table, splitThreshold, partition, fileReferences).ifPresent(results::add);
+            List<FileReference> partitionFiles = fileReferencesByPartition.getOrDefault(partition.getId(), List.of());
+            splitPartitionIfNecessary(table, splitThreshold, partition, partitionFiles).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
             TableStatus table, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
-        List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
-        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), table, check.getNumberOfRecordsInPartition());
+        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, fileReferences);
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), table, check.getKnownRecordsInPartition());
         if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, relevantFiles));
+            return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, check.getFilesToComputeSplitPointsFrom()));
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.empty();

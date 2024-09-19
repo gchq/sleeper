@@ -20,33 +20,49 @@ import sleeper.core.statestore.FileReference;
 
 import java.util.List;
 
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class PartitionSplitCheck {
 
-    private final long numberOfRecordsInPartition;
+    private final long estimatedRecordsInPartition;
+    private final long knownRecordsInPartition;
     private final long splitThreshold;
+    private final List<FileReference> filesToComputeSplitPointsFrom;
 
-    private PartitionSplitCheck(long numberOfRecordsInPartition, long splitThreshold) {
-        this.numberOfRecordsInPartition = numberOfRecordsInPartition;
+    private PartitionSplitCheck(long estimatedRecordsInPartition, long numberOfRecordsInPartition, long splitThreshold, List<FileReference> filesToComputeSplitPointsFrom) {
+        this.estimatedRecordsInPartition = estimatedRecordsInPartition;
+        this.knownRecordsInPartition = numberOfRecordsInPartition;
         this.splitThreshold = splitThreshold;
+        this.filesToComputeSplitPointsFrom = filesToComputeSplitPointsFrom;
     }
 
-    public long getNumberOfRecordsInPartition() {
-        return numberOfRecordsInPartition;
+    public long getEstimatedRecordsInPartition() {
+        return estimatedRecordsInPartition;
+    }
+
+    public long getKnownRecordsInPartition() {
+        return knownRecordsInPartition;
     }
 
     public boolean isNeedsSplitting() {
-        return numberOfRecordsInPartition >= splitThreshold;
+        return knownRecordsInPartition >= splitThreshold;
     }
 
-    public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, List<FileReference> relevantFiles) {
-        return fromFilesInPartition(properties.getLong(PARTITION_SPLIT_THRESHOLD), relevantFiles);
+    public List<FileReference> getFilesToComputeSplitPointsFrom() {
+        return filesToComputeSplitPointsFrom;
     }
 
-    public static PartitionSplitCheck fromFilesInPartition(long splitThreshold, List<FileReference> relevantFiles) {
-        long numberOfRecordsInPartition = relevantFiles.stream().map(FileReference::getNumberOfRecords).mapToLong(Long::longValue).sum();
-        return new PartitionSplitCheck(numberOfRecordsInPartition, splitThreshold);
+    public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, List<FileReference> partitionFiles) {
+        return fromFilesInPartition(properties.getLong(PARTITION_SPLIT_THRESHOLD), partitionFiles);
+    }
+
+    public static PartitionSplitCheck fromFilesInPartition(long splitThreshold, List<FileReference> partitionFiles) {
+        long estimated = partitionFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        long known = partitionFiles.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRecords).sum();
+        List<FileReference> filesWhollyInPartition = partitionFiles.stream().filter(FileReference::onlyContainsDataForThisPartition).collect(toUnmodifiableList());
+        return new PartitionSplitCheck(estimated, known, splitThreshold, filesWhollyInPartition);
     }
 
 }
