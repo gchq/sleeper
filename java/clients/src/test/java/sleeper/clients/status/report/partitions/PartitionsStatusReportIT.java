@@ -42,7 +42,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -52,6 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 @Testcontainers
 public class PartitionsStatusReportIT {

@@ -18,6 +18,7 @@ package sleeper.clients.status.report.partitions;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
@@ -27,18 +28,19 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.splitter.status.PartitionsStatus;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithNoChildren;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createTablePropertiesWithSplitThreshold;
 
 class PartitionsStatusReportTest {
     @Test
@@ -175,5 +177,12 @@ class PartitionsStatusReportTest {
         // When
         assertThat(getStandardReport(properties, store)).isEqualTo(
                 example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
+    }
+
+    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
+        PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
+        reporter.report(PartitionsStatus.from(tableProperties, stateStore));
+        return output.toString();
     }
 }

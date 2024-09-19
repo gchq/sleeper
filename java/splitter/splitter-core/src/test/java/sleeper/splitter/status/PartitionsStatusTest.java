@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.partitions;
+package sleeper.splitter.status;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,12 +33,12 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTableProperties;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createPartitionsBuilder;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createTableProperties;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createTablePropertiesWithSplitThreshold;
 
 class PartitionsStatusTest {
 
