@@ -70,11 +70,11 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "approxRecords", "knownRecords")
+                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
                     .containsExactlyInAnyOrder(
-                            tuple("parent", 0, 0L, 0L),
-                            tuple("A", 2, 10L, 5L),
-                            tuple("B", 1, 5L, 0L));
+                            tuple("parent", 0, 0L, 0L, 0L),
+                            tuple("A", 2, 5L, 10L, 10L),
+                            tuple("B", 1, 0L, 5L, 5L));
         }
     }
 
