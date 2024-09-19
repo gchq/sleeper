@@ -17,14 +17,13 @@ package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.ecr.EcrClient;
 
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
@@ -46,6 +45,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
+import sleeper.configuration.utils.AwsV2ClientHelper;
 import sleeper.core.table.TableIndex;
 import sleeper.task.common.QueueMessageCount;
 
@@ -93,19 +93,18 @@ public class AdminClient {
                 .propertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version).build();
 
+        ConsoleOutput out = new ConsoleOutput(System.out);
+        ConsoleInput in = new ConsoleInput(System.console());
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
         AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
 
-        UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
-                .baseDockerDirectory(baseDockerDir).build();
-        ConsoleOutput out = new ConsoleOutput(System.out);
-        ConsoleInput in = new ConsoleInput(System.console());
         int errorCode;
-        try {
+        try (EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder())) {
+            UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
+                    .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
+                    .baseDockerDirectory(baseDockerDir).build();
             errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
@@ -114,7 +113,6 @@ public class AdminClient {
             s3Client.shutdown();
             dynamoClient.shutdown();
             sqsClient.shutdown();
-            ecrClient.shutdown();
             emrClient.shutdown();
         }
         System.exit(errorCode);

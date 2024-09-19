@@ -18,12 +18,11 @@ package sleeper.clients.deploy;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
@@ -55,7 +54,7 @@ public class DeployExistingInstance {
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final CdkDeploy deployCommand;
     private final CommandPipelineRunner runCommand;
 
@@ -84,8 +83,8 @@ public class DeployExistingInstance {
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-        try (S3Client s3v2 = S3Client.create()) {
+        try (S3Client s3v2 = S3Client.create();
+                EcrClient ecr = EcrClient.create()) {
             builder().clients(s3v2, ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
@@ -95,7 +94,6 @@ public class DeployExistingInstance {
         } finally {
             s3.shutdown();
             dynamoDB.shutdown();
-            ecr.shutdown();
         }
     }
 
@@ -143,7 +141,7 @@ public class DeployExistingInstance {
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
-        private AmazonECR ecr;
+        private EcrClient ecr;
         private CdkDeploy deployCommand = CdkCommand.deployExisting();
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
 
@@ -174,7 +172,7 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, AmazonECR ecr) {
+        public Builder clients(S3Client s3, EcrClient ecr) {
             this.s3 = s3;
             this.ecr = ecr;
             return this;

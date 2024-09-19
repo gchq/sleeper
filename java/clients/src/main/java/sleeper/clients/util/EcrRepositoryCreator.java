@@ -16,14 +16,9 @@
 
 package sleeper.clients.util;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.model.CreateRepositoryRequest;
-import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
-import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
-import com.amazonaws.services.ecr.model.ListImagesRequest;
-import com.amazonaws.services.ecr.model.ListImagesResult;
-import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
-import com.amazonaws.services.ecr.model.SetRepositoryPolicyRequest;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecr.model.ListImagesResponse;
+import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
 import java.util.Objects;
 
@@ -31,21 +26,21 @@ public class EcrRepositoryCreator {
     private EcrRepositoryCreator() {
     }
 
-    public static Client withEcrClient(AmazonECR ecrClient) {
+    public static Client withEcrClient(EcrClient ecrClient) {
         return new AwsClient(ecrClient);
     }
 
     private static class AwsClient implements Client {
-        private final AmazonECR ecrClient;
+        private final EcrClient ecrClient;
 
-        AwsClient(AmazonECR ecrClient) {
+        AwsClient(EcrClient ecrClient) {
             this.ecrClient = ecrClient;
         }
 
         @Override
         public boolean repositoryExists(String repository) {
             try {
-                ecrClient.describeRepositories(new DescribeRepositoriesRequest().withRepositoryNames(repository));
+                ecrClient.describeRepositories(request -> request.repositoryNames(repository));
                 return true;
             } catch (RepositoryNotFoundException e) {
                 return false;
@@ -54,18 +49,19 @@ public class EcrRepositoryCreator {
 
         @Override
         public void createRepository(String repository) {
-            ecrClient.createRepository(new CreateRepositoryRequest().withRepositoryName(repository));
+            ecrClient.createRepository(request -> request.repositoryName(repository));
         }
 
         @Override
         public void deleteRepository(String repository) {
-            ecrClient.deleteRepository(new DeleteRepositoryRequest().withRepositoryName(repository));
+            ecrClient.deleteRepository(request -> request.repositoryName(repository));
         }
 
         @Override
         public void createEmrServerlessAccessPolicy(String repository) {
-            ecrClient.setRepositoryPolicy(new SetRepositoryPolicyRequest().withRepositoryName(repository)
-                    .withPolicyText("" +
+            ecrClient.setRepositoryPolicy(request -> request
+                    .repositoryName(repository)
+                    .policyText("" +
                             "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"EmrServerlessCustomImageSupport\"," +
                             "\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"emr-serverless.amazonaws.com\"}," +
                             "\"Action\":[\"ecr:BatchGetImage\",\"ecr:DescribeImages\",\"ecr:GetDownloadUrlForLayer\"]}]}"));
@@ -74,11 +70,11 @@ public class EcrRepositoryCreator {
         @Override
         public boolean versionExistsInRepository(String repository, String version) {
             try {
-                ListImagesResult result = ecrClient.listImages(new ListImagesRequest().withRepositoryName(repository));
-                return result.getImageIds().stream()
+                ListImagesResponse response = ecrClient.listImages(request -> request.repositoryName(repository));
+                return response.imageIds().stream()
                         // Note that image tag can be null. In particular, a multiplatform image has multiple images but
                         // only the image index is tagged.
-                        .anyMatch(imageIdentifier -> Objects.equals(version, imageIdentifier.getImageTag()));
+                        .anyMatch(imageIdentifier -> Objects.equals(version, imageIdentifier.imageTag()));
             } catch (RepositoryNotFoundException e) {
                 return false;
             }

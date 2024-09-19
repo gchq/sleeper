@@ -17,8 +17,6 @@ package sleeper.clients.deploy;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -27,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.status.update.AddTable;
@@ -59,7 +58,7 @@ public class DeployNewInstance {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -186,7 +185,7 @@ public class DeployNewInstance {
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonDynamoDB dynamoDB;
-        private AmazonECR ecr;
+        private EcrClient ecr;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -227,7 +226,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder ecr(AmazonECR ecr) {
+        public Builder ecr(EcrClient ecr) {
             this.ecr = ecr;
             return this;
         }
@@ -290,8 +289,8 @@ public class DeployNewInstance {
             AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
             AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
             AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-            AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-            try (S3Client s3v2 = S3Client.create()) {
+            try (S3Client s3v2 = S3Client.create();
+                    EcrClient ecr = EcrClient.create()) {
                 deployWithClients(
                         sts, DefaultAwsRegionProviderChain.builder().build(),
                         s3, s3v2, dynamoDB, ecr);
@@ -299,13 +298,12 @@ public class DeployNewInstance {
                 sts.shutdown();
                 s3.shutdown();
                 dynamoDB.shutdown();
-                ecr.shutdown();
             }
         }
 
         public void deployWithClients(
                 AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, AmazonECR ecr) throws IOException, InterruptedException {
+                AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, EcrClient ecr) throws IOException, InterruptedException {
             sts(sts).regionProvider(regionProvider)
                     .s3(s3).s3v2(s3v2).dynamoDB(dynamoDB).ecr(ecr)
                     .build().deploy();
