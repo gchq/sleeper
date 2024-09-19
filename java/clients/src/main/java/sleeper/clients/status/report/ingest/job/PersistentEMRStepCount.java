@@ -16,11 +16,10 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
-import com.amazonaws.services.elasticmapreduce.model.ListStepsRequest;
-import com.amazonaws.services.elasticmapreduce.model.StepSummary;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ClusterSummary;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
+import software.amazon.awssdk.services.emr.model.StepSummary;
 
 import sleeper.clients.util.EmrUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -40,35 +39,34 @@ public class PersistentEMRStepCount {
     }
 
     public static Map<String, Integer> byStatus(
-            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient) {
+            InstanceProperties instanceProperties, EmrClient emrClient) {
         return byStatus(instanceProperties, emrClient, EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
     }
 
     public static Map<String, Integer> byStatus(
-            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+            InstanceProperties instanceProperties, EmrClient emrClient, StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
         return getPersistentClusterId(instanceProperties, emrClient, listActiveClustersLimit)
-                .map(id -> emrClient.listSteps(new ListStepsRequest()
-                        .withClusterId(id)).getSteps())
+                .map(id -> emrClient.listSteps(request -> request.clusterId(id)).steps())
                 .map(PersistentEMRStepCount::countStepsByState)
                 .orElse(Collections.emptyMap());
     }
 
     private static Optional<String> getPersistentClusterId(
-            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+            InstanceProperties instanceProperties, EmrClient emrClient, StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
         String clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         if (clusterName == null) {
             return Optional.empty();
         }
-        return listActiveClusters(emrClient, listActiveClustersLimit).getClusters().stream()
-                .filter(cluster -> clusterName.equals(cluster.getName()))
-                .map(ClusterSummary::getId)
+        return listActiveClusters(emrClient, listActiveClustersLimit).clusters().stream()
+                .filter(cluster -> clusterName.equals(cluster.name()))
+                .map(ClusterSummary::id)
                 .findAny();
     }
 
     private static Map<String, Integer> countStepsByState(List<StepSummary> steps) {
         Map<String, Integer> counts = new HashMap<>();
         for (StepSummary step : steps) {
-            counts.compute(step.getStatus().getState(), PersistentEMRStepCount::incrementCount);
+            counts.compute(step.status().stateAsString(), PersistentEMRStepCount::incrementCount);
         }
         return counts;
     }

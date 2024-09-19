@@ -17,13 +17,12 @@ package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
@@ -98,10 +97,10 @@ public class AdminClient {
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        AmazonElasticMapReduce emrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
 
         int errorCode;
-        try (EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder())) {
+        try (EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
+                EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                     .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                     .baseDockerDirectory(baseDockerDir).build();
@@ -113,7 +112,6 @@ public class AdminClient {
             s3Client.shutdown();
             dynamoClient.shutdown();
             sqsClient.shutdown();
-            emrClient.shutdown();
         }
         System.exit(errorCode);
     }
