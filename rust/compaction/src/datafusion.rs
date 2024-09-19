@@ -35,7 +35,7 @@ use datafusion::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
         accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
@@ -455,7 +455,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
 ///
 /// This is a list of the row key columns followed by the sort key columns.
 ///
-fn sort_order(input_data: &CompactionInput) -> Vec<Expr> {
+fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
     let sort_order = input_data
         .row_key_cols
         .iter()
