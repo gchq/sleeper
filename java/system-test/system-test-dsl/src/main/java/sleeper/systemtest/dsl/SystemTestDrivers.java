@@ -42,7 +42,11 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -64,6 +68,12 @@ public interface SystemTestDrivers {
     GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest);
 
     IngestSourceFilesDriver sourceFiles(SystemTestContext context);
+
+    IngestLocalFilesDriver localFiles(SystemTestContext context);
+
+    StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context);
+
+    StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context);
 
     PartitionSplittingDriver partitionSplitting(SystemTestContext context);
 
@@ -112,6 +122,10 @@ public interface SystemTestDrivers {
     PartitionReportDriver partitionReports(SystemTestContext context);
 
     TableMetricsDriver tableMetrics(SystemTestContext context);
+
+    default PollWithRetriesDriver pollWithRetries() {
+        return PollWithRetriesDriver.realWaits();
+    }
 
     PurgeQueueDriver purgeQueues(SystemTestContext context);
 

@@ -73,7 +73,6 @@ import static java.util.Objects.requireNonNull;
  * Provides information to Trino about the table structure and other metadata. This class also handles the application
  * of static filters to tables, and the resolution of indexes.
  */
-@SuppressWarnings("checkstyle:summaryJavadoc") // Checkstyle fails on the method beginInsert, seemingly mistaking a param tag for a continuation of the summary fragment.
 public class SleeperMetadata implements ConnectorMetadata {
     private static final Logger LOGGER = Logger.get(SleeperMetadata.class);
 

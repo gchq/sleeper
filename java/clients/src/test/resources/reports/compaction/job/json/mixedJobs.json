@@ -1,49 +1,53 @@
 [
   {
-    "jobId": "$(jobId6)",
+    "jobId": "job77777-7777-7777-7777-777777777777",
     "createdStatus": {
       "updateTime": "2022-09-22T13:33:12.001Z",
       "partitionId": "partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-22T13:33:13.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-22T13:34:12.123Z",
-            "startTime": "2022-09-22T13:34:12.001Z"
+            "startTime": "2022-09-22T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-09-22T13:36:12.001Z",
-            "updateTime": "2022-09-22T13:36:12.123Z"
+            "updateTime": "2022-09-22T13:36:12.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId5)",
+    "jobId": "job66666-6666-6666-6666-666666666666",
     "createdStatus": {
       "updateTime": "2022-09-21T13:33:12.001Z",
       "partitionId": "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-21T13:33:13.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-21T13:34:12.123Z",
-            "startTime": "2022-09-21T13:34:12.001Z"
+            "startTime": "2022-09-21T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-21T13:35:12.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,
@@ -57,37 +61,39 @@
               },
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-09-21T13:36:12.001Z",
-            "updateTime": "2022-09-21T13:36:12.123Z"
+            "updateTime": "2022-09-21T13:36:12.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId4)",
+    "jobId": "job55555-5555-5555-5555-555555555555",
     "createdStatus": {
       "updateTime": "2022-09-20T13:33:12.001Z",
       "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-20T13:33:13.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-20T13:34:12.123Z",
-            "startTime": "2022-09-20T13:34:12.001Z"
+            "startTime": "2022-09-20T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-09-20T13:35:12.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600,
@@ -101,30 +107,33 @@
               },
               "recordsReadPerSecond": 10.0,
               "recordsWrittenPerSecond": 5.0
-            }
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId3)",
+    "jobId": "job44444-4444-4444-4444-444444444444",
     "createdStatus": {
       "updateTime": "2022-09-19T13:33:12.001Z",
       "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-19T13:33:13.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-19T13:34:12.123Z",
-            "startTime": "2022-09-19T13:34:12.001Z"
+            "startTime": "2022-09-19T13:34:12.001Z",
+            "type": "STARTED"
           },
           {
-            "type": "FAILED",
             "updateTime": "2022-09-19T13:35:12.123Z",
             "runTime": {
               "startTime": "2022-09-19T13:34:12.001Z",
@@ -135,36 +144,52 @@
             "failureReasons": [
               "Something went wrong",
               "More details"
-            ]
+            ],
+            "type": "FAILED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId2)",
+    "jobId": "job33333-3333-3333-3333-333333333333",
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",
       "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-18T13:33:13.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
             "updateTime": "2022-09-18T13:34:12.123Z",
-            "startTime": "2022-09-18T13:34:12.001Z"
+            "startTime": "2022-09-18T13:34:12.001Z",
+            "type": "STARTED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId1)",
+    "jobId": "job22222-2222-2222-2222-222222222222",
     "createdStatus": {
       "updateTime": "2022-09-17T13:33:12.001Z",
+      "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
+      "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-09-17T13:33:13.001Z"
+    },
+    "jobRuns": []
+  },
+  {
+    "jobId": "job11111-1111-1111-1111-111111111111",
+    "createdStatus": {
+      "updateTime": "2022-09-16T13:33:12.001Z",
       "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
       "inputFilesCount": 1
     },

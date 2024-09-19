@@ -35,13 +35,11 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.statestore.InMemoryTransactionLogsPerTable;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
@@ -50,9 +48,7 @@ import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter.SnapshotF
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -73,8 +69,7 @@ public class TransactionLogSnapshotTestBase {
     private java.nio.file.Path tempDir;
     private FileSystem fs;
     protected final Schema schema = schemaWithKey("key", new LongType());
-    private final Map<String, TransactionLogStore> partitionTransactionStoreByTableId = new HashMap<>();
-    private final Map<String, TransactionLogStore> fileTransactionStoreByTableId = new HashMap<>();
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
@@ -142,8 +137,8 @@ public class TransactionLogSnapshotTestBase {
             TableProperties table, LatestSnapshotsMetadataLoader latestSnapshotsLoader, SnapshotMetadataSaver snapshotSaver) {
         new DynamoDBTransactionLogSnapshotCreator(
                 instanceProperties, table,
-                fileTransactionStoreByTableId.get(table.get(TABLE_ID)),
-                partitionTransactionStoreByTableId.get(table.get(TABLE_ID)),
+                transactionLogs.forTable(table).getFilesLogStore(),
+                transactionLogs.forTable(table).getPartitionsLogStore(),
                 configuration, latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
@@ -161,12 +156,7 @@ public class TransactionLogSnapshotTestBase {
     }
 
     protected StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
-        StateStore stateStore = TransactionLogStateStore.builder()
-                .sleeperTable(table.getStatus())
-                .schema(table.getSchema())
-                .filesLogStore(fileTransactionStoreByTableId.get(table.get(TABLE_ID)))
-                .partitionsLogStore(partitionTransactionStoreByTableId.get(table.get(TABLE_ID)))
-                .build();
+        StateStore stateStore = transactionLogs.stateStoreBuilder(table).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
@@ -181,8 +171,6 @@ public class TransactionLogSnapshotTestBase {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
-        fileTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
-        partitionTransactionStoreByTableId.put(tableId, new InMemoryTransactionLogStore());
         return tableProperties;
     }
 

@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperPropertyValues;
-import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility methods for interacting with SQS queues.
+ * Utility methods for validating Sleeper configuration properties.
  */
 public class Utils {
 
@@ -51,8 +50,16 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num > 0);
     }
 
+    public static boolean isPositiveIntegerOrNull(String integer) {
+        return (integer == null) || (isPositiveInteger(integer));
+    }
+
     public static boolean isPositiveIntegerLtEq10(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0 && num <= 10);
+    }
+
+    public static boolean isPositiveIntegerLtEq15(String integer) {
+        return parseAndCheckInteger(integer, num -> num > 0 && num <= 15);
     }
 
     public static boolean isNonNegativeInteger(String integer) {
@@ -93,10 +100,6 @@ public class Utils {
 
     public static boolean isValidFadvise(String fadvise) {
         return VALID_FADVISE_VALUES.contains(fadvise);
-    }
-
-    public static boolean isValidCompressionCodec(String codec) {
-        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
     }
 
     public static boolean isValidLogRetention(String logRetention) {
@@ -213,6 +216,10 @@ public class Utils {
     public static <T extends Enum<T>> String describeEnumValuesInLowerCase(Class<T> cls) {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString)
                 .map(String::toLowerCase).collect(Collectors.toList()).toString();
+    }
+
+    public static <T extends Enum<T>> String describeEnumValues(Class<T> cls) {
+        return Stream.of(cls.getEnumConstants()).map(Enum::toString).collect(Collectors.toList()).toString();
     }
 
 }

@@ -18,11 +18,15 @@ chunks:
   common:
     name: Common
     workflow: chunk-common.yaml
-    modules: [ core, configuration, sketches, parquet, common/common-job, common/common-task, common/common-invoke-tables, build, common/dynamodb-tools ]
+    modules: [ core, configuration, sketches, parquet, common/common-job, common/common-task, common/common-invoke-tables, build, common/dynamodb-tools, common/dynamodb-test ]
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
-    modules: [ compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-job-creation-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda, compaction/compaction-rust ]
+    modules: [ compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-job-creation-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda ]
+  rust:
+    name: Rust
+    workflow: chunk-rust.yaml
+    modules: [ compaction/compaction-rust ]
   data:
     name: Data
     workflow: chunk-data.yaml

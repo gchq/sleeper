@@ -17,13 +17,12 @@
 package sleeper.systemtest.dsl.ingest;
 
 import java.util.List;
-import java.util.Set;
 
 public interface IngestBatcherDriver {
 
     void sendFiles(List<String> files);
 
-    Set<String> invokeGetJobIds();
+    List<String> invokeGetJobIds();
 
     void clearStore();
 }

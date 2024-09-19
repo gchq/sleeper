@@ -29,13 +29,13 @@ use datafusion::{
         tree_node::{Transformed, TreeNode},
         DFSchema, DFSchemaRef,
     },
-    config::FormatOptions,
+    datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
         accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
@@ -230,7 +230,7 @@ async fn collect_stats(
     let mut logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
         output_path.as_str().into(),
-        FormatOptions::PARQUET(pqo),
+        format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
         HashMap::default(),
         Vec::new(),
     )?
@@ -455,7 +455,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
 ///
 /// This is a list of the row key columns followed by the sort key columns.
 ///
-fn sort_order(input_data: &CompactionInput) -> Vec<Expr> {
+fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
     let sort_order = input_data
         .row_key_cols
         .iter()

@@ -99,7 +99,7 @@ public class InvokeCdkForInstance {
     }
 
     private Path systemTestJarFile() {
-        return jarsDirectory.resolve(String.format("system-test-%s-utility.jar", version));
+        return jarsDirectory.resolve(String.format("system-test-cdk-%s.jar", version));
     }
 
     public static final class Builder {

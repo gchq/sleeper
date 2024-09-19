@@ -6,7 +6,7 @@ page-0                         0  row-0001                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                         4               141                     0
+page-0                         4               144                     0
 
 Row group 1
 Column index for column test-key
@@ -16,7 +16,7 @@ page-0                         0  row-0101                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       145               140                     0
+page-0                       148               144                     0
 
 Row group 2
 Column index for column test-key
@@ -26,7 +26,7 @@ page-0                         0  row-0201                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       285               141                     0
+page-0                       292               144                     0
 
 Row group 3
 Column index for column test-key
@@ -36,7 +36,7 @@ page-0                         0  row-0301                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       426               141                     0
+page-0                       436               144                     0
 
 Row group 4
 Column index for column test-key
@@ -46,7 +46,7 @@ page-0                         0  row-0401                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       567               141                     0
+page-0                       580               144                     0
 
 Row group 5
 Column index for column test-key
@@ -56,7 +56,7 @@ page-0                         0  row-0501                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       708               141                     0
+page-0                       724               144                     0
 
 Row group 6
 Column index for column test-key
@@ -66,7 +66,7 @@ page-0                         0  row-0601                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       849               141                     0
+page-0                       868               144                     0
 
 Row group 7
 Column index for column test-key
@@ -76,7 +76,7 @@ page-0                         0  row-0701                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                       990               141                     0
+page-0                      1012               144                     0
 
 Row group 8
 Column index for column test-key
@@ -86,7 +86,7 @@ page-0                         0  row-0801                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                      1131               141                     0
+page-0                      1156               144                     0
 
 Row group 9
 Column index for column test-key
@@ -96,5 +96,5 @@ page-0                         0  row-0901                                  row-
 
 Page index for column test-key
                           offset   compressed size       first row index
-page-0                      1272               142                     0
+page-0                      1300               145                     0
 

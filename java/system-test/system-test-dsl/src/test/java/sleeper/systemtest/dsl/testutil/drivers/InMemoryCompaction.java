@@ -21,9 +21,10 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
+import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.execution.StandardCompactor;
+import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -50,6 +51,7 @@ import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.io.IOException;
@@ -63,10 +65,12 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
+    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
@@ -83,14 +87,14 @@ public class InMemoryCompaction {
         return new Driver(instance);
     }
 
-    public WaitForJobs waitForJobs(SystemTestContext context) {
+    public WaitForJobs waitForJobs(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(context.instance(), properties -> {
             String taskId = runningTasks.stream().map(CompactionTaskStatus::getTaskId)
                     .findFirst().orElseThrow();
             finishJobs(context.instance(), taskId);
             finishTasks();
             return jobStore;
-        }, properties -> taskStore);
+        }, properties -> taskStore, pollDriver);
     }
 
     public CompactionJobStatusStore jobStore() {
@@ -157,7 +161,7 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), jobStore, mode);
+                    instance.getStateStoreProvider(), jobSender(), jobStore, mode, jobIdAssignmentRequests::add);
         }
     }
 
@@ -168,6 +172,7 @@ public class InMemoryCompaction {
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
             jobStore.jobStarted(compactionJobStarted(job, summary.getStartTime()).taskId(taskId).build());
             jobStore.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
+            jobStore.jobCommitted(compactionJobCommitted(job, summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
         }
         queuedJobsById.clear();
     }
@@ -213,7 +218,7 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Record> mergingIterator;
         try {
-            mergingIterator = StandardCompactor.getMergingIterator(
+            mergingIterator = JavaCompactionRunner.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);

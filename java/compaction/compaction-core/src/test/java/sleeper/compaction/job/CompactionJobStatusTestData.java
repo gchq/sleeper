@@ -19,6 +19,7 @@ package sleeper.compaction.job;
 import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -48,11 +49,20 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    public static CompactionJobStatus jobFilesAssigned(CompactionJob job, Instant createdTime, Instant assignedTime, ProcessRun... runsLatestFirst) {
+        return CompactionJobStatus.builder()
+                .jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
+                .filesAssignedStatus(new CompactionJobInputFilesAssignedStatus(assignedTime))
+                .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
+                .build();
+    }
+
     public static ProcessRun startedCompactionRun(String taskId, Instant startTime) {
         return ProcessRun.started(taskId, compactionStartedStatus(startTime));
     }
 
-    public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary) {
+    public static ProcessRun uncommittedCompactionRun(String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
@@ -61,7 +71,7 @@ public class CompactionJobStatusTestData {
     public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary, Instant commitTime) {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                .finishedStatus(compactionFinishedStatusUncommitted(summary))
+                .finishedStatus(compactionFinishedStatus(summary))
                 .statusUpdate(compactionCommittedStatus(commitTime))
                 .build();
     }
@@ -75,7 +85,7 @@ public class CompactionJobStatusTestData {
     public static ProcessRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(startTime))
-                .finishedStatus(compactionFinishedStatusUncommitted(summary(startTime, finishTime, 10L, 10L)))
+                .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
                 .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
                 .build();
     }
@@ -86,11 +96,6 @@ public class CompactionJobStatusTestData {
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
-    }
-
-    public static CompactionJobFinishedStatus compactionFinishedStatusUncommitted(RecordsProcessedSummary summary) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateUpdate(true).build();
     }
 
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {

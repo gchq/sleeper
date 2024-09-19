@@ -21,19 +21,24 @@ import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
+import sleeper.clients.util.EmrUtils;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
@@ -44,17 +49,25 @@ public class ShutdownSystemProcesses {
     private final AmazonECS ecs;
     private final AmazonElasticMapReduce emrClient;
     private final EmrServerlessClient emrServerlessClient;
+    private final StaticRateLimit<ListClustersResult> listActiveClustersLimit;
+
+    public ShutdownSystemProcesses(TearDownClients clients) {
+        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
+    }
 
     public ShutdownSystemProcesses(
             AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
-            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
+            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient,
+            StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
         this.emrServerlessClient = emrServerlessClient;
+        this.listActiveClustersLimit = listActiveClustersLimit;
     }
 
     public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
+        LOGGER.info("Shutting down system processes for instance {}", instanceProperties.get(ID));
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
@@ -69,14 +82,14 @@ public class ShutdownSystemProcesses {
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
-        new TerminateEMRClusters(emrClient, properties).run();
+        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit).run();
     }
 
     private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
+    public static <T extends SleeperProperty> void stopTasks(AmazonECS ecs, SleeperProperties<T> properties, T property) {
         if (!properties.isSet(property)) {
             return;
         }

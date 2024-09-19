@@ -20,6 +20,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -27,8 +28,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -47,8 +47,8 @@ public class PartitionStatusReportTestHelper {
     }
 
     public static StateStoreTestBuilder createRootPartitionWithTwoChildren() {
-        return StateStoreTestBuilder.from(createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+        return StateStoreTestBuilder.from(PartitionsBuilderSplitsFirst.leavesWithSplits(DEFAULT_SCHEMA,
+                List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B"));
     }
 

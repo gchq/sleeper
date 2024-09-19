@@ -24,11 +24,10 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
-import sleeper.splitter.FindPartitionToSplitResult;
-import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.splitter.find.FindPartitionToSplitResult;
+import sleeper.splitter.find.FindPartitionsToSplit;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +40,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class WaitForPartitionSplitting {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
 
-    private static final PollWithRetries WAIT_FOR_SPLITS = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1));
     private final Map<String, Set<String>> partitionIdsByTableId;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
@@ -60,9 +57,9 @@ public class WaitForPartitionSplitting {
         return new WaitForPartitionSplitting(getResults(tablePropertiesStream, getStateStore));
     }
 
-    public void pollUntilFinished(SystemTestInstanceContext instance) throws InterruptedException {
+    public void pollUntilFinished(SystemTestInstanceContext instance, PollWithRetries poll) throws InterruptedException {
         LOGGER.info("Waiting for splits, expecting partitions to be split: {}", partitionIdsByTableId);
-        WAIT_FOR_SPLITS.pollUntil("partition splits finished", () -> isSplitFinished(instance));
+        poll.pollUntil("partition splits finished", () -> isSplitFinished(instance));
     }
 
     private boolean isSplitFinished(SystemTestInstanceContext instance) {

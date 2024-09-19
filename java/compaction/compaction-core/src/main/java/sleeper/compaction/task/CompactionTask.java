@@ -25,9 +25,15 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -53,10 +59,12 @@ public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
 
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
+    private final StateStoreProvider stateStoreProvider;
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
-    private final CompactionAlgorithmSelector selector;
+    private final CompactionRunnerFactory selector;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
@@ -65,23 +73,31 @@ public class CompactionTask {
     private final Supplier<Instant> timeSupplier;
     private final WaitForFileAssignment waitForFiles;
 
-    public CompactionTask(InstanceProperties instanceProperties, PropertiesReloader propertiesReloader,
+    public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
-            CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector, String taskId) {
-        this(instanceProperties, propertiesReloader, messageReceiver, waitForFiles, jobCommitter,
-                jobStore, taskStore, selector, taskId, () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
+            CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
+        this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
+                messageReceiver, waitForFiles, jobCommitter,
+                jobStore, taskStore, selector, taskId,
+                () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CompactionTask(
             InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
+            StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionAlgorithmSelector selector,
+            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
+        this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
@@ -94,7 +110,7 @@ public class CompactionTask {
         this.waitForFiles = waitForFiles;
     }
 
-    public void run() throws IOException {
+    public void run() throws IOException, InterruptedException {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -108,7 +124,7 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    public Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
+    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
         Instant lastActiveTime = startTime;
         Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
@@ -138,17 +154,19 @@ public class CompactionTask {
                 String jobRunId = jobRunIdSupplier.get();
                 Instant jobStartTime = timeSupplier.get();
                 try {
+                    propertiesReloader.reloadIfNeeded();
                     waitForFiles.wait(job);
                     RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
+                } catch (InterruptedException e) {
+                    LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
+                    throw e;
+                } catch (TableNotFoundException e) {
+                    LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
                 } catch (Exception e) {
-                    Instant jobFinishTime = timeSupplier.get();
-                    jobStatusStore.jobFailed(compactionJobFailed(job,
-                            new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .failure(e).taskId(taskId).jobRunId(jobRunId).build());
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
                     message.failed();
@@ -163,14 +181,24 @@ public class CompactionTask {
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
-        propertiesReloader.reloadIfNeeded();
-        CompactionRunner compactor = this.selector.chooseCompactor(job);
-        RecordsProcessed recordsProcessed = compactor.compact(job);
-        Instant jobFinishTime = timeSupplier.get();
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-        jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId));
-        logMetrics(job, summary);
-        return summary;
+        try {
+            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+            CompactionRunner compactor = selector.createCompactor(job, tableProperties);
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            Partition partition = stateStore.getPartition(job.getPartitionId());
+            RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+            Instant jobFinishTime = timeSupplier.get();
+            RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            logMetrics(job, summary);
+            return summary;
+        } catch (Exception e) {
+            Instant jobFinishTime = timeSupplier.get();
+            jobStatusStore.jobFailed(compactionJobFailed(job,
+                    new ProcessRunTime(jobStartTime, jobFinishTime))
+                    .failure(e).taskId(taskId).jobRunId(jobRunId).build());
+            throw e;
+        }
     }
 
     private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {

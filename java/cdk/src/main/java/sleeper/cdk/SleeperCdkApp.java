@@ -68,12 +68,13 @@ import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -108,35 +109,12 @@ public class SleeperCdkApp extends Stack {
         this.jars = jars;
     }
 
-    private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
-            EmrBulkImportStack.class,
-            EmrServerlessBulkImportStack.class,
-            PersistentEmrBulkImportStack.class,
-            EksBulkImportStack.class)
-            .map(Class::getSimpleName).collect(Collectors.toList());
-
-    private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
-            EmrBulkImportStack.class,
-            EmrServerlessBulkImportStack.class,
-            PersistentEmrBulkImportStack.class)
-            .map(Class::getSimpleName).collect(Collectors.toList());
-
-    public static final List<String> INGEST_STACK_NAMES = Stream.of(
-            IngestStack.class,
-            EmrBulkImportStack.class,
-            EmrServerlessBulkImportStack.class,
-            PersistentEmrBulkImportStack.class,
-            EksBulkImportStack.class)
-            .map(Class::getSimpleName).collect(Collectors.toList());
-    public static final List<String> QUERY_STACK_NAMES = Stream.of(
-            QueryStack.class,
-            WebSocketQueryStack.class)
-            .map(Class::getSimpleName).collect(Collectors.toList());
-
     @SuppressWarnings("checkstyle:methodlength")
     public void create() {
         // Optional stacks to be included
-        List<String> optionalStacks = instanceProperties.getList(OPTIONAL_STACKS);
+        Set<OptionalStack> optionalStacks = instanceProperties
+                .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
+                .collect(toUnmodifiableSet());
 
         List<IMetric> errorMetrics = new ArrayList<>();
         // Stack for Checking VPC configuration
@@ -164,7 +142,7 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, jars,
                 configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestStatusStore, compactionStatusStore,
-                topicStack.getTopic(), errorMetrics);
+                policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
@@ -173,25 +151,25 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         new TransactionLogTransactionStack(this, "TransactionLogTransaction",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
-        if (optionalStacks.contains(TableMetricsStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
             new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
         }
 
         // Stack for Athena analytics
-        if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.AthenaStack)) {
             new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
         }
 
-        if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+        if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
         }
-        if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+        if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
                     instanceProperties, coreStacks, bulkImportBucketStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
-        if (optionalStacks.contains(EmrServerlessBulkImportStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.EmrServerlessBulkImportStack)) {
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -200,12 +178,12 @@ public class SleeperCdkApp extends Stack {
                     errorMetrics);
 
             // Stack to created EMR studio to be used to access EMR Serverless
-            if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
+            if (optionalStacks.contains(OptionalStack.EmrStudioStack)) {
                 new EmrStudioStack(this, "EmrStudio", instanceProperties);
             }
         }
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
-        if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -216,7 +194,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
-        if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -227,7 +205,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Stack to run bulk import jobs via EKS
-        if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
             eksBulkImportStack = new EksBulkImportStack(this, "BulkImportEKS",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -237,7 +215,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Stack to garbage collect old files
-        if (optionalStacks.contains(GarbageCollectorStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
@@ -246,7 +224,7 @@ public class SleeperCdkApp extends Stack {
                     errorMetrics);
         }
         // Stack for containers for compactions and splitting compactions
-        if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.CompactionStack)) {
             compactionStack = new CompactionStack(this,
                     "Compaction",
                     instanceProperties, jars,
@@ -256,7 +234,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Stack to split partitions
-        if (optionalStacks.contains(PartitionSplittingStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
@@ -267,7 +245,7 @@ public class SleeperCdkApp extends Stack {
 
         QueryStack queryStack = null;
         // Stack to execute queries
-        if (QUERY_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+        if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
                     topicStack.getTopic(), coreStacks,
@@ -279,7 +257,7 @@ public class SleeperCdkApp extends Stack {
                     coreStacks, queryQueueStack,
                     errorMetrics);
             // Stack to execute queries using the web socket API
-            if (optionalStacks.contains(WebSocketQueryStack.class.getSimpleName())) {
+            if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
                 new WebSocketQueryStack(this,
                         "WebSocketQuery",
                         instanceProperties, jars,
@@ -287,7 +265,7 @@ public class SleeperCdkApp extends Stack {
             }
         }
         // Stack for ingest jobs
-        if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.IngestStack)) {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
@@ -300,7 +278,7 @@ public class SleeperCdkApp extends Stack {
         ingestStacks = new IngestStacks(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack);
 
         // Stack to batch up files to ingest and create jobs
-        if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
             ingestBatcherStack = new IngestBatcherStack(this, "IngestBatcher",
                     instanceProperties, jars,
                     topicStack.getTopic(),
@@ -309,7 +287,7 @@ public class SleeperCdkApp extends Stack {
                     errorMetrics);
         }
 
-        if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.DashboardStack)) {
             new DashboardStack(this,
                     "Dashboard",
                     ingestStack,
@@ -319,7 +297,7 @@ public class SleeperCdkApp extends Stack {
                     errorMetrics);
         }
 
-        if (optionalStacks.contains(KeepLambdaWarmStack.class.getSimpleName())) {
+        if (optionalStacks.contains(OptionalStack.KeepLambdaWarmStack)) {
             new KeepLambdaWarmStack(this,
                     "KeepLambdaWarmExecution",
                     instanceProperties,

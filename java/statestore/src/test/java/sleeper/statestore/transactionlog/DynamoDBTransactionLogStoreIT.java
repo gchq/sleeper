@@ -26,6 +26,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -229,9 +230,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .leavesWithSplits(leafIds, splitPoints)
+        stateStore.initialise(PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves().buildList());
 
         // When
@@ -251,9 +251,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         List<Object> splitPoints = LongStream.range(1, 1000)
                 .mapToObj(i -> "split" + i)
                 .collect(Collectors.toList());
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .leavesWithSplits(leafIds, splitPoints)
+        List<Partition> partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves().buildList();
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);

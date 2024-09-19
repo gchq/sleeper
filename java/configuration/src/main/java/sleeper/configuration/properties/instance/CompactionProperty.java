@@ -19,8 +19,13 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionECSLaunchType;
+import sleeper.configuration.properties.validation.CompactionMethod;
 
 import java.util.List;
+
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 
 public interface CompactionProperty {
     UserDefinedInstanceProperty ECR_COMPACTION_REPO = Index.propertyBuilder("sleeper.compaction.repo")
@@ -34,6 +39,14 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.creation.limit")
+            .description("The maximum number of compaction jobs that are to be created as part of single invocation. " +
+                    "If this limit is exceeded, the selection of jobs is randomised.")
+            .defaultValue("10000")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
@@ -49,7 +62,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.failed.visibility.timeout.seconds")
             .description("The delay in seconds until a failed compaction job becomes visible on the compaction job " +
                     "queue and can be processed again.")
-            .defaultValue("0")
+            .defaultValue("60")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_WAIT_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.wait.time.seconds")
             .description("The time in seconds for a compaction task to wait for a compaction job to appear on the " +
@@ -104,6 +117,16 @@ public interface CompactionProperty {
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the lambda used to create compaction jobs.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the lambda used to create compaction jobs.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -252,9 +275,11 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction support is " +
-                    "experimental.")
-            .defaultValue("JAVA")
+            .description("Select which compaction method to use if not configured against a Sleeper table. DataFusion " +
+                    "compaction support is experimental.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
+            .defaultValue(CompactionMethod.JAVA.toString())
+            .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

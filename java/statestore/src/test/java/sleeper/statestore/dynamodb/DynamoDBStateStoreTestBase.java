@@ -16,38 +16,16 @@
 
 package sleeper.statestore.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.dynamodb.tools.DynamoDBContainer;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DynamoDBStateStoreTestBase {
-    protected static AmazonDynamoDB dynamoDBClient;
-
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
+public class DynamoDBStateStoreTestBase extends DynamoDBTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
 
     @BeforeEach
     void setUpBase() {

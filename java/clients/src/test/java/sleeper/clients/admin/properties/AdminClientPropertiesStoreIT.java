@@ -28,6 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -334,7 +335,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     class UploadDockerImages {
         @BeforeEach
         void setup() {
-            instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
+            instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
             instanceProperties.saveToS3(s3);
         }
 
@@ -344,7 +345,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
+            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.CompactionStack, OptionalStack.IngestStack));
         }
 
         @Test
@@ -371,7 +372,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
+            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.IngestStack));
         }
 
         @Test
@@ -388,7 +389,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         updateInstanceProperty(store(), instanceId, property, value);
     }
 
-    private StacksForDockerUpload withStacks(String... stacks) {
+    private StacksForDockerUpload withStacks(OptionalStack... stacks) {
         return StacksForDockerUpload.builder()
                 .ecrPrefix(instanceProperties.get(ID))
                 .account(instanceProperties.get(ACCOUNT))

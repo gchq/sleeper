@@ -19,6 +19,7 @@ package sleeper.configuration.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperPropertyValues;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -35,6 +36,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final boolean editable;
     private final boolean includedInTemplate;
     private final boolean includedInBasicTemplate;
+    private final boolean ignoreEmptyValue;
+    private final InstanceProperty defaultProperty;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -47,6 +50,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         includedInTemplate = builder.includedInTemplate;
         includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
                 .orElseGet(UserDefinedInstanceProperty.super::isIncludedInBasicTemplate);
+        ignoreEmptyValue = builder.ignoreEmptyValue;
+        defaultProperty = builder.defaultProperty;
     }
 
     public static Builder builder() {
@@ -58,7 +63,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public Predicate<String> validationPredicate() {
+    public Predicate<String> getValidationPredicate() {
         return validationPredicate;
     }
 
@@ -106,6 +111,29 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return includedInBasicTemplate;
     }
 
+    @Override
+    public boolean isIgnoreEmptyValue() {
+        return ignoreEmptyValue;
+    }
+
+    public InstanceProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
+    public String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
+        if (value != null) {
+            return value;
+        }
+
+        InstanceProperty tempProperty = getDefaultProperty();
+        if (tempProperty != null) {
+            return instanceProperties.get(tempProperty);
+        } else {
+            return getDefaultValue();
+        }
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -116,7 +144,9 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private boolean editable = true;
         private boolean includedInTemplate = true;
         private Boolean includedInBasicTemplate;
+        private boolean ignoreEmptyValue = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
+        private InstanceProperty defaultProperty;
 
         private Builder() {
         }
@@ -146,6 +176,12 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
+        public Builder defaultProperty(InstanceProperty defaultProperty) {
+            this.defaultProperty = defaultProperty;
+            this.validationPredicate = defaultProperty.getValidationPredicate();
+            return this;
+        }
+
         public Builder runCdkDeployWhenChanged(boolean runCdkDeployWhenChanged) {
             this.runCdkDeployWhenChanged = runCdkDeployWhenChanged;
             return this;
@@ -163,6 +199,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder includedInBasicTemplate(boolean includedInBasicTemplate) {
             this.includedInBasicTemplate = includedInBasicTemplate;
+            return this;
+        }
+
+        public Builder ignoreEmptyValue(boolean ignoreEmptyValue) {
+            this.ignoreEmptyValue = ignoreEmptyValue;
             return this;
         }
 

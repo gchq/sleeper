@@ -53,7 +53,7 @@ import sleeper.query.model.QueryProcessingConfig;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -183,7 +183,7 @@ public class WarmQueryExecutorLambdaIT {
 
     private void createTable(TableProperties tableProperties) {
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        StateStore stateStore = new StateStoreProvider(instanceProperties, s3Client, dynamoClient, configuration)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());

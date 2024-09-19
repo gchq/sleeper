@@ -18,6 +18,7 @@ package sleeper.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
@@ -29,6 +30,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
@@ -77,7 +79,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldReportRunWhenJobFinished() {
+    public void shouldReportRunWhenJobUncommitted() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -89,6 +91,29 @@ public class CompactionJobRunTest {
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
+
+        // Then
+        assertThat(status.getJobRuns())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(DEFAULT_TASK_ID, started, finished));
+        assertThat(status.isUnstartedOrInProgress()).isTrue();
+    }
+
+    @Test
+    public void shouldReportRunWhenJobFinished() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
+        CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
+
+        // When
+        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished, committed);
 
         // Then
         assertThat(status.getJobRuns())

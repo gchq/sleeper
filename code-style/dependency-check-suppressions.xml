@@ -134,7 +134,7 @@
         We don't expose that page, so it won't be a problem.
         This is a provided dependency for the module bulk-import/bulk-import-runner.
         ]]></notes>
-        <filePath regex="true">^.*/avro-ipc-1\.11\.3\.jar/.*/jquery-.*\.js$</filePath>
+        <filePath regex="true">^.*/avro-ipc-1\.12\.0\.jar/.*/jquery-.*\.js$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -265,5 +265,23 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
+        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.56 at time of
+        writing.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
+        of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
+        we're using uses Jetty 9.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
     </suppress>
 </suppressions>

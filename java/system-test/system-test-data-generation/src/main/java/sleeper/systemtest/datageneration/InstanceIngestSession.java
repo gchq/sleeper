@@ -33,8 +33,9 @@ import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 public class InstanceIngestSession implements AutoCloseable {
     private final AmazonS3 s3;
@@ -70,6 +71,10 @@ public class InstanceIngestSession implements AutoCloseable {
         return new InstanceIngestSession(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName);
     }
 
+    public AmazonS3 s3() {
+        return s3;
+    }
+
     public S3AsyncClient s3Async() {
         return s3Async;
     }
@@ -91,7 +96,7 @@ public class InstanceIngestSession implements AutoCloseable {
     }
 
     public StateStoreProvider createStateStoreProvider() {
-        return new StateStoreProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
     }
 
     @Override

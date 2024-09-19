@@ -128,17 +128,12 @@ public class ProcessRun {
     }
 
     /**
-     * Gets the latest update time for this run. This will be the finish update time if the run has finished, or the
-     * start update time otherwise.
+     * Gets the latest update time for this run.
      *
      * @return the latest update time
      */
     public Instant getLatestUpdateTime() {
-        if (isFinished()) {
-            return getFinishedStatus().getUpdateTime();
-        } else {
-            return getStartUpdateTime();
-        }
+        return getLatestUpdate().getUpdateTime();
     }
 
     public ProcessStatusUpdate getLatestUpdate() {

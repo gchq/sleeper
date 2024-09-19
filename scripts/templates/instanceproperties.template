@@ -77,7 +77,11 @@ sleeper.stack.tag.name=DeploymentStack
 # instance is destroyed.
 sleeper.retain.infra.after.destroy=true
 
-# The optional stacks to deploy.
+# The optional stacks to deploy. Not case sensitive.
+# Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
+# PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, QueryStack, WebSocketQueryStack,
+# AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
+# DashboardStack, TableMetricsStack]
 sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
@@ -126,6 +130,16 @@ sleeper.task.runner.timeout.seconds=900
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
 
+# The reserved concurrency for the table metrics lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.metrics.concurrency.reserved=
+
+# The maximum given concurrency allowed for the table metrics lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.metrics.concurrency.max=
+
 # The number of tables to calculate metrics for in a single invocation. This will be the batch size
 # for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.metrics.batch.size=1
@@ -162,6 +176,16 @@ sleeper.statestore.transactionlog.snapshot.creation.batch.size=1
 # The frequency in minutes with which the transaction log snapshot creation lambda is run.
 sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes=5
 
+# The reserved concurrency for the snapshot creation lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved=
+
+# The maximum given concurrency allowed for the snapshot creation lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.snapshot.creation.concurrency.max=
+
 # The number of tables to delete old transaction log snapshots for in a single invocation. This will
 # be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.snapshot.deletion.batch.size=1
@@ -169,12 +193,32 @@ sleeper.statestore.transactionlog.snapshot.deletion.batch.size=1
 # The frequency in minutes with which the transaction log snapshot deletion lambda is run.
 sleeper.statestore.transactionlog.snapshot.deletion.lambda.period.minutes=60
 
+# The reserved concurrency for the snapshot deletion lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.snapshot.deletion.concurrency.reserved=
+
+# The maximum given concurrency allowed for the snapshot deletion lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.snapshot.deletion.concurrency.max=
+
 # The number of tables to delete old transaction log transactions for in a single invocation. This
 # will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.transaction.deletion.batch.size=1
 
 # The frequency in minutes with which the transaction log transaction deletion lambda is run.
 sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes=60
+
+# The reserved concurrency for the transaction deletion lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transactionlog.transaction.deletion.concurrency.reserved=
+
+# The maximum given concurrency allowed for the transaction deletion lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.transactionlog.transaction.deletion.concurrency.max=
 
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
@@ -205,6 +249,16 @@ sleeper.statestore.committer.lambda.timeout.seconds=900
 # The number of state store updates to be sent to the state store committer lambda in one invocation.
 # This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.committer.batch.size=10
+
+# The reserved concurrency for the state store committer lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.committer.concurrency.reserved=
+
+# The maximum given concurrency allowed for the state store committer lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.statestore.committer.concurrency.max=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
@@ -768,11 +822,28 @@ sleeper.partition.splitting.finder.memory=2048
 # The timeout in seconds for the lambda function used to identify partitions that need to be split.
 sleeper.partition.splitting.finder.timeout.seconds=900
 
+# The reserved concurrency for the find partitions to split lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.partition.splitting.finder.concurrency.reserved=
+
+# The maximum given concurrency allowed for the find partitions to split lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.partition.splitting.finder.concurrency.max=
+
 # The amount of memory in MB for the lambda function used to split partitions.
 sleeper.partition.splitting.memory=2048
 
 # The timeout in seconds for the lambda function used to split partitions.
 sleeper.partition.splitting.timeout.seconds=900
+
+# The number of lambda instances to reserve from your AWS account's quota for splitting partitions.
+# Note that this will not provision instances until they are needed. Each time partition splitting
+# runs, a separate lambda invocation will be made for each partition that needs to be split. If the
+# reserved concurrency is less than the number of partitions that need to be split across all Sleeper
+# tables in the instance, these invocations may queue up.
+sleeper.partition.splitting.reserved.concurrency=10
 
 # This is the default value of the partition splitting threshold. Partitions with more than the
 # following number of records in will be split. This value can be overridden on a per-table basis.
@@ -784,8 +855,21 @@ sleeper.default.partition.splitting.threshold=1000000000
 # The frequency in minutes with which the garbage collector lambda is run.
 sleeper.gc.period.minutes=15
 
+# The configurable timeout wait in minutes for the garbage collector lambda.
+sleeper.gc.lambda.timeout.minutes=14
+
 # The amount of memory in MB for the lambda function used to perform garbage collection.
 sleeper.gc.memory=1024
+
+# The reserved concurrency for the garbage collection lambda.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.gc.concurrency.reserved=
+
+# The maximum given concurrency allowed for the garbage collection lambda.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.gc.concurrency.max=
 
 # The number of tables to perform garbage collection for in a single invocation. This will be the
 # batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
@@ -810,6 +894,10 @@ sleeper.default.gc.delay.minutes=15
 # batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.compaction.job.creation.batch.size=1
 
+# The maximum number of compaction jobs that are to be created as part of single invocation. If this
+# limit is exceeded, the selection of jobs is randomised.
+sleeper.compaction.job.creation.limit=10000
+
 # The visibility timeout for the queue of compaction jobs.
 sleeper.compaction.queue.visibility.timeout.seconds=900
 
@@ -821,7 +909,7 @@ sleeper.compaction.keepalive.period.seconds=300
 
 # The delay in seconds until a failed compaction job becomes visible on the compaction job queue and
 # can be processed again.
-sleeper.compaction.job.failed.visibility.timeout.seconds=0
+sleeper.compaction.job.failed.visibility.timeout.seconds=60
 
 # The time in seconds for a compaction task to wait for a compaction job to appear on the SQS queue
 # (must be <= 20).
@@ -857,6 +945,16 @@ sleeper.compaction.job.creation.memory=1024
 
 # The timeout for the lambda that creates compaction jobs in seconds.
 sleeper.compaction.job.creation.timeout.seconds=900
+
+# The reserved concurrency for the lambda used to create compaction jobs.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.compaction.job.creation.concurrency.reserved=
+
+# The maximum given concurrency allowed for the lambda used to create compaction jobs.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.compaction.job.creation.concurrency.max=
 
 # The maximum number of concurrent compaction tasks to run.
 sleeper.compaction.max.concurrent.tasks=300
@@ -964,8 +1062,9 @@ sleeper.default.table.compaction.strategy.sizeratio.ratio=3
 # concurrently per partition. It can be overridden on a per-table basis.
 sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
 
-# Select what compaction method to use on a table. Current options are JAVA and RUST. Rust compaction
-# support is experimental.
+# Select which compaction method to use if not configured against a Sleeper table. DataFusion
+# compaction support is experimental.
+# Valid values are: [java, datafusion]
 sleeper.default.table.compaction.method=JAVA
 
 
@@ -1222,15 +1321,72 @@ sleeper.default.ingest.record.batch.type=arrow
 # of partitions is large.
 sleeper.default.ingest.partition.file.writer.type=async
 
-# If true, compaction job commit requests will be sent to the state store committer lambda to be
-# performed asynchronously. If false, compaction jobs will be committed synchronously by compaction
-# tasks.
+# This is the default for whether state store updates will be applied asynchronously via the state
+# store committer.
+# This is usually only used for state store implementations where there's a benefit to applying state
+# store updates in a single process for each Sleeper table. This is usually to avoid contention from
+# multiple processes performing updates at the same time.
+# This is separate from the properties that determine which state store updates will be done as
+# asynchronous commits. Those properties will only be applied when asynchronous commits are enabled
+# for a given state store.
+# Valid values are: [disabled, per_implementation, all_implementations]
+# With `disabled`, asynchronous commits will never be used unless overridden in table properties.
+# With `per_implementation`, asynchronous commits will be used for all state store implementations
+# that are known to benefit from it, unless overridden in table properties.
+# With `all_implementations`, asynchronous commits will be used for all state stores unless overridden
+# in table properties.
+sleeper.default.statestore.commit.async.behaviour=PER_IMPLEMENTATION
+
+# This is the default for whether created compaction jobs will be assigned to their input files
+# asynchronously via the state store committer, if asynchronous commit is enabled. Otherwise, the
+# compaction job creator will commit input file assignments directly to the state store.
+sleeper.default.compaction.job.id.assignment.commit.async=true
+
+# This is the default for whether compaction tasks will commit finished jobs asynchronously via the
+# state store committer, if asynchronous commit is enabled. Otherwise, compaction tasks will commit
+# finished jobs directly to the state store.
 sleeper.default.compaction.job.commit.async=true
 
-# If true, ingest tasks will add files via requests sent to the state store committer lambda
-# asynchronously. If false, ingest tasks will commit new files synchronously.
-sleeper.default.ingest.job.files.commit.async=false
+# This is the default for whether ingest tasks will add files asynchronously via the state store
+# committer, if asynchronous commit is enabled. Otherwise, ingest tasks will add files directly to the
+# state store.
+sleeper.default.ingest.job.files.commit.async=true
 
-# If true, bulk import will add files via requests sent to the state store committer lambda
-# asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
+# This is the default for whether bulk import will add files asynchronously via the state store
+# committer, if asynchronous commit is enabled. Otherwise, bulk import will add files directly to the
+# state store.
 sleeper.default.bulk.import.job.files.commit.async=true
+
+# This is the default for whether partition splits will be applied asynchronously via the state store
+# committer, if asynchronous commit is enabled. Otherwise, the partition splitter will apply splits
+# directly to the state store.
+sleeper.default.partition.splitting.commit.async=true
+
+# This is the default for whether the garbage collector will record deleted files asynchronously via
+# the state store committer, if asynchronous commit is enabled. Otherwise, the garbage collector will
+# record this directly to the state store.
+sleeper.default.gc.commit.async=true
+
+# When using the transaction log state store, this sets whether to update from the transaction log
+# before adding a transaction in the asynchronous state store committer.
+# If asynchronous commits are used for all or almost all state store updates, this can be false to
+# avoid the extra queries.
+# If the state store is commonly updated directly outside of the asynchronous committer, this can be
+# true to avoid conflicts and retries.
+sleeper.default.statestore.committer.update.every.commit=false
+
+# When using the transaction log state store, this sets whether to update from the transaction log
+# before adding a batch of transactions in the asynchronous state store committer.
+sleeper.default.statestore.committer.update.every.batch=true
+
+# Default value for the reserved concurrency for each lambda within the Sleeper instance. Each lambda
+# also has its own implementation of the property which will override the value found here.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.default.lambda.concurrency.reserved=
+
+# Default value for the maximum concurrency assigned to each lambda within the Sleeper instance. Each
+# lambda has its own property that overrides the value found here.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+# sleeper.default.lambda.concurrency.max=

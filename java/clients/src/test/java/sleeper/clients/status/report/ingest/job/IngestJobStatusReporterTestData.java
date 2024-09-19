@@ -136,7 +136,7 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> jobWithMultipleRuns() {
-        IngestJob job = createJob(2, 1);
+        IngestJob job = createJob(1, 1);
 
         return Collections.singletonList(jobStatus(job,
                 startedIngestRun(job, task(1), Instant.parse("2022-10-12T10:02:00.001Z")),

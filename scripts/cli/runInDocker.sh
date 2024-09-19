@@ -21,7 +21,15 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-HOME_IN_IMAGE=/root
+HOME_IN_IMAGE=/home/sleeper
+
+# Allow use of runner Dockerfile in source directory or in home install
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+RUNNER_PATH="$THIS_DIR/runner"
+HOME_RUNNER_PATH="$HOME/.sleeper/runner"
+if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
+    RUNNER_PATH="$HOME_RUNNER_PATH"
+fi
 
 run_in_docker() {
   local RUN_PARAMS
@@ -31,6 +39,7 @@ run_in_docker() {
   fi
   local TEMP_DIR=$(mktemp -d)
   local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
+  mkdir -p "$HOME/.aws"
   # We ensure the container ID is available as a file inside the container
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
@@ -58,71 +67,65 @@ run_in_docker() {
   rmdir "$TEMP_DIR"
 }
 
+build_temp_runner_image() {
+  local RUN_IMAGE=$1
+  local TEMP_TAG=$(date +%Y-%m-%d"_"%H_%M_%S)_$RANDOM
+  # Propagate current user IDs to image, to avoid mixed file ownership
+  local SET_UID=$(id -u)
+  local SET_GID=$(id -g)
+  local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
+  TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
+  echo "Propagating current user to Docker image"
+  docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
+    --build-arg RUN_IMAGE="$RUN_IMAGE" \
+    --build-arg SET_UID=$SET_UID \
+    --build-arg SET_GID=$SET_GID \
+    --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
+}
+
 run_in_environment_docker() {
+  build_temp_runner_image sleeper-local:current
+  mkdir -p "$HOME/.sleeper/environments"
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
-    sleeper-local:current "$@"
+    "$TEMP_RUNNER_IMAGE" "$@"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 run_in_builder_docker() {
+  build_temp_runner_image sleeper-builder:current
   # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
   # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
+  mkdir -p "$HOME/.sleeper/builder"
+  mkdir -p "$HOME/.m2"
   run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    sleeper-builder:current "$@"
+    "$TEMP_RUNNER_IMAGE" "$@"
+  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 get_version() {
-  run_in_environment_docker cat /sleeper/version.txt
-}
-
-parse_version(){
-  if [ "$#" -lt 1 ]; then
-    CURRENT_VERSION=$(get_version | tr -d '\r\n')
-    case $CURRENT_VERSION in
-    *-SNAPSHOT)
-      VERSION="develop"
-      ;;
-    *)
-      # We could get the latest version from GitHub by querying this URL:
-      # https://github.com/gchq/sleeper/releases/latest
-      # At time of writing, this shows no releases. Once we have full releases on GitHub, we could use that.
-      echo "Please specify version to upgrade to"
-      return 1
-      ;;
-    esac
-  else
-    VERSION=$1
-  fi
-
-  GIT_REF="$VERSION"
-  REMOTE_TAG="$VERSION"
-  if [ "$VERSION" == "main" ]; then
-    REMOTE_TAG="latest"
-  elif [ "$VERSION" == "latest" ]; then
-    GIT_REF="main"
-  elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
-    REMOTE_TAG=${VERSION:1}
-  fi
+  run_in_docker sleeper-local:current cat /sleeper/version.txt
 }
 
 pull_docker_images(){
-  parse_version "$@"
+  echo "Updating CLI runner Dockerfile"
+  mkdir -p "$HOME_RUNNER_PATH"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
 }
 
 upgrade_cli() {
-  parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images "$VERSION"
+  "$TEMP_PATH" cli pull-images
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
@@ -136,7 +139,7 @@ upgrade_cli() {
 
 pull_and_tag() {
   IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
   LOCAL_IMAGE="$IMAGE_NAME:current"
 
   docker pull "$REMOTE_IMAGE"
@@ -164,9 +167,9 @@ elif [ "$COMMAND" == "cli" ]; then
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
-    upgrade_cli "$@"
+    upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
-    pull_docker_images "$@"
+    pull_docker_images
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1

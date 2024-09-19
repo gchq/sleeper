@@ -43,6 +43,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.status.ProcessRun;
@@ -60,8 +62,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.net.URI;
@@ -374,7 +374,7 @@ class IngestJobRunnerIT {
                 stateStoreProvider, statusStore,
                 "test-task",
                 localDir.toString(),
-                s3Async, sqs,
+                s3, s3Async, sqs,
                 hadoopConfiguration,
                 timeSupplier);
     }
@@ -394,6 +394,7 @@ class IngestJobRunnerIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "false");
         tableProperties.setSchema(schema);
         return tableProperties;
     }

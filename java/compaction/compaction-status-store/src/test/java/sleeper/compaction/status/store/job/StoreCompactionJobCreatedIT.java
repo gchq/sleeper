@@ -23,6 +23,7 @@ import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStor
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,14 +38,15 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         CompactionJob job = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile(100L)),
                 partition.getId());
+        Instant createdTime = Instant.parse("2024-09-06T09:53:00Z");
 
         // When
-        store.jobCreated(job);
+        storeWithUpdateTime(createdTime).jobCreated(job);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime()));
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
+                .containsExactly(CompactionJobStatusTestData.jobCreated(job, createdTime));
     }
 
     @Test
@@ -57,14 +59,15 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                         fileFactory.rootFile("file1", 100L),
                         fileFactory.rootFile("file2", 100L)),
                 partition.getId());
+        Instant createdTime = Instant.parse("2024-09-06T09:53:00Z");
 
         // When
-        store.jobCreated(job);
+        storeWithUpdateTime(createdTime).jobCreated(job);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime()));
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
+                .containsExactly(CompactionJobStatusTestData.jobCreated(job, createdTime));
     }
 
     @Test
@@ -77,16 +80,18 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                 List.of(fileFactory.partitionFile("B", 100L)), "B");
         CompactionJob job2 = jobFactory.createCompactionJob(
                 List.of(fileFactory.partitionFile("C", 100L)), "C");
+        Instant createdTime1 = Instant.parse("2024-09-06T09:54:00Z");
+        Instant createdTime2 = Instant.parse("2024-09-06T09:55:00Z");
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeWithUpdateTime(createdTime1).jobCreated(job1);
+        storeWithUpdateTime(createdTime2).jobCreated(job2);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
                 .containsExactlyInAnyOrder(
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()));
+                        CompactionJobStatusTestData.jobCreated(job1, createdTime1),
+                        CompactionJobStatusTestData.jobCreated(job2, createdTime2));
     }
 }

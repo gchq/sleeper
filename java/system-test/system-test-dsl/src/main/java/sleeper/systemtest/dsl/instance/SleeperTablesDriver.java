@@ -19,8 +19,8 @@ package sleeper.systemtest.dsl.instance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
-import sleeper.statestore.StateStoreProvider;
 
 public interface SleeperTablesDriver {
 

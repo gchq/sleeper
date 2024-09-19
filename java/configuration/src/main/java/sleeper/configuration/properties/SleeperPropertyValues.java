@@ -20,11 +20,12 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 @FunctionalInterface
 public interface SleeperPropertyValues<T extends SleeperProperty> {
@@ -35,8 +36,13 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         return Boolean.parseBoolean(get(property));
     }
 
-    default int getInt(T property) {
-        return Integer.parseInt(get(property));
+    default Integer getInt(T property) {
+        String val = get(property);
+        if (val != null) {
+            return Integer.parseInt(val);
+        } else {
+            return null;
+        }
     }
 
     default long getLong(T property) {
@@ -55,10 +61,12 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         return SleeperPropertyValues.readList(get(property));
     }
 
+    default <E extends Enum<E>> List<E> getEnumList(T property, Class<E> enumClass) {
+        return streamEnumList(property, enumClass).collect(toUnmodifiableList());
+    }
+
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
-        return getList(property).stream()
-                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, value))
-                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value)));
+        return streamEnumList(property, get(property), enumClass);
     }
 
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
@@ -69,11 +77,16 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     static List<String> readList(String value) {
-        if (value == null) {
+        if (value == null || value.length() < 1) {
             return List.of();
         } else {
             return Lists.newArrayList(value.split(","));
         }
     }
 
+    static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
+        return readList(value).stream()
+                .map(item -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, item))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + item)));
+    }
 }

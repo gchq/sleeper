@@ -106,6 +106,17 @@ public class IngestJobMessageHandler<T> {
                             "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
             return Optional.empty();
         }
+        return validate(job, message);
+    }
+
+    /**
+     * Validates an ingest or bulk import job, resolves the Sleeper table and assigns a job ID if not provided.
+     *
+     * @param  job     the job
+     * @param  message the JSON of the original message
+     * @return         the resolved job if it validated
+     */
+    public Optional<T> validate(T job, String message) {
         IngestJob ingestJob = toIngestJob.apply(job);
         String jobId = ingestJob.getId();
         if (jobId == null || jobId.isBlank()) {
@@ -117,7 +128,7 @@ public class IngestJobMessageHandler<T> {
         List<String> validationFailures = new ArrayList<>();
         if (files == null) {
             validationFailures.add("Missing property \"files\"");
-        } else if (files.contains(null)) {
+        } else if (files.stream().anyMatch(file -> file == null)) {
             validationFailures.add("One of the files was null");
         }
         Optional<TableStatus> tableOpt = getTable(ingestJob);

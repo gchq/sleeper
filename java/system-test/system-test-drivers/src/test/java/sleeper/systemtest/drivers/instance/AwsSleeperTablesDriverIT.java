@@ -16,86 +16,56 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.statestore.s3.S3StateStoreCreator;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 
-@Testcontainers
+@LocalStackDslTest
 public class AwsSleeperTablesDriverIT {
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(S3, DYNAMODB);
-
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, S3, AmazonS3ClientBuilder.standard());
-    private final S3Client s3v2 = buildAwsV2Client(localStackContainer, S3, S3Client.builder());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final Configuration hadoop = getHadoopConfiguration(localStackContainer);
-    private final SleeperTablesDriver driver = new AwsSleeperTablesDriver(s3, s3v2, dynamoDB, hadoop);
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private SleeperInstanceDriver instanceDriver;
+    private SleeperTablesDriver driver;
+    private InstanceProperties instanceProperties;
 
     @BeforeEach
-    void setUp() {
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+    void setUp(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestParameters parameters) {
+        driver = drivers.tables(parameters);
+        instanceDriver = drivers.instance(parameters);
+        sleeper.connectToInstanceNoTables(MAIN);
+        instanceProperties = sleeper.instanceProperties();
     }
 
     @Test
-    void shouldAddOneTable() {
-        driver.addTable(instanceProperties, tableProperties);
-        assertThat(driver.tableIndex(instanceProperties).streamAllTables())
-                .containsExactly(tableProperties.getStatus());
+    void shouldAddOneTable(SleeperSystemTest sleeper) {
+        sleeper.tables().create("A", DEFAULT_SCHEMA);
+        assertThat(sleeper.tables().list())
+                .containsExactly(sleeper.table("A").tableProperties().getStatus());
     }
 
     @Test
-    void shouldInitialiseTablePartitions() throws StateStoreException {
-        driver.addTable(instanceProperties, tableProperties);
-        assertThat(driver.createStateStoreProvider(instanceProperties).getStateStore(tableProperties)
-                .getAllPartitions())
+    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) throws StateStoreException {
+        sleeper.tables().create("A", DEFAULT_SCHEMA);
+        assertThat(sleeper.table("A").partitioning().tree().getAllPartitions())
                 .hasSize(1);
     }
 
     @Test
-    void shouldDeleteOneTable() {
-        driver.addTable(instanceProperties, tableProperties);
+    void shouldDeleteOneTable(SleeperSystemTest sleeper) {
+        sleeper.tables().create("A", DEFAULT_SCHEMA);
         driver.deleteAllTables(instanceProperties);
         assertThat(driver.tableIndex(instanceProperties).streamAllTables())
                 .isEmpty();
@@ -108,12 +78,12 @@ public class AwsSleeperTablesDriverIT {
     }
 
     @Test
-    void shouldDeleteNothingWhenNoTablesArePresentAndInstancePropertiesAreSavedInConfigBucket() {
-        instanceProperties.saveToS3(s3);
+    void shouldDeleteNothingWhenNoTablesArePresentAndInstancePropertiesAreSavedInConfigBucket(SystemTestDrivers drivers) {
+        instanceDriver.saveInstanceProperties(instanceProperties);
         driver.deleteAllTables(instanceProperties);
 
         InstanceProperties loaded = new InstanceProperties();
-        loaded.loadFromS3GivenInstanceId(s3, instanceProperties.get(ID));
+        instanceDriver.loadInstanceProperties(loaded, instanceProperties.get(ID));
         assertThat(loaded).isEqualTo(instanceProperties);
     }
 }

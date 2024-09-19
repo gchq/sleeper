@@ -15,11 +15,8 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.core.statestore.FileReference;
-
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Contains the definition of a compaction job. This includes the ID of the job,
@@ -154,12 +151,6 @@ public class CompactionJob {
         public Builder inputFiles(List<String> inputFiles) {
             this.inputFiles = inputFiles;
             return this;
-        }
-
-        public Builder inputFileReferences(List<FileReference> inputFiles) {
-            return inputFiles(inputFiles.stream()
-                    .map(FileReference::getFilename)
-                    .collect(Collectors.toList()));
         }
 
         public Builder outputFile(String outputFile) {

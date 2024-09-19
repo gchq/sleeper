@@ -16,13 +16,15 @@
 
 package sleeper.systemtest.suite.fixtures;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -74,6 +76,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cpt-pll", SystemTestInstance::buildCompactionInParallelConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
+    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("commitr", SystemTestInstance::buildStateStoreCommitterThroughputConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
@@ -81,8 +84,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildMainConfiguration() {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
-        properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,EmrServerlessBulkImportStack,IngestBatcherStack," +
-                "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,TableMetricsStack");
+        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
@@ -119,7 +121,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildIngestPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "IngestStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
@@ -141,7 +143,8 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
@@ -161,7 +164,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "EmrBulkImportStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         Map<String, String> tags = new HashMap<>(properties.getTags());
@@ -174,7 +177,7 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionOnEC2Configuration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
@@ -187,12 +190,25 @@ public class SystemTestInstance {
     private static DeployInstanceConfiguration buildCompactionInParallelConfiguration() {
         DeployInstanceConfiguration configuration = buildMainConfiguration();
         InstanceProperties properties = configuration.getInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
 
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "compactionInParallel");
         tags.put("Description", "Sleeper Maven system test compaction in parallel");
+        properties.setTags(tags);
+        return configuration;
+    }
+
+    private static DeployInstanceConfiguration buildStateStoreCommitterThroughputConfiguration() {
+        DeployInstanceConfiguration configuration = buildMainConfiguration();
+        InstanceProperties properties = configuration.getInstanceProperties();
+
+        properties.setList(OPTIONAL_STACKS, List.of());
+
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "stateStoreCommitterThroughput");
+        tags.put("Description", "Sleeper Maven system test state store committer throughput");
         properties.setTags(tags);
         return configuration;
     }

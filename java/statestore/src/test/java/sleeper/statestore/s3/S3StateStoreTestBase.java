@@ -16,17 +16,11 @@
 
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.dynamodb.tools.DynamoDBContainer;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.nio.file.Path;
 
@@ -34,27 +28,12 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public abstract class S3StateStoreTestBase {
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    protected static AmazonDynamoDB dynamoDBClient;
+public abstract class S3StateStoreTestBase extends DynamoDBTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @TempDir
     public Path tempDir;
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
 
     @BeforeEach
     void setUpBase() {

@@ -17,7 +17,7 @@
 package sleeper.clients.deploy.docker;
 
 import com.amazonaws.services.sqs.model.Message;
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -27,15 +27,15 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class SendFilesToIngestIT extends DockerInstanceTestBase {
     @TempDir
@@ -56,16 +56,16 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, sqsClient);
 
         // Then
-        assertThat(getObjectContents(instanceProperties.get(INGEST_SOURCE_BUCKET), "ingest/test-file.parquet"))
+        assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
                 .isEqualTo("abc");
         assertThat(sqsClient.receiveMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL)).getMessages())
                 .map(Message::getBody)
                 .map(new IngestJobSerDe()::fromJson)
                 .flatMap(IngestJob::getFiles)
-                .containsExactly(instanceProperties.get(INGEST_SOURCE_BUCKET) + "/ingest/test-file.parquet");
+                .containsExactly(instanceProperties.get(DATA_BUCKET) + "/ingest/test-file.parquet");
     }
 
     private String getObjectContents(String bucketName, String key) throws IOException {
-        return IOUtils.toString(s3Client.getObject(bucketName, key).getObjectContent(), Charset.defaultCharset());
+        return CharStreams.toString(new InputStreamReader(s3Client.getObject(bucketName, key).getObjectContent()));
     }
 }

@@ -1,19 +1,22 @@
 [
   {
-    "jobId": "$(jobId3)",
+    "jobId": "job33333-3333-3333-3333-333333333333",
     "createdStatus": {
       "updateTime": "2022-10-12T10:00:00.001Z",
       "partitionId": "root",
       "inputFilesCount": 1
     },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-12T10:00:01.001Z"
+    },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-12T10:02:00.123Z",
             "startTime": "2022-10-12T10:02:00.001Z",
-            "updateTime": "2022-10-12T10:02:00.123Z"
+            "type": "STARTED"
           }
         ]
       },
@@ -21,33 +24,32 @@
         "taskId": "task2222-2222-2222-2222-222222222222",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-12T10:01:15.123Z",
             "startTime": "2022-10-12T10:01:15.001Z",
-            "updateTime": "2022-10-12T10:01:15.123Z"
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-12T10:01:45.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 300,
                 "recordsWritten": 150
               },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0,
               "runTime": {
-                "durationInSeconds": 30.0,
-                "finishTime": "2022-10-12T10:01:45.001Z",
                 "startTime": "2022-10-12T10:01:15.001Z",
+                "finishTime": "2022-10-12T10:01:45.001Z",
+                "durationInSeconds": 30.0,
                 "timeInProcessInSeconds": 30.0
-              }
-            }
+              },
+              "recordsReadPerSecond": 10.0,
+              "recordsWrittenPerSecond": 5.0
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-10-12T10:02:00.001Z",
-            "updateTime": "2022-10-12T10:02:00.123Z"
+            "updateTime": "2022-10-12T10:02:00.123Z",
+            "type": "COMMITTED"
           }
         ]
       },
@@ -55,53 +57,55 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-12T10:01:00.123Z",
             "startTime": "2022-10-12T10:01:00.001Z",
-            "updateTime": "2022-10-12T10:01:00.123Z"
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-12T10:01:30.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 300,
                 "recordsWritten": 150
               },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0,
               "runTime": {
-                "durationInSeconds": 30.0,
-                "finishTime": "2022-10-12T10:01:30.001Z",
                 "startTime": "2022-10-12T10:01:00.001Z",
+                "finishTime": "2022-10-12T10:01:30.001Z",
+                "durationInSeconds": 30.0,
                 "timeInProcessInSeconds": 30.0
-              }
-            }
+              },
+              "recordsReadPerSecond": 10.0,
+              "recordsWrittenPerSecond": 5.0
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-10-12T10:01:45.001Z",
-            "updateTime": "2022-10-12T10:01:45.123Z"
+            "updateTime": "2022-10-12T10:01:45.123Z",
+            "type": "COMMITTED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId2)",
+    "jobId": "job22222-2222-2222-2222-222222222222",
     "createdStatus": {
       "updateTime": "2022-10-11T10:00:00.001Z",
       "partitionId": "root",
       "inputFilesCount": 1
     },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-11T10:00:01.001Z"
+    },
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-11T10:02:00.123Z",
             "startTime": "2022-10-11T10:02:00.001Z",
-            "updateTime": "2022-10-11T10:02:00.123Z"
+            "type": "STARTED"
           }
         ]
       },
@@ -109,57 +113,60 @@
         "taskId": "task2222-2222-2222-2222-222222222222",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-11T10:01:00.123Z",
             "startTime": "2022-10-11T10:01:00.001Z",
-            "updateTime": "2022-10-11T10:01:00.123Z"
+            "type": "STARTED"
           },
           {
-            "type": "FAILED",
             "updateTime": "2022-10-11T10:01:30.123Z",
+            "runTime": {
+              "startTime": "2022-10-11T10:01:00.001Z",
+              "finishTime": "2022-10-11T10:01:30.001Z",
+              "durationInSeconds": 30.0,
+              "timeInProcessInSeconds": 30.0
+            },
             "failureReasons": [
               "Unexpected failure reading input file",
               "Some temporary IO problem"
             ],
-            "runTime": {
-              "durationInSeconds": 30.0,
-              "finishTime": "2022-10-11T10:01:30.001Z",
-              "startTime": "2022-10-11T10:01:00.001Z",
-              "timeInProcessInSeconds": 30.0
-            }
+            "type": "FAILED"
           }
         ]
       }
     ]
   },
   {
-    "jobId": "$(jobId1)",
+    "jobId": "job11111-1111-1111-1111-111111111111",
     "createdStatus": {
       "updateTime": "2022-10-10T10:00:00.001Z",
       "partitionId": "root",
       "inputFilesCount": 1
+    },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-10T10:00:01.001Z"
     },
     "jobRuns": [
       {
         "taskId": "task2222-2222-2222-2222-222222222222",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-10T10:01:15.123Z",
             "startTime": "2022-10-10T10:01:15.001Z",
-            "updateTime": "2022-10-10T10:01:15.123Z"
+            "type": "STARTED"
           },
           {
-            "type": "FAILED",
             "updateTime": "2022-10-10T10:01:45.123Z",
+            "runTime": {
+              "startTime": "2022-10-10T10:01:15.001Z",
+              "finishTime": "2022-10-10T10:01:45.001Z",
+              "durationInSeconds": 30.0,
+              "timeInProcessInSeconds": 30.0
+            },
             "failureReasons": [
               "Compaction has already been committed",
               "Failed database update"
             ],
-            "runTime": {
-              "durationInSeconds": 30.0,
-              "finishTime": "2022-10-10T10:01:45.001Z",
-              "startTime": "2022-10-10T10:01:15.001Z",
-              "timeInProcessInSeconds": 30.0
-            }
+            "type": "FAILED"
           }
         ]
       },
@@ -167,33 +174,32 @@
         "taskId": "task1111-1111-1111-1111-111111111111",
         "updates": [
           {
-            "type": "STARTED",
+            "updateTime": "2022-10-10T10:01:00.123Z",
             "startTime": "2022-10-10T10:01:00.001Z",
-            "updateTime": "2022-10-10T10:01:00.123Z"
+            "type": "STARTED"
           },
           {
-            "type": "FINISHED_WHEN_COMMITTED",
             "updateTime": "2022-10-10T10:01:20.123Z",
-            "committedBySeparateUpdate": true,
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 200,
                 "recordsWritten": 100
               },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0,
               "runTime": {
-                "durationInSeconds": 20.0,
-                "finishTime": "2022-10-10T10:01:20.001Z",
                 "startTime": "2022-10-10T10:01:00.001Z",
+                "finishTime": "2022-10-10T10:01:20.001Z",
+                "durationInSeconds": 20.0,
                 "timeInProcessInSeconds": 20.0
-              }
-            }
+              },
+              "recordsReadPerSecond": 10.0,
+              "recordsWrittenPerSecond": 5.0
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
           },
           {
-            "type": "COMMITTED",
             "commitTime": "2022-10-10T10:01:30.001Z",
-            "updateTime": "2022-10-10T10:01:30.123Z"
+            "updateTime": "2022-10-10T10:01:30.123Z",
+            "type": "COMMITTED"
           }
         ]
       }

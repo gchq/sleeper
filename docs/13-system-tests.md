@@ -103,7 +103,7 @@ You can run specific tests like this:
 
 ```bash
 ./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceST,IngestPerformanceST
 ```
 
 You can run a specific test suite like this:
@@ -114,6 +114,10 @@ You can run a specific test suite like this:
 ```
 
 This can also be used with NightlyFunctionalSystemTestSuite.
+
+Note that some system tests are designed to run on at least 3 subnets in different availability zones. There is no
+guarantee that these tests will pass if you use fewer subnets than this, as there might not be enough capacity in
+the availaiblity zones you have provided.
 
 ### Reusing resources
 
@@ -171,9 +175,9 @@ the test suite will write reports in separate files. Here are some examples:
 
 ```bash
 # Set an output directory for reports
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> IngestPerformanceIT \
+./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> IngestPerformanceST \
   -Dsleeper.system.test.output.dir=/tmp/sleeper/output
-less /tmp/sleeper/output/IngestPerformanceIT.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
+less /tmp/sleeper/output/IngestPerformanceST.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
 
 # Redirect output to a file
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> &> test.log &
@@ -215,3 +219,4 @@ otherwise not have been noticed.
 | 0.22.0         | 22/03/2024 | 350177                      | 155302                           |
 | 0.23.0         | 22/05/2024 | 273585                      | 154574                           |
 | 0.24.0         | 17/07/2024 | 242175                      | 151578                           |
+| 0.25.0         | 18/09/2024 | 257317                      | 144229                           |

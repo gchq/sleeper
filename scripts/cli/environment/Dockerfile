@@ -30,12 +30,23 @@ RUN set -eux; \
     curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/$ssmArch/session-manager-plugin.deb" -o "session-manager-plugin.deb"
 RUN dpkg -i session-manager-plugin.deb
 
-# Set command line prompt to show you're in the environment Docker container
-RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-environment\[\e[0m\]: \w # "' >> ~/.bashrc
+# Set ownership for Sleeper directory & scripts
+RUN groupadd -g 2500 sleeperenv \
+    && adduser --disabled-password --gecos "" --uid 2500 --gid 2500 sleeperenv \
+    && passwd -d sleeperenv
+RUN mkdir /sleeper && chown sleeperenv:sleeperenv /sleeper && chmod g+w /sleeper
 
 WORKDIR /sleeper
-COPY . .
-
+COPY --chown=sleeperenv:sleeperenv . .
 ENV PATH=/sleeper/bin:$PATH
+
+# Create non-root user
+RUN adduser --disabled-password --gecos "" sleeper \
+    && usermod -aG sudo,sleeperenv sleeper \
+    && passwd -d sleeper
+USER sleeper
+
+# Set command line prompt to show you're in the environment Docker container
+RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-environment\[\e[0m\]: \w # "' >> ~/.bashrc
 
 CMD [ "bash" ]

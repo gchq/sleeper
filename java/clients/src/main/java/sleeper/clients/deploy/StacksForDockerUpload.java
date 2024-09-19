@@ -17,6 +17,7 @@
 package sleeper.clients.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +36,7 @@ public class StacksForDockerUpload {
     private final String account;
     private final String region;
     private final String version;
-    private final List<String> stacks;
+    private final List<OptionalStack> stacks;
 
     private StacksForDockerUpload(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
@@ -60,7 +61,8 @@ public class StacksForDockerUpload {
                 .account(properties.get(ACCOUNT))
                 .region(properties.get(REGION))
                 .version(version)
-                .stacks(properties.getList(OPTIONAL_STACKS)).build();
+                .stacks(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class))
+                .build();
     }
 
     public String getEcrPrefix() {
@@ -79,7 +81,7 @@ public class StacksForDockerUpload {
         return version;
     }
 
-    public List<String> getStacks() {
+    public List<OptionalStack> getStacks() {
         return stacks;
     }
 
@@ -120,7 +122,7 @@ public class StacksForDockerUpload {
         private String account;
         private String region;
         private String version;
-        private List<String> stacks;
+        private List<OptionalStack> stacks;
 
         private Builder() {
         }
@@ -145,7 +147,7 @@ public class StacksForDockerUpload {
             return this;
         }
 
-        public Builder stacks(List<String> stacks) {
+        public Builder stacks(List<OptionalStack> stacks) {
             this.stacks = stacks;
             return this;
         }

@@ -6,7 +6,7 @@ on:
       - 'java/**/pom.xml'
 
 jobs:
-  build-cli:
+  check:
     uses: ./.github/workflows/dependency-check.yaml
     with:
       failOnCacheMiss: true

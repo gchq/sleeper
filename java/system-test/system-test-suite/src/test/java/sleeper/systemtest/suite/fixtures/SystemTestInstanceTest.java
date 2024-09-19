@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -33,7 +33,7 @@ import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.par
 
 public class SystemTestInstanceTest {
 
-    private final List<SystemTestInstanceConfiguration> instances = instances().collect(toUnmodifiableList());
+    private final List<SystemTestInstanceConfiguration> instances = readInstances();
 
     @Test
     void shouldFindInstances() {
@@ -47,7 +47,7 @@ public class SystemTestInstanceTest {
                 .build();
         assertThat(instances)
                 .extracting(instance -> parameters.buildInstanceId(instance.getShortName()))
-                .allMatch(CommonProperty.ID.validationPredicate());
+                .allMatch(CommonProperty.ID.getValidationPredicate());
     }
 
     @Test
@@ -60,11 +60,11 @@ public class SystemTestInstanceTest {
                 .extracting(config -> config.buildDeployConfig(parameters))
                 .flatExtracting(DeployInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
-                .asList().hasSize(instances.size())
+                .hasSize(instances.size())
                 .containsOnly("test-class");
     }
 
-    private Stream<SystemTestInstanceConfiguration> instances() {
+    private List<SystemTestInstanceConfiguration> readInstances() {
         return Stream.of(SystemTestInstance.class.getDeclaredFields())
                 .filter(field -> field.getType() == SystemTestInstanceConfiguration.class)
                 .map(field -> {
@@ -73,6 +73,7 @@ public class SystemTestInstanceTest {
                     } catch (IllegalAccessException e) {
                         throw new RuntimeException(e);
                     }
-                });
+                })
+                .collect(toUnmodifiableList());
     }
 }

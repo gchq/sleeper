@@ -20,54 +20,55 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * A simple leaf partition compaction strategy to compact all files over the batch size. Lists the active files for a
- * partition in increasing order of the number of records they contain, and iterates through this list creating
+ * A simple leaf partition compaction strategy to compact all files over the batch size. Iterates through a list of
+ * file references for a partition, sorted in increasing order of the number of records they contain, creating
  * compaction jobs with at most compactionFilesBatchSize files in each.
  */
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
     private CompactionJobFactory factory;
-    private String tableName;
     private int compactionFilesBatchSize;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
-        tableName = tableProperties.get(TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
     }
 
     @Override
-    public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileReference> fileReferences) {
+    public List<CompactionJob> createJobsForLeafPartition(FilesInPartition filesInPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileReference> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileReferences);
+        List<FileReference> filesWithNoJobId = filesInPartition.getFilesWithNoJobIdInAscendingOrder();
 
         // Iterate through files, creating jobs for batches of compactionFilesBatchSize files
         List<FileReference> filesForJob = new ArrayList<>();
-        for (FileReference fileReference : filesInAscendingOrder) {
+        for (FileReference fileReference : filesWithNoJobId) {
             filesForJob.add(fileReference);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
-                        filesForJob.size(), partition, tableName);
-                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
+                        filesForJob.size(), filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
+                compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                 filesForJob.clear();
             }
+        }
+        if (compactionJobs.isEmpty()) {
+            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
+                    filesInPartition.getPartitionId(), filesInPartition.getTableStatus(),
+                    compactionFilesBatchSize);
         }
         return compactionJobs;
     }

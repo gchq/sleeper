@@ -18,9 +18,11 @@ package sleeper.core.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A utility class to help split a collection of items into batches.
@@ -72,5 +74,78 @@ public class SplitIntoBatches {
         if (!batch.isEmpty()) {
             operation.accept(batch);
         }
+    }
+
+    /**
+     * Splits a stream of items into batches of a given size.
+     *
+     * @param  <T>       the item type
+     * @param  batchSize the number of items to fill a batch
+     * @param  items     a stream of items to split into batches
+     * @return           a stream of batches
+     */
+    public static <T> Stream<List<T>> streamBatchesOf(int batchSize, Stream<T> items) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be at least 1, found " + batchSize);
+        }
+        BatchSpliterator<T> spliterator = new BatchSpliterator<>(batchSize, items.spliterator());
+        return StreamSupport.stream(spliterator, false);
+    }
+
+    /**
+     * Partitions an iterator into batches.
+     *
+     * @param <T> the item type
+     */
+    private static class BatchSpliterator<T> implements Spliterator<List<T>> {
+        private final int batchSize;
+        private final Spliterator<T> source;
+
+        private BatchSpliterator(int batchSize, Spliterator<T> source) {
+            this.batchSize = batchSize;
+            this.source = source;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super List<T>> action) {
+            return source.tryAdvance(firstItem -> {
+                List<T> batch = new ArrayList<>(batchSize);
+                batch.add(firstItem);
+                for (int i = 1; i < batchSize; i++) {
+                    if (!source.tryAdvance(batch::add)) {
+                        break;
+                    }
+                }
+                action.accept(batch);
+            });
+        }
+
+        @Override
+        public Spliterator<List<T>> trySplit() {
+            // Multiple here aims to limit the number of incomplete batches
+            int minSplitSize = batchSize * 8;
+            if (source.estimateSize() <= minSplitSize) {
+                return null;
+            }
+            Spliterator<T> split = source.trySplit();
+            if (split == null) {
+                return null;
+            } else {
+                return new BatchSpliterator<>(batchSize, split);
+            }
+        }
+
+        @Override
+        public long estimateSize() {
+            long sourceEstimate = source.estimateSize();
+            long lastBatchSize = sourceEstimate % batchSize;
+            return sourceEstimate / batchSize + (lastBatchSize == 0 ? 0 : 1);
+        }
+
+        @Override
+        public int characteristics() {
+            return source.characteristics();
+        }
+
     }
 }

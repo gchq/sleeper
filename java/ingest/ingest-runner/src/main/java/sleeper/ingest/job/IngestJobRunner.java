@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.job;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +29,7 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -43,7 +45,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.utils.HadoopPathUtils;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -67,11 +68,13 @@ public class IngestJobRunner implements IngestJobHandler {
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
+    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public IngestJobRunner(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
@@ -80,6 +83,7 @@ public class IngestJobRunner implements IngestJobHandler {
             IngestJobStatusStore statusStore,
             String taskId,
             String localDir,
+            AmazonS3 s3Client,
             S3AsyncClient s3AsyncClient,
             AmazonSQS sqsClient,
             Configuration hadoopConfiguration,
@@ -92,6 +96,7 @@ public class IngestJobRunner implements IngestJobHandler {
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
+        this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
@@ -136,14 +141,12 @@ public class IngestJobRunner implements IngestJobHandler {
             }
         }
 
-        // Concatenate iterators into one iterator
-        CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-
-        // Run the ingest
+        // Concatenate iterators into one iterator and run the ingest
         IngestResult result;
-        try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
-                .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
-                .build()) {
+        try (CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
+                IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+                        .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
+                        .build()) {
             result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
@@ -152,7 +155,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties,
+            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
                     requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,

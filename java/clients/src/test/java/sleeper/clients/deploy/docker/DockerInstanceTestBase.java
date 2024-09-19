@@ -39,7 +39,7 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.model.Query;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -74,7 +74,7 @@ public class DockerInstanceTestBase {
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration())
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration())
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,

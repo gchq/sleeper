@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class LoggedDurationTest {
     @Nested
-    @DisplayName("Output long duration format")
+    @DisplayName("Output long format")
     class LongFormat {
         @Test
         void shouldOutputDurationWithOnlySeconds() {
@@ -107,6 +107,37 @@ public class LoggedDurationTest {
         }
 
         @Test
+        void shouldOutputDurationWithOnlyHours() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T07:00:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T19:00:00Z");
+
+            // When
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("12 hours 0 seconds");
+        }
+
+        @Test
+        void shouldOutputNegativeDuration() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T19:34:56.789Z");
+            Instant stopTime = Instant.parse("2023-11-21T07:00:00Z");
+
+            // When
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("-12 hours 34 minutes 56.789 seconds");
+        }
+    }
+
+    @Nested
+    @DisplayName("Output long format with singular or plural")
+    class LongFormatSingular {
+
+        @Test
         void shouldOutputDurationWithSingleUnits() {
             // Given
             Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
@@ -131,10 +162,49 @@ public class LoggedDurationTest {
             // Then
             assertThat(output).isEqualTo("0 seconds");
         }
+
+        @Test
+        void shouldOutputDurationWithSingleUnitsAndFraction() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T17:10:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T18:11:01.123Z");
+
+            // When
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("1 hour 1 minute 1.123 seconds");
+        }
+
+        @Test
+        void shouldOutputNegativeDurationWithSingleUnits() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T19:12:01Z");
+            Instant stopTime = Instant.parse("2023-11-21T18:11:00Z");
+
+            // When
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("-1 hour 1 minute 1 second");
+        }
+
+        @Test
+        void shouldOutputNegativeDurationWithSingleUnitsAndFraction() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T19:12:01.123Z");
+            Instant stopTime = Instant.parse("2023-11-21T18:11:00Z");
+
+            // When
+            String output = LoggedDuration.withFullOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("-1 hour 1 minute 1.123 seconds");
+        }
     }
 
     @Nested
-    @DisplayName("Output short duration format")
+    @DisplayName("Output short format")
     class ShortFormat {
         @Test
         void shouldOutputStringInShortFormat() {
@@ -147,6 +217,32 @@ public class LoggedDurationTest {
 
             // Then
             assertThat(output).isEqualTo("12h 34m 56.789s");
+        }
+
+        @Test
+        void shouldOutputNegativeDurationInShortFormat() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T19:34:56.789Z");
+            Instant stopTime = Instant.parse("2023-11-21T07:00:00Z");
+
+            // When
+            String output = LoggedDuration.withShortOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("-12h 34m 56.789s");
+        }
+
+        @Test
+        void shouldOutputDurationWithOnlyHours() {
+            // Given
+            Instant startTime = Instant.parse("2023-11-21T07:00:00Z");
+            Instant stopTime = Instant.parse("2023-11-21T19:00:00Z");
+
+            // When
+            String output = LoggedDuration.withShortOutput(startTime, stopTime).toString();
+
+            // Then
+            assertThat(output).isEqualTo("12h 0s");
         }
     }
 }

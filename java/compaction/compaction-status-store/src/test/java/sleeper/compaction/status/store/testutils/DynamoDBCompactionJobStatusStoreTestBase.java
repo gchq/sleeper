@@ -38,7 +38,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -48,12 +48,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
@@ -66,6 +66,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createdStatus.updateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_TIME = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -89,6 +91,14 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return storeWithUpdateTimes(updateTimes);
+    }
+
+    protected CompactionJobStatusStore storeWithUpdateTime(Instant updateTime) {
+        return storeWithUpdateTimes(updateTime);
+    }
+
+    protected CompactionJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
@@ -144,28 +154,20 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
                 startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()));
     }
 
-    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
-        return finishedStatusWithDefaults(job, defaultSummary());
-    }
-
-    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
-        return jobCreated(job, ignoredUpdateTime(),
-                finishedCompactionRun(DEFAULT_TASK_ID, summary));
-    }
-
     protected static CompactionJobStatus finishedUncommittedStatusWithDefaults(CompactionJob job) {
         return jobCreated(job, ignoredUpdateTime(),
-                ProcessRun.builder().taskId(DEFAULT_TASK_ID)
-                        .startedStatus(compactionStartedStatus(defaultStartTime()))
-                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
-                        .build());
+                uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary()));
     }
 
     protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job) {
+        return finishedThenCommittedStatusWithDefaults(job, defaultSummary());
+    }
+
+    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
         return jobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
-                        .startedStatus(compactionStartedStatus(defaultStartTime()))
-                        .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                        .startedStatus(compactionStartedStatus(summary.getStartTime()))
+                        .finishedStatus(compactionFinishedStatus(summary))
                         .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                         .build());
     }

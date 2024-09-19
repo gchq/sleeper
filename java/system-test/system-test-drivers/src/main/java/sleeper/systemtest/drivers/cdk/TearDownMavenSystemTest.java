@@ -18,28 +18,19 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
-import sleeper.clients.teardown.RemoveECRRepositories;
-import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
-import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildJarsBucketName;
-import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 public class TearDownMavenSystemTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownMavenSystemTest.class);
@@ -56,60 +47,41 @@ public class TearDownMavenSystemTest {
                 .collect(toUnmodifiableList());
         List<String> instanceIdsAndStandalone = Stream.concat(instanceIds.stream(), standaloneInstanceIds.stream())
                 .collect(toUnmodifiableList());
-        Map<String, TearDownInstance> tearDownInstanceById = Stream.concat(shortIds.stream(), instanceIdsAndStandalone.stream())
-                .collect(Collectors.toMap(instanceId -> instanceId, instanceId -> TearDownInstance.builder()
-                        .scriptsDir(scriptsDir)
-                        .instanceId(instanceId)
-                        .clients(clients)
-                        .build()));
         Instant startTime = Instant.now();
         LOGGER.info("Found system test short IDs to tear down: {}", shortIds);
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
-        CloudFormationClient cloudFormation = clients.getCloudFormation();
-        for (String instanceId : instanceIdsAndStandalone) {
-            LOGGER.info("Deleting instance CloudFormation stack {}", instanceId);
-            tearDownInstanceById.get(instanceId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(instanceId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting instance stack: " + instanceId, e);
-            }
+        List<TearDownSystemTestDeployment> tearDownSystemTestDeployments = shortIds.stream()
+                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(clients, deploymentId))
+                .collect(toUnmodifiableList());
+        List<TearDownInstance> tearDownMavenInstances = instanceIds.stream()
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .collect(toUnmodifiableList());
+        List<TearDownInstance> tearDownStandaloneInstances = instanceIds.stream()
+                .map(instanceId -> TearDownTestInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .collect(toUnmodifiableList());
+        List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
+
+        for (TearDownInstance instance : tearDownAllInstances) {
+            instance.shutdownSystemProcesses();
+            instance.deleteStack();
         }
-        for (String instanceId : instanceIds) {
-            LOGGER.info("Waiting for instance CloudFormation stack to delete: {}", instanceId);
-            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        for (TearDownInstance instance : tearDownMavenInstances) {
+            instance.waitForStackToDelete();
         }
-        for (String shortId : shortIds) {
-            LOGGER.info("Deleting system test CloudFormation stack {}", shortId);
-            tearDownInstanceById.get(shortId).shutdownSystemProcesses();
-            try {
-                cloudFormation.deleteStack(builder -> builder.stackName(shortId));
-            } catch (RuntimeException e) {
-                LOGGER.warn("Failed deleting system test stack: " + shortId, e);
-            }
+        for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
+            deployment.shutdownSystemProcesses();
+            deployment.deleteStack();
         }
-        for (String instanceId : standaloneInstanceIds) {
-            LOGGER.info("Waiting for standalone instance CloudFormation stack to delete: {}", instanceId);
-            WaitForStackToDelete.from(cloudFormation, instanceId).pollUntilFinished();
+        for (TearDownInstance instance : tearDownStandaloneInstances) {
+            instance.waitForStackToDelete();
+            instance.cleanupAfterStackDeleted();
         }
-        for (String shortId : shortIds) {
-            LOGGER.info("Waiting for system test CloudFormation stack to delete: {}", shortId);
-            WaitForStackToDelete.from(cloudFormation, shortId).pollUntilFinished();
+        for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
+            deployment.waitForStackToDelete();
+            deployment.cleanupAfterAllInstancesAndStackDeleted();
         }
 
-        for (String instanceId : instanceIdsAndStandalone) {
-            tearDownInstanceById.get(instanceId).removeBucketsAndContainers();
-        }
-
-        for (String shortId : shortIds) {
-            RemoveJarsBucket.remove(clients.getS3v2(), buildJarsBucketName(shortId));
-        }
-        for (String shortId : shortIds) {
-            RemoveECRRepositories.remove(clients.getEcr(),
-                    PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
-                    List.of(buildSystemTestECRRepoName(shortId)));
-        }
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 

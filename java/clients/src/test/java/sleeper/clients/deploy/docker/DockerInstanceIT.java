@@ -37,7 +37,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -240,7 +240,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(tempDir.toString())
                     .hadoopConfiguration(getHadoopConfiguration())
-                    .stateStoreProvider(new StateStoreProvider(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration()))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration()))
                     .s3AsyncClient(createS3AsyncClient())
                     .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
         }

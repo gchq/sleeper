@@ -17,8 +17,9 @@ package sleeper.compaction.job.execution;
 
 import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.core.util.PollWithRetries;
 
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
@@ -28,7 +29,7 @@ public class StateStoreWaitForFilesTestHelper {
     }
 
     public static StateStoreWaitForFiles waitWithRetries(int retries, StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
-        return new StateStoreWaitForFiles(retries, backoffNoJitter(), stateStoreProvider.byTableId(tablePropertiesProvider));
+        return new StateStoreWaitForFiles(retries, backoffNoJitter(), PollWithRetries.noRetries(), tablePropertiesProvider, stateStoreProvider);
     }
 
     private static ExponentialBackoffWithJitter backoffNoJitter() {

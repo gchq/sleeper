@@ -29,6 +29,7 @@ import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -52,6 +53,10 @@ public class SystemTestStandaloneProperties
         return properties;
     }
 
+    public static SystemTestStandaloneProperties fromS3GivenDeploymentId(AmazonS3 s3Client, String deploymentId) {
+        return fromS3(s3Client, buildSystemTestBucketName(deploymentId));
+    }
+
     public static SystemTestStandaloneProperties fromFile(Path propertiesFile) {
         return new SystemTestStandaloneProperties(loadProperties(propertiesFile));
     }
@@ -60,6 +65,11 @@ public class SystemTestStandaloneProperties
         saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
         LOGGER.info("Saved system test properties to bucket {}, key {}",
                 get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+    }
+
+    @Override
+    public String get(SystemTestProperty property) {
+        return compute(property, value -> property.computeValue(value, other -> get((SystemTestProperty) other)));
     }
 
     @Override
@@ -72,5 +82,10 @@ public class SystemTestStandaloneProperties
         return SleeperPropertiesPrettyPrinter.builder()
                 .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON))
                 .build();
+    }
+
+    public static String buildSystemTestBucketName(String deploymentId) {
+        return String.join("-", "sleeper", deploymentId, "system", "test")
+                .toLowerCase(Locale.ROOT);
     }
 }

@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatusUncommitted;
+import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
@@ -58,7 +58,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
     }
 
     @Test
-    public void shouldReportFinishedJob() {
+    void shouldReportUncommittedJob() {
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
@@ -76,7 +76,31 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(finishedStatusWithDefaults(job));
+                .containsExactly(finishedUncommittedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldReportFinishedAndCommittedJob() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile(100L)),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+                .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
+        store.jobFinished(compactionJobFinished(job, defaultSummary())
+                .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
+        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
+                .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedThenCommittedStatusWithDefaults(job));
     }
 
     @Test
@@ -114,11 +138,11 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
         store.jobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true)
+        store.jobFinished(compactionJobFinished(job, defaultSummary())
                 .taskId("test-task").jobRunId("test-run-1").build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).committedBySeparateUpdate(true)
+        store.jobFinished(compactionJobFinished(job, defaultSummary())
                 .taskId("test-task").jobRunId("test-run-2").build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
@@ -131,12 +155,12 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 .containsExactly(jobCreated(job, ignoredUpdateTime(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatusUncommitted(defaultSummary()))
+                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build()));
     }

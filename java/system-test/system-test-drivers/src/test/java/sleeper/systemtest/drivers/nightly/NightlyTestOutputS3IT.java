@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.nightly;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.apache.commons.io.IOUtils;
+import com.google.common.io.CharStreams;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,13 +31,12 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -156,7 +155,8 @@ class NightlyTestOutputS3IT {
     }
 
     public static String example(String path) throws IOException {
-        URL url = NightlyTestOutput.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+        try (Reader reader = new InputStreamReader(NightlyTestOutputS3IT.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        }
     }
 }

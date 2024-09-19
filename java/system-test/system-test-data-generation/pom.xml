@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.24.0</version>
+        <version>0.25.0</version>
     </parent>
 
     <artifactId>system-test-data-generation</artifactId>
@@ -30,17 +30,12 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-dsl</artifactId>
+            <artifactId>system-test-configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

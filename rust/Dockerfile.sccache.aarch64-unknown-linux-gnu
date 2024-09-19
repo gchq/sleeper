@@ -1,0 +1,13 @@
+FROM ghcr.io/cross-rs/aarch64-unknown-linux-gnu:edge
+ARG DEBIAN_FRONTEND=noninteractive
+
+# COPY sccache-source.sh /sccache.sh
+# RUN /sccache.sh aarch64-unknown-linux-gnu
+
+COPY sccache-prebuilt.sh /sccache.sh
+RUN /sccache.sh x86_64-unknown-linux-musl
+
+ENV RUSTC_WRAPPER="/usr/bin/sccache"
+ENV SCCACHE_DIR="/tmp/sccache"
+ENV SCCACHE_C_CUSTOM_CACHE_BUSTER="aarch64"
+ENV SCCACHE_GHA_VERSION="aarch64"

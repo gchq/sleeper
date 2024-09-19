@@ -20,11 +20,14 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +37,7 @@ import static sleeper.clients.status.report.partitions.PartitionStatusReportTest
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTableProperties;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class PartitionsStatusTest {
@@ -119,10 +123,10 @@ class PartitionsStatusTest {
     @Test
     void shouldOrderPartitionsByTreeLeavesFirst() throws StateStoreException {
         // Given
-        PartitionTree partitions = createPartitionsBuilder()
-                .leavesWithSplits(
-                        Arrays.asList("some-leaf", "other-leaf", "third-leaf", "fourth-leaf"),
-                        Arrays.asList("aaa", "bbb", "ccc"))
+        Schema schema = schemaWithKey("key", new StringType());
+        PartitionTree partitions = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
+                List.of("some-leaf", "other-leaf", "third-leaf", "fourth-leaf"),
+                List.of("aaa", "bbb", "ccc"))
                 .parentJoining("some-middle", "some-leaf", "other-leaf")
                 .parentJoining("other-middle", "third-leaf", "fourth-leaf")
                 .parentJoining("root", "some-middle", "other-middle")

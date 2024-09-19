@@ -28,6 +28,7 @@ import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
+import sleeper.systemtest.drivers.ingest.HadoopLocalFilesDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
 import sleeper.systemtest.drivers.instance.AwsSystemTestDeploymentDriver;
@@ -42,9 +43,11 @@ import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
-import sleeper.systemtest.drivers.snapshots.AwsSnapshotsDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
+import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
+import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -73,7 +76,10 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -81,10 +87,10 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
 
     public AwsSystemTestDrivers() {
-        this(new SystemTestClients());
+        this(SystemTestClients.fromDefaults());
     }
 
-    private AwsSystemTestDrivers(SystemTestClients clients) {
+    protected AwsSystemTestDrivers(SystemTestClients clients) {
         this.clients = clients;
     }
 
@@ -99,13 +105,23 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     public AssumeAdminRoleDriver assumeAdminRole() {
-        return properties -> new AwsSystemTestDrivers(new SystemTestClients(clients,
-                AssumeSleeperRole.instanceAdmin(properties)));
+        return properties -> new AwsSystemTestDrivers(
+                clients.assumeRole(AssumeSleeperRole.instanceAdmin(properties)));
     }
 
     @Override
     public SleeperTablesDriver tables(SystemTestParameters parameters) {
         return new AwsSleeperTablesDriver(clients);
+    }
+
+    @Override
+    public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
+        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqs(), clients.getLambda());
+    }
+
+    @Override
+    public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
+        return new AwsStateStoreCommitterLogsDriver(context.instance(), clients.getCloudWatchLogs());
     }
 
     @Override
@@ -119,13 +135,18 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
+    public IngestLocalFilesDriver localFiles(SystemTestContext context) {
+        return new HadoopLocalFilesDriver();
+    }
+
+    @Override
     public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
         return new AwsPartitionSplittingDriver(context.instance(), clients.getLambda());
     }
 
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
-        return new AwsDirectIngestDriver(context.instance());
+        return new AwsDirectIngestDriver(context.instance(), clients);
     }
 
     @Override
@@ -150,12 +171,12 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override
@@ -185,7 +206,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB());
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB(), pollWithRetries());
     }
 
     @Override

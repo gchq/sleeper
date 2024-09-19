@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -89,12 +89,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         this.getPrettyPrinter(writer).print(this);
     }
 
-    public String get(T property) {
-        String value = properties.getProperty(property.getPropertyName(), property.getDefaultValue());
-        if ("".equals(value)) {
-            return property.getDefaultValue();
+    public abstract String get(T property);
+
+    protected String compute(T property, UnaryOperator<String> compute) {
+        String value = properties.getProperty(property.getPropertyName());
+        if (property.isIgnoreEmptyValue() && "".equals(value)) {
+            value = null;
         }
-        return value;
+        return compute.apply(value);
     }
 
     public void set(T property, String value) {

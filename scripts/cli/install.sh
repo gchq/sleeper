@@ -16,20 +16,14 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$1" == "latest" ]; then
-  VERSION="main"
-else
-  VERSION="$1"
-fi
-
 echo "Downloading Sleeper CLI"
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
 
-"$TEMP_PATH" cli pull-images "$VERSION"
+"$TEMP_PATH" cli pull-images
 echo "Downloaded Docker images"
 
 EXECUTABLE_DIR="$HOME/.local/bin"

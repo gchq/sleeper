@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
-import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -68,8 +68,8 @@ public class ParallelCompactionsTest {
                 .map(i -> 10000 * i / NUMBER_OF_COMPACTIONS)
                 .mapToObj(i -> "row-" + numberStringAndZeroPadTo(4, i))
                 .collect(toUnmodifiableList());
-        sleeper.partitioning().setPartitions(new PartitionsBuilder(schema)
-                .leavesWithSplits(leafIds, splitPoints)
+        sleeper.partitioning().setPartitions(PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves()
                 .buildTree());
         // And we have records spread across all partitions in two files per partition

@@ -16,9 +16,6 @@
 
 package sleeper.clients.status.report;
 
-import java.util.List;
-import java.util.function.Function;
-
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 
 public class StatusReporterTestHelper {
@@ -32,22 +29,4 @@ public class StatusReporterTestHelper {
     public static String task(int number) {
         return exampleUUID("task", number);
     }
-
-    public static String replaceStandardJobIds(List<String> jobIds, String example) {
-        return replaceJobIds(jobIds, StatusReporterTestHelper::job, example);
-    }
-
-    public static String replaceBracketedJobIds(List<String> jobIds, String example) {
-        return replaceJobIds(jobIds, number -> "$(jobId" + number + ")", example);
-    }
-
-    protected static String replaceJobIds(
-            List<String> jobIds, Function<Integer, String> getTemplateId, String example) {
-        String replaced = example;
-        for (int i = 0; i < jobIds.size(); i++) {
-            replaced = replaced.replace(getTemplateId.apply(jobIds.size() - i), jobIds.get(i));
-        }
-        return replaced;
-    }
-
 }

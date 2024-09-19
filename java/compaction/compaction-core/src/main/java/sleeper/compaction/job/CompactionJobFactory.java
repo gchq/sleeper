@@ -15,9 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
@@ -26,15 +24,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import static java.util.stream.Collectors.toList;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
     private final String tableId;
-    private final CompactionOutputFileNameFactory fileNameFactory;
+    private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
@@ -45,41 +43,45 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        fileNameFactory = CompactionOutputFileNameFactory.forTable(instanceProperties, tableProperties);
+        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
-        LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
-                tableProperties.getStatus(), fileNameFactory.getOutputFilePrefix());
+    }
+
+    public String getOutputFilePrefix() {
+        return outputFilePrefix;
     }
 
     public CompactionJob createCompactionJob(
             List<FileReference> files, String partition) {
-        CompactionJob job = createCompactionJobBuilder(files, partition).build();
-
-        LOGGER.info("Created compaction job of id {} to compact {} files in partition {} to output file {}",
-                job.getId(), files.size(), partition, job.getOutputFile());
-
-        return job;
+        return createCompactionJob(jobIdSupplier.get(), files, partition);
     }
 
-    private CompactionJob.Builder createCompactionJobBuilder(List<FileReference> files, String partition) {
+    public CompactionJob createCompactionJob(
+            String jobId, List<FileReference> files, String partition) {
         for (FileReference fileReference : files) {
             if (!partition.equals(fileReference.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
                         + partition + ", FileReference = " + fileReference);
             }
         }
+        return createCompactionJobWithFilenames(jobId,
+                files.stream().map(FileReference::getFilename).collect(toList()),
+                partition);
+    }
 
-        String jobId = jobIdSupplier.get();
-        String outputFile = fileNameFactory.jobPartitionFile(jobId, partition);
+    public CompactionJob createCompactionJobWithFilenames(
+            String jobId, List<String> filenames, String partitionId) {
+        String outputFile = TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)
-                .inputFileReferences(files)
+                .inputFiles(filenames)
                 .outputFile(outputFile)
-                .partitionId(partition)
+                .partitionId(partitionId)
                 .iteratorClassName(iteratorClassName)
-                .iteratorConfig(iteratorConfig);
+                .iteratorConfig(iteratorConfig)
+                .build();
     }
 }

@@ -1,0 +1,32 @@
+name: Rust Nightly
+on:
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule: # Planned execution once per day
+    - cron: "0 2 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/rust-cache.yaml'
+
+env:
+  CROSS_CONFIG: "Cross.sccache.toml"
+  SCCACHE_GHA_ENABLED: "true"
+  SSCACHE_CACHE_SIZE: "2G"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.79.0
+      - uses: mozilla-actions/sccache-action@v0.0.5
+      - name: Install cargo cross
+        run: cargo install cross
+      - name: Build x86_64
+        working-directory: ./rust
+        run: SCCACHE_LOG=trace cross build --release --target x86_64-unknown-linux-gnu --verbose
+      - name: Build aarch64
+        working-directory: ./rust
+        env:
+          RUSTFLAGS: "-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1"
+        run: SCCACHE_LOG=trace cross build --release --target aarch64-unknown-linux-gnu --verbose

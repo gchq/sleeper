@@ -20,7 +20,7 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobJsonSerDe;
-import sleeper.core.statestore.CommitRequestType;
+import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
 public class CompactionJobCommitRequestSerDe {

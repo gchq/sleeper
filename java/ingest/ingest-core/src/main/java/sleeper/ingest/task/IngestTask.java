@@ -46,6 +46,8 @@ public class IngestTask {
     private final IngestJobStatusStore jobStatusStore;
     private final IngestTaskStatusStore taskStatusStore;
     private final String taskId;
+    private final IngestTaskStatus.Builder taskStatusBuilder;
+    private final IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
     private int totalNumberOfMessagesProcessed = 0;
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
@@ -58,69 +60,80 @@ public class IngestTask {
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
+        this.taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId);
     }
 
     /**
      * Executes jobs from a queue, updating the status stores with progress of the task.
      */
     public void run() {
-        Instant startTime = timeSupplier.get();
-        IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTime);
-        LOGGER.info("Starting task {}", taskId);
-        taskStatusStore.taskStarted(taskStatusBuilder.build());
-        IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-        Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
-        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
-        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
-
-        IngestTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
-        taskStatusStore.taskFinished(taskFinished);
+        start();
+        while (true) {
+            if (!handleOneMessage()) {
+                break;
+            }
+        }
+        finish();
     }
 
     /**
-     * Receives messages, deserialising each message to an ingest job, then runs it. Updates the ingest job status
-     * store with progress on the job. These actions are repeated until no more messages are found.
-     *
-     * @param  startTime           the start time
-     * @param  taskFinishedBuilder the ingest task finished builder
-     * @return                     the finish time
+     * Records the start of the task.
      */
-    private Instant handleMessages(Instant startTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
-        while (true) {
-            Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
-            if (!messageOpt.isPresent()) {
-                LOGGER.info("Terminating ingest task as no messages were received");
-                return timeSupplier.get();
-            }
-            try (MessageHandle message = messageOpt.get()) {
-                IngestJob job = message.getJob();
-                LOGGER.info("IngestJob is: {}", job);
-                String jobRunId = jobRunIdSupplier.get();
-                Instant jobStartTime = timeSupplier.get();
-                try {
-                    jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
-                            .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
-                    IngestResult result = ingester.ingest(job, jobRunId);
-                    LOGGER.info("{} records were written", result.getRecordsWritten());
-                    Instant jobFinishTime = timeSupplier.get();
-                    RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                    jobStatusStore.jobFinished(ingestJobFinished(job, summary)
-                            .taskId(taskId).jobRunId(jobRunId)
-                            .committedBySeparateFileUpdates(true)
-                            .fileReferencesAddedByJob(result.getFileReferenceList())
-                            .build());
-                    taskFinishedBuilder.addJobSummary(summary);
-                    message.completed(summary);
-                    totalNumberOfMessagesProcessed++;
-                } catch (Exception e) {
-                    Instant jobFinishTime = timeSupplier.get();
-                    jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
-                            .taskId(taskId).jobRunId(jobRunId).failure(e)
-                            .build());
-                    LOGGER.error("Failed processing ingest job, terminating task", e);
-                    message.failed();
-                    return timeSupplier.get();
-                }
+    public void start() {
+        LOGGER.info("Starting task {}", taskId);
+        taskStatusStore.taskStarted(taskStatusBuilder.startTime(timeSupplier.get()).build());
+    }
+
+    /**
+     * Records the finish of the task.
+     */
+    public void finish() {
+        IngestTaskStatus taskFinished = taskStatusBuilder.finished(timeSupplier.get(), taskFinishedBuilder).build();
+        taskStatusStore.taskFinished(taskFinished);
+        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
+        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(taskFinished.getDuration()));
+    }
+
+    /**
+     * Run an ingest job if there is one on the queue.
+     *
+     * @return true if a job was completed, false otherwise
+     */
+    public boolean handleOneMessage() {
+        Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
+        if (!messageOpt.isPresent()) {
+            LOGGER.info("Terminating ingest task as no messages were received");
+            return false;
+        }
+        try (MessageHandle message = messageOpt.get()) {
+            IngestJob job = message.getJob();
+            LOGGER.info("IngestJob is: {}", job);
+            String jobRunId = jobRunIdSupplier.get();
+            Instant jobStartTime = timeSupplier.get();
+            try {
+                jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
+                        .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
+                IngestResult result = ingester.ingest(job, jobRunId);
+                LOGGER.info("{} records were written", result.getRecordsWritten());
+                Instant jobFinishTime = timeSupplier.get();
+                RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
+                jobStatusStore.jobFinished(ingestJobFinished(job, summary)
+                        .taskId(taskId).jobRunId(jobRunId)
+                        .committedBySeparateFileUpdates(true)
+                        .fileReferencesAddedByJob(result.getFileReferenceList())
+                        .build());
+                taskFinishedBuilder.addJobSummary(summary);
+                message.completed(summary);
+                totalNumberOfMessagesProcessed++;
+                return true;
+            } catch (Exception e) {
+                LOGGER.error("Failed processing ingest job, terminating task", e);
+                Instant jobFinishTime = timeSupplier.get();
+                jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
+                        .taskId(taskId).jobRunId(jobRunId).failure(e)
+                        .build());
+                message.failed();
+                return false;
             }
         }
     }

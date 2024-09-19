@@ -42,6 +42,7 @@ class TransactionLogHead<T> {
 
     private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
+    private final boolean updateLogBeforeAddTransaction;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
@@ -56,18 +57,19 @@ class TransactionLogHead<T> {
     private Instant nextTransactionCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
-        this.sleeperTable = builder.sleeperTable;
-        this.logStore = builder.logStore;
-        this.maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
-        this.retryBackoff = builder.retryBackoff;
-        this.transactionType = builder.transactionType;
-        this.snapshotLoader = builder.snapshotLoader;
-        this.timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
-        this.timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
-        this.stateUpdateClock = builder.stateUpdateClock;
-        this.minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
-        this.state = builder.state;
-        this.lastTransactionNumber = builder.lastTransactionNumber;
+        sleeperTable = builder.sleeperTable;
+        logStore = builder.logStore;
+        updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
+        maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
+        retryBackoff = builder.retryBackoff;
+        transactionType = builder.transactionType;
+        snapshotLoader = builder.snapshotLoader;
+        timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
+        timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
+        stateUpdateClock = builder.stateUpdateClock;
+        minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
+        state = builder.state;
+        lastTransactionNumber = builder.lastTransactionNumber;
     }
 
     static Builder<?> builder() {
@@ -82,42 +84,66 @@ class TransactionLogHead<T> {
      */
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
-        LOGGER.info("Adding transaction of type {} to table {}",
+        LOGGER.debug("Adding transaction of type {} to table {}",
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
+            prepareAddTransactionAttempt(attempt, transaction);
             try {
-                retryBackoff.waitBeforeAttempt(attempt);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new StateStoreException("Interrupted while waiting to retry", e);
-            }
-            forceUpdate();
-            transaction.validate(state);
-            long transactionNumber = lastTransactionNumber + 1;
-            try {
-                logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
+                attemptAddTransaction(updateTime, transaction);
+                LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
+                        transaction.getClass().getSimpleName(), sleeperTable, attempt,
+                        LoggedDuration.withShortOutput(startTime, Instant.now()));
+                return;
             } catch (DuplicateTransactionNumberException e) {
                 LOGGER.warn("Failed adding transaction on attempt {} of {} for table {}, failure: {}",
                         attempt, maxAddTransactionAttempts, sleeperTable, e.toString());
                 failure = e;
-                continue;
-            } catch (RuntimeException e) {
-                throw new StateStoreException("Failed adding transaction", e);
             }
-            transaction.apply(state, updateTime);
-            lastTransactionNumber = transactionNumber;
-            failure = null;
-            LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
-                    transaction.getClass().getSimpleName(), sleeperTable, attempt,
-                    LoggedDuration.withShortOutput(startTime, Instant.now()));
-            break;
         }
-        if (failure != null) {
-            LOGGER.error("Failed adding transaction with {} attempts, took {}",
-                    maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
-            throw new StateStoreException("Failed adding transaction", failure);
+        LOGGER.error("Failed adding transaction with {} attempts, took {}",
+                maxAddTransactionAttempts, LoggedDuration.withShortOutput(startTime, Instant.now()));
+        throw new StateStoreException("Failed adding transaction", failure);
+    }
+
+    private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
+        if (updateLogBeforeAddTransaction) {
+            forceUpdate();
+            transaction.validate(state);
+            waitBeforeAttempt(attempt);
+        } else if (attempt > 1) {
+            forceUpdate();
+            transaction.validate(state);
+            waitBeforeAttempt(attempt - 1);
+        } else {
+            try {
+                transaction.validate(state);
+            } catch (StateStoreException e) {
+                LOGGER.warn("Failed validating transaction on first attempt for table {}, will update from log and revalidate: {}", sleeperTable, e.getMessage());
+                forceUpdate();
+                transaction.validate(state);
+            }
         }
+    }
+
+    private void waitBeforeAttempt(int attempt) throws StateStoreException {
+        try {
+            retryBackoff.waitBeforeAttempt(attempt);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new StateStoreException("Interrupted while waiting to retry", e);
+        }
+    }
+
+    private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
+        long transactionNumber = lastTransactionNumber + 1;
+        try {
+            logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed adding transaction", e);
+        }
+        transaction.apply(state, updateTime);
+        lastTransactionNumber = transactionNumber;
     }
 
     /**
@@ -228,6 +254,7 @@ class TransactionLogHead<T> {
     static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;
+        private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
@@ -249,6 +276,11 @@ class TransactionLogHead<T> {
 
         public Builder<T> logStore(TransactionLogStore logStore) {
             this.logStore = logStore;
+            return this;
+        }
+
+        public Builder<T> updateLogBeforeAddTransaction(boolean updateLogBeforeAddTransaction) {
+            this.updateLogBeforeAddTransaction = updateLogBeforeAddTransaction;
             return this;
         }
 
