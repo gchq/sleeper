@@ -18,8 +18,6 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
@@ -38,6 +36,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
@@ -79,7 +78,7 @@ public class SystemTestClients {
     private final EcrClient ecr;
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
-    private final AmazonCloudWatchEvents cloudWatchEvents;
+    private final CloudWatchEventsClient cloudWatchEvents;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
     private final boolean skipAssumeRole;
@@ -131,7 +130,7 @@ public class SystemTestClients {
                 .ecr(EcrClient.create())
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
-                .cloudWatchEvents(AmazonCloudWatchEventsClientBuilder.defaultClient())
+                .cloudWatchEvents(CloudWatchEventsClient.create())
                 .build();
     }
 
@@ -160,7 +159,7 @@ public class SystemTestClients {
                 .ecr(v2.buildClient(EcrClient.builder()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
-                .cloudWatchEvents(v1.buildClient(AmazonCloudWatchEventsClientBuilder.standard()))
+                .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
                 .getAuthEnvVars(v1::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
@@ -230,7 +229,7 @@ public class SystemTestClients {
         return cloudWatchLogs;
     }
 
-    public AmazonCloudWatchEvents getCloudWatchEvents() {
+    public CloudWatchEventsClient getCloudWatchEvents() {
         return cloudWatchEvents;
     }
 
@@ -273,7 +272,7 @@ public class SystemTestClients {
         private EcrClient ecr;
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
-        private AmazonCloudWatchEvents cloudWatchEvents;
+        private CloudWatchEventsClient cloudWatchEvents;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
         private boolean skipAssumeRole = false;
@@ -366,7 +365,7 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder cloudWatchEvents(AmazonCloudWatchEvents cloudWatchEvents) {
+        public Builder cloudWatchEvents(CloudWatchEventsClient cloudWatchEvents) {
             this.cloudWatchEvents = cloudWatchEvents;
             return this;
         }

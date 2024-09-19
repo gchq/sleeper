@@ -15,7 +15,6 @@
  */
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
@@ -24,6 +23,7 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
@@ -45,7 +45,7 @@ public class ShutdownSystemProcesses {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownSystemProcesses.class);
 
-    private final AmazonCloudWatchEvents cloudWatch;
+    private final CloudWatchEventsClient cloudWatch;
     private final AmazonECS ecs;
     private final AmazonElasticMapReduce emrClient;
     private final EmrServerlessClient emrServerlessClient;
@@ -56,7 +56,7 @@ public class ShutdownSystemProcesses {
     }
 
     public ShutdownSystemProcesses(
-            AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
+            CloudWatchEventsClient cloudWatch, AmazonECS ecs,
             AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient,
             StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
         this.cloudWatch = cloudWatch;
