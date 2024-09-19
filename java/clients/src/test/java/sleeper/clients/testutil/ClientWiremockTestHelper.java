@@ -17,8 +17,6 @@ package sleeper.clients.testutil;
 
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -29,6 +27,7 @@ import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import java.net.URI;
@@ -36,6 +35,7 @@ import java.net.URISyntaxException;
 
 import static sleeper.task.common.WiremockTestHelper.WIREMOCK_ACCESS_KEY;
 import static sleeper.task.common.WiremockTestHelper.WIREMOCK_SECRET_KEY;
+import static sleeper.task.common.WiremockTestHelper.wiremockAwsV2Client;
 import static sleeper.task.common.WiremockTestHelper.wiremockCredentialsProvider;
 import static sleeper.task.common.WiremockTestHelper.wiremockEndpointConfiguration;
 
@@ -46,11 +46,8 @@ public class ClientWiremockTestHelper {
     private ClientWiremockTestHelper() {
     }
 
-    public static AmazonECR wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonECRClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static EcrClient wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EcrClient.builder());
     }
 
     public static AmazonCloudWatchEvents wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
