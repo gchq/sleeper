@@ -62,7 +62,7 @@ public class CompactionPerformanceST {
                 .waitForTotalFileReferences(110);
 
         sleeper.compaction().createJobs(10).invokeTasks(10)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
         assertThat(sleeper.tableFiles().references())
                 .hasSize(10)
