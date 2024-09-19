@@ -4,9 +4,9 @@ Partitions Status Report:
 There are 3 partitions (2 leaf partitions)
 There are 0 leaf partitions that will be split
 Split threshold is 10 records
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| ID     | PARENT | PARENT_SIDE | FILES | KNOWN_RECORDS | APPROX_RECORDS | APPROX_RECORDS_AFTER_COMPACTION | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
-| A      | parent | min         |     1 |             5 |              5 |                               5 | yes  | no            | no                     |             |             |
-| B      | parent | max         |     1 |             5 |              5 |                               5 | yes  | no            | no                     |             |             |
-| parent |        |             |     0 |             0 |              0 |                               0 | no   |               |                        | key         | [raw bytes] |
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| ID     | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | KNOWN_RECORDS | APPROX_RECORDS | APPROX_RECORDS_AFTER_COMPACTION | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
+| A      | parent | min         |     1 |             0 |             5 |              5 |                               5 | yes  | no            | no                     |             |             |
+| B      | parent | max         |     1 |             0 |             5 |              5 |                               5 | yes  | no            | no                     |             |             |
+| parent |        |             |     0 |             0 |             0 |              0 |                               0 | no   |               |                        | key         | [raw bytes] |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

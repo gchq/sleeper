@@ -36,6 +36,7 @@ public class PartitionsStatusReporter {
     private static final TableField PARENT = BUILDER.addField("PARENT");
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
+    private static final TableField FILES_ON_JOBS = BUILDER.addNumericField("FILES_ON_JOBS");
     private static final TableField KNOWN_RECORDS = BUILDER.addNumericField("KNOWN_RECORDS");
     private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
     private static final TableField APPROX_RECORDS_AFTER_COMPACTION = BUILDER.addNumericField("APPROX_RECORDS_AFTER_COMPACTION");
@@ -70,6 +71,7 @@ public class PartitionsStatusReporter {
                 .value(PARENT, partition.getParentPartitionId())
                 .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
+                .value(FILES_ON_JOBS, status.getNumberOfFilesOnJobs())
                 .value(KNOWN_RECORDS, status.getKnownRecords())
                 .value(APPROX_RECORDS, status.getApproxRecords())
                 .value(APPROX_RECORDS_AFTER_COMPACTION, status.getApproxRecordsAfterCompaction())

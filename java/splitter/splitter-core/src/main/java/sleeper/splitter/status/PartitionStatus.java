@@ -31,6 +31,7 @@ public class PartitionStatus {
 
     private final Partition partition;
     private final int numberOfFiles;
+    private final int numberOfFilesOnJobs;
     private final long knownRecords;
     private final long approxRecords;
     private final long approxRecordsAfterCompaction;
@@ -43,6 +44,7 @@ public class PartitionStatus {
     private PartitionStatus(Builder builder) {
         partition = builder.partition;
         numberOfFiles = builder.numberOfFiles;
+        numberOfFilesOnJobs = builder.numberOfFilesOnJobs;
         knownRecords = builder.knownRecords;
         approxRecords = builder.approxRecords;
         approxRecordsAfterCompaction = builder.approxRecordsAfterCompaction;
@@ -57,8 +59,10 @@ public class PartitionStatus {
             TableProperties tableProperties, PartitionTree tree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         Schema schema = tableProperties.getSchema();
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(tableProperties, tree, partition, fileReferencesByPartition);
+        List<FileReference> partitionFiles = check.getPartitionFileReferences();
         return builder().partition(partition)
-                .numberOfFiles(check.getPartitionFileReferences().size())
+                .numberOfFiles(partitionFiles.size())
+                .numberOfFilesOnJobs((int) partitionFiles.stream().filter(file -> file.getJobId() != null).count())
                 .knownRecords(check.getKnownRecordsWhollyInPartition())
                 .approxRecords(check.getEstimatedRecordsFromReferencesInPartition())
                 .approxRecordsAfterCompaction(check.getEstimatedRecordsAfterCompaction())
@@ -88,6 +92,10 @@ public class PartitionStatus {
 
     public int getNumberOfFiles() {
         return numberOfFiles;
+    }
+
+    public int getNumberOfFilesOnJobs() {
+        return numberOfFilesOnJobs;
     }
 
     public long getKnownRecords() {
@@ -150,6 +158,7 @@ public class PartitionStatus {
     public static final class Builder {
         private Partition partition;
         private int numberOfFiles;
+        private int numberOfFilesOnJobs;
         private long knownRecords;
         private long approxRecords;
         private long approxRecordsAfterCompaction;
@@ -169,6 +178,11 @@ public class PartitionStatus {
 
         public Builder numberOfFiles(int numberOfFiles) {
             this.numberOfFiles = numberOfFiles;
+            return this;
+        }
+
+        public Builder numberOfFilesOnJobs(int numberOfFilesOnJobs) {
+            this.numberOfFilesOnJobs = numberOfFilesOnJobs;
             return this;
         }
 

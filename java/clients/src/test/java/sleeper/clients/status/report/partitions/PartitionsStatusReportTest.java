@@ -179,6 +179,24 @@ class PartitionsStatusReportTest {
                 example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
     }
 
+    @Test
+    void shouldReportSomeFilesAssignedToAJob() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema).singlePartition("root"))
+                .partitionFileWithRecords("root", "1.parquet", 100L)
+                .partitionFileWithRecords("root", "2.parquet", 100L)
+                .partitionFileWithRecords("root", "3.parquet", 100L)
+                .assignJobOnPartitionToFiles("test-job", "root", List.of("1.parquet", "2.parquet"))
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithSomeFilesOnJob.txt"));
+    }
+
     public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
