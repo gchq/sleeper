@@ -55,14 +55,14 @@ class PartitionsStatusTest {
     class CountRecords {
 
         @Test
-        void shouldCountRecordsInPartitions() throws StateStoreException {
+        void shouldCountRecordsFromReferencesOnLeaves() throws Exception {
             // Given
             StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa"))
-                    .partitionFileWithRecords("A", "file-a1.parquet", 5)
-                    .partitionFileWithRecords("parent", "file-b1.parquet", 10)
-                    .splitFileToPartitions("file-b1.parquet", "A", "B")
+                    .partitionFileWithRecords("A", "file-a.parquet", 5)
+                    .partitionFileWithRecords("parent", "file-ab.parquet", 10)
+                    .splitFileToPartitions("file-ab.parquet", "A", "B")
                     .buildStateStore();
 
             // When

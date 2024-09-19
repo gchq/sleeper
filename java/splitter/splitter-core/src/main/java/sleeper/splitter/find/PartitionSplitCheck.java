@@ -42,21 +42,21 @@ public class PartitionSplitCheck {
     private final List<FileReference> filesWhollyInPartition;
     private final long estimatedRecordsFromReferencesInPartitionTree;
     private final long estimatedRecordsFromReferencesInPartition;
-    private final long knownRecordsReferencedInPartition;
+    private final long knownRecordsWhollyInPartition;
     private final long splitThreshold;
 
     private PartitionSplitCheck(TableStatus table, Partition partition,
             List<FileReference> partitionFileReferences,
             List<FileReference> filesWhollyInPartition,
             long estimatedRecordsFromReferencesInPartitionTree, long estimatedRecordsFromReferencesInPartition,
-            long knownRecordsReferencedInPartition, long splitThreshold) {
+            long knownRecordsWhollyInPartition, long splitThreshold) {
         this.table = table;
         this.partition = partition;
         this.partitionFileReferences = partitionFileReferences;
         this.filesWhollyInPartition = filesWhollyInPartition;
         this.estimatedRecordsFromReferencesInPartitionTree = estimatedRecordsFromReferencesInPartitionTree;
         this.estimatedRecordsFromReferencesInPartition = estimatedRecordsFromReferencesInPartition;
-        this.knownRecordsReferencedInPartition = knownRecordsReferencedInPartition;
+        this.knownRecordsWhollyInPartition = knownRecordsWhollyInPartition;
         this.splitThreshold = splitThreshold;
     }
 
@@ -72,12 +72,12 @@ public class PartitionSplitCheck {
         return estimatedRecordsFromReferencesInPartition;
     }
 
-    public long getKnownRecordsReferencedInPartition() {
-        return knownRecordsReferencedInPartition;
+    public long getKnownRecordsWhollyInPartition() {
+        return knownRecordsWhollyInPartition;
     }
 
     public boolean isNeedsSplitting() {
-        return knownRecordsReferencedInPartition >= splitThreshold;
+        return knownRecordsWhollyInPartition >= splitThreshold;
     }
 
     public boolean maySplitIfCompacted() {
@@ -88,9 +88,8 @@ public class PartitionSplitCheck {
         LOGGER.info("Analyzed partition {} of table {}", partition.getId(), table);
         LOGGER.info("Estimated records from file references in partition tree: {}", estimatedRecordsFromReferencesInPartitionTree);
         LOGGER.info("Estimated records from file references in partition: {}", estimatedRecordsFromReferencesInPartition);
-        LOGGER.info("Known exact count of records: {}", knownRecordsReferencedInPartition);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), table, knownRecordsReferencedInPartition);
-        if (knownRecordsReferencedInPartition >= splitThreshold) {
+        LOGGER.info("Known exact records from files wholly in partition: {}", knownRecordsWhollyInPartition);
+        if (knownRecordsWhollyInPartition >= splitThreshold) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, filesWhollyInPartition));
         } else {
@@ -103,8 +102,8 @@ public class PartitionSplitCheck {
         List<FileReference> partitionFileReferences = fileReferencesByPartition.getOrDefault(partition.getId(), List.of());
         long estimatedInPartitionOrAncestors = streamFilesInPartitionOrAncestors(partition, partitionTree, fileReferencesByPartition).mapToLong(FileReference::getNumberOfRecords).sum();
         long estimatedInPartition = partitionFileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
-        long known = partitionFileReferences.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRecords).sum();
         List<FileReference> filesWhollyInPartition = partitionFileReferences.stream().filter(FileReference::onlyContainsDataForThisPartition).collect(toUnmodifiableList());
+        long known = filesWhollyInPartition.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRecords).sum();
         return new PartitionSplitCheck(properties.getStatus(), partition,
                 partitionFileReferences, filesWhollyInPartition,
                 estimatedInPartitionOrAncestors, estimatedInPartition, known,
