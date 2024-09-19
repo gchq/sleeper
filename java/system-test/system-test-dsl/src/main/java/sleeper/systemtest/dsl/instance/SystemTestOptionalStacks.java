@@ -16,11 +16,14 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -37,25 +40,37 @@ public class SystemTestOptionalStacks {
     }
 
     public <T> void addOptionalStack(Class<T> stackClass) {
-        LOGGER.info("Adding optional stack: {}", stackClass);
-        updateOptionalStacks(stacks -> stacks.add(stackClass.getSimpleName()));
+        addOptionalStack(stack(stackClass));
     }
 
     public <T> void removeOptionalStack(Class<T> stackClass) {
-        LOGGER.info("Removing optional stack: {}", stackClass);
-        updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
+        removeOptionalStack(stack(stackClass));
     }
 
-    private void updateOptionalStacks(Consumer<Set<String>> update) {
+    public void addOptionalStack(OptionalStack stack) {
+        LOGGER.info("Adding optional stack: {}", stack);
+        updateOptionalStacks(stacks -> stacks.add(stack));
+    }
+
+    public void removeOptionalStack(OptionalStack stack) {
+        LOGGER.info("Removing optional stack: {}", stack);
+        updateOptionalStacks(stacks -> stacks.remove(stack));
+    }
+
+    private OptionalStack stack(Class<?> stackClass) {
+        return EnumUtils.getEnumIgnoreCase(OptionalStack.class, stackClass.getSimpleName());
+    }
+
+    private void updateOptionalStacks(Consumer<Set<OptionalStack>> update) {
         InstanceProperties properties = instance.getInstanceProperties();
-        Set<String> optionalStacks = new LinkedHashSet<>(properties.getList(OPTIONAL_STACKS));
-        Set<String> before = new LinkedHashSet<>(optionalStacks);
+        Set<OptionalStack> optionalStacks = new LinkedHashSet<>(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class));
+        Set<OptionalStack> before = new LinkedHashSet<>(optionalStacks);
         update.accept(optionalStacks);
         if (before.equals(optionalStacks)) {
             LOGGER.info("Optional stacks unchanged, not redeploying");
             return;
         }
-        properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
+        properties.setEnumList(OPTIONAL_STACKS, new ArrayList<>(optionalStacks));
         instance.redeployCurrentInstance();
     }
 }

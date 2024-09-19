@@ -20,7 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -50,13 +50,13 @@ public class EksBulkImportST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
-        sleeper.enableOptionalStack(EksBulkImportStack.class);
+        sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @AfterEach
     void tearDown(SleeperSystemTest sleeper) {
-        sleeper.disableOptionalStack(EksBulkImportStack.class);
+        sleeper.disableOptionalStack(OptionalStack.EksBulkImportStack);
     }
 
     @Test

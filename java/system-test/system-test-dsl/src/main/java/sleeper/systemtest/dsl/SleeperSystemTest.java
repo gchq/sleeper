@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
@@ -170,12 +171,12 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public <T> void enableOptionalStack(Class<T> stackClass) {
-        new SystemTestOptionalStacks(context.instance()).addOptionalStack(stackClass);
+    public void enableOptionalStack(OptionalStack stack) {
+        new SystemTestOptionalStacks(context.instance()).addOptionalStack(stack);
     }
 
-    public <T> void disableOptionalStack(Class<T> stackClass) {
-        new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stackClass);
+    public void disableOptionalStack(OptionalStack stack) {
+        new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stack);
     }
 
     public SystemTestStateStore stateStore() {

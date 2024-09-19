@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.deploy.DeployInstanceConfiguration;
+import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.function.Supplier;

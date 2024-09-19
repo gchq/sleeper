@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.deploy;
+package sleeper.configuration.properties.deploy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

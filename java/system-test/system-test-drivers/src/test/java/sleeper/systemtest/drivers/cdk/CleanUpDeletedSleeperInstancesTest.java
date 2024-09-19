@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.cdk;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -46,8 +47,8 @@ public class CleanUpDeletedSleeperInstancesTest {
     void shouldGetInstanceIdsFromEcrRepositories() {
         assertThat(instanceIdsByEcrRepositories(
                 new DockerImageConfiguration(Map.of(
-                        "IngestStack", dockerBuildImage("ingest"),
-                        "CompactionStack", dockerBuildxImage("compaction-job-execution"))),
+                        OptionalStack.IngestStack, dockerBuildImage("ingest"),
+                        OptionalStack.CompactionStack, dockerBuildxImage("compaction-job-execution"))),
                 Stream.of("an-instance/ingest",
                         "not-sleeper/something",
                         "not-an-instance",

@@ -29,12 +29,14 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreFactory;
@@ -42,13 +44,13 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.SleeperPropertyValues.readList;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
@@ -137,9 +139,13 @@ public class AdminClientPropertiesStore {
             return false;
         }
         PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<String> stacksBefore = new HashSet<>(readList(stackDiff.getOldValue()));
-        Set<String> newStacks = new HashSet<>(readList(stackDiff.getNewValue()));
-        newStacks.removeAll(stacksBefore);
+        Set<OptionalStack> stacksBefore = SleeperPropertyValues
+                .streamEnumList(OPTIONAL_STACKS, stackDiff.getOldValue(), OptionalStack.class)
+                .collect(toUnmodifiableSet());
+        Set<OptionalStack> newStacks = SleeperPropertyValues
+                .streamEnumList(OPTIONAL_STACKS, stackDiff.getNewValue(), OptionalStack.class)
+                .filter(not(stacksBefore::contains))
+                .collect(toUnmodifiableSet());
         return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 

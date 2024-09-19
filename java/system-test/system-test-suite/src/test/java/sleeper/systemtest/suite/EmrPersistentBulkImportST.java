@@ -20,7 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
+import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -51,7 +51,7 @@ public class EmrPersistentBulkImportST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
-        sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
+        sleeper.enableOptionalStack(OptionalStack.PersistentEmrBulkImportStack);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
         // Note that we don't purge the bulk import job queue when the test fails,
         // because it is deleted when the optional stack is disabled.
@@ -59,7 +59,7 @@ public class EmrPersistentBulkImportST {
 
     @AfterEach
     void tearDown(SleeperSystemTest sleeper) {
-        sleeper.disableOptionalStack(PersistentEmrBulkImportStack.class);
+        sleeper.disableOptionalStack(OptionalStack.PersistentEmrBulkImportStack);
     }
 
     @Test

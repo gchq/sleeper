@@ -26,6 +26,7 @@ import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -52,11 +53,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesTest {
-    private static final Map<String, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(
-            "IngestStack", dockerBuildImage("ingest"),
-            "EksBulkImportStack", dockerBuildImage("bulk-import-runner"),
-            "BuildxStack", dockerBuildxImage("buildx"),
-            "EmrServerlessBulkImportStack", emrServerlessImage("bulk-import-runner-emr-serverless"));
+    private static final Map<OptionalStack, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(
+            OptionalStack.IngestStack, dockerBuildImage("ingest"),
+            OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
+            OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
+            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
     private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES);
@@ -88,7 +89,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -107,7 +108,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateRepositoriesAndPushImagesForTwoStacks() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -130,7 +131,7 @@ public class UploadDockerImagesTest {
         void shouldCreateRepositoryAndPushImageWhenEcrRepositoryPrefixIsSet() throws Exception {
             // Given
             properties.set(ECR_REPOSITORY_PREFIX, "custom-ecr-prefix");
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -152,7 +153,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
             // Given
-            properties.set(OPTIONAL_STACKS, "OtherStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.AthenaStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -165,7 +166,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
             // Given
-            properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.AthenaStack, OptionalStack.IngestStack));
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -186,7 +187,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "BuildxStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -206,7 +207,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateRepositoryAndPushImageWhenOnlyOneImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack,BuildxStack");
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.CompactionStack));
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -234,7 +235,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldCreateSecurityPolicyToGiveAccessToEmrServerlessImageOnly() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack,EmrServerlessBulkImportStack");
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EmrServerlessBulkImportStack));
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
@@ -263,7 +264,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldFailWhenDockerLoginFails() {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When / Then
             assertThatThrownBy(() -> uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties)))
@@ -277,7 +278,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldNotFailWhenRemoveBuildxBuilderFails() throws Exception {
             // Given
-            properties.set(OPTIONAL_STACKS, "BuildxStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties),
@@ -298,7 +299,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldFailWhenCreateBuildxBuilderFails() {
             // Given
-            properties.set(OPTIONAL_STACKS, "BuildxStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When / Then
             assertThatThrownBy(() -> uploader().upload(
@@ -314,7 +315,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldDeleteRepositoryWhenDockerBuildFails() {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When / Then
             CommandPipeline buildImageCommand = buildImageCommand(
@@ -337,7 +338,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldBuildAndPushImageIfImageWithDifferentVersionExists() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             ecrClient.createRepository("test-instance/ingest");
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
@@ -358,7 +359,7 @@ public class UploadDockerImagesTest {
         @Test
         void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws IOException, InterruptedException {
             // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             ecrClient.createRepository("test-instance/ingest");
             ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
 
