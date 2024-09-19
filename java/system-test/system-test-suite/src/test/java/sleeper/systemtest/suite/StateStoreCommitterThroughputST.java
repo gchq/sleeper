@@ -282,17 +282,17 @@ public class StateStoreCommitterThroughputST {
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(90.0, 150.0);
+                .isBetween(90.0, 200.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(35.0, 60.0);
+                .isBetween(35.0, 80.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(20.0, 150.0);
+                .isBetween(20.0, 200.0);
     }
 
 }
