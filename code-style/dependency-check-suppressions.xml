@@ -275,4 +275,13 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
+        of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
+        we're using uses Jetty 9.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+    </suppress>
 </suppressions>
