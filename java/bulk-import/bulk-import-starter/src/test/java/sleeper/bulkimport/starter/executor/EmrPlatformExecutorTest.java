@@ -15,18 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
-import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
-import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
-import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
-import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
-import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
-import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
-import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +22,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ComputeLimits;
+import software.amazon.awssdk.services.emr.model.ComputeLimitsUnitType;
+import software.amazon.awssdk.services.emr.model.EbsConfiguration;
+import software.amazon.awssdk.services.emr.model.InstanceFleetConfig;
+import software.amazon.awssdk.services.emr.model.InstanceFleetType;
+import software.amazon.awssdk.services.emr.model.InstanceGroupConfig;
+import software.amazon.awssdk.services.emr.model.InstanceRoleType;
+import software.amazon.awssdk.services.emr.model.InstanceTypeConfig;
+import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
+import software.amazon.awssdk.services.emr.model.MarketType;
+import software.amazon.awssdk.services.emr.model.RunJobFlowRequest;
+import software.amazon.awssdk.services.emr.model.RunJobFlowResponse;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
@@ -79,7 +80,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 class EmrPlatformExecutorTest {
-    private final AmazonElasticMapReduce emr = mock(AmazonElasticMapReduce.class);
+    private final EmrClient emr = mock(EmrClient.class);
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
@@ -89,9 +90,9 @@ class EmrPlatformExecutorTest {
     @BeforeEach
     public void setUpEmr() {
         when(emr.runJobFlow(any(RunJobFlowRequest.class)))
-                .then((Answer<RunJobFlowResult>) invocation -> {
+                .then((Answer<RunJobFlowResponse>) invocation -> {
                     requested.set(invocation.getArgument(0));
-                    return new RunJobFlowResult();
+                    return RunJobFlowResponse.builder().build();
                 });
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -109,10 +110,10 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups())
-                    .extracting(InstanceGroupConfig::getInstanceRole, InstanceGroupConfig::getInstanceCount)
+                    .extracting(InstanceGroupConfig::instanceRole, InstanceGroupConfig::instanceCount)
                     .containsExactlyInAnyOrder(
-                            tuple("MASTER", 1),
-                            tuple("CORE", 2));
+                            tuple(InstanceRoleType.MASTER, 1),
+                            tuple(InstanceRoleType.CORE, 2));
         }
 
         @Test
@@ -129,7 +130,7 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
-                    .extracting(InstanceGroupConfig::getInstanceType)
+                    .extracting(InstanceGroupConfig::instanceType)
                     .containsExactly("r5.xlarge");
         }
 
@@ -140,8 +141,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
-                    .extracting(InstanceGroupConfig::getMarket)
-                    .containsExactly("SPOT");
+                    .extracting(InstanceGroupConfig::market)
+                    .containsExactly(MarketType.SPOT);
         }
 
         @Test
@@ -156,8 +157,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
-                    .extracting(InstanceGroupConfig::getMarket)
-                    .containsExactly("ON_DEMAND");
+                    .extracting(InstanceGroupConfig::market)
+                    .containsExactly(MarketType.ON_DEMAND);
         }
 
         @Test
@@ -178,8 +179,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
-                    .extracting(InstanceGroupConfig::getMarket)
-                    .containsExactly("SPOT");
+                    .extracting(InstanceGroupConfig::market)
+                    .containsExactly(MarketType.SPOT);
         }
 
         @Test
@@ -218,7 +219,7 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
-                    .extracting(InstanceGroupConfig::getInstanceType)
+                    .extracting(InstanceGroupConfig::instanceType)
                     .containsExactly("m5.4xlarge");
         }
 
@@ -232,7 +233,7 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceGroups(InstanceRoleType.MASTER))
-                    .extracting(InstanceGroupConfig::getInstanceType)
+                    .extracting(InstanceGroupConfig::instanceType)
                     .containsExactly("m5.xlarge");
         }
 
@@ -246,10 +247,11 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedComputeLimits())
-                    .isEqualTo(new ComputeLimits()
-                            .withUnitType(ComputeLimitsUnitType.Instances)
-                            .withMinimumCapacityUnits(1)
-                            .withMaximumCapacityUnits(5));
+                    .isEqualTo(ComputeLimits.builder()
+                            .unitType(ComputeLimitsUnitType.INSTANCES)
+                            .minimumCapacityUnits(1)
+                            .maximumCapacityUnits(5)
+                            .build());
         }
     }
 
@@ -264,11 +266,11 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets())
-                    .extracting(InstanceFleetConfig::getInstanceFleetType,
-                            InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
+                    .extracting(InstanceFleetConfig::instanceFleetType,
+                            InstanceFleetConfig::targetOnDemandCapacity, InstanceFleetConfig::targetSpotCapacity)
                     .containsExactlyInAnyOrder(
-                            tuple("MASTER", 1, null),
-                            tuple("CORE", null, 2));
+                            tuple(InstanceFleetType.MASTER, 1, null),
+                            tuple(InstanceFleetType.CORE, null, 2));
         }
 
         @Test
@@ -282,7 +284,7 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
-                    .extracting(InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
+                    .extracting(InstanceFleetConfig::targetOnDemandCapacity, InstanceFleetConfig::targetSpotCapacity)
                     .containsExactly(tuple(5, null));
         }
 
@@ -303,7 +305,7 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
-                    .extracting(InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
+                    .extracting(InstanceFleetConfig::targetOnDemandCapacity, InstanceFleetConfig::targetSpotCapacity)
                     .containsExactly(tuple(null, 5));
         }
 
@@ -330,8 +332,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
-                    .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
-                    .extracting(InstanceTypeConfig::getInstanceType)
+                    .flatExtracting(InstanceFleetConfig::instanceTypeConfigs)
+                    .extracting(InstanceTypeConfig::instanceType)
                     .containsExactly("m5.4xlarge", "m5a.4xlarge");
         }
 
@@ -345,8 +347,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets(InstanceFleetType.MASTER))
-                    .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
-                    .extracting(InstanceTypeConfig::getInstanceType)
+                    .flatExtracting(InstanceFleetConfig::instanceTypeConfigs)
+                    .extracting(InstanceTypeConfig::instanceType)
                     .containsExactly("m5.xlarge", "m5a.xlarge");
         }
 
@@ -361,10 +363,11 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedComputeLimits())
-                    .isEqualTo(new ComputeLimits()
-                            .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
-                            .withMinimumCapacityUnits(3)
-                            .withMaximumCapacityUnits(5));
+                    .isEqualTo(ComputeLimits.builder()
+                            .unitType(ComputeLimitsUnitType.INSTANCE_FLEET_UNITS)
+                            .minimumCapacityUnits(3)
+                            .maximumCapacityUnits(5)
+                            .build());
         }
 
         @Test
@@ -377,8 +380,8 @@ class EmrPlatformExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
-                    .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
-                    .extracting(InstanceTypeConfig::getInstanceType, InstanceTypeConfig::getWeightedCapacity)
+                    .flatExtracting(InstanceFleetConfig::instanceTypeConfigs)
+                    .extracting(InstanceTypeConfig::instanceType, InstanceTypeConfig::weightedCapacity)
                     .containsExactly(
                             tuple("m5.4xlarge", 5),
                             tuple("m5a.4xlarge", null));
@@ -397,7 +400,7 @@ class EmrPlatformExecutorTest {
         executor().runJob(myJob);
 
         // Then
-        List<String> args = requested.get().getSteps().get(0).getHadoopJarStep().getArgs();
+        List<String> args = requested.get().steps().get(0).hadoopJarStep().args();
         Map<String, String> conf = new HashMap<>();
         for (int i = 0; i < args.size(); i++) {
             if ("--conf".equalsIgnoreCase(args.get(i))) {
@@ -496,42 +499,42 @@ class EmrPlatformExecutorTest {
 
     private Stream<InstanceGroupConfig> requestedInstanceGroups(InstanceRoleType roleType) {
         return requestedInstanceGroups()
-                .filter(g -> roleType.name().equals(g.getInstanceRole()));
+                .filter(g -> roleType.equals(g.instanceRole()));
     }
 
     private Stream<InstanceGroupConfig> requestedInstanceGroups() {
-        return requested.get().getInstances().getInstanceGroups().stream();
+        return requested.get().instances().instanceGroups().stream();
     }
 
     private ComputeLimits requestedComputeLimits() {
-        return requested.get().getManagedScalingPolicy().getComputeLimits();
+        return requested.get().managedScalingPolicy().computeLimits();
     }
 
     private String requestedInstanceGroupSubnetId() {
-        return requested.get().getInstances().getEc2SubnetId();
+        return requested.get().instances().ec2SubnetId();
     }
 
     private List<String> requestedInstanceFleetSubnetIds() {
-        return requested.get().getInstances().getEc2SubnetIds();
+        return requested.get().instances().ec2SubnetIds();
     }
 
     private Stream<InstanceFleetConfig> requestedInstanceFleets() {
-        return requested.get().getInstances().getInstanceFleets().stream();
+        return requested.get().instances().instanceFleets().stream();
     }
 
     private Stream<InstanceFleetConfig> requestedInstanceFleets(InstanceFleetType type) {
-        return requestedInstanceFleets().filter(fleet -> type.name().equals(fleet.getInstanceFleetType()));
+        return requestedInstanceFleets().filter(fleet -> type.equals(fleet.instanceFleetType()));
     }
 
     public static class FakeEmrInstanceConfiguration implements EmrInstanceConfiguration {
         @Override
         public JobFlowInstancesConfig createJobFlowInstancesConfig(EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-            return new JobFlowInstancesConfig();
+            return JobFlowInstancesConfig.builder().build();
         }
 
         @Override
         public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
-            return new ComputeLimits();
+            return ComputeLimits.builder().build();
         }
     }
 }
