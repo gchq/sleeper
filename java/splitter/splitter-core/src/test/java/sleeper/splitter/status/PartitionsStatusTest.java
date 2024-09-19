@@ -16,6 +16,7 @@
 
 package sleeper.splitter.status;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,29 @@ class PartitionsStatusTest {
                             tuple("parent", 0, 0L, 0L, 0L),
                             tuple("A", 2, 5L, 10L, 10L),
                             tuple("B", 1, 0L, 5L, 5L));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldCountRecordsFromReferenceOnLeafAndRoot() throws Exception {
+            // Given
+            StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                    .rootFirst("parent")
+                    .splitToNewChildren("parent", "A", "B", "aaa"))
+                    .partitionFileWithRecords("A", "file-a.parquet", 5)
+                    .partitionFileWithRecords("parent", "file-parent.parquet", 10)
+                    .buildStateStore();
+
+            // When
+            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+
+            // Then
+            assertThat(status.getPartitions())
+                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
+                    .containsExactlyInAnyOrder(
+                            tuple("parent", 1, 10L, 10L, 0L),
+                            tuple("A", 1, 5L, 5L, 10L),
+                            tuple("B", 0, 0L, 0L, 5L));
         }
     }
 
