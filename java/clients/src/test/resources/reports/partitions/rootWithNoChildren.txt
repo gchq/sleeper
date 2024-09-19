@@ -4,7 +4,7 @@ Partitions Status Report:
 There are 1 partitions (1 leaf partitions)
 There are 0 leaf partitions that will be split
 Split threshold is 10 records
-----------------------------------------------------------------------------------------------------------------------------------------------------
-| ID   | PARENT | PARENT_SIDE | FILES | APPROX_RECORDS | KNOWN_RECORDS | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
-| root |        |             |     1 |              5 |             5 | yes  | no            | no                     |             |             |
-----------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| ID   | PARENT | PARENT_SIDE | FILES | KNOWN_RECORDS | APPROX_RECORDS | APPROX_RECORDS_AFTER_COMPACTION | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
+| root |        |             |     1 |             5 |              5 |                               5 | yes  | no            | no                     |             |             |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
