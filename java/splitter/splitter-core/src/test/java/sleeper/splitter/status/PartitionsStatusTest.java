@@ -16,7 +16,6 @@
 
 package sleeper.splitter.status;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,7 +78,6 @@ class PartitionsStatusTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldCountRecordsFromReferenceOnLeafAndRoot() throws Exception {
             // Given
             StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
@@ -99,6 +97,32 @@ class PartitionsStatusTest {
                             tuple("parent", 1, 10L, 10L, 0L),
                             tuple("A", 1, 5L, 5L, 10L),
                             tuple("B", 0, 0L, 0L, 5L));
+        }
+
+        @Test
+        void shouldCountRecordsFromNestedTree() throws Exception {
+            // Given
+            StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "aaa")
+                    .splitToNewChildren("R", "RL", "RR", "bbb"))
+                    .partitionFileWithRecords("root", "file-root.parquet", 20)
+                    .partitionFileWithRecords("R", "file-R.parquet", 10)
+                    .partitionFileWithRecords("RR", "file-RR.parquet", 5)
+                    .buildStateStore();
+
+            // When
+            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+
+            // Then
+            assertThat(status.getPartitions())
+                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
+                    .containsExactlyInAnyOrder(
+                            tuple("root", 1, 20L, 20L, 0L),
+                            tuple("L", 0, 0L, 0L, 10L),
+                            tuple("R", 1, 10L, 10L, 0L),
+                            tuple("RL", 0, 0L, 0L, 10L),
+                            tuple("RR", 1, 5L, 5L, 15L));
         }
     }
 

@@ -27,7 +27,6 @@ import sleeper.core.table.TableStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -64,8 +63,8 @@ public class PartitionSplitCheck {
         return partitionFileReferences;
     }
 
-    public long getEstimatedRecordsFromReferencesInPartitionTree() {
-        return estimatedRecordsFromReferencesInPartitionTree;
+    public long getEstimatedRecordsAfterCompaction() {
+        return partition.isLeafPartition() ? estimatedRecordsFromReferencesInPartitionTree : 0;
     }
 
     public long getEstimatedRecordsFromReferencesInPartition() {
@@ -81,10 +80,10 @@ public class PartitionSplitCheck {
     }
 
     public boolean maySplitIfCompacted() {
-        return estimatedRecordsFromReferencesInPartitionTree >= splitThreshold;
+        return getEstimatedRecordsAfterCompaction() >= splitThreshold;
     }
 
-    public Optional<FindPartitionToSplitResult> splitIfNecessary() {
+    Optional<FindPartitionToSplitResult> splitIfNecessary() {
         LOGGER.info("Analyzed partition {} of table {}", partition.getId(), table);
         LOGGER.info("Estimated records from file references in partition tree: {}", estimatedRecordsFromReferencesInPartitionTree);
         LOGGER.info("Estimated records from file references in partition: {}", estimatedRecordsFromReferencesInPartition);
@@ -100,21 +99,28 @@ public class PartitionSplitCheck {
 
     public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, PartitionTree partitionTree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         List<FileReference> partitionFileReferences = fileReferencesByPartition.getOrDefault(partition.getId(), List.of());
-        long estimatedInPartitionOrAncestors = streamFilesInPartitionOrAncestors(partition, partitionTree, fileReferencesByPartition).mapToLong(FileReference::getNumberOfRecords).sum();
+        long estimatedInPartitionFromTree = estimateRecordsInPartitionFromTree(partition, partitionTree, fileReferencesByPartition);
         long estimatedInPartition = partitionFileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
         List<FileReference> filesWhollyInPartition = partitionFileReferences.stream().filter(FileReference::onlyContainsDataForThisPartition).collect(toUnmodifiableList());
         long known = filesWhollyInPartition.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRecords).sum();
         return new PartitionSplitCheck(properties.getStatus(), partition,
                 partitionFileReferences, filesWhollyInPartition,
-                estimatedInPartitionOrAncestors, estimatedInPartition, known,
+                estimatedInPartitionFromTree, estimatedInPartition, known,
                 properties.getLong(PARTITION_SPLIT_THRESHOLD));
     }
 
-    private static Stream<FileReference> streamFilesInPartitionOrAncestors(
-            Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
-        return Stream.concat(Stream.of(partition), tree.ancestorsOf(partition))
-                .map(Partition::getId)
-                .flatMap(partitionId -> fileReferencesByPartition.getOrDefault(partitionId, List.of()).stream());
+    private static long estimateRecordsInPartitionFromTree(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+        Partition current = partition;
+        long treeDivisor = 1;
+        long count = 0;
+        do {
+            List<FileReference> partitionFiles = fileReferencesByPartition.getOrDefault(current.getId(), List.of());
+            long partitionCount = partitionFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+            count += partitionCount / treeDivisor;
+            treeDivisor *= 2;
+            current = tree.getParent(current);
+        } while (current != null);
+        return count;
     }
 
 }

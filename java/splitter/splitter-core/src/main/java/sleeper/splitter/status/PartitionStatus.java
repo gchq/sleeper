@@ -61,7 +61,7 @@ public class PartitionStatus {
                 .numberOfFiles(check.getPartitionFileReferences().size())
                 .knownRecords(check.getKnownRecordsWhollyInPartition())
                 .approxRecords(check.getEstimatedRecordsFromReferencesInPartition())
-                .approxRecordsAfterCompaction(check.getEstimatedRecordsFromReferencesInPartitionTree())
+                .approxRecordsAfterCompaction(check.getEstimatedRecordsAfterCompaction())
                 .willBeSplit(check.isNeedsSplitting())
                 .maySplitIfCompacted(check.maySplitIfCompacted())
                 .splitField(splitField(partition, schema))
