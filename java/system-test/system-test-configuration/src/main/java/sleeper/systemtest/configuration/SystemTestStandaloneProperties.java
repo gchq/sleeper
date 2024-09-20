@@ -49,7 +49,8 @@ public class SystemTestStandaloneProperties
 
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String propertiesString = s3Client.getObjectAsString(bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        properties.resetAndValidate(loadProperties(propertiesString));
         return properties;
     }
 
@@ -62,9 +63,11 @@ public class SystemTestStandaloneProperties
     }
 
     public void saveToS3(AmazonS3 s3Client) {
-        this.saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String bucket = get(SYSTEM_TEST_BUCKET_NAME);
+        LOGGER.debug("Uploading config to bucket {}", bucket);
+        s3Client.putObject(bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, saveAsString());
         LOGGER.info("Saved system test properties to bucket {}, key {}",
-                get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+                bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override
@@ -87,15 +90,5 @@ public class SystemTestStandaloneProperties
     public static String buildSystemTestBucketName(String deploymentId) {
         return String.join("-", "sleeper", deploymentId, "system", "test")
                 .toLowerCase(Locale.ROOT);
-    }
-
-    protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
-        LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, key, saveAsString());
-    }
-
-    protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
-        String propertiesString = s3Client.getObjectAsString(bucket, key);
-        resetAndValidate(loadProperties(propertiesString));
     }
 }
