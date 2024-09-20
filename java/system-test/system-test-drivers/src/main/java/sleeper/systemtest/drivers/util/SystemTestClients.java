@@ -22,8 +22,6 @@ import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -40,6 +38,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
@@ -74,7 +73,7 @@ public class SystemTestClients {
     private final CloudFormationClient cloudFormation;
     private final EmrServerlessClient emrServerless;
     private final AmazonElasticMapReduce emr;
-    private final AmazonECS ecs;
+    private final EcsClient ecs;
     private final AmazonAutoScaling autoScaling;
     private final EcrClient ecr;
     private final CloudWatchClient cloudWatch;
@@ -126,7 +125,7 @@ public class SystemTestClients {
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
                 .emr(AmazonElasticMapReduceClientBuilder.defaultClient())
-                .ecs(AmazonECSClientBuilder.defaultClient())
+                .ecs(EcsClient.create())
                 .autoScaling(AmazonAutoScalingClientBuilder.defaultClient())
                 .ecr(EcrClient.create())
                 .cloudWatch(CloudWatchClient.create())
@@ -155,7 +154,7 @@ public class SystemTestClients {
                 .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
                 .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
                 .emr(v1.buildClient(AmazonElasticMapReduceClientBuilder.standard()))
-                .ecs(v1.buildClient(AmazonECSClientBuilder.standard()))
+                .ecs(v2.buildClient(EcsClient.builder()))
                 .autoScaling(v1.buildClient(AmazonAutoScalingClientBuilder.standard()))
                 .ecr(v2.buildClient(EcrClient.builder()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
@@ -210,7 +209,7 @@ public class SystemTestClients {
         return emr;
     }
 
-    public AmazonECS getEcs() {
+    public EcsClient getEcs() {
         return ecs;
     }
 
@@ -268,7 +267,7 @@ public class SystemTestClients {
         private CloudFormationClient cloudFormation;
         private EmrServerlessClient emrServerless;
         private AmazonElasticMapReduce emr;
-        private AmazonECS ecs;
+        private EcsClient ecs;
         private AmazonAutoScaling autoScaling;
         private EcrClient ecr;
         private CloudWatchClient cloudWatch;
@@ -341,7 +340,7 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder ecs(AmazonECS ecs) {
+        public Builder ecs(EcsClient ecs) {
             this.ecs = ecs;
             return this;
         }
