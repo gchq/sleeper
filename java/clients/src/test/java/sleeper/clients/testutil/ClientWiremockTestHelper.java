@@ -15,8 +15,6 @@
  */
 package sleeper.clients.testutil;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -26,6 +24,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
@@ -50,11 +49,8 @@ public class ClientWiremockTestHelper {
         return wiremockAwsV2Client(runtimeInfo, EcrClient.builder());
     }
 
-    public static AmazonCloudWatchEvents wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonCloudWatchEventsClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static CloudWatchEventsClient wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, CloudWatchEventsClient.builder());
     }
 
     public static AmazonElasticMapReduce wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {

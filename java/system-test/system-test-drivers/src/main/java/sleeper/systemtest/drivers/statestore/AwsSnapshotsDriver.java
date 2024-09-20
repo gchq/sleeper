@@ -15,11 +15,9 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.model.DisableRuleRequest;
-import com.amazonaws.services.cloudwatchevents.model.EnableRuleRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
@@ -28,23 +26,21 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
-    private final AmazonCloudWatchEvents cwClient;
+    private final CloudWatchEventsClient cwClient;
 
-    public AwsSnapshotsDriver(AmazonCloudWatchEvents cwClient) {
+    public AwsSnapshotsDriver(CloudWatchEventsClient cwClient) {
         this.cwClient = cwClient;
     }
 
     @Override
     public void enableCreation(InstanceProperties instanceProperties) {
         LOGGER.info("Enabling transaction log snapshot creation");
-        cwClient.enableRule(new EnableRuleRequest()
-                .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
+        cwClient.enableRule(request -> request.name(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
     }
 
     @Override
     public void disableCreation(InstanceProperties instanceProperties) {
         LOGGER.info("Disabling transaction log snapshot creation");
-        cwClient.disableRule(new DisableRuleRequest()
-                .withName(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
+        cwClient.disableRule(request -> request.name(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
     }
 }
