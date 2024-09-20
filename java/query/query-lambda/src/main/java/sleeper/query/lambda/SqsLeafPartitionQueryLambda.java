@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -56,7 +57,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
     }
 
     public SqsLeafPartitionQueryLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
-        InstanceProperties instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
@@ -73,11 +74,5 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
                 .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
                 .forEach(query -> processor.processQuery(query.asLeafQuery()));
         return null;
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3(s3Client, configBucket);
-        return properties;
     }
 }

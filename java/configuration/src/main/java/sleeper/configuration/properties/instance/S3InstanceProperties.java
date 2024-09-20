@@ -53,6 +53,10 @@ public class S3InstanceProperties {
         LOGGER.info("Saved instance properties to bucket {}, key {}", bucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 
+    public static void reload(AmazonS3 s3Client, InstanceProperties properties) {
+        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, properties.get(CONFIG_BUCKET)));
+    }
+
     private static Properties loadPropertiesGivenInstanceId(AmazonS3 s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId));
     }

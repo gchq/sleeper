@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
@@ -102,7 +103,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             LOGGER.error("Config Bucket was null. Was an environment variable missing?");
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
@@ -110,11 +111,5 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = Instant.now();
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3(s3Client, configBucket);
-        return properties;
     }
 }

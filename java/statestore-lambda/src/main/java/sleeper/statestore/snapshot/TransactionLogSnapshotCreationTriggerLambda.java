@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -50,7 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationTriggerLambda.class);
 
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
     private final AmazonSQS sqsClient;
@@ -60,7 +61,7 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
         this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
     }
 
     @Override

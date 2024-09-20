@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -163,8 +164,7 @@ public class IngestRandomData {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
-                InstanceProperties instanceProperties = new InstanceProperties();
-                instanceProperties.loadFromS3(instanceS3Client, configBucket);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, configBucket);
                 return ingestRandomData(instanceProperties, systemTestProperties, tableName);
             } finally {
                 s3Client.shutdown();
@@ -173,8 +173,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData combinedInstance(String configBucket, String tableName, AmazonS3 s3Client) {
-            SystemTestProperties properties = new SystemTestProperties();
-            properties.loadFromS3(s3Client, configBucket);
+            SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
             return ingestRandomData(properties, properties.testPropertiesOnly(), tableName);
         }
 

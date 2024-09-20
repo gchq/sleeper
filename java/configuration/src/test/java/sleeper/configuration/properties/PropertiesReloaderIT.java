@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -146,10 +147,9 @@ public class PropertiesReloaderIT {
 
     private void updatePropertiesInS3(
             InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) {
-        InstanceProperties propertiesAfter = new InstanceProperties();
-        propertiesAfter.loadFromS3(s3Client, propertiesBefore.get(CONFIG_BUCKET));
+        InstanceProperties propertiesAfter = S3InstanceProperties.loadFromBucket(s3Client, propertiesBefore.get(CONFIG_BUCKET));
         extraProperties.accept(propertiesAfter);
-        propertiesAfter.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, propertiesAfter);
     }
 
     private void updatePropertiesInS3(String tableName, Consumer<TableProperties> extraProperties) {

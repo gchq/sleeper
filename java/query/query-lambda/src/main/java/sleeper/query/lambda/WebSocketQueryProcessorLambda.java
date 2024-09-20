@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -65,8 +66,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
     public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, configBucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.queryQueueUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         this.serde = new QuerySerDe(tablePropertiesProvider);

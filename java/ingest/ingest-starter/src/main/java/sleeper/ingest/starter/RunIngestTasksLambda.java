@@ -26,6 +26,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.core.ContainerConstants;
 import sleeper.task.common.RunIngestTasks;
 
@@ -44,8 +45,7 @@ public class RunIngestTasksLambda {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         this.runTasks = new RunIngestTasks(sqsClient,
                 ecsClient, instanceProperties,
