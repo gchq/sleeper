@@ -63,8 +63,8 @@ public class PartitionSplitCheck {
         return partitionFileReferences;
     }
 
-    public long getEstimatedRecordsAfterCompaction() {
-        return partition.isLeafPartition() ? estimatedRecordsFromReferencesInPartitionTree : 0;
+    public long getEstimatedRecordsFromReferencesInPartitionTree() {
+        return estimatedRecordsFromReferencesInPartitionTree;
     }
 
     public long getEstimatedRecordsFromReferencesInPartition() {
@@ -80,7 +80,7 @@ public class PartitionSplitCheck {
     }
 
     public boolean maySplitIfCompacted() {
-        return getEstimatedRecordsAfterCompaction() >= splitThreshold;
+        return partition.isLeafPartition() && estimatedRecordsFromReferencesInPartitionTree >= splitThreshold;
     }
 
     Optional<FindPartitionToSplitResult> splitIfNecessary() {
@@ -112,7 +112,10 @@ public class PartitionSplitCheck {
     private static long estimateRecordsInPartitionFromTree(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
         Partition current = partition;
         long treeDivisor = 1;
-        long count = 0;
+        long count = tree.descendentsOf(partition)
+                .flatMap(descendent -> fileReferencesByPartition.getOrDefault(descendent.getId(), List.of()).stream())
+                .mapToLong(FileReference::getNumberOfRecords)
+                .sum();
         do {
             List<FileReference> partitionFiles = fileReferencesByPartition.getOrDefault(current.getId(), List.of());
             long partitionCount = partitionFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();

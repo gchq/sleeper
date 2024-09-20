@@ -106,6 +106,19 @@ public class PartitionTree {
     }
 
     /**
+     * Streams through all partitions that are descendents of the given partition. Starts with the child partitions,
+     * then finds their child partitions, and so on. Traverses depth first.
+     *
+     * @param  partition the partition
+     * @return           the partition's descendents
+     */
+    public Stream<Partition> descendentsOf(Partition partition) {
+        return partition.getChildPartitionIds()
+                .stream().map(this::getPartition)
+                .flatMap(child -> Stream.concat(Stream.of(child), descendentsOf(child)));
+    }
+
+    /**
      * Retrieves the parent of a partition.
      *
      * @param  partition the partition

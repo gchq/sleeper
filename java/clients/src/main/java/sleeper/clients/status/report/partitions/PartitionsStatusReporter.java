@@ -37,9 +37,9 @@ public class PartitionsStatusReporter {
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
     private static final TableField FILES_ON_JOBS = BUILDER.addNumericField("FILES_ON_JOBS");
-    private static final TableField KNOWN_RECORDS = BUILDER.addNumericField("KNOWN_RECORDS");
     private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
-    private static final TableField APPROX_RECORDS_AFTER_COMPACTION = BUILDER.addNumericField("APPROX_RECORDS_AFTER_COMPACTION");
+    private static final TableField APPROX_RECORDS_REFERENCED = BUILDER.addNumericField("APPROX_RECORDS_REFERENCED");
+    private static final TableField EXACT_RECORDS_REFERENCED = BUILDER.addNumericField("EXACT_RECORDS_REFERENCED");
     private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField WILL_BE_SPLIT = BUILDER.addField("WILL_BE_SPLIT");
     private static final TableField MAY_SPLIT_IF_COMPACTED = BUILDER.addField("MAY_SPLIT_IF_COMPACTED");
@@ -72,9 +72,9 @@ public class PartitionsStatusReporter {
                 .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
                 .value(FILES_ON_JOBS, status.getNumberOfFilesOnJobs())
-                .value(KNOWN_RECORDS, status.getKnownRecords())
                 .value(APPROX_RECORDS, status.getApproxRecords())
-                .value(APPROX_RECORDS_AFTER_COMPACTION, status.getApproxRecordsAfterCompaction())
+                .value(APPROX_RECORDS_REFERENCED, status.getApproxRecordsReferenced())
+                .value(EXACT_RECORDS_REFERENCED, status.getExactRecordsReferenced())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(WILL_BE_SPLIT, willBeSplitString(status))
                 .value(MAY_SPLIT_IF_COMPACTED, maySplitIfCompactedString(status))
