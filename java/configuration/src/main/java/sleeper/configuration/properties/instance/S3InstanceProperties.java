@@ -34,15 +34,15 @@ public class S3InstanceProperties {
     private S3InstanceProperties() {
     }
 
-    public InstanceProperties loadGivenInstanceId(AmazonS3 s3Client, String instanceId) {
+    public static InstanceProperties loadGivenInstanceId(AmazonS3 s3Client, String instanceId) {
         return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceId(s3Client, instanceId));
     }
 
-    public InstanceProperties loadGivenInstanceIdNoValidation(AmazonS3 s3Client, String instanceId) {
+    public static InstanceProperties loadGivenInstanceIdNoValidation(AmazonS3 s3Client, String instanceId) {
         return InstanceProperties.createWithoutValidation(loadPropertiesGivenInstanceId(s3Client, instanceId));
     }
 
-    public InstanceProperties loadFromBucket(AmazonS3 s3Client, String bucket) {
+    public static InstanceProperties loadFromBucket(AmazonS3 s3Client, String bucket) {
         return InstanceProperties.createAndValidate(loadPropertiesFromBucket(s3Client, bucket));
     }
 

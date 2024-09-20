@@ -25,6 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
@@ -89,8 +90,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
@@ -121,8 +121,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
 
         client.shutdown();
@@ -153,8 +152,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, alternativeBucket);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, alternativeBucket);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
