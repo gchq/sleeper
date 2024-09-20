@@ -38,7 +38,7 @@ each library, we list the dependencies that bring them in transitively:
 
 - Netty
   - Apache Spark
-  - AWS Athena, AWS SDK v1, AWS Lambda
+  - AWS Athena, AWS SDK, AWS Lambda
   - Apache Arrow
 
 - Jetty
