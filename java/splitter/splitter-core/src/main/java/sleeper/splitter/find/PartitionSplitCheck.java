@@ -80,7 +80,10 @@ public class PartitionSplitCheck {
     }
 
     public boolean maySplitIfCompacted() {
-        return partition.isLeafPartition() && estimatedRecordsFromReferencesInPartitionTree >= splitThreshold;
+        if (!partition.isLeafPartition()) {
+            return false;
+        }
+        return estimatedRecordsFromReferencesInPartitionTree >= splitThreshold;
     }
 
     Optional<FindPartitionToSplitResult> splitIfNecessary() {
