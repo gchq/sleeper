@@ -128,6 +128,19 @@ public class FindPartitionsToSplitTest {
                             partitionTree().getRootPartition(),
                             List.of("file-3.parquet", "file-2.parquet")));
         }
+
+        @Test
+        void shouldNotSplitPartitionWithNoFiles() throws Exception {
+            // Given
+            instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
+
+            // When
+            List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
+
+            // Then
+            assertThat(jobs).isEmpty();
+        }
     }
 
     @Nested

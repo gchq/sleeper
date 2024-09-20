@@ -22,6 +22,8 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
+import sleeper.splitter.status.PartitionStatus;
+import sleeper.splitter.status.PartitionsStatus;
 
 import java.io.PrintStream;
 

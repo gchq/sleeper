@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.partitions;
+package sleeper.splitter.status;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -22,20 +22,18 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.splitter.find.FindPartitionsToSplit;
 import sleeper.splitter.find.PartitionSplitCheck;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toUnmodifiableList;
+import java.util.Map;
 
 public class PartitionStatus {
 
     private final Partition partition;
-    private final List<FileReference> filesInPartition;
+    private final int numberOfFiles;
+    private final long knownRecords;
+    private final long approxRecords;
+    private final long approxRecordsAfterCompaction;
     private final boolean willBeSplit;
     private final boolean maySplitIfCompacted;
     private final Field splitField;
@@ -44,7 +42,10 @@ public class PartitionStatus {
 
     private PartitionStatus(Builder builder) {
         partition = builder.partition;
-        filesInPartition = builder.filesInPartition;
+        numberOfFiles = builder.numberOfFiles;
+        knownRecords = builder.knownRecords;
+        approxRecords = builder.approxRecords;
+        approxRecordsAfterCompaction = builder.approxRecordsAfterCompaction;
         willBeSplit = builder.willBeSplit;
         maySplitIfCompacted = builder.maySplitIfCompacted;
         splitField = builder.splitField;
@@ -53,18 +54,16 @@ public class PartitionStatus {
     }
 
     static PartitionStatus from(
-            TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileReference> activeFiles) {
+            TableProperties tableProperties, PartitionTree tree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         Schema schema = tableProperties.getSchema();
-        List<FileReference> filesInPartitionForSplit = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
-        List<FileReference> filesInPartitionOrAncestors = getFilesInPartitionOrAncestors(partition, tree, activeFiles);
-        boolean willBeSplit = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartitionForSplit).isNeedsSplitting();
-        boolean maySplitIfCompacted = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartitionOrAncestors).isNeedsSplitting();
+        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(tableProperties, tree, partition, fileReferencesByPartition);
         return builder().partition(partition)
-                .filesInPartition(activeFiles.stream()
-                        .filter(file -> file.getPartitionId().equals(partition.getId()))
-                        .collect(toUnmodifiableList()))
-                .willBeSplit(willBeSplit)
-                .maySplitIfCompacted(maySplitIfCompacted)
+                .numberOfFiles(check.getPartitionFileReferences().size())
+                .knownRecords(check.getKnownRecordsWhollyInPartition())
+                .approxRecords(check.getEstimatedRecordsFromReferencesInPartition())
+                .approxRecordsAfterCompaction(check.getEstimatedRecordsAfterCompaction())
+                .willBeSplit(check.isNeedsSplitting())
+                .maySplitIfCompacted(check.maySplitIfCompacted())
                 .splitField(splitField(partition, schema))
                 .splitValue(splitValue(partition, tree, schema))
                 .indexInParent(indexInParent(partition, tree))
@@ -88,18 +87,19 @@ public class PartitionStatus {
     }
 
     public int getNumberOfFiles() {
-        return filesInPartition.size();
-    }
-
-    public long getApproxRecords() {
-        return filesInPartition.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        return numberOfFiles;
     }
 
     public long getKnownRecords() {
-        return filesInPartition.stream()
-                .filter(fileReference -> !fileReference.isCountApproximate() && fileReference.onlyContainsDataForThisPartition())
-                .mapToLong(FileReference::getNumberOfRecords)
-                .sum();
+        return knownRecords;
+    }
+
+    public long getApproxRecords() {
+        return approxRecords;
+    }
+
+    public long getApproxRecordsAfterCompaction() {
+        return approxRecordsAfterCompaction;
     }
 
     public Field getSplitField() {
@@ -147,20 +147,12 @@ public class PartitionStatus {
         return parent.getChildPartitionIds().indexOf(partition.getId());
     }
 
-    private static List<FileReference> getFilesInPartitionOrAncestors(
-            Partition partition, PartitionTree tree, List<FileReference> fileReferences) {
-        Set<String> partitionIds = Stream.concat(
-                Stream.of(partition), tree.ancestorsOf(partition))
-                .map(Partition::getId)
-                .collect(toSet());
-        return fileReferences.stream()
-                .filter(file -> partitionIds.contains(file.getPartitionId()))
-                .collect(toUnmodifiableList());
-    }
-
     public static final class Builder {
         private Partition partition;
-        private List<FileReference> filesInPartition;
+        private int numberOfFiles;
+        private long knownRecords;
+        private long approxRecords;
+        private long approxRecordsAfterCompaction;
         private boolean willBeSplit;
         private boolean maySplitIfCompacted;
         private Field splitField;
@@ -175,8 +167,23 @@ public class PartitionStatus {
             return this;
         }
 
-        public Builder filesInPartition(List<FileReference> filesInPartition) {
-            this.filesInPartition = filesInPartition;
+        public Builder numberOfFiles(int numberOfFiles) {
+            this.numberOfFiles = numberOfFiles;
+            return this;
+        }
+
+        public Builder knownRecords(long knownRecords) {
+            this.knownRecords = knownRecords;
+            return this;
+        }
+
+        public Builder approxRecords(long approxRecords) {
+            this.approxRecords = approxRecords;
+            return this;
+        }
+
+        public Builder approxRecordsAfterCompaction(long approxRecordsAfterCompaction) {
+            this.approxRecordsAfterCompaction = approxRecordsAfterCompaction;
             return this;
         }
 
