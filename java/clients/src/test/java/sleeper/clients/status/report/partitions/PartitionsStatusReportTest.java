@@ -179,6 +179,45 @@ class PartitionsStatusReportTest {
                 example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
     }
 
+    @Test
+    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(100);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc")
+                .splitToNewChildren("R", "RL", "RR", "def"))
+                .partitionFileWithRecords("root", "root.parquet", 100L)
+                .partitionFileWithRecords("R", "R.parquet", 100L)
+                .partitionFileWithRecords("RL", "RL.parquet", 24L)
+                .partitionFileWithRecords("RR", "RR.parquet", 26L)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/combinedPartitionRecordCountExceedsThreshold.txt"));
+    }
+
+    @Test
+    void shouldReportSomeFilesAssignedToAJob() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema).singlePartition("root"))
+                .partitionFileWithRecords("root", "1.parquet", 100L)
+                .partitionFileWithRecords("root", "2.parquet", 100L)
+                .partitionFileWithRecords("root", "3.parquet", 100L)
+                .assignJobOnPartitionToFiles("test-job", "root", List.of("1.parquet", "2.parquet"))
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithSomeFilesOnJob.txt"));
+    }
+
     public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());

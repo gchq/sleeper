@@ -19,6 +19,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
@@ -39,6 +40,7 @@ public class StateStoreTestBuilder {
     private final PartitionTree tree;
     private final List<Partition> partitions;
     private final List<FileReference> files = new ArrayList<>();
+    private final List<AssignJobIdRequest> assignJobIds = new ArrayList<>();
     private final FileReferenceFactory fileReferenceFactory;
 
     private StateStoreTestBuilder(PartitionTree tree) {
@@ -127,6 +129,19 @@ public class StateStoreTestBuilder {
     }
 
     /**
+     * Assigns previously declared file references to a job.
+     *
+     * @param  jobId       the ID of the job
+     * @param  partitionId the ID of the job's partition
+     * @param  filenames   the filenames
+     * @return             the builder
+     */
+    public StateStoreTestBuilder assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
+        assignJobIds.add(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames));
+        return this;
+    }
+
+    /**
      * Creates an in-memory state store and sets the declared state.
      *
      * @return the state store
@@ -144,6 +159,9 @@ public class StateStoreTestBuilder {
         try {
             store.initialise(partitions);
             store.addFiles(files);
+            if (!assignJobIds.isEmpty()) {
+                store.assignJobIds(assignJobIds);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Failed setting up state store", e);
         }

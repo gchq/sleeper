@@ -70,9 +70,9 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
+                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
                     .containsExactlyInAnyOrder(
-                            tuple("parent", 0, 0L, 0L, 0L),
+                            tuple("parent", 0, 0L, 0L, 15L),
                             tuple("A", 2, 5L, 10L, 10L),
                             tuple("B", 1, 0L, 5L, 5L));
         }
@@ -92,9 +92,9 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
+                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
                     .containsExactlyInAnyOrder(
-                            tuple("parent", 1, 10L, 10L, 0L),
+                            tuple("parent", 1, 10L, 10L, 15L),
                             tuple("A", 1, 5L, 5L, 10L),
                             tuple("B", 0, 0L, 0L, 5L));
         }
@@ -116,11 +116,11 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "knownRecords", "approxRecords", "approxRecordsAfterCompaction")
+                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
                     .containsExactlyInAnyOrder(
-                            tuple("root", 1, 20L, 20L, 0L),
+                            tuple("root", 1, 20L, 20L, 35L),
                             tuple("L", 0, 0L, 0L, 10L),
-                            tuple("R", 1, 10L, 10L, 0L),
+                            tuple("R", 1, 10L, 10L, 25L),
                             tuple("RL", 0, 0L, 0L, 10L),
                             tuple("RR", 1, 5L, 5L, 15L));
         }

@@ -31,9 +31,10 @@ public class PartitionStatus {
 
     private final Partition partition;
     private final int numberOfFiles;
-    private final long knownRecords;
+    private final int numberOfFilesOnJobs;
+    private final long exactRecordsReferenced;
+    private final long approxRecordsReferenced;
     private final long approxRecords;
-    private final long approxRecordsAfterCompaction;
     private final boolean willBeSplit;
     private final boolean maySplitIfCompacted;
     private final Field splitField;
@@ -43,9 +44,10 @@ public class PartitionStatus {
     private PartitionStatus(Builder builder) {
         partition = builder.partition;
         numberOfFiles = builder.numberOfFiles;
-        knownRecords = builder.knownRecords;
+        numberOfFilesOnJobs = builder.numberOfFilesOnJobs;
+        exactRecordsReferenced = builder.exactRecordsReferenced;
+        approxRecordsReferenced = builder.approxRecordsReferenced;
         approxRecords = builder.approxRecords;
-        approxRecordsAfterCompaction = builder.approxRecordsAfterCompaction;
         willBeSplit = builder.willBeSplit;
         maySplitIfCompacted = builder.maySplitIfCompacted;
         splitField = builder.splitField;
@@ -57,11 +59,13 @@ public class PartitionStatus {
             TableProperties tableProperties, PartitionTree tree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         Schema schema = tableProperties.getSchema();
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(tableProperties, tree, partition, fileReferencesByPartition);
+        List<FileReference> partitionFiles = check.getPartitionFileReferences();
         return builder().partition(partition)
-                .numberOfFiles(check.getPartitionFileReferences().size())
-                .knownRecords(check.getKnownRecordsWhollyInPartition())
-                .approxRecords(check.getEstimatedRecordsFromReferencesInPartition())
-                .approxRecordsAfterCompaction(check.getEstimatedRecordsAfterCompaction())
+                .numberOfFiles(partitionFiles.size())
+                .numberOfFilesOnJobs((int) partitionFiles.stream().filter(file -> file.getJobId() != null).count())
+                .exactRecordsReferenced(check.getKnownRecordsWhollyInPartition())
+                .approxRecordsReferenced(check.getEstimatedRecordsFromReferencesInPartition())
+                .approxRecords(check.getEstimatedRecordsFromReferencesInPartitionTree())
                 .willBeSplit(check.isNeedsSplitting())
                 .maySplitIfCompacted(check.maySplitIfCompacted())
                 .splitField(splitField(partition, schema))
@@ -90,16 +94,20 @@ public class PartitionStatus {
         return numberOfFiles;
     }
 
-    public long getKnownRecords() {
-        return knownRecords;
+    public int getNumberOfFilesOnJobs() {
+        return numberOfFilesOnJobs;
+    }
+
+    public long getExactRecordsReferenced() {
+        return exactRecordsReferenced;
+    }
+
+    public long getApproxRecordsReferenced() {
+        return approxRecordsReferenced;
     }
 
     public long getApproxRecords() {
         return approxRecords;
-    }
-
-    public long getApproxRecordsAfterCompaction() {
-        return approxRecordsAfterCompaction;
     }
 
     public Field getSplitField() {
@@ -150,9 +158,10 @@ public class PartitionStatus {
     public static final class Builder {
         private Partition partition;
         private int numberOfFiles;
-        private long knownRecords;
+        private int numberOfFilesOnJobs;
+        private long exactRecordsReferenced;
+        private long approxRecordsReferenced;
         private long approxRecords;
-        private long approxRecordsAfterCompaction;
         private boolean willBeSplit;
         private boolean maySplitIfCompacted;
         private Field splitField;
@@ -172,18 +181,23 @@ public class PartitionStatus {
             return this;
         }
 
-        public Builder knownRecords(long knownRecords) {
-            this.knownRecords = knownRecords;
+        public Builder numberOfFilesOnJobs(int numberOfFilesOnJobs) {
+            this.numberOfFilesOnJobs = numberOfFilesOnJobs;
+            return this;
+        }
+
+        public Builder exactRecordsReferenced(long exactRecordsReferenced) {
+            this.exactRecordsReferenced = exactRecordsReferenced;
+            return this;
+        }
+
+        public Builder approxRecordsReferenced(long approxRecordsReferenced) {
+            this.approxRecordsReferenced = approxRecordsReferenced;
             return this;
         }
 
         public Builder approxRecords(long approxRecords) {
             this.approxRecords = approxRecords;
-            return this;
-        }
-
-        public Builder approxRecordsAfterCompaction(long approxRecordsAfterCompaction) {
-            this.approxRecordsAfterCompaction = approxRecordsAfterCompaction;
             return this;
         }
 
