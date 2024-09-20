@@ -40,7 +40,7 @@ public class WiremockTestHelper {
     public static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> T wiremockAwsV2Client(WireMockRuntimeInfo runtimeInfo, B builder) {
         return builder
                 .endpointOverride(URI.create(runtimeInfo.getHttpBaseUrl()))
-                .region(Region.US_EAST_1)
+                .region(Region.AWS_GLOBAL)
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)))
                 .build();

@@ -15,8 +15,8 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
+import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -33,7 +33,7 @@ public interface PlatformExecutor {
         switch (platform) {
             case "NonPersistentEMR":
                 return new EmrPlatformExecutor(
-                        AmazonElasticMapReduceClientBuilder.defaultClient(),
+                        EmrClient.create(),
                         instanceProperties, tablePropertiesProvider);
             case "EKS":
                 return new StateMachinePlatformExecutor(
@@ -41,7 +41,7 @@ public interface PlatformExecutor {
                         instanceProperties);
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(
-                        AmazonElasticMapReduceClientBuilder.defaultClient(),
+                        EmrClient.create(),
                         instanceProperties);
             case "EMRServerless":
                 return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties);
