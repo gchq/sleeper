@@ -123,7 +123,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     public void saveToS3(AmazonS3 s3Client) {
-        this.saveToS3(s3Client, get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
+        String bucket = get(CONFIG_BUCKET);
+        LOGGER.debug("Uploading config to bucket {}", bucket);
+        s3Client.putObject(bucket, S3_INSTANCE_PROPERTIES_FILE, saveAsString());
         LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
@@ -161,11 +163,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
             count++;
         }
         return builder.toString();
-    }
-
-    protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
-        LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, key, saveAsString());
     }
 
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
