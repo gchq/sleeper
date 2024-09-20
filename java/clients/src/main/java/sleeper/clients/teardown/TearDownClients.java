@@ -18,8 +18,6 @@ package sleeper.clients.teardown;
 
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
@@ -27,6 +25,7 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuild
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -39,7 +38,7 @@ public class TearDownClients {
     private final S3Client s3v2;
     private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final AmazonElasticMapReduce emr;
     private final EmrServerlessClient emrServerless;
     private final CloudFormationClient cloudFormation;
@@ -59,11 +58,11 @@ public class TearDownClients {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonCloudWatchEvents cloudWatchClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        AmazonECR ecrClient = AmazonECRClientBuilder.defaultClient();
         AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
         try (S3Client s3v2Client = S3Client.create();
                 EmrServerlessClient emrServerless = EmrServerlessClient.create();
-                CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
+                CloudFormationClient cloudFormationClient = CloudFormationClient.create();
+                EcrClient ecrClient = EcrClient.create()) {
             TearDownClients clients = builder()
                     .s3(s3Client)
                     .s3v2(s3v2Client)
@@ -79,7 +78,6 @@ public class TearDownClients {
             s3Client.shutdown();
             cloudWatchClient.shutdown();
             ecsClient.shutdown();
-            ecrClient.shutdown();
             emrClient.shutdown();
         }
     }
@@ -104,7 +102,7 @@ public class TearDownClients {
         return ecs;
     }
 
-    public AmazonECR getEcr() {
+    public EcrClient getEcr() {
         return ecr;
     }
 
@@ -125,7 +123,7 @@ public class TearDownClients {
         private S3Client s3v2;
         private AmazonCloudWatchEvents cloudWatch;
         private AmazonECS ecs;
-        private AmazonECR ecr;
+        private EcrClient ecr;
         private AmazonElasticMapReduce emr;
         private EmrServerlessClient emrServerless;
         private CloudFormationClient cloudFormation;
@@ -153,7 +151,7 @@ public class TearDownClients {
             return this;
         }
 
-        public Builder ecr(AmazonECR ecr) {
+        public Builder ecr(EcrClient ecr) {
             this.ecr = ecr;
             return this;
         }
