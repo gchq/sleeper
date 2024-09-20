@@ -22,6 +22,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -29,9 +30,10 @@ import sleeper.core.table.TableStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
@@ -93,35 +95,19 @@ public class FindPartitionsToSplit {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         LOGGER.info("There are {} file references in table {}", fileReferences.size(), table);
 
-        List<Partition> leafPartitions = stateStore.getLeafPartitions();
+        PartitionTree partitionTree = new PartitionTree(stateStore.getAllPartitions());
+        List<Partition> leafPartitions = partitionTree.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), table);
+
+        Map<String, List<FileReference>> fileReferencesByPartition = fileReferences.stream()
+                .collect(groupingBy(FileReference::getPartitionId));
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(table, splitThreshold, partition, fileReferences).ifPresent(results::add);
+            PartitionSplitCheck.fromFilesInPartition(tableProperties, partitionTree, partition, fileReferencesByPartition)
+                    .splitIfNecessary().ifPresent(results::add);
         }
         return results;
-    }
-
-    private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableStatus table, long splitThreshold, Partition partition, List<FileReference> fileReferences) {
-        List<FileReference> relevantFiles = getFilesInPartition(partition, fileReferences);
-        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), table, check.getNumberOfRecordsInPartition());
-        if (check.isNeedsSplitting()) {
-            LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, relevantFiles));
-        } else {
-            LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
-            return Optional.empty();
-        }
-    }
-
-    public static List<FileReference> getFilesInPartition(Partition partition, List<FileReference> fileReferences) {
-        return fileReferences.stream()
-                .filter(file -> file.getPartitionId().equals(partition.getId()))
-                .filter(FileReference::onlyContainsDataForThisPartition)
-                .collect(Collectors.toUnmodifiableList());
     }
 
     @FunctionalInterface

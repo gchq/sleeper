@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.partitions;
+package sleeper.splitter.status;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -24,8 +24,10 @@ import sleeper.core.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class PartitionsStatus {
@@ -52,8 +54,10 @@ public class PartitionsStatus {
             TableProperties tableProperties, List<Partition> partitions, List<FileReference> activeFiles) {
 
         PartitionTree tree = new PartitionTree(partitions);
+        Map<String, List<FileReference>> fileReferencesByPartition = activeFiles.stream()
+                .collect(groupingBy(FileReference::getPartitionId));
         return tree.traverseLeavesFirst()
-                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
+                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, fileReferencesByPartition))
                 .collect(Collectors.toList());
     }
 

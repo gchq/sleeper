@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.partitions;
+package sleeper.splitter.status;
 
-import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
@@ -24,8 +23,6 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.List;
@@ -34,12 +31,12 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
-public class PartitionStatusReportTestHelper {
+public class PartitionsStatusTestHelper {
     private static final Schema DEFAULT_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .build();
 
-    private PartitionStatusReportTestHelper() {
+    private PartitionsStatusTestHelper() {
     }
 
     public static StateStoreTestBuilder createRootPartitionWithNoChildren() {
@@ -54,13 +51,6 @@ public class PartitionStatusReportTestHelper {
 
     public static PartitionsBuilder createPartitionsBuilder() {
         return new PartitionsBuilder(DEFAULT_SCHEMA);
-    }
-
-    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        ToStringConsoleOutput output = new ToStringConsoleOutput();
-        PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
-        reporter.report(PartitionsStatus.from(tableProperties, stateStore));
-        return output.toString();
     }
 
     public static TableProperties createTablePropertiesWithSplitThreshold(long splitThreshold) {

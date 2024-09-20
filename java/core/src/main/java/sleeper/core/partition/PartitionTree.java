@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
@@ -105,6 +106,19 @@ public class PartitionTree {
     }
 
     /**
+     * Streams through all partitions that are descendents of the given partition. Starts with the child partitions,
+     * then finds their child partitions, and so on. Traverses depth first.
+     *
+     * @param  partition the partition
+     * @return           the partition's descendents
+     */
+    public Stream<Partition> descendentsOf(Partition partition) {
+        return partition.getChildPartitionIds()
+                .stream().map(this::getPartition)
+                .flatMap(child -> Stream.concat(Stream.of(child), descendentsOf(child)));
+    }
+
+    /**
      * Retrieves the parent of a partition.
      *
      * @param  partition the partition
@@ -129,6 +143,10 @@ public class PartitionTree {
 
     public List<Partition> getAllPartitions() {
         return List.copyOf(idToPartition.values());
+    }
+
+    public List<Partition> getLeafPartitions() {
+        return idToPartition.values().stream().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
     }
 
     /**

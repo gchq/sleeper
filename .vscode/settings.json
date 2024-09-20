@@ -34,7 +34,7 @@
   "java.format.settings.profile": "Sleeper Checkstyle",
   "java.format.settings.url": "./code-style/eclipse-style.xml",
   "comment.java.jdt.ls.java.home": "/usr/lib/jvm/java-17-amazon-corretto.x86_64",
-  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx16G -Xms2G -Xlog:disable",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx24G -Xms2G -Xlog:disable",
   "java.test.config": {
     "vmArgs": [
       "--add-opens",
