@@ -110,12 +110,21 @@ public class PartitionSplitCheck {
     }
 
     private static long estimateRecordsInPartitionFromTree(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
-        Partition current = partition;
-        long treeDivisor = 1;
-        long count = tree.descendentsOf(partition)
+        return estimateRecordsInPartitionDescendents(partition, tree, fileReferencesByPartition)
+                + estimateRecordsInPartitionAndAncestors(partition, tree, fileReferencesByPartition);
+    }
+
+    private static long estimateRecordsInPartitionDescendents(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+        return tree.descendentsOf(partition)
                 .flatMap(descendent -> fileReferencesByPartition.getOrDefault(descendent.getId(), List.of()).stream())
                 .mapToLong(FileReference::getNumberOfRecords)
                 .sum();
+    }
+
+    private static long estimateRecordsInPartitionAndAncestors(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+        Partition current = partition;
+        long count = 0;
+        long treeDivisor = 1;
         do {
             List<FileReference> partitionFiles = fileReferencesByPartition.getOrDefault(current.getId(), List.of());
             long partitionCount = partitionFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
