@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -36,7 +37,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 
 public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSleeperInstanceDriver.class);
@@ -63,7 +63,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (clients.getS3().doesBucketExistV2(getConfigBucketFromInstanceId(instanceId))) {
+        if (clients.getS3().doesBucketExistV2(S3InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);

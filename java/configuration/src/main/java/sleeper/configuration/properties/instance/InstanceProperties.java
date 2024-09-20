@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -56,6 +55,16 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     public static InstanceProperties copyOf(InstanceProperties instanceProperties) {
         return new InstanceProperties(loadProperties(instanceProperties.saveAsString()));
+    }
+
+    public static InstanceProperties createAndValidate(Properties properties) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.resetAndValidate(properties);
+        return instanceProperties;
+    }
+
+    public static InstanceProperties createWithoutValidation(Properties properties) {
+        return new InstanceProperties(properties);
     }
 
     @Override
@@ -100,12 +109,8 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return stringWriter.toString();
     }
 
-    public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
-    }
-
     public void loadFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
-        String configBucket = getConfigBucketFromInstanceId(instanceId);
+        String configBucket = S3InstanceProperties.getConfigBucketFromInstanceId(instanceId);
         loadFromS3(s3Client, configBucket);
     }
 
@@ -119,7 +124,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     private static String loadStringFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
-        String configBucket = getConfigBucketFromInstanceId(instanceId);
+        String configBucket = S3InstanceProperties.getConfigBucketFromInstanceId(instanceId);
         return s3Client.getObjectAsString(configBucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 

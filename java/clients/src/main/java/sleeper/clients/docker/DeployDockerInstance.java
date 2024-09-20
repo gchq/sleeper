@@ -32,6 +32,7 @@ import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.clients.status.update.AddTable;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.core.schema.Field;
@@ -53,7 +54,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
@@ -129,7 +129,7 @@ public class DeployDockerInstance {
 
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(CONFIG_BUCKET, S3InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");

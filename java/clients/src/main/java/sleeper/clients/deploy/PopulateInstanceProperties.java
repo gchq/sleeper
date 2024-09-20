@@ -23,6 +23,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -45,7 +46,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 
 public class PopulateInstanceProperties {
     private final Supplier<String> accountSupplier;
@@ -83,7 +83,7 @@ public class PopulateInstanceProperties {
 
     public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
         InstanceProperties instanceProperties = populateDefaultsFromInstanceId(new InstanceProperties(), instanceId);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(CONFIG_BUCKET, S3InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
                 .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));
