@@ -15,17 +15,15 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ActionOnFailure;
-import com.amazonaws.services.elasticmapreduce.model.AddJobFlowStepsRequest;
-import com.amazonaws.services.elasticmapreduce.model.ClusterState;
-import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
-import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
-import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ActionOnFailure;
+import software.amazon.awssdk.services.emr.model.AddJobFlowStepsRequest;
+import software.amazon.awssdk.services.emr.model.ClusterState;
+import software.amazon.awssdk.services.emr.model.ClusterSummary;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
+import software.amazon.awssdk.services.emr.model.StepConfig;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -34,13 +32,13 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 
-    private final AmazonElasticMapReduce emrClient;
+    private final EmrClient emrClient;
     private final InstanceProperties instanceProperties;
     private final String clusterId;
     private final String clusterName;
 
     public PersistentEmrPlatformExecutor(
-            AmazonElasticMapReduce emrClient,
+            EmrClient emrClient,
             InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
@@ -50,30 +48,32 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
-        StepConfig stepConfig = new StepConfig()
-                .withName("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
-                .withActionOnFailure(ActionOnFailure.CONTINUE)
-                .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(arguments.sparkSubmitCommandForEMRCluster(
-                                clusterName, EmrJarLocation.getJarLocation(instanceProperties))));
-        AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
-                .withJobFlowId(clusterId)
-                .withSteps(stepConfig);
+        StepConfig stepConfig = StepConfig.builder()
+                .name("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
+                .actionOnFailure(ActionOnFailure.CONTINUE)
+                .hadoopJarStep(step -> step
+                        .jar("command-runner.jar")
+                        .args(arguments.sparkSubmitCommandForEMRCluster(
+                                clusterName, EmrJarLocation.getJarLocation(instanceProperties))))
+                .build();
+        AddJobFlowStepsRequest addJobFlowStepsRequest = AddJobFlowStepsRequest.builder()
+                .jobFlowId(clusterId)
+                .steps(stepConfig)
+                .build();
 
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest);
         emrClient.addJobFlowSteps(addJobFlowStepsRequest);
     }
 
-    private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String clusterName) {
-        ListClustersRequest listClustersRequest = new ListClustersRequest()
-                .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
-        ListClustersResult result = emrClient.listClusters(listClustersRequest);
-        String clusterId = null;
+    private static String getClusterIdFromName(EmrClient emrClient, String clusterName) {
         LOGGER.debug("Searching for id of cluster with name {}", clusterName);
-        for (ClusterSummary cs : result.getClusters()) {
-            LOGGER.debug("Found cluster with name {}", cs.getName());
-            if (cs.getName().equals(clusterName)) {
-                clusterId = cs.getId();
+        ListClustersResponse response = emrClient.listClusters(request -> request
+                .clusterStates(ClusterState.BOOTSTRAPPING, ClusterState.RUNNING, ClusterState.STARTING, ClusterState.WAITING));
+        String clusterId = null;
+        for (ClusterSummary cs : response.clusters()) {
+            LOGGER.debug("Found cluster with name {}", cs.name());
+            if (cs.name().equals(clusterName)) {
+                clusterId = cs.id();
                 break;
             }
         }

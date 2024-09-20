@@ -15,13 +15,13 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
-import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
-import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
-import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
-import com.amazonaws.services.elasticmapreduce.model.MarketType;
+import software.amazon.awssdk.services.emr.model.ComputeLimits;
+import software.amazon.awssdk.services.emr.model.ComputeLimitsUnitType;
+import software.amazon.awssdk.services.emr.model.EbsConfiguration;
+import software.amazon.awssdk.services.emr.model.InstanceGroupConfig;
+import software.amazon.awssdk.services.emr.model.InstanceRoleType;
+import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
+import software.amazon.awssdk.services.emr.model.MarketType;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -54,23 +54,26 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
     public JobFlowInstancesConfig createJobFlowInstancesConfig(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
 
-        return new JobFlowInstancesConfig()
-                .withEc2SubnetId(randomSubnet())
-                .withInstanceGroups(
-                        new InstanceGroupConfig()
-                                .withName("Executors")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES).get(0))
-                                .withInstanceRole(InstanceRoleType.CORE)
-                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
-                                .withEbsConfiguration(ebsConfiguration)
-                                .withMarket(MarketType.fromValue(platformSpec.getOrDefault(
-                                        BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
-                        new InstanceGroupConfig()
-                                .withName("Driver")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES).get(0))
-                                .withInstanceRole(InstanceRoleType.MASTER)
-                                .withInstanceCount(1)
-                                .withEbsConfiguration(ebsConfiguration));
+        return JobFlowInstancesConfig.builder()
+                .ec2SubnetId(randomSubnet())
+                .instanceGroups(
+                        InstanceGroupConfig.builder()
+                                .name("Executors")
+                                .instanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES).get(0))
+                                .instanceRole(InstanceRoleType.CORE)
+                                .instanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
+                                .ebsConfiguration(ebsConfiguration)
+                                .market(MarketType.fromValue(platformSpec.getOrDefault(
+                                        BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT")))
+                                .build(),
+                        InstanceGroupConfig.builder()
+                                .name("Driver")
+                                .instanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES).get(0))
+                                .instanceRole(InstanceRoleType.MASTER)
+                                .instanceCount(1)
+                                .ebsConfiguration(ebsConfiguration)
+                                .build())
+                .build();
     }
 
     @Override
@@ -79,10 +82,11 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
         Integer maxNumberOfExecutors = Integer.max(
                 platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY),
                 platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
-        return new ComputeLimits()
-                .withUnitType(ComputeLimitsUnitType.Instances)
-                .withMinimumCapacityUnits(1)
-                .withMaximumCapacityUnits(maxNumberOfExecutors);
+        return ComputeLimits.builder()
+                .unitType(ComputeLimitsUnitType.INSTANCES)
+                .minimumCapacityUnits(1)
+                .maximumCapacityUnits(maxNumberOfExecutors)
+                .build();
     }
 
     private String randomSubnet() {

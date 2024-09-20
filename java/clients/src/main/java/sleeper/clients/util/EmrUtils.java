@@ -15,10 +15,9 @@
  */
 package sleeper.clients.util;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ClusterState;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ClusterState;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 
 import sleeper.core.util.StaticRateLimit;
 
@@ -28,12 +27,11 @@ public class EmrUtils {
     private EmrUtils() {
     }
 
-    private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
-            ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
-    public static final StaticRateLimit<ListClustersResult> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.5);
+    private static final List<ClusterState> ACTIVE_STATES = List.of(ClusterState.STARTING, ClusterState.BOOTSTRAPPING,
+            ClusterState.RUNNING, ClusterState.WAITING, ClusterState.TERMINATING);
+    public static final StaticRateLimit<ListClustersResponse> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.5);
 
-    public static ListClustersResult listActiveClusters(AmazonElasticMapReduce emrClient, StaticRateLimit<ListClustersResult> rateLimit) {
-        return rateLimit.requestOrGetLast(() -> emrClient.listClusters(
-                new ListClustersRequest().withClusterStates(ACTIVE_STATES)));
+    public static ListClustersResponse listActiveClusters(EmrClient emrClient, StaticRateLimit<ListClustersResponse> rateLimit) {
+        return rateLimit.requestOrGetLast(() -> emrClient.listClusters(request -> request.clusterStates(ACTIVE_STATES)));
     }
 }
