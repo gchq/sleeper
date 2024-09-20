@@ -33,6 +33,7 @@ public class PartitionsStatusReporter {
 
     private static final TableWriterFactory.Builder BUILDER = TableWriterFactory.builder();
     private static final TableField ID = BUILDER.addField("ID");
+    private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField PARENT = BUILDER.addField("PARENT");
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
@@ -40,7 +41,6 @@ public class PartitionsStatusReporter {
     private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
     private static final TableField APPROX_RECORDS_REFERENCED = BUILDER.addNumericField("APPROX_RECORDS_REFERENCED");
     private static final TableField EXACT_RECORDS_REFERENCED = BUILDER.addNumericField("EXACT_RECORDS_REFERENCED");
-    private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField WILL_BE_SPLIT = BUILDER.addField("WILL_BE_SPLIT");
     private static final TableField MAY_SPLIT_IF_COMPACTED = BUILDER.addField("MAY_SPLIT_IF_COMPACTED");
     private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");

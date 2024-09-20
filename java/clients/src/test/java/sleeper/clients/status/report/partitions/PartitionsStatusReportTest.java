@@ -180,6 +180,27 @@ class PartitionsStatusReportTest {
     }
 
     @Test
+    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(100);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc")
+                .splitToNewChildren("R", "RL", "RR", "def"))
+                .partitionFileWithRecords("root", "root.parquet", 100L)
+                .partitionFileWithRecords("R", "R.parquet", 100L)
+                .partitionFileWithRecords("RL", "RL.parquet", 24L)
+                .partitionFileWithRecords("RR", "RR.parquet", 26L)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/combinedPartitionRecordCountExceedsThreshold.txt"));
+    }
+
+    @Test
     void shouldReportSomeFilesAssignedToAJob() throws Exception {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))

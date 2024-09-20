@@ -5,6 +5,6 @@ There are 1 partitions (1 leaf partitions)
 There are 1 leaf partitions that will be split
 Split threshold is 10 records
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| ID   | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | APPROX_RECORDS | APPROX_RECORDS_REFERENCED | EXACT_RECORDS_REFERENCED | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
-| root |        |             |     3 |             2 |            300 |                       300 |                      300 | yes  | yes           |                        |             |             |
+| ID   | LEAF | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | APPROX_RECORDS | APPROX_RECORDS_REFERENCED | EXACT_RECORDS_REFERENCED | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
+| root | yes  |        |             |     3 |             2 |            300 |                       300 |                      300 | yes           |                        |             |             |
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

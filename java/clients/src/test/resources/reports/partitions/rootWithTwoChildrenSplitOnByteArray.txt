@@ -5,8 +5,8 @@ There are 3 partitions (2 leaf partitions)
 There are 0 leaf partitions that will be split
 Split threshold is 10 records
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| ID     | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | APPROX_RECORDS | APPROX_RECORDS_REFERENCED | EXACT_RECORDS_REFERENCED | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
-| A      | parent | min         |     1 |             0 |              5 |                         5 |                        5 | yes  | no            | no                     |             |             |
-| B      | parent | max         |     1 |             0 |              5 |                         5 |                        5 | yes  | no            | no                     |             |             |
-| parent |        |             |     0 |             0 |             10 |                         0 |                        0 | no   |               |                        | key         | [raw bytes] |
+| ID     | LEAF | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | APPROX_RECORDS | APPROX_RECORDS_REFERENCED | EXACT_RECORDS_REFERENCED | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
+| A      | yes  | parent | min         |     1 |             0 |              5 |                         5 |                        5 | no            | no                     |             |             |
+| B      | yes  | parent | max         |     1 |             0 |              5 |                         5 |                        5 | no            | no                     |             |             |
+| parent | no   |        |             |     0 |             0 |             10 |                         0 |                        0 |               |                        | key         | [raw bytes] |
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
