@@ -80,7 +80,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
-        instanceProperties.saveToS3(s3);
+        S3InstanceProperties.saveToS3(s3, instanceProperties);
     }
 
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {

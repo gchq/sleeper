@@ -58,7 +58,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     @Override
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
         LOGGER.info("Saving properties with instance ID: {}", instanceProperties.get(ID));
-        instanceProperties.saveToS3(clients.getS3());
+        S3InstanceProperties.saveToS3(clients.getS3(), instanceProperties);
     }
 
     @Override

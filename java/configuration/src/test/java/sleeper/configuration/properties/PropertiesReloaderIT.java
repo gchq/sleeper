@@ -72,7 +72,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
@@ -88,7 +88,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
@@ -103,7 +103,7 @@ public class PropertiesReloaderIT {
     void shouldReloadTablePropertiesIfForceReloadPropertiesSetToTrue() {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
@@ -126,7 +126,7 @@ public class PropertiesReloaderIT {
     void shouldNotReloadTablePropertiesIfForceReloadPropertiesSetToFalse() {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);

@@ -76,7 +76,7 @@ public class InstancePropertiesTestHelper {
         extraProperties.accept(instanceProperties);
         try {
             s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save instance properties", e);
         }

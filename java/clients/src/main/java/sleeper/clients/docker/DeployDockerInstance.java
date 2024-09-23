@@ -113,7 +113,7 @@ public class DeployDockerInstance {
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
 
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         for (TableProperties tableProperties : tables) {
             try {

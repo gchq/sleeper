@@ -116,7 +116,7 @@ class SaveLocalPropertiesS3IT {
 
     private InstanceProperties createTestInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties(s3Client);
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         return instanceProperties;
     }

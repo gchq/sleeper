@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.instance;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 
 /**
@@ -107,13 +105,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Properties tagsProperties = getTagsProperties();
         tagsProperties.store(stringWriter, "");
         return stringWriter.toString();
-    }
-
-    public void saveToS3(AmazonS3 s3Client) {
-        String bucket = get(CONFIG_BUCKET);
-        LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, S3_INSTANCE_PROPERTIES_FILE, saveAsString());
-        LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override

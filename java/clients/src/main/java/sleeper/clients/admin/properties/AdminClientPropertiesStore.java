@@ -114,7 +114,7 @@ public class AdminClientPropertiesStore {
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
             } else {
                 LOGGER.info("Saving to AWS");
-                properties.saveToS3(s3);
+                S3InstanceProperties.saveToS3(s3, properties);
             }
         } catch (IOException | AmazonS3Exception | InterruptedException e) {
             String instanceId = properties.get(ID);
