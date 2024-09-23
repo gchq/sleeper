@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.File;
@@ -30,12 +31,9 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
-
 /**
  * Loads jars from the S3 jars bucket into the classpath dynamically. Only includes jars specified in the user jars
- * instance property.
+ * instance property, see {@link CommonProperty#USER_JARS}.
  */
 public class S3UserJarsLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3UserJarsLoader.class);
@@ -57,7 +55,7 @@ public class S3UserJarsLoader {
      * @throws ObjectFactoryException if we could not build a URL to reference the local file a jar was downloaded to
      */
     public ClassLoader getClassLoader() throws ObjectFactoryException {
-        List<String> userJarsFiles = instanceProperties.getList(USER_JARS);
+        List<String> userJarsFiles = instanceProperties.getList(CommonProperty.USER_JARS);
         if (null != userJarsFiles) {
             try {
                 ClassLoader classLoader = getClassLoader(userJarsFiles);
@@ -89,11 +87,12 @@ public class S3UserJarsLoader {
     }
 
     private String loadJar(String jar) {
-        GetObjectRequest getObjectRequest = new GetObjectRequest(instanceProperties.get(JARS_BUCKET), jar);
+        String bucket = instanceProperties.get(CommonProperty.JARS_BUCKET);
+        GetObjectRequest getObjectRequest = new GetObjectRequest(bucket, jar);
         String outputFile = localDir + "/" + jar;
         ObjectMetadata metadata = s3Client.getObject(getObjectRequest, new File(outputFile));
         LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
-                jar, metadata.getContentLength(), instanceProperties.get(JARS_BUCKET), outputFile);
+                jar, metadata.getContentLength(), bucket, outputFile);
         return outputFile;
     }
 }
