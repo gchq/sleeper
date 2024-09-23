@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 
 import java.io.IOException;
@@ -133,9 +134,7 @@ public class TearDownInstance {
     public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId) {
         LOGGER.info("Loading configuration for instance {}", instanceId);
         try {
-            InstanceProperties properties = new InstanceProperties();
-            properties.loadFromS3GivenInstanceId(s3, instanceId);
-            return properties;
+            return S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
             return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);

@@ -52,7 +52,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     @Override
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        instanceProperties.loadFromS3GivenInstanceId(clients.getS3(), instanceId);
+        S3InstanceProperties.reloadGivenInstanceId(clients.getS3(), instanceProperties, instanceId);
     }
 
     @Override

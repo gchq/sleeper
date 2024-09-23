@@ -57,6 +57,10 @@ public class S3InstanceProperties {
         properties.resetAndValidate(loadPropertiesFromBucket(s3Client, properties.get(CONFIG_BUCKET)));
     }
 
+    public static void reloadGivenInstanceId(AmazonS3 s3Client, InstanceProperties properties, String instanceId) {
+        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId)));
+    }
+
     private static Properties loadPropertiesGivenInstanceId(AmazonS3 s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId));
     }

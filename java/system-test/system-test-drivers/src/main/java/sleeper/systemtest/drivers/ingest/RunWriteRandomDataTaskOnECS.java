@@ -137,8 +137,7 @@ public class RunWriteRandomDataTaskOnECS {
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         try {
-            SystemTestProperties systemTestProperties = new SystemTestProperties();
-            systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
             List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
