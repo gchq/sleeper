@@ -53,6 +53,10 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_IND
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
+/**
+ * The DynamoDB implementation of the Sleeper table index. Records which tables exist in a Sleeper instance, their
+ * names, and which are online or offline.
+ */
 public class DynamoDBTableIndex implements TableIndex {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTableIndex.class);
 
@@ -200,6 +204,12 @@ public class DynamoDBTableIndex implements TableIndex {
         update(oldStatus, table);
     }
 
+    /**
+     * Updates a table index entry.
+     *
+     * @param oldStatus the entry before the update
+     * @param newStatus the entry after the update
+     */
     public void update(TableStatus oldStatus, TableStatus newStatus) {
         if (oldStatus.equals(newStatus)) {
             LOGGER.debug("No changes detected for table {}, skipping update", oldStatus);
