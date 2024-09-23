@@ -23,6 +23,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Creates instances of classes that may be held in an external jar to be dynamically loaded into the classpath.
+ */
 public class ObjectFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObjectFactory.class);
 
@@ -36,10 +39,24 @@ public class ObjectFactory {
         classLoader = ObjectFactory.class.getClassLoader();
     }
 
+    /**
+     * Creates an instance of this class which will use the current classpath without any dynamic loading of jars.
+     *
+     * @return the instance
+     */
     public static ObjectFactory noUserJars() {
         return new ObjectFactory();
     }
 
+    /**
+     * Creates an instance of the given class.
+     *
+     * @param  <T>                    the type of the object to be created
+     * @param  className              the binary name of the class, see {@link ClassLoader}
+     * @param  parentClass            the type to cast the new object to
+     * @return                        the new instance
+     * @throws ObjectFactoryException if the object could not be instantiated
+     */
     public <T> T getObject(String className, Class<T> parentClass) throws ObjectFactoryException {
         T object;
         try {

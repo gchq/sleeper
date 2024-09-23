@@ -33,6 +33,10 @@ import java.util.List;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 
+/**
+ * Loads jars from the S3 jars bucket into the classpath dynamically. Only includes jars specified in the user jars
+ * instance property.
+ */
 public class S3UserJarsLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3UserJarsLoader.class);
 
@@ -46,6 +50,12 @@ public class S3UserJarsLoader {
         this.localDir = localDir;
     }
 
+    /**
+     * Builds a class loader to load from either the current classpath, or the specified user jars.
+     *
+     * @return                        the class loader
+     * @throws ObjectFactoryException if we could not build a URL to reference the local file a jar was downloaded to
+     */
     public ClassLoader getClassLoader() throws ObjectFactoryException {
         List<String> userJarsFiles = instanceProperties.getList(USER_JARS);
         if (null != userJarsFiles) {
