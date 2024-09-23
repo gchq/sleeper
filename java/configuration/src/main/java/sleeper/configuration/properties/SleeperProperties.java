@@ -73,7 +73,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     public void validate(SleeperPropertiesValidationReporter reporter) {
-        getPropertiesIndex().getUserDefined().forEach(property -> property.validate(get(property), reporter));
+        getPropertiesIndex().getUserDefined().forEach(property -> {
+            String value = get(property);
+            if (!property.getValidationPredicate().test(value)) {
+                reporter.invalidProperty(property, value);
+            }
+        });
     }
 
     public abstract SleeperPropertyIndex<T> getPropertiesIndex();
