@@ -23,12 +23,23 @@ import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
 
 import java.net.URI;
 
+/**
+ * Applies default configuration to AWS SDK v2 clients.
+ */
 public class AwsV2ClientHelper {
     private static final String AWS_ENDPOINT_ENV_VAR = "AWS_ENDPOINT_URL";
 
     private AwsV2ClientHelper() {
     }
 
+    /**
+     * Builds an AWS SDK v2 client with default configuration.
+     *
+     * @param  <B>     the builder type
+     * @param  <T>     the client type
+     * @param  builder the builder
+     * @return         the client
+     */
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(B builder) {
         String endpoint = System.getenv(AWS_ENDPOINT_ENV_VAR);
         if (endpoint != null) {
