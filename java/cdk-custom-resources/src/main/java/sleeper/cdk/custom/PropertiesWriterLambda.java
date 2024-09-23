@@ -22,7 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -65,13 +65,13 @@ public class PropertiesWriterLambda {
     private void deleteProperties(String propertiesStr) throws IOException {
         String bucketName = readBucketName(propertiesStr);
         LOGGER.info("Deleting from bucket {}", bucketName);
-        s3Client.deleteObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        s3Client.deleteObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     private void updateProperties(String propertiesStr) throws IOException {
         String bucketName = readBucketName(propertiesStr);
         LOGGER.info("Writing to bucket {}", bucketName);
-        s3Client.putObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
+        s3Client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
     }
 
     private String readBucketName(String propertiesStr) throws IOException {

@@ -15,9 +15,6 @@
  */
 package sleeper.configuration.properties.instance;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
@@ -36,9 +33,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
  * Contains all the properties needed to deploy an instance of Sleeper.
  */
 public class InstanceProperties extends SleeperProperties<InstanceProperty> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceProperties.class);
-
-    public static final String S3_INSTANCE_PROPERTIES_FILE = "instance.properties";
 
     protected Map<String, String> tags = new HashMap<>();
 

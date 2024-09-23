@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
@@ -57,7 +57,7 @@ public class AwsGeneratedIngestSourceFilesDriver implements GeneratedIngestSourc
         String bucketName = context.getSystemTestBucketName();
         List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
                 .contents().stream().map(S3Object::key)
-                .filter(not(InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
+                .filter(not(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
                 .map(key -> ObjectIdentifier.builder().key(key).build())
                 .collect(Collectors.toList());
         if (!objects.isEmpty()) {

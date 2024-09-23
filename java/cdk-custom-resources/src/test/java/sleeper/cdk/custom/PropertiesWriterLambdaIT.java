@@ -41,7 +41,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -105,7 +104,7 @@ public class PropertiesWriterLambdaIT {
         client.createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
 
-        client.putObject(bucketName, S3_INSTANCE_PROPERTIES_FILE, "foo");
+        client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("bar", bucketName);
@@ -164,7 +163,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        client.putObject(bucketName, S3_INSTANCE_PROPERTIES_FILE, "foo");
+        client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
