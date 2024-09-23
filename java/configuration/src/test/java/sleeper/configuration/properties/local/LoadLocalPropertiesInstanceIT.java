@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesNoValidation;
 
 class LoadLocalPropertiesInstanceIT {
 
@@ -119,13 +121,5 @@ class LoadLocalPropertiesInstanceIT {
         Properties tags = new Properties();
         tagMap.forEach(tags::setProperty);
         Files.writeString(tempDir.resolve("tags.properties"), propertiesString(tags));
-    }
-
-    private InstanceProperties loadInstanceProperties(Path file) {
-        return LoadLocalProperties.loadInstanceProperties(InstanceProperties::new, file);
-    }
-
-    private InstanceProperties loadInstancePropertiesNoValidation(Path file) {
-        return LoadLocalProperties.loadInstancePropertiesNoValidation(InstanceProperties::new, file);
     }
 }

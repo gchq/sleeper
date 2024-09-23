@@ -148,7 +148,7 @@ public class PopulateInstanceProperties {
         }
 
         public Builder instanceProperties(Path propertiesPath) {
-            this.properties = new InstanceProperties(loadProperties(propertiesPath));
+            this.properties = InstanceProperties.createWithoutValidation(loadProperties(propertiesPath));
             return this;
         }
 

@@ -32,6 +32,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -53,7 +54,6 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
@@ -79,7 +79,7 @@ public class AdminClientPropertiesStore {
 
     public InstanceProperties loadInstanceProperties(String instanceId) {
         try {
-            return new InstanceProperties(loadPropertiesFromS3GivenInstanceId(s3, instanceId));
+            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
         } catch (AmazonS3Exception e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }

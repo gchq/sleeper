@@ -55,7 +55,7 @@ public class DeployInstanceConfigurationFromTemplates {
         if (instancePropertiesPath == null) {
             return fromTemplatesDir();
         }
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(InstanceProperties::new, instancePropertiesPath);
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
         if (instanceProperties.getTags().isEmpty()) {
             loadTagsTemplate(instanceProperties);
         }
@@ -90,7 +90,7 @@ public class DeployInstanceConfigurationFromTemplates {
     }
 
     private InstanceProperties loadInstancePropertiesTemplate() {
-        return new InstanceProperties(
+        return InstanceProperties.createWithoutValidation(
                 loadProperties(templatesDir.resolve("instanceproperties.template")));
     }
 

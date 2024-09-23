@@ -344,7 +344,7 @@ public class SleeperCdkApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
+        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, app);
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()

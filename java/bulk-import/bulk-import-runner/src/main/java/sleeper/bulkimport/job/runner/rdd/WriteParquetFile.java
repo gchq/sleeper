@@ -52,7 +52,7 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
 
     @Override
     public Iterator<Row> call(Iterator<Row> rowIter) {
-        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
         PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());

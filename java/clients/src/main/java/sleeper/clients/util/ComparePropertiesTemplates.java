@@ -90,7 +90,7 @@ public class ComparePropertiesTemplates {
     }
 
     private static InstanceProperties loadInstanceProperties(Path file) {
-        return new InstanceProperties(loadProperties(file));
+        return InstanceProperties.createWithoutValidation(loadProperties(file));
     }
 
     private static TableProperties loadTableProperties(InstanceProperties instanceProperties, Path file) {
@@ -105,7 +105,7 @@ public class ComparePropertiesTemplates {
     private static InstanceProperties generateInstanceProperties(Consumer<Writer> generator) {
         StringWriter writer = new StringWriter();
         generator.accept(writer);
-        return new InstanceProperties(loadProperties(writer.toString()));
+        return InstanceProperties.createWithoutValidation(loadProperties(writer.toString()));
     }
 
     private static TableProperties generateTableProperties(
