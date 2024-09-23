@@ -26,6 +26,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * A Sleeper instance property which is set by the user.
+ */
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final String propertyName;
     private final String defaultValue;
@@ -134,6 +137,9 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         }
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     static final class Builder {
         private String propertyName;
         private String defaultValue;

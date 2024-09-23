@@ -26,6 +26,9 @@ import java.util.Objects;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 
+/**
+ * Definitions of instance properties commonly set for any instance.
+ */
 public interface CommonProperty {
     int ID_MAX_LENGTH = 20;
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
@@ -356,10 +359,9 @@ public interface CommonProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

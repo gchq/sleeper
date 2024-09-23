@@ -29,6 +29,9 @@ import java.util.Locale;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
+/**
+ * Definitions of instance properties that are defaults for other properties, particularly table properties.
+ */
 public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.default.fs.s3a.readahead.range")
             .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
@@ -351,10 +354,9 @@ public interface DefaultProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

@@ -21,6 +21,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to ingest writing files asynchronously.
+ */
 public interface AsyncIngestPartitionFileWriterProperty {
     UserDefinedInstanceProperty ASYNC_INGEST_CLIENT_TYPE = Index.propertyBuilder("sleeper.ingest.async.client.type")
             .description("The implementation of the async S3 client to use for upload during ingest.\n" +
@@ -52,10 +55,9 @@ public interface AsyncIngestPartitionFileWriterProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

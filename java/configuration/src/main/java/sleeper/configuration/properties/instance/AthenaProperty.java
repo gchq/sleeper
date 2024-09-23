@@ -21,6 +21,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to the integration with AWS Athena.
+ */
 public interface AthenaProperty {
     UserDefinedInstanceProperty SPILL_BUCKET_AGE_OFF_IN_DAYS = Index.propertyBuilder("sleeper.athena.spill.bucket.ageoff.days")
             .description("The number of days before objects in the spill bucket are deleted.")
@@ -49,10 +52,9 @@ public interface AthenaProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

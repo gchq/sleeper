@@ -22,6 +22,9 @@ import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to bulk import on AWS EMR with a separate cluster created for each job.
+ */
 public interface NonPersistentEMRProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.default.bulk.import.emr.release.label")
             .description("(Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster for bulk importing data " +
@@ -100,10 +103,9 @@ public interface NonPersistentEMRProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

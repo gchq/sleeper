@@ -20,6 +20,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to bulk import on AWS EKS.
+ */
 public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_REPO = Index.propertyBuilder("sleeper.bulk.import.eks.repo")
             .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
@@ -41,10 +44,9 @@ public interface EKSProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

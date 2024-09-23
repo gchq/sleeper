@@ -21,6 +21,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to ingest.
+ */
 public interface IngestProperty {
     UserDefinedInstanceProperty ECR_INGEST_REPO = Index.propertyBuilder("sleeper.ingest.repo")
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
@@ -108,10 +111,9 @@ public interface IngestProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

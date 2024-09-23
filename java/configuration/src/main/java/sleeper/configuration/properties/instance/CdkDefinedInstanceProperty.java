@@ -22,9 +22,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import java.util.List;
 
 /**
- * Properties set internally by the Sleeper CDK app and not by the user. These are set by the system itself at
- * deployment time so require no default or validation. Even if you set these in your properties file, they will be
- * overwritten.
+ * Definitions of properties set internally by the Sleeper CDK app and not by the user. These are set by the system
+ * itself at deployment time so require no default or validation. If you set these in your properties file, they will be
+ * overwritten by the CDK.
  */
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -577,15 +577,14 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
     @Override
     default boolean isSetByCdk() {
         return true;
     }
 
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
 
         private Index() {

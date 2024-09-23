@@ -25,6 +25,9 @@ import java.util.function.Predicate;
 
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 
+/**
+ * Definitions of instance properties relating to bulk import on AWS EMR Serverless.
+ */
 public interface EMRServerlessProperty {
 
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
@@ -246,10 +249,9 @@ public interface EMRServerlessProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }
