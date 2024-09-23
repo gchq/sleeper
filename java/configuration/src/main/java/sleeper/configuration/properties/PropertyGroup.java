@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * A group used to organise Sleeper configuration properties.
+ */
 public class PropertyGroup {
     private final String name;
     private final String description;
@@ -31,6 +34,12 @@ public class PropertyGroup {
         description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
+    /**
+     * Creates a builder for a group with a given name.
+     *
+     * @param  name the group name
+     * @return      a builder
+     */
     public static Builder group(String name) {
         return new Builder().name(name);
     }
@@ -65,6 +74,9 @@ public class PropertyGroup {
         return description;
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private String name;
         private String description;
@@ -74,16 +86,34 @@ public class PropertyGroup {
         private Builder() {
         }
 
+        /**
+         * Sets the group name.
+         *
+         * @param  name the name
+         * @return      this builder
+         */
         public Builder name(String name) {
             this.name = name;
             return this;
         }
 
+        /**
+         * Sets the group description.
+         *
+         * @param  description the description
+         * @return             this builder
+         */
         public Builder description(String description) {
             this.description = description;
             return this;
         }
 
+        /**
+         * Sets an operation to perform on the group after it is built.
+         *
+         * @param  afterBuild the operation
+         * @return            this builder
+         */
         public Builder afterBuild(Consumer<PropertyGroup> afterBuild) {
             this.afterBuild = afterBuild;
             return this;
@@ -96,6 +126,15 @@ public class PropertyGroup {
         }
     }
 
+    /**
+     * Sorts a list of Sleeper configuration properties by their group. Orders groups of properties in the order that
+     * the property groups are specified in the list.
+     *
+     * @param  <T>        the type of property to sort
+     * @param  properties the properties
+     * @param  groups     the order of groups to apply to the properties
+     * @return            a new list of the properties with groups in the given order
+     */
     public static <T extends SleeperProperty> List<T> sortPropertiesByGroup(List<T> properties, List<PropertyGroup> groups) {
         List<T> sorted = new ArrayList<>(properties);
         sorted.sort(Comparator.comparingInt(p -> groups.indexOf(p.getPropertyGroup())));
