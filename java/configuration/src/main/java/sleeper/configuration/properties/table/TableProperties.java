@@ -79,7 +79,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @param  properties         the property values
      * @return                    the table properties
      */
-    public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
+    public static TableProperties createAndValidate(InstanceProperties instanceProperties, Properties properties) {
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
         tableProperties.validate();
         return tableProperties;
@@ -93,7 +93,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @param  newProperties   the property values
      * @return                 the new table properties
      */
-    public static TableProperties reinitialise(TableProperties tableProperties, Properties newProperties) {
+    public static TableProperties recreateWithoutValidation(TableProperties tableProperties, Properties newProperties) {
         return new TableProperties(tableProperties.instanceProperties, newProperties);
     }
 

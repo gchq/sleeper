@@ -81,7 +81,7 @@ class TablePropertiesSchemaTest {
         Properties properties = loadProperties(input);
 
         // When
-        TableProperties tableProperties = TableProperties.loadAndValidate(new InstanceProperties(), properties);
+        TableProperties tableProperties = TableProperties.createAndValidate(new InstanceProperties(), properties);
 
         // Then
         assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
@@ -115,7 +115,7 @@ class TablePropertiesSchemaTest {
         Properties properties = loadProperties(input);
 
         // Then
-        assertThatThrownBy(() -> TableProperties.loadAndValidate(instanceProperties, properties))
+        assertThatThrownBy(() -> TableProperties.createAndValidate(instanceProperties, properties))
                 .hasMessage("Property sleeper.table.name was invalid. It was unset.");
     }
 }
