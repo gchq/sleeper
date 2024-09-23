@@ -40,8 +40,6 @@
     <suppress files="[\\/]cdk[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]system-test[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]system-test[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]configuration[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]configuration[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]parquet[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]parquet[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
