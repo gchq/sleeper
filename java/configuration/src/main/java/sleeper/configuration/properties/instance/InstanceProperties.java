@@ -30,7 +30,7 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 
 /**
- * Contains all the properties needed to deploy an instance of Sleeper.
+ * Contains values of the properties to configure an instance of Sleeper.
  */
 public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
