@@ -30,6 +30,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
+/**
+ * A store to load and save table properties via the table index of the Sleeper instance.
+ */
 public class TablePropertiesStore {
 
     private static final TableIdGenerator ID_GENERATOR = new TableIdGenerator();
@@ -42,42 +45,86 @@ public class TablePropertiesStore {
         this.client = client;
     }
 
+    /**
+     * Loads properties for the given Sleeper table.
+     *
+     * @param  table the table status
+     * @return       the table properties
+     */
     TableProperties loadProperties(TableStatus table) {
         TableProperties tableProperties = client.loadProperties(table);
         tableProperties.validate();
         return tableProperties;
     }
 
+    /**
+     * Loads and validates properties for the Sleeper table with the given name.
+     *
+     * @param  tableName the table name
+     * @return           the table properties
+     */
     public TableProperties loadByName(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(this::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
+    /**
+     * Loads and validates properties for the Sleeper table with the given unique ID.
+     *
+     * @param  tableId the unique table ID
+     * @return         the table properties
+     */
     public TableProperties loadById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
                 .map(this::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableId(tableId));
     }
 
+    /**
+     * Loads properties for the Sleeper table with the given name, with no validation.
+     *
+     * @param  tableName the table name
+     * @return           the table properties
+     */
     public TableProperties loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(client::loadProperties)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
     }
 
+    /**
+     * Loads properties for all tables in the Sleeper instance.
+     *
+     * @return the table properties
+     */
     public Stream<TableProperties> streamAllTables() {
         return streamAllTableStatuses().map(this::loadProperties);
     }
 
+    /**
+     * Loads the table index entry for all tables in the Sleeper instance.
+     *
+     * @return the table statuses
+     */
     public Stream<TableStatus> streamAllTableStatuses() {
         return tableIndex.streamAllTables();
     }
 
+    /**
+     * Loads the table index entry for all online tables in the Sleeper instance.
+     *
+     * @return the statuses of online tables
+     */
     public Stream<TableStatus> streamOnlineTableIds() {
         return tableIndex.streamOnlineTables();
     }
 
+    /**
+     * Creates a new Sleeper table in the table index, and saves the table properties.
+     *
+     * @param tableProperties the table properties
+     */
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         tableIndex.getTableByName(tableName).ifPresent(tableId -> {
@@ -86,6 +133,11 @@ public class TablePropertiesStore {
         createWhenNotInIndex(tableProperties);
     }
 
+    /**
+     * Creates or updates a Sleeper table in the table index, and saves its table properties.
+     *
+     * @param tableProperties the table properties
+     */
     public void save(TableProperties tableProperties) {
         Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
         if (existingOpt.isPresent()) {
@@ -119,21 +171,51 @@ public class TablePropertiesStore {
         tableIndex.create(tableProperties.getStatus());
     }
 
+    /**
+     * Deletes a Sleeper table by its name.
+     *
+     * @param tableName the table name
+     */
     public void deleteByName(String tableName) {
         tableIndex.getTableByName(tableName)
                 .ifPresent(this::delete);
     }
 
+    /**
+     * Deletes a Sleeper table.
+     *
+     * @param table the table status
+     */
     public void delete(TableStatus table) {
         tableIndex.delete(table);
         client.deleteProperties(table);
     }
 
+    /**
+     * Loads, saves and deletes table properties in the underlying store.
+     */
     public interface Client {
+
+        /**
+         * Loads properties of the given Sleeper table.
+         *
+         * @param  table the table status
+         * @return       the table properties
+         */
         TableProperties loadProperties(TableStatus table);
 
+        /**
+         * Saves table properties.
+         *
+         * @param tableProperties the table properties
+         */
         void saveProperties(TableProperties tableProperties);
 
+        /**
+         * Deletes table properties.
+         *
+         * @param table the table status
+         */
         void deleteProperties(TableStatus table);
     }
 }
