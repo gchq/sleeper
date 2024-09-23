@@ -67,7 +67,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * would be done in the constructor, and also revalidate the values. This should be overridden if any metadata needs
      * to be set at load time.
      *
-     * @throws SleeperPropertiesInvalidException
+     * @throws SleeperPropertiesInvalidException if any value is invalid
      */
     protected void init() throws SleeperPropertiesInvalidException {
         validate();
@@ -127,7 +127,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * Retrieves the value of a property. Please call the getter relevant to the type of the property, see
      * {@link SleeperPropertyValues}.
      *
-     * @param property the property
+     * @param  property the property
+     * @return          the value of the property
      */
     public abstract String get(T property);
 
@@ -136,8 +137,9 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * strings for properties where this is equivalent to no value being set. The post-processing compute method can be
      * used to provide the default value of a property, or handle other logic to replace the value under some condition.
      *
-     * @param property the property
-     * @param compute  the method to post-process the value of a property, including null if it is unset
+     * @param  property the property
+     * @param  compute  the method to post-process the value of a property, including null if it is unset
+     * @return          the value of the property
      */
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
@@ -165,7 +167,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * this class.
      *
      * @param property the property
-     * @param value    the value, if the property is a number
+     * @param number   the value, if the property is a number
      */
     public void setNumber(T property, Number number) {
         set(property, number == null ? null : number.toString());
@@ -176,7 +178,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * this class.
      *
      * @param property the property
-     * @param value    the value, if the property is a list of strings
+     * @param list     the value, if the property is a list of strings
      */
     public void setList(T property, List<String> list) {
         set(property, String.join(",", list));
@@ -215,7 +217,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * this class.
      *
      * @param property the property
-     * @param value    the value, if the property is a list of an enum type
+     * @param list     the value, if the property is a list of an enum type
      */
     public <E extends Enum<E>> void setEnumList(T property, List<E> list) {
         set(property, list == null ? null
