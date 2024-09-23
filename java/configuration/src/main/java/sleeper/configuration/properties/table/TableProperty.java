@@ -18,7 +18,6 @@ package sleeper.configuration.properties.table;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionMethod;
@@ -90,7 +89,8 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 
 /**
- * These contain the table properties which are stored separately to the instance properties.
+ * Definitions of the table properties which are stored separately to the instance properties. Each Sleeper table has
+ * its own values for these properties.
  */
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -580,10 +580,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }
@@ -596,7 +595,10 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
         }
     }
 
+    /**
+     * Retrieves the property that sets the default value for this property if unset.
+     *
+     * @return the default property
+     */
     SleeperProperty getDefaultProperty();
-
-    PropertyGroup getPropertyGroup();
 }
