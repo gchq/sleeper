@@ -114,18 +114,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         loadFromS3(s3Client, configBucket);
     }
 
-    public void loadFromS3(AmazonS3 s3Client, String bucket) {
+    private void loadFromS3(AmazonS3 s3Client, String bucket) {
         String propertiesString = s3Client.getObjectAsString(bucket, S3_INSTANCE_PROPERTIES_FILE);
         resetAndValidate(loadProperties(propertiesString));
-    }
-
-    public static Properties loadPropertiesFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
-        return loadProperties(loadStringFromS3GivenInstanceId(s3Client, instanceId));
-    }
-
-    private static String loadStringFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
-        String configBucket = S3InstanceProperties.getConfigBucketFromInstanceId(instanceId);
-        return s3Client.getObjectAsString(configBucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 
     public void saveToS3(AmazonS3 s3Client) {
