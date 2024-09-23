@@ -33,20 +33,43 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
+/**
+ * Loads Sleeper configuration files from the local file system.
+ */
 public class LoadLocalProperties {
 
     private LoadLocalProperties() {
     }
 
+    /**
+     * Loads and validates instance properties from a given directory. Looks for an instance properties file and a tags
+     * file.
+     *
+     * @param  directory the directory
+     * @return           the instance properties
+     */
     public static InstanceProperties loadInstancePropertiesFromDirectory(Path directory) {
         Path file = directory.resolve("instance.properties");
         return loadInstanceProperties(InstanceProperties::createWithoutValidation, file);
     }
 
+    /**
+     * Loads and validates instance properties from a given instance properties file. Also loads a tags file if present.
+     *
+     * @param  file the instance properties file
+     * @return      the instance properties
+     */
     public static InstanceProperties loadInstanceProperties(Path file) {
         return loadInstanceProperties(InstanceProperties::createWithoutValidation, file);
     }
 
+    /**
+     * Loads instance properties from a given instance properties file, with no validation. Also loads a tags file if
+     * present.
+     *
+     * @param  file the instance properties file
+     * @return      the instance properties
+     */
     public static InstanceProperties loadInstancePropertiesNoValidation(Path file) {
         return loadInstancePropertiesNoValidation(InstanceProperties::createWithoutValidation, file);
     }
@@ -57,6 +80,15 @@ public class LoadLocalProperties {
         return properties;
     }
 
+    /**
+     * Loads instance properties from a given instance properties file, with no validation. Also loads a tags file if
+     * present. This should only be used with a class that extends {@link InstanceProperties}, to create an instance
+     * of that class.
+     *
+     * @param  constructor a method to create instance properties from the given properties object
+     * @param  file        the instance properties file
+     * @return             the instance properties
+     */
     public static <T extends InstanceProperties> T loadInstancePropertiesNoValidation(Function<Properties, T> constructor, Path file) {
         T properties = constructor.apply(loadProperties(file));
         Path tagsFile = directoryOf(file).resolve("tags.properties");
@@ -67,16 +99,37 @@ public class LoadLocalProperties {
         return properties;
     }
 
+    /**
+     * Loads and validates table properties by scanning alongside the given instance properties file.
+     *
+     * @param  instanceProperties     the instance properties
+     * @param  instancePropertiesFile the path to the instance properties file
+     * @return                        the table properties found
+     */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFile(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
         return loadTablesFromDirectory(instanceProperties, directoryOf(instancePropertiesFile));
     }
 
+    /**
+     * Loads table properties by scanning alongside the given instance properties file, with no validation.
+     *
+     * @param  instanceProperties     the instance properties
+     * @param  instancePropertiesFile the path to the instance properties file
+     * @return                        the table properties found
+     */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
         return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
     }
 
+    /**
+     * Loads and validates table properties by scanning under the given directory.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  directory          the directory
+     * @return                    the table properties found
+     */
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
         return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
@@ -86,6 +139,13 @@ public class LoadLocalProperties {
                 });
     }
 
+    /**
+     * Loads table properties by scanning under the given directory, with no validation.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  directory          the directory
+     * @return                    the table properties found
+     */
     public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
