@@ -19,16 +19,40 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 /**
- * Interface to be implemented by all property enums. Allows SleeperProperties to set generically. Depending on
- * implementation the class may want to provide a means of validating the provided property.
+ * Defines a property used in Sleeper configuration. Used to generate documentation and to validate values and process
+ * changes for a single Sleeper property.
  */
 public interface SleeperProperty {
+
+    /**
+     * Retrieves the name of the property, used to set the value in a properties file.
+     *
+     * @return the property name
+     */
     String getPropertyName();
 
+    /**
+     * Retrieves the default value of the property. May be null if the property has no default value. This is usually
+     * the value the property will have if it is not set, but some properties have other behaviour to compute thier
+     * value, e.g. to retrieve the value from another property.
+     *
+     * @return the default value
+     */
     String getDefaultValue();
 
+    /**
+     * Retrieves a description of the property. Used in documentation and when displaying the value in a human-readable
+     * way.
+     *
+     * @return the description
+     */
     String getDescription();
 
+    /**
+     * Retrieves the property's group. Used to gather related properties together for display.
+     *
+     * @return the group
+     */
     PropertyGroup getPropertyGroup();
 
     default boolean isSetByCdk() {
