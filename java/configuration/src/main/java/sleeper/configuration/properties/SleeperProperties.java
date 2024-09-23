@@ -17,8 +17,6 @@ package sleeper.configuration.properties;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
@@ -54,7 +52,6 @@ import static java.util.function.Predicate.not;
  * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
 public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
     private final Properties properties;
 
     protected SleeperProperties() {
