@@ -123,13 +123,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         this.getPrettyPrinter(writer).print(this);
     }
 
-    /**
-     * Retrieves the value of a property. Please call the getter relevant to the type of the property, see
-     * {@link SleeperPropertyValues}.
-     *
-     * @param  property the property
-     * @return          the value of the property
-     */
+    @Override
     public abstract String get(T property);
 
     /**

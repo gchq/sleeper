@@ -17,6 +17,9 @@ package sleeper.configuration.properties;
 
 import java.util.Map;
 
+/**
+ * A failure for when one or more Sleeper configuration properties have invalid values.
+ */
 public class SleeperPropertiesInvalidException extends IllegalArgumentException {
 
     private final transient Map<SleeperProperty, String> invalidValues;
