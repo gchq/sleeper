@@ -15,10 +15,16 @@
  */
 package sleeper.configuration.properties.instance;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
+
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -73,4 +79,12 @@ public class S3InstanceProperties {
         return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 
+    public static InstanceProperties saveToLocalWithTableProperties(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
+        SaveLocalProperties.saveToDirectory(directory, instanceProperties,
+                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                        .streamAllTables());
+        return instanceProperties;
+    }
 }
