@@ -66,7 +66,7 @@ public class S3InstanceProperties {
     }
 
     /**
-     * Loads instance properties from the given S3 bucket.
+     * Loads and validates instance properties from the given S3 bucket.
      *
      * @param  s3Client the S3 client
      * @param  bucket   the bucket name
@@ -91,8 +91,8 @@ public class S3InstanceProperties {
     }
 
     /**
-     * Reloads instance properties from the config bucket. This will only work if the given properties were originally
-     * loaded from a deployed instance, as otherwise the config bucket property will not be set.
+     * Reloads and validates instance properties from the config bucket. This will only work if the given properties
+     * were originally loaded from a deployed instance, as otherwise the config bucket property will not be set.
      *
      * @param s3Client   the S3 client
      * @param properties the instance properties
@@ -102,7 +102,7 @@ public class S3InstanceProperties {
     }
 
     /**
-     * Reloads instance properties from the config bucket of the given Sleeper instance.
+     * Reloads and validates instance properties from the config bucket of the given Sleeper instance.
      *
      * @param s3Client   the S3 client
      * @param properties the instance properties
