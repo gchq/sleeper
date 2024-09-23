@@ -67,6 +67,15 @@ public class S3InstanceProperties {
         properties.resetAndValidate(loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId)));
     }
 
+    public static InstanceProperties saveToLocalWithTableProperties(
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
+        InstanceProperties instanceProperties = loadGivenInstanceId(s3, instanceId);
+        SaveLocalProperties.saveToDirectory(directory, instanceProperties,
+                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                        .streamAllTables());
+        return instanceProperties;
+    }
+
     private static Properties loadPropertiesGivenInstanceId(AmazonS3 s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId));
     }
@@ -79,12 +88,4 @@ public class S3InstanceProperties {
         return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 
-    public static InstanceProperties saveToLocalWithTableProperties(
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
-        SaveLocalProperties.saveToDirectory(directory, instanceProperties,
-                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
-                        .streamAllTables());
-        return instanceProperties;
-    }
 }
