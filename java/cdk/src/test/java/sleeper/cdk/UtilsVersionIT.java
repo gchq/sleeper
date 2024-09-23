@@ -90,7 +90,7 @@ class UtilsVersionIT {
     }
 
     private InstanceProperties loadInstanceProperties(Function<String, String> context) {
-        return Utils.loadInstanceProperties(InstanceProperties::new, context);
+        return Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, context);
     }
 
 }

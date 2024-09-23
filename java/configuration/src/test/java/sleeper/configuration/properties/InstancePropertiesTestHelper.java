@@ -18,6 +18,7 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 
 import java.io.IOException;
@@ -58,7 +59,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 
 public class InstancePropertiesTestHelper {
 
@@ -76,7 +76,7 @@ public class InstancePropertiesTestHelper {
         extraProperties.accept(instanceProperties);
         try {
             s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save instance properties", e);
         }
@@ -87,7 +87,7 @@ public class InstancePropertiesTestHelper {
         String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(id));
+        instanceProperties.set(CONFIG_BUCKET, S3InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(ACCOUNT, "test-account");

@@ -15,11 +15,16 @@
  */
 package sleeper.systemtest.configuration;
 
+import com.amazonaws.services.s3.AmazonS3;
+
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.util.Properties;
+
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
  * Holds properties for a Sleeper instance as well as properties needed to run system test data generation tasks.
@@ -34,6 +39,16 @@ public class SystemTestProperties extends InstanceProperties {
 
     public SystemTestProperties(Properties properties) {
         super(properties);
+    }
+
+    public static SystemTestProperties loadFromBucket(AmazonS3 s3Client, String bucket) {
+        SystemTestProperties properties = new SystemTestProperties();
+        properties.resetAndValidate(loadProperties(s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)));
+        return properties;
+    }
+
+    public static SystemTestProperties loadFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
+        return loadFromBucket(s3Client, S3InstanceProperties.getConfigBucketFromInstanceId(instanceId));
     }
 
     private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {

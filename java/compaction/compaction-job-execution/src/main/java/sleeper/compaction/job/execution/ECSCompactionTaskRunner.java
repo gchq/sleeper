@@ -42,6 +42,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
@@ -81,8 +82,7 @@ public class ECSCompactionTaskRunner {
         AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, s3Bucket);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             // Log some basic data if running on EC2 inside ECS
             logEC2Metadata(instanceProperties, ecsClient);

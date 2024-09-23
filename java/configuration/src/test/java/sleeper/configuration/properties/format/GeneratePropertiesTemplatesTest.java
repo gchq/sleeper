@@ -232,7 +232,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        return new InstanceProperties(loadProperties(propertiesString));
+        return InstanceProperties.createAndValidate(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {

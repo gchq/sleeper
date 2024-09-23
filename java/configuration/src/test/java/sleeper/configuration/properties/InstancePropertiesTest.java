@@ -110,7 +110,7 @@ class InstancePropertiesTest {
         // When
         File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
-        InstanceProperties loaded = new InstanceProperties(loadProperties(file));
+        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(file));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -123,7 +123,7 @@ class InstancePropertiesTest {
 
         // When
         String string = instanceProperties.saveAsString();
-        InstanceProperties loaded = new InstanceProperties(loadProperties(string));
+        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(string));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -211,7 +211,7 @@ class InstancePropertiesTest {
     @Test
     void shouldDetectSystemTestPropertySetWhenValidPropertiesAlsoSet() {
         // Given
-        InstanceProperties properties = new InstanceProperties(loadProperties(
+        InstanceProperties properties = InstanceProperties.createAndValidate(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +
                         "sleeper.systemtest.writers=123"));
 
@@ -221,7 +221,7 @@ class InstancePropertiesTest {
     @Test
     void shouldGetUnknownPropertyValues() {
         // Given
-        InstanceProperties properties = new InstanceProperties(loadProperties(
+        InstanceProperties properties = InstanceProperties.createAndValidate(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +
                         "unknown.property=123"));
 

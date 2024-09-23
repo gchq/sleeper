@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.task.common.EC2InstanceDetails;
 
 import java.io.BufferedReader;
@@ -75,8 +76,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
 
         // Find the instance properties from S3
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         // Find ECS cluster name
         this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);

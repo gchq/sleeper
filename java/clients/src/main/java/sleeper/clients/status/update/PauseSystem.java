@@ -20,9 +20,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchevents.model.ResourceNotFoundException;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class PauseSystem {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         try (CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             pause(cwClient, instanceProperties);
         } finally {
             s3Client.shutdown();

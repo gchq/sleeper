@@ -150,8 +150,7 @@ public class MultipleQueries {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            SystemTestProperties systemTestProperties = new SystemTestProperties();
-            systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
             multipleQueries.run();
         } finally {

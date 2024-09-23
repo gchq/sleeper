@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
@@ -53,7 +54,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
 
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
 
@@ -61,7 +62,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         s3Client = AmazonS3ClientBuilder.defaultClient();
         dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }

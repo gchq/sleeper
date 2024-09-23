@@ -26,8 +26,8 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -116,7 +116,7 @@ public class RetryMessages {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         InstanceProperties instanceProperties;
         try {
-            instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
         } finally {
             s3Client.shutdown();
         }

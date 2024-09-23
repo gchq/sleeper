@@ -123,11 +123,11 @@ class TablePropertiesTest {
         // Given
         Properties properties = new Properties();
         properties.setProperty("a", "b");
-        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(properties);
 
         Properties differentProperties = new Properties();
         properties.setProperty("a", "c");
-        InstanceProperties differentInstanceProperties = new InstanceProperties(differentProperties);
+        InstanceProperties differentInstanceProperties = InstanceProperties.createWithoutValidation(differentProperties);
 
         // When
         TableProperties tableProperties = new TableProperties(instanceProperties);

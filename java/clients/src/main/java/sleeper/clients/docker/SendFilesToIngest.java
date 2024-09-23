@@ -23,6 +23,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
@@ -54,8 +55,7 @@ public class SendFilesToIngest {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
-            InstanceProperties properties = new InstanceProperties();
-            properties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            InstanceProperties properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
         } finally {
             s3Client.shutdown();

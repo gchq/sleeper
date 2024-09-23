@@ -204,7 +204,7 @@ class SleeperPropertiesPrettyPrinterTest {
 
         @Test
         void shouldEscapeSpecialCharactersInPropertyKey() {
-            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+            InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties("" +
                     "unknown\\=property=test"));
             assertThat(printInstanceProperties(instanceProperties))
                     .contains("\n\n" +
@@ -239,7 +239,7 @@ class SleeperPropertiesPrettyPrinterTest {
 
         @Test
         void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() {
-            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+            InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties("" +
                     "multiline.property=one\\ntwo\\nthree"));
             assertThat(printInstanceProperties("multiline.property=one\\ntwo\\nthree"))
                     .contains("\n\n" +
@@ -361,11 +361,11 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(String properties) {
-        return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
+        return printInstanceProperties(InstanceProperties.createWithoutValidation(loadProperties(properties)));
     }
 
     private static String printInstancePropertiesByGroup(String properties, PropertyGroup group) {
-        return printInstancePropertiesByGroup(new InstanceProperties(loadProperties(properties)), group);
+        return printInstancePropertiesByGroup(InstanceProperties.createWithoutValidation(loadProperties(properties)), group);
     }
 
     private static String printInstanceProperties(InstanceProperties properties) {

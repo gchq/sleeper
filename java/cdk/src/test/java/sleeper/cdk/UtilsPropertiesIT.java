@@ -121,7 +121,7 @@ class UtilsPropertiesIT {
     }
 
     private InstanceProperties loadInstanceProperties(Function<String, String> context) {
-        return Utils.loadInstanceProperties(InstanceProperties::new, context);
+        return Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, context);
     }
 
     private Function<String, String> cdkContextWithPropertiesFile() {

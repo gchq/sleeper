@@ -26,6 +26,7 @@ import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.validation.OptionalStack;
@@ -227,7 +228,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
 
             // When
             updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
@@ -256,7 +257,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
             doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
 
             // When / Then
@@ -336,7 +337,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @BeforeEach
         void setup() {
             instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
         @Test

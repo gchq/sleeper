@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -71,7 +72,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
@@ -87,7 +88,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
@@ -102,7 +103,7 @@ public class PropertiesReloaderIT {
     void shouldReloadTablePropertiesIfForceReloadPropertiesSetToTrue() {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
@@ -125,7 +126,7 @@ public class PropertiesReloaderIT {
     void shouldNotReloadTablePropertiesIfForceReloadPropertiesSetToFalse() {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
@@ -146,10 +147,9 @@ public class PropertiesReloaderIT {
 
     private void updatePropertiesInS3(
             InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) {
-        InstanceProperties propertiesAfter = new InstanceProperties();
-        propertiesAfter.loadFromS3(s3Client, propertiesBefore.get(CONFIG_BUCKET));
+        InstanceProperties propertiesAfter = S3InstanceProperties.loadFromBucket(s3Client, propertiesBefore.get(CONFIG_BUCKET));
         extraProperties.accept(propertiesAfter);
-        propertiesAfter.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, propertiesAfter);
     }
 
     private void updatePropertiesInS3(String tableName, Consumer<TableProperties> extraProperties) {

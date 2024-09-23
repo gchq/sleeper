@@ -92,7 +92,7 @@ public class SleeperPropertiesValidationTest {
             Properties properties = loadProperties(invalidInstanceProperties().saveAsString());
 
             // When / Then
-            assertThatCode(() -> new InstanceProperties(properties))
+            assertThatCode(() -> InstanceProperties.createWithoutValidation(properties))
                     .doesNotThrowAnyException();
         }
 
