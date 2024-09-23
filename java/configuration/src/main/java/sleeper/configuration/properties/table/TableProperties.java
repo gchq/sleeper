@@ -41,6 +41,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
 
+/**
+ * Contains values of the properties to configure a Sleeper table.
+ */
 public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
@@ -58,17 +61,38 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         schema = loadSchema(properties);
     }
 
+    /**
+     * Creates a copy of the given table properties.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the copy
+     */
     public static TableProperties copyOf(TableProperties tableProperties) {
         InstanceProperties instanceProperties = InstanceProperties.copyOf(tableProperties.instanceProperties);
         return new TableProperties(instanceProperties, loadProperties(tableProperties.saveAsString()));
     }
 
+    /**
+     * Creates and validates an instance of this class with the given property values.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  properties         the property values
+     * @return                    the table properties
+     */
     public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
         tableProperties.validate();
         return tableProperties;
     }
 
+    /**
+     * Creates an instance with different property values than the given instance. Performs no validation, and uses the
+     * same instance properties as the given instance.
+     *
+     * @param  tableProperties the original table properties
+     * @param  newProperties   the property values
+     * @return                 the new table properties
+     */
     public static TableProperties reinitialise(TableProperties tableProperties, Properties newProperties) {
         return new TableProperties(tableProperties.instanceProperties, newProperties);
     }
@@ -112,6 +136,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return schema;
     }
 
+    /**
+     * Sets the schema of the Sleeper table.
+     *
+     * @param schema the schema
+     */
     public void setSchema(Schema schema) {
         this.schema = schema;
         set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
