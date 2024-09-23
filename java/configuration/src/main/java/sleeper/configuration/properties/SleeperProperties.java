@@ -74,7 +74,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Validates the values all properties.
+     * Validates the values of all properties.
      *
      * @throws SleeperPropertiesInvalidException if any value is invalid
      */
@@ -85,7 +85,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Validates the values all properties, and reports any failues to the given reporter.
+     * Validates the values of all properties, and reports any failues to the given reporter.
      *
      * @param reporter the reporter to receive failures
      */
