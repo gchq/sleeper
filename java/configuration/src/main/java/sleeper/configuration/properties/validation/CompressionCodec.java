@@ -17,6 +17,9 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+/**
+ * Valid values for compression codecs of files containing data in a Sleeper table.
+ */
 public enum CompressionCodec {
     UNCOMPRESSED,
     SNAPPY,
@@ -26,6 +29,12 @@ public enum CompressionCodec {
     LZ4,
     ZSTD;
 
+    /**
+     * Checks if the value is a valid compression codec.
+     *
+     * @param  codec the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String codec) {
         return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
     }

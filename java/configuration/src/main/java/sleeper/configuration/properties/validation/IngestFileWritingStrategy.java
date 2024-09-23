@@ -31,6 +31,12 @@ public enum IngestFileWritingStrategy {
      */
     ONE_REFERENCE_PER_LEAF;
 
+    /**
+     * Checks if the value is a valid ingest file writing strategy.
+     *
+     * @param  value the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(IngestFileWritingStrategy.class, value);
     }

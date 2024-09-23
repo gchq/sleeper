@@ -16,6 +16,9 @@
 
 package sleeper.configuration.properties.validation;
 
+/**
+ * Valid values for AWS EMR instance architecture.
+ */
 public enum EmrInstanceArchitecture {
     X86_64, ARM64
 }

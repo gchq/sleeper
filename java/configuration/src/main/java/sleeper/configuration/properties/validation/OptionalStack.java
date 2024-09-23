@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Valid values for optional deployment stacks. Determines which components of Sleeper will be deployed.
+ */
 public enum OptionalStack {
 
     // Ingest
@@ -92,6 +95,12 @@ public enum OptionalStack {
             PartitionSplittingStack,
             QueryStack);
 
+    /**
+     * Checks if the value is a valid optional deployment stack.
+     *
+     * @param  value the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String value) {
         return SleeperPropertyValues.readList(value).stream()
                 .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));

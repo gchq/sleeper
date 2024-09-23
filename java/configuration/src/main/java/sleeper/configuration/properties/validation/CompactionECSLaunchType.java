@@ -17,9 +17,18 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+/**
+ * Valid values for launch types of compaction tasks on AWS ECS.
+ */
 public enum CompactionECSLaunchType {
     FARGATE, EC2;
 
+    /**
+     * Checks if the value is a valid ECS launch type.
+     *
+     * @param  value the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(CompactionECSLaunchType.class, value);
     }

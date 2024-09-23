@@ -28,6 +28,9 @@ import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
+/**
+ * Reads and validates EMR instance types set in Sleeper configuration properties.
+ */
 public class EmrInstanceTypeConfig {
     private final EmrInstanceArchitecture architecture;
     private final String instanceType;
@@ -39,6 +42,18 @@ public class EmrInstanceTypeConfig {
         weightedCapacity = builder.weightedCapacity;
     }
 
+    /**
+     * Streams through instance type configurations set by the given configuration properties.
+     *
+     * @param  <T>                  the configuration property type
+     * @param  properties           the property values
+     * @param  architectureProperty the property listing EMR instance architectures to include
+     * @param  x86Property          the property listing instance types for the x86 architecture, with weighted
+     *                              capacities if needed
+     * @param  armProperty          the property listing instance types for the ARM architecture, with weighted
+     *                              capacities if needed
+     * @return                      the instance type configurations
+     */
     public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
             SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
         return properties.streamEnumList(architectureProperty, EmrInstanceArchitecture.class)
@@ -51,6 +66,14 @@ public class EmrInstanceTypeConfig {
                 });
     }
 
+    /**
+     * Streams through instance type configurations based on instance type entries for a given architecture. The
+     * instance type entries are set in a comma delimited list in a configuration property for each architecture.
+     *
+     * @param  instanceTypeEntries the instance type entries
+     * @param  architecture        the architecture
+     * @return                     the instance type configurations
+     */
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries, EmrInstanceArchitecture architecture) {
         Builder builder = null;
         List<Builder> builders = new ArrayList<>();
@@ -69,6 +92,12 @@ public class EmrInstanceTypeConfig {
         return builders.stream().map(Builder::build);
     }
 
+    /**
+     * Checks if the given value is a valid list of EMR instance type entries.
+     *
+     * @param  value the value
+     * @return       true if valid
+     */
     public static boolean isValidInstanceTypes(String value) {
         if (value == null) {
             return false;
@@ -131,6 +160,9 @@ public class EmrInstanceTypeConfig {
                 '}';
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private String instanceType;
         private Integer weightedCapacity;
@@ -139,16 +171,34 @@ public class EmrInstanceTypeConfig {
         private Builder() {
         }
 
+        /**
+         * Sets the AWS EMR instance type.
+         *
+         * @param  instanceType the instance type
+         * @return              this builder
+         */
         public Builder instanceType(String instanceType) {
             this.instanceType = instanceType;
             return this;
         }
 
+        /**
+         * Sets the weighted capacity to be assigned to this instance type. If unset, all instance types will be equal.
+         *
+         * @param  weightedCapacity the weighted capacity
+         * @return                  this builder
+         */
         public Builder weightedCapacity(Integer weightedCapacity) {
             this.weightedCapacity = weightedCapacity;
             return this;
         }
 
+        /**
+         * Sets the architecture for this instance type.
+         *
+         * @param  architecture the architecture
+         * @return              this builder
+         */
         public Builder architecture(EmrInstanceArchitecture architecture) {
             this.architecture = architecture;
             return this;
