@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties.local;
 
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -85,7 +84,7 @@ public class SaveLocalProperties {
 
     private static void writeTableProperties(TableProperties tableProperties, Path file) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
-            SleeperPropertiesPrettyPrinter.forTableProperties(new PrintWriter(writer))
+            TableProperties.forTableProperties(new PrintWriter(writer))
                     .print(tableProperties);
         }
     }

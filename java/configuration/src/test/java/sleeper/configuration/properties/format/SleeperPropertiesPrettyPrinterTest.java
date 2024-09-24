@@ -381,7 +381,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printTableProperties(TableProperties tableProperties) {
-        return print(SleeperPropertiesPrettyPrinter::forTableProperties, tableProperties);
+        return print(TableProperties::forTableProperties, tableProperties);
     }
 
     private static String printTablePropertiesByGroup(TableProperties tableProperties, PropertyGroup group) {

@@ -62,6 +62,17 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     /**
+     * Creates a printer to be used to display all table properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.builder().properties(TableProperty.getAll(), TablePropertyGroup.getAll())
+                .writer(writer).build();
+    }
+
+    /**
      * Creates a copy of the given table properties.
      *
      * @param  tableProperties the table properties
@@ -153,7 +164,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
-        return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
+        return forTableProperties(writer);
     }
 
     public TableStatus getStatus() {

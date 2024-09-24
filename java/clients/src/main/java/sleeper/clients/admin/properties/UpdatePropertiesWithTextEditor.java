@@ -58,7 +58,7 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
         TableProperties updatedProperties = TableProperties.recreateWithoutValidation(properties,
-                editProperties(properties, SleeperPropertiesPrettyPrinter::forTableProperties));
+                editProperties(properties, TableProperties::forTableProperties));
         return buildRequest(properties, updatedProperties);
     }
 
