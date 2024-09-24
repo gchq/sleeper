@@ -79,7 +79,7 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.Requirements;
+import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.ContainerConstants;
@@ -527,7 +527,7 @@ public class CompactionStack extends NestedStack {
 
     private FargateTaskDefinition compactionFargateTaskDefinition() {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, "CompactionFargateTaskDefinition")
                 .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
@@ -551,7 +551,7 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
@@ -564,7 +564,7 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createEC2ContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)

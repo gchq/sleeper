@@ -24,9 +24,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 
-public final class Requirements {
+public final class CompactionTaskRequirements {
 
-    private Requirements() {
+    private CompactionTaskRequirements() {
     }
 
     /**
