@@ -30,11 +30,22 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Saves Sleeper configuration files to the local file system.
+ */
 public class SaveLocalProperties {
 
     private SaveLocalProperties() {
     }
 
+    /**
+     * Saves instance and table properties to the given directory.
+     *
+     * @param  directory             the directory
+     * @param  instanceProperties    the instance properties
+     * @param  tablePropertiesStream the table properties
+     * @throws IOException           if we could not write to the file system
+     */
     public static void saveToDirectory(
             Path directory, InstanceProperties instanceProperties,
             Stream<TableProperties> tablePropertiesStream) throws IOException {

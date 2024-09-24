@@ -16,16 +16,19 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to the metrics dashboard.
+ */
 public interface DashboardProperty {
     UserDefinedInstanceProperty DASHBOARD_TIME_WINDOW_MINUTES = Index.propertyBuilder("sleeper.dashboard.time.window.minutes")
             .description("The period in minutes used in the dashboard.")
             .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DASHBOARD)
             .runCdkDeployWhenChanged(true).build();
 
@@ -33,10 +36,9 @@ public interface DashboardProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

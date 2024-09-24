@@ -16,14 +16,17 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 
+/**
+ * Definitions of instance properties relating to partition splitting.
+ */
 public interface PartitionSplittingProperty {
     UserDefinedInstanceProperty PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda runs to find partitions that need splitting " +
@@ -41,7 +44,7 @@ public interface PartitionSplittingProperty {
             .description("The number of tables to find partitions to split for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.finder.memory")
@@ -93,10 +96,9 @@ public interface PartitionSplittingProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

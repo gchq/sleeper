@@ -30,7 +30,7 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 
 /**
- * Contains all the properties needed to deploy an instance of Sleeper.
+ * Contains values of the properties to configure an instance of Sleeper.
  */
 public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
@@ -45,16 +45,36 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         tags = csvTagsToMap(get(TAGS));
     }
 
+    /**
+     * Creates a copy of the given instance properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the copy
+     */
     public static InstanceProperties copyOf(InstanceProperties instanceProperties) {
         return new InstanceProperties(loadProperties(instanceProperties.saveAsString()));
     }
 
+    /**
+     * Creates and validates an instance of this class with the given property values.
+     *
+     * @param  properties the property values
+     * @return            the instance properties
+     */
     public static InstanceProperties createAndValidate(Properties properties) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.resetAndValidate(properties);
         return instanceProperties;
     }
 
+    /**
+     * Creates an instance of this class with the given property values, without validating the values. This should
+     * usually only be used if we need to operate on invalid or incomplete values. It can also be used in other cases
+     * where we want to skip validation.
+     *
+     * @param  properties the property values
+     * @return            the instance properties
+     */
     public static InstanceProperties createWithoutValidation(Properties properties) {
         return new InstanceProperties(properties);
     }
@@ -69,12 +89,22 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return tags;
     }
 
+    /**
+     * Sets the tags instance property from a map of tag name to value.
+     *
+     * @param tagsMap the map
+     */
     public void setTags(Map<String, String> tagsMap) {
         tags.clear();
         tags.putAll(tagsMap);
         set(TAGS, tagsToString(tags));
     }
 
+    /**
+     * Sets the tags instance property from a properties file.
+     *
+     * @param tagsProperties the properties file contents
+     */
     public void loadTags(Properties tagsProperties) {
         tags.clear();
         tagsProperties.stringPropertyNames().forEach(tagName -> tags.put(tagName, tagsProperties.getProperty(tagName)));
@@ -88,12 +118,22 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return compute(property, value -> property.computeValue(value, this));
     }
 
+    /**
+     * Creates a properties file from the tags instance property.
+     *
+     * @return the properties file contents
+     */
     public Properties getTagsProperties() {
         Properties tagsProperties = new Properties();
         tags.forEach(tagsProperties::setProperty);
         return tagsProperties;
     }
 
+    /**
+     * Creates a properties file string from the tags instance property.
+     *
+     * @return the properties file as a string
+     */
     public String getTagsPropertiesAsString() throws IOException {
         StringWriter stringWriter = new StringWriter();
         Properties tagsProperties = getTagsProperties();
@@ -111,6 +151,13 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return SleeperPropertiesPrettyPrinter.forInstanceProperties(writer);
     }
 
+    /**
+     * Converts CSV values for the tags instance property into a map of tag name to value. This is the format in which
+     * the tags will be held in the instance property.
+     *
+     * @param  csvTags the instance property value
+     * @return         the map of tag name to value
+     */
     public static Map<String, String> csvTagsToMap(String csvTags) {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
@@ -122,6 +169,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return tags;
     }
 
+    /**
+     * Converts a map of tag name to value into the value for the tags instance property. This is in CSV format.
+     *
+     * @param  tags the map of tag name to value
+     * @return      the instance property value
+     */
     public static String tagsToString(Map<String, String> tags) {
         StringBuilder builder = new StringBuilder();
         int count = 0;

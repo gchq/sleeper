@@ -34,6 +34,9 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Settings to create a configuration for a Sleeper instance by combining templates with configuration files.
+ */
 public class DeployInstanceConfigurationFromTemplates {
     private final Path instancePropertiesPath;
     private final Path templatesDir;
@@ -51,6 +54,11 @@ public class DeployInstanceConfigurationFromTemplates {
         return new Builder();
     }
 
+    /**
+     * Load the configuration files, and use templates for any missing components of the configuration.
+     *
+     * @return the configuration
+     */
     public DeployInstanceConfiguration load() {
         if (instancePropertiesPath == null) {
             return fromTemplatesDir();
@@ -120,6 +128,9 @@ public class DeployInstanceConfigurationFromTemplates {
         }
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private Path instancePropertiesPath;
         private Path templatesDir;
@@ -129,21 +140,49 @@ public class DeployInstanceConfigurationFromTemplates {
         private Builder() {
         }
 
+        /**
+         * Sets the path to load the Sleeper instance configuration from. This should point to the instance properties
+         * file. Any other configuration files will be found relative to this. If this is not set, the templates will
+         * be used directly.
+         *
+         * @param  instancePropertiesPath the path to the instance properties file
+         * @return                        this builder
+         */
         public Builder instancePropertiesPath(Path instancePropertiesPath) {
             this.instancePropertiesPath = instancePropertiesPath;
             return this;
         }
 
+        /**
+         * Sets the path to the templates directory. Templates will be found and loaded based on expected filenames
+         * under this directory.
+         *
+         * @param  templatesDir the directory
+         * @return              this builder
+         */
         public Builder templatesDir(Path templatesDir) {
             this.templatesDir = templatesDir;
             return this;
         }
 
+        /**
+         * Sets the default Sleeper table name if none is specified. If no Sleeper table is specified in the
+         * configuration files, one will be created from the template with this table name.
+         *
+         * @param  tableNameForTemplate the table name
+         * @return                      this builder
+         */
         public Builder tableNameForTemplate(String tableNameForTemplate) {
             this.tableNameForTemplate = tableNameForTemplate;
             return this;
         }
 
+        /**
+         * Sets the split points file to use when creating a Sleeper table from the template.
+         *
+         * @param  splitPointsFileForTemplate the split points file
+         * @return                            this builder
+         */
         public Builder splitPointsFileForTemplate(Path splitPointsFileForTemplate) {
             this.splitPointsFileForTemplate = splitPointsFileForTemplate;
             return this;

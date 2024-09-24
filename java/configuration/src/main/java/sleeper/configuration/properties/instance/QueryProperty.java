@@ -16,17 +16,20 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to queries.
+ */
 public interface QueryProperty {
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES = Index.propertyBuilder("sleeper.query.s3.max-connections")
             .description("The maximum number of simultaneous connections to S3 from a single query runner. This is separated " +
                     "from the main one as it's common for a query runner to need to open more files at once.")
             .defaultValue("1024")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.query.processor.memory")
             .description("The amount of memory in MB for the lambda that executes queries.")
@@ -51,22 +54,22 @@ public interface QueryProperty {
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS = Index.propertyBuilder("sleeper.query.processor.record.retrieval.threads")
             .description("The size of the thread pool for retrieving records in a query processing lambda.")
             .defaultValue("10")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout")
             .description("The default value for the amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
             .defaultValue("60")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_TRACKER_ITEM_TTL_IN_DAYS = Index.propertyBuilder("sleeper.query.tracker.ttl.days")
             .description("This value is used to set the time-to-live on the tracking of the queries in the DynamoDB-based query tracker.")
             .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.query.results.bucket.expiry.days")
             .description("The length of time the results of queries remain in the query results bucket before being deleted.")
             .defaultValue("7")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.query.results.rowgroup.size")
@@ -84,7 +87,7 @@ public interface QueryProperty {
             .description("The rate at which the query lambda runs to keep it warm (in minutes, must be >=1). " +
                     " This only applies when the KeepLambdaWarmStack is enabled")
             .defaultValue("5")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
 
@@ -92,10 +95,9 @@ public interface QueryProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

@@ -22,6 +22,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The configuration to deploy a Sleeper instance and configure Sleeper tables.
+ */
 public class DeployInstanceConfiguration {
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
@@ -72,6 +75,9 @@ public class DeployInstanceConfiguration {
                 '}';
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private InstanceProperties instanceProperties;
         private List<TableProperties> tableProperties;
@@ -79,16 +85,34 @@ public class DeployInstanceConfiguration {
         public Builder() {
         }
 
+        /**
+         * Sets the instance properties.
+         *
+         * @param  instanceProperties the instance properties.
+         * @return                    this builder
+         */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
         }
 
+        /**
+         * Sets the table properties for all tables in this instance.
+         *
+         * @param  tableProperties the table properties.
+         * @return                 this builder
+         */
         public Builder tableProperties(List<TableProperties> tableProperties) {
             this.tableProperties = tableProperties;
             return this;
         }
 
+        /**
+         * Sets the table properties for an instance with only one table.
+         *
+         * @param  tableProperties the table properties.
+         * @return                 this builder
+         */
         public Builder tableProperties(TableProperties tableProperties) {
             this.tableProperties = List.of(tableProperties);
             return this;

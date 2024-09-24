@@ -30,6 +30,9 @@ import sleeper.core.table.TableStatus;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
+/**
+ * Saves and loads table properties in AWS S3.
+ */
 public class S3TableProperties implements TablePropertiesStore.Client {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
@@ -41,6 +44,14 @@ public class S3TableProperties implements TablePropertiesStore.Client {
         this.s3Client = s3Client;
     }
 
+    /**
+     * Creates a store for loading and saving table properties in S3, via the table index.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  s3Client           the S3 client
+     * @param  dynamoClient       the DynamoDB client
+     * @return                    the store
+     */
     public static TablePropertiesStore getStore(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         return new TablePropertiesStore(

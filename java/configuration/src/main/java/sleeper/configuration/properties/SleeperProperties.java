@@ -62,30 +62,79 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         this.properties = properties;
     }
 
-    protected void init() {
+    /**
+     * A method to be called any time the properties are reloaded as a whole. This should perform any operations that
+     * would be done in the constructor, and also revalidate the values. This should be overridden if any metadata needs
+     * to be set at load time.
+     *
+     * @throws SleeperPropertiesInvalidException if any value is invalid
+     */
+    protected void init() throws SleeperPropertiesInvalidException {
         validate();
     }
 
-    public final void validate() {
+    /**
+     * Validates the values of all properties.
+     *
+     * @throws SleeperPropertiesInvalidException if any value is invalid
+     */
+    public final void validate() throws SleeperPropertiesInvalidException {
         SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
         validate(reporter);
         reporter.throwIfFailed();
     }
 
+    /**
+     * Validates the values of all properties, and reports any failues to the given reporter.
+     *
+     * @param reporter the reporter to receive failures
+     */
     public void validate(SleeperPropertiesValidationReporter reporter) {
-        getPropertiesIndex().getUserDefined().forEach(property -> property.validate(get(property), reporter));
+        getPropertiesIndex().getUserDefined().forEach(property -> {
+            String value = get(property);
+            if (!property.getValidationPredicate().test(value)) {
+                reporter.invalidProperty(property, value);
+            }
+        });
     }
 
+    /**
+     * Retrieves an index of definitions of all properties that can be set for this object. Deals with metadata rather
+     * than property values.
+     *
+     * @return the index
+     */
     public abstract SleeperPropertyIndex<T> getPropertiesIndex();
 
+    /**
+     * Retrieves a printer to output the property values in a human-readable string format.
+     *
+     * @param  writer a writer to print to
+     * @return        the pretty printer
+     */
     protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
 
+    /**
+     * Writes the property values to the given writer in a human-readable string format.
+     *
+     * @param writer the writer
+     */
     public void saveUsingPrettyPrinter(PrintWriter writer) {
         this.getPrettyPrinter(writer).print(this);
     }
 
+    @Override
     public abstract String get(T property);
 
+    /**
+     * Computes the value of a property. This should be used in implementations of {@link #get}. Handles ignoring empty
+     * strings for properties where this is equivalent to no value being set. The post-processing compute method can be
+     * used to provide the default value of a property, or handle other logic to replace the value under some condition.
+     *
+     * @param  property the property
+     * @param  compute  the method to post-process the value of a property, including null if it is unset
+     * @return          the value of the property
+     */
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
         if (property.isIgnoreEmptyValue() && "".equals(value)) {
@@ -94,22 +143,48 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return compute.apply(value);
     }
 
+    /**
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
+     * this class.
+     *
+     * @param property the property
+     * @param value    the value, if the property is a string
+     */
     public void set(T property, String value) {
         if (value != null) {
             properties.setProperty(property.getPropertyName(), value);
         }
     }
 
+    /**
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
+     * this class.
+     *
+     * @param property the property
+     * @param number   the value, if the property is a number
+     */
     public void setNumber(T property, Number number) {
-        if (number != null) {
-            set(property, number.toString());
-        }
+        set(property, number == null ? null : number.toString());
     }
 
+    /**
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
+     * this class.
+     *
+     * @param property the property
+     * @param list     the value, if the property is a list of strings
+     */
     public void setList(T property, List<String> list) {
         set(property, String.join(",", list));
     }
 
+    /**
+     * Adds any missing values to a property which contains a list of strings. Appends any missing values to the end of
+     * the list. Avoids any duplicates.
+     *
+     * @param property the property
+     * @param list     the values to append
+     */
     public void addToListIfMissing(T property, List<String> list) {
         List<String> before = getList(property);
         Set<String> beforeSet = new HashSet<>(before);
@@ -120,28 +195,56 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         setList(property, after);
     }
 
+    /**
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
+     * this class.
+     *
+     * @param property the property
+     * @param value    the value, if the property is an enum type
+     */
     public <E extends Enum<E>> void setEnum(T property, E value) {
-        if (value != null) {
-            set(property, value.name().toLowerCase(Locale.ROOT));
-        }
+        set(property, value == null ? null : value.name().toLowerCase(Locale.ROOT));
     }
 
+    /**
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
+     * this class.
+     *
+     * @param property the property
+     * @param list     the value, if the property is a list of an enum type
+     */
     public <E extends Enum<E>> void setEnumList(T property, List<E> list) {
-        if (list != null) {
-            set(property, list.stream()
-                    .map(value -> value.toString().toLowerCase(Locale.ROOT))
-                    .collect(Collectors.joining(",")));
-        }
+        set(property, list == null ? null
+                : list.stream()
+                        .map(value -> value.toString().toLowerCase(Locale.ROOT))
+                        .collect(Collectors.joining(",")));
     }
 
+    /**
+     * Removes any value of a property.
+     *
+     * @param property the property
+     */
     public void unset(T property) {
         properties.remove(property.getPropertyName());
     }
 
+    /**
+     * Checks if any property has been set with a name that starts with the given prefix.
+     *
+     * @param  propertyNameStart the prefix to check
+     * @return                   true if any property has been set with the prefix
+     */
     public boolean isAnyPropertySetStartingWith(String propertyNameStart) {
         return properties.stringPropertyNames().stream().anyMatch(name -> name.startsWith(propertyNameStart));
     }
 
+    /**
+     * Checks if a property has been set.
+     *
+     * @param  property the property
+     * @return          true if the property is set to any value
+     */
     public boolean isSet(T property) {
         return properties.containsKey(property.getPropertyName()) &&
                 !"".equals(properties.getProperty(property.getPropertyName()));
@@ -151,6 +254,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return properties;
     }
 
+    /**
+     * Saves a properties file with the set values to the given output stream. This will only contain the values, and
+     * will not contain descriptions or other aids for human readability.
+     *
+     * @param outputStream the output stream
+     */
     public void save(OutputStream outputStream) {
         try {
             properties.store(outputStream, "");
@@ -159,6 +268,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         }
     }
 
+    /**
+     * Saves a properties file with the set values. This will only contain the values, and will not contain descriptions
+     * or other aids for human readability.
+     *
+     * @param file the file to save to
+     */
     public void save(File file) {
         try {
             OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
@@ -168,6 +283,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         }
     }
 
+    /**
+     * Saves a properties file with the set values. This will only contain the values, and will not contain descriptions
+     * or other aids for human readability.
+     *
+     * @param file the path to save to
+     */
     public void save(Path file) {
         try {
             OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(file));
@@ -177,6 +298,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         }
     }
 
+    /**
+     * Creates a properties file with the set values. This will only contain the values, and will not contain
+     * descriptions or other aids for human readability.
+     *
+     * @return a string with the contents of a properties file
+     */
     public String saveAsString() {
         StringWriter stringWriter = new StringWriter();
         try {
@@ -187,12 +314,22 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return stringWriter.toString();
     }
 
+    /**
+     * Clears all values, resets them from the given object, and validates the new values.
+     *
+     * @param newProperties the properties to set
+     */
     public void resetAndValidate(Properties newProperties) {
         properties.clear();
         properties.putAll(newProperties);
         init();
     }
 
+    /**
+     * Retrieves the names of any properties that have values but are not present in the property metadata index.
+     *
+     * @return the entries for the values of unknown properties
+     */
     public Stream<Map.Entry<String, String>> getUnknownProperties() {
         return properties.stringPropertyNames().stream()
                 .filter(not(this::isKnownProperty))
@@ -203,6 +340,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return getPropertiesIndex().getByName(propertyName).isPresent();
     }
 
+    /**
+     * Converts and copies all set values of properties into a hash map.
+     *
+     * @return the copied map
+     */
     public Map<String, String> toMap() {
         return PropertiesUtils.toMap(properties);
     }

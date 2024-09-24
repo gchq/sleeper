@@ -28,7 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.configuration.TableUtils;
+import sleeper.configuration.TableFilePaths;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
@@ -276,8 +276,8 @@ public class RustCompactionRunnerIT {
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
-        String prefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
-        return TableUtils.constructPartitionParquetFilePath(prefix, partitionId, filename);
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, filename);
     }
 
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {

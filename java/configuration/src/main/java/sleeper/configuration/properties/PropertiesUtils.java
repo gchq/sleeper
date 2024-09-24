@@ -33,11 +33,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+/**
+ * Utilities to read and write properties configuration files.
+ */
 public class PropertiesUtils {
 
     private PropertiesUtils() {
     }
 
+    /**
+     * Loads a properties file from the file system.
+     *
+     * @param  file the path to the file
+     * @return      the properties file contents
+     */
     public static Properties loadProperties(Path file) {
         try (BufferedReader reader = Files.newBufferedReader(file)) {
             return loadProperties(reader);
@@ -46,6 +55,12 @@ public class PropertiesUtils {
         }
     }
 
+    /**
+     * Loads a properties file from the file system.
+     *
+     * @param  file the path to the file
+     * @return      the properties file contents
+     */
     public static Properties loadProperties(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
             return loadProperties(reader);
@@ -54,10 +69,22 @@ public class PropertiesUtils {
         }
     }
 
+    /**
+     * Loads properties from a string.
+     *
+     * @param  input the string
+     * @return       the properties
+     */
     public static Properties loadProperties(String input) {
         return loadProperties(new StringReader(input));
     }
 
+    /**
+     * Loads a properties file from a reader.
+     *
+     * @param  reader the reader
+     * @return        the properties file contents
+     */
     public static Properties loadProperties(Reader reader) {
         Properties properties = new Properties();
         try {
@@ -68,6 +95,12 @@ public class PropertiesUtils {
         return properties;
     }
 
+    /**
+     * Creates a properties writer with settings for Sleeper.
+     *
+     * @param  writer the writer to write to
+     * @return        the properties writer
+     */
     public static PropertiesConfiguration.PropertiesWriter buildPropertiesWriter(Writer writer) {
         PropertiesConfiguration.PropertiesWriter propertiesWriter = new PropertiesConfiguration.PropertiesWriter(
                 writer, new DisabledListDelimiterHandler());
@@ -75,6 +108,12 @@ public class PropertiesUtils {
         return propertiesWriter;
     }
 
+    /**
+     * Converts a properties object to a map from property name to value.
+     *
+     * @param  properties the properties
+     * @return            the map
+     */
     public static Map<String, String> toMap(Properties properties) {
         return properties.stringPropertyNames().stream()
                 .collect(Collectors.toUnmodifiableMap(

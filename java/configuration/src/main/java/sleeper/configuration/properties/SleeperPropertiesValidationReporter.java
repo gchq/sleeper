@@ -18,15 +18,30 @@ package sleeper.configuration.properties;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * A listener to be notified of invalid Sleeper configuration property values. Gathers invalid values to throw as an
+ * exception.
+ */
 public class SleeperPropertiesValidationReporter {
 
     private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
 
+    /**
+     * Records that the given property value is invalid.
+     *
+     * @param property the property
+     * @param value    the value
+     */
     public void invalidProperty(SleeperProperty property, String value) {
         invalidValues.put(property, value);
     }
 
-    public void throwIfFailed() {
+    /**
+     * Throws an exception if any property values were invalid.
+     *
+     * @throws SleeperPropertiesInvalidException if any values were reported as invalid
+     */
+    public void throwIfFailed() throws SleeperPropertiesInvalidException {
         if (!invalidValues.isEmpty()) {
             throw new SleeperPropertiesInvalidException(invalidValues);
         }

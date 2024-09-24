@@ -15,6 +15,10 @@
  */
 package sleeper.configuration.jars;
 
+/**
+ * Thrown due to failures creating instances of a class that may be specified in an external user jar. This includes
+ * iterators.
+ */
 public class ObjectFactoryException extends Exception {
 
     public ObjectFactoryException(Throwable cause) {

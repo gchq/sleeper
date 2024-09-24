@@ -25,7 +25,7 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 
-import sleeper.configuration.TableUtils;
+import sleeper.configuration.TableFilePaths;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -93,14 +93,14 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param  s3TransferManager     the manager to use to perform the asynchronous upload
      * @param  localWorkingDirectory the local directory to use to create temporary files
      * @param  s3BucketName          the S3 bucket name and prefix to write to
-     * @param  filePathPrefix        the prefix for S3 objects to write
+     * @param  filePaths             the file path generator for S3 objects to write
      * @throws IOException           if there was a failure writing the file
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String s3BucketName,
-            String filePathPrefix,
+            TableFilePaths filePaths,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
             String fileName) throws IOException {
@@ -111,8 +111,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
-        this.partitionParquetS3Key = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
-        this.quantileSketchesS3Key = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
+        this.partitionParquetS3Key = filePaths.constructPartitionParquetFilePath(partition, fileName);
+        this.quantileSketchesS3Key = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createQuantileSketchMap(sleeperSchema);

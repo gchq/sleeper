@@ -27,6 +27,9 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
+/**
+ * Valid values to choose an ingest job queue. Each queue is for a different type of ingest or bulk import.
+ */
 public enum IngestQueue {
     STANDARD_INGEST(INGEST_JOB_QUEUE_URL),
     BULK_IMPORT_EMR(BULK_IMPORT_EMR_JOB_QUEUE_URL),
@@ -40,10 +43,22 @@ public enum IngestQueue {
         this.jobQueueUrlProperty = jobQueueUrlProperty;
     }
 
+    /**
+     * Checks if the value is a valid ingest job queue.
+     *
+     * @param  value the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(IngestQueue.class, value);
     }
 
+    /**
+     * Retrieves the SQS URL of the ingest job queue from the instance properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the URL of the ingest job queue
+     */
     public String getJobQueueUrl(InstanceProperties instanceProperties) {
         return instanceProperties.get(jobQueueUrlProperty);
     }

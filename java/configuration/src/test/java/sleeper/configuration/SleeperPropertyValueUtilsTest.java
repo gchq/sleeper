@@ -20,9 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UtilsTest {
+class SleeperPropertyValueUtilsTest {
 
     @Nested
     @DisplayName("Validate numbers")
@@ -30,38 +32,38 @@ class UtilsTest {
         @Test
         void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
             // When/Then
-            assertThat(Utils.isPositiveInteger("123"))
+            assertThat(SleeperPropertyValueUtils.isPositiveInteger("123"))
                     .isTrue();
-            assertThat(Utils.isPositiveInteger("ABC"))
+            assertThat(SleeperPropertyValueUtils.isPositiveInteger("ABC"))
                     .isFalse();
         }
 
         @Test
         void shouldNotThrowExceptionDuringPositiveLongCheck() {
             // When/Then
-            assertThat(Utils.isPositiveLong("123"))
+            assertThat(SleeperPropertyValueUtils.isPositiveLong("123"))
                     .isTrue();
-            assertThat(Utils.isPositiveLong("ABC"))
+            assertThat(SleeperPropertyValueUtils.isPositiveLong("ABC"))
                     .isFalse();
         }
 
         @Test
         void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
             // When/Then
-            assertThat(Utils.isPositiveDouble("123"))
+            assertThat(SleeperPropertyValueUtils.isPositiveDouble("123"))
                     .isTrue();
-            assertThat(Utils.isPositiveDouble("ABC"))
+            assertThat(SleeperPropertyValueUtils.isPositiveDouble("ABC"))
                     .isFalse();
         }
 
         @Test
         void shouldValidAllCorrectVariantsForIsPositiveIntegerOrNull() {
             // When/Then
-            assertThat(Utils.isPositiveIntegerOrNull(null))
+            assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull(null))
                     .isTrue();
-            assertThat(Utils.isPositiveIntegerOrNull("24"))
+            assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull("24"))
                     .isTrue();
-            assertThat(Utils.isPositiveIntegerOrNull("-7"))
+            assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull("-7"))
                     .isFalse();
         }
     }
@@ -71,37 +73,37 @@ class UtilsTest {
     class ValidateBytesSize {
         @Test
         void shouldReadBytesSize() {
-            assertThat(Utils.readBytes("42")).isEqualTo(42L);
+            assertThat(SleeperPropertyValueUtils.readBytes("42")).isEqualTo(42L);
         }
 
         @Test
         void shouldReadKilobytesSize() {
-            assertThat(Utils.readBytes("2K")).isEqualTo(2048L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2K")).isEqualTo(2048L);
         }
 
         @Test
         void shouldReadMegabytesSize() {
-            assertThat(Utils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
         }
 
         @Test
         void shouldReadGigabytesSize() {
-            assertThat(Utils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
         }
 
         @Test
         void shouldReadTerabytesSize() {
-            assertThat(Utils.readBytes("2T")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2T")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L);
         }
 
         @Test
         void shouldReadPetabytesSize() {
-            assertThat(Utils.readBytes("2P")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2P")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L);
         }
 
         @Test
         void shouldReadExabytesSize() {
-            assertThat(Utils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
+            assertThat(SleeperPropertyValueUtils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
         }
     }
 
@@ -110,32 +112,32 @@ class UtilsTest {
     class ValidateStrings {
         @Test
         void shouldFailToValidateNullString() {
-            assertThat(Utils.isNonNullNonEmptyString(null)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyString(null)).isFalse();
         }
 
         @Test
         void shouldFailToValidateEmptyString() {
-            assertThat(Utils.isNonNullNonEmptyString("")).isFalse();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyString("")).isFalse();
         }
 
         @Test
         void shouldValidateNonNullNonEmptyString() {
-            assertThat(Utils.isNonNullNonEmptyString("test")).isTrue();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyString("test")).isTrue();
         }
 
         @Test
         void shouldValidateStringWhenStringLengthIsLowerThanMaxLength() {
-            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 5)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 5)).isTrue();
         }
 
         @Test
         void shouldFailToValidateWhenStringLengthExceedsMaxLength() {
-            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 1)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 1)).isFalse();
         }
 
         @Test
         void shouldValidateStringWhenStringLengthMeetsMaxLength() {
-            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
         }
     }
 
@@ -144,27 +146,27 @@ class UtilsTest {
     class ValidateLists {
         @Test
         void shouldValidateNullStringAsEmptyList() {
-            assertThat(Utils.isListWithMaxSize(null, 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isListWithMaxSize(null, 4)).isTrue();
         }
 
         @Test
         void shouldValidateEmptyString() {
-            assertThat(Utils.isListWithMaxSize("", 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isListWithMaxSize("", 4)).isTrue();
         }
 
         @Test
         void shouldValidateStringWhenListSizeIsLowerThanMaxSize() {
-            assertThat(Utils.isListWithMaxSize("a,b", 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isListWithMaxSize("a,b", 4)).isTrue();
         }
 
         @Test
         void shouldValidateStringWhenListSizeMeetsMaxSize() {
-            assertThat(Utils.isListWithMaxSize("a,b,c,d", 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isListWithMaxSize("a,b,c,d", 4)).isTrue();
         }
 
         @Test
         void shouldFailToValidateStringWhenListSizeExceedsMaxSize() {
-            assertThat(Utils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
         }
     }
 

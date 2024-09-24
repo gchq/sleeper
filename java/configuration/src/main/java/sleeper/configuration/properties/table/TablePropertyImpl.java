@@ -29,6 +29,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * A Sleeper table property.
+ */
 class TablePropertyImpl implements TableProperty {
 
     private final String propertyName;
@@ -122,6 +125,9 @@ class TablePropertyImpl implements TableProperty {
         return propertyName;
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     static final class Builder {
         private String propertyName;
         private String description;

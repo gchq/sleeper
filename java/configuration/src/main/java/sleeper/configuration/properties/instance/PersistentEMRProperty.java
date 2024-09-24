@@ -16,9 +16,10 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -28,6 +29,9 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 
+/**
+ * Definitions of instance properties relating to bulk import on AWS EMR with a persistent cluster.
+ */
 public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.release.label")
             .description("(Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.")
@@ -39,7 +43,7 @@ public interface PersistentEMRProperty {
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .defaultValue("x86_64")
-            .validationPredicate(Utils::isValidArchitecture)
+            .validationPredicate(EmrInstanceArchitecture::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.x86.instance.types")
             .description("(Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the master " +
@@ -87,7 +91,7 @@ public interface PersistentEMRProperty {
                     "If managed scaling is not used then the cluster will be of fixed size, with a number of " +
                     "instances equal to this value.")
             .defaultValue("1")
-            .validationPredicate(Utils::isNonNegativeInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.max.capacity")
@@ -98,13 +102,13 @@ public interface PersistentEMRProperty {
                     "the number of instances.\n" +
                     "This value is only used if managed scaling is used.")
             .defaultValue("10")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.step.concurrency.level")
             .description("(Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.")
             .defaultValue("2")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 
@@ -112,10 +116,9 @@ public interface PersistentEMRProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

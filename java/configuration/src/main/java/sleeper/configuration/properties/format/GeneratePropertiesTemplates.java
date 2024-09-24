@@ -28,7 +28,6 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,6 +64,9 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Generates template files to be filled in when deploying an instance of Sleeper, or creating tables.
+ */
 public class GeneratePropertiesTemplates {
 
     private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
@@ -94,6 +96,12 @@ public class GeneratePropertiesTemplates {
         fromRepositoryPath(Path.of(args[0]));
     }
 
+    /**
+     * Generates and writes all template files.
+     *
+     * @param  repositoryRoot the root directory of the Sleeper repository
+     * @throws IOException    if any files could not be written
+     */
     public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
 
         Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
@@ -152,16 +160,31 @@ public class GeneratePropertiesTemplates {
         return properties;
     }
 
+    /**
+     * Writes the full instance properties example file to the given writer.
+     *
+     * @param writer the writer
+     */
     public static void writeExampleFullInstanceProperties(Writer writer) {
         InstanceProperties properties = generateExampleFullInstanceProperties();
         writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
     }
 
+    /**
+     * Writes the full table properties example file to the given writer.
+     *
+     * @param writer the writer
+     */
     public static void writeExampleFullTableProperties(Writer writer) {
         TableProperties properties = generateExampleTableProperties();
         writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
     }
 
+    /**
+     * Writes the basic instance properties example file to the given writer.
+     *
+     * @param writer the writer
+     */
     public static void writeExampleBasicInstanceProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new InstanceProperties(),
@@ -169,6 +192,11 @@ public class GeneratePropertiesTemplates {
                 BASIC_INSTANCE_EXAMPLE_VALUES);
     }
 
+    /**
+     * Writes the basic table properties example file to the given writer.
+     *
+     * @param writer the writer
+     */
     public static void writeExampleBasicTableProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new TableProperties(new InstanceProperties()),
@@ -176,6 +204,11 @@ public class GeneratePropertiesTemplates {
                 BASIC_TABLE_EXAMPLE_VALUES);
     }
 
+    /**
+     * Writes the instance properties template file to the given writer.
+     *
+     * @param out the writer
+     */
     public static void writeInstancePropertiesTemplate(Writer out) {
         InstanceProperties properties = generateTemplateInstanceProperties();
 
@@ -206,6 +239,11 @@ public class GeneratePropertiesTemplates {
                 .print(properties);
     }
 
+    /**
+     * Writes the table properties template file to the given writer.
+     *
+     * @param out the writer
+     */
     public static void writeTablePropertiesTemplate(Writer out) {
         TableProperties properties = generateTemplateTableProperties();
 
@@ -253,11 +291,9 @@ public class GeneratePropertiesTemplates {
                 .print(properties);
     }
 
-    private static void writeFile(Path file, Consumer<Writer> generator) {
+    private static void writeFile(Path file, Consumer<Writer> generator) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             generator.accept(writer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 }

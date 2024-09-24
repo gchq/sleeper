@@ -39,6 +39,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
+/**
+ * A base class for tests storing table properties in S3 with a DynamoDB table index, in LocalStack.
+ */
 @Testcontainers
 public abstract class TablePropertiesITBase {
 

@@ -19,6 +19,9 @@ package sleeper.configuration.properties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
+/**
+ * A fake instance property to test working with instance property values.
+ */
 public class DummyInstanceProperty implements InstanceProperty {
     private final String propertyName;
 

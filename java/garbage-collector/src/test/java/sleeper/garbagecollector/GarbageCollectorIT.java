@@ -472,13 +472,13 @@ public class GarbageCollectorIT {
 
     private GarbageCollector collector() throws Exception {
         return new GarbageCollector(deleteFileAndSketches(new Configuration()), instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName),
+                FixedStateStoreProvider.byTableName(stateStoreByTableName),
                 sentCommits::add);
     }
 
     private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
         return new GarbageCollector(deleteFile, instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName),
+                FixedStateStoreProvider.byTableName(stateStoreByTableName),
                 sentCommits::add);
     }
 

@@ -37,6 +37,10 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
+/**
+ * Tracks properties for the names of CloudWatch rules that invoke various operations on a schedule. Used to pause and
+ * resume the system.
+ */
 public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
@@ -86,28 +90,64 @@ public class SleeperScheduleRule {
         this.nameFormat = requireNonNull(nameFormat, "nameFormat must not be null");
     }
 
+    /**
+     * Streams through all CloudWatch rules for a given Sleeper instance.
+     *
+     * @param  properties the instance properties
+     * @return            values for each CloudWatch rule property, containing rule names
+     */
     public static Stream<Value> getCloudWatchRules(InstanceProperties properties) {
         return RULES.stream()
                 .map(rule -> rule.readValue(properties));
     }
 
+    /**
+     * Streams through all CloudWatch rule default values for a given Sleeper instance.
+     *
+     * @param  instanceId the instance ID
+     * @return            default values for each CloudWatch rule property, with rule names derived from the instance ID
+     */
     public static Stream<Value> getCloudWatchRuleDefaults(String instanceId) {
         return RULES.stream()
                 .map(rule -> rule.getDefault(instanceId));
     }
 
+    /**
+     * Reads the value of this CloudWatch rule property.
+     *
+     * @param  properties the instance properties
+     * @return            the value, containing rule names
+     */
     public Value readValue(InstanceProperties properties) {
         return new Value(properties.get(property));
     }
 
+    /**
+     * Derives the default CloudWatch rule name from the instance ID, for this property.
+     *
+     * @param  properties the instance properties
+     * @return            the default rule name
+     */
     public String buildRuleName(InstanceProperties properties) {
         return buildRuleName(properties.get(ID));
     }
 
+    /**
+     * Derives the default CloudWatch rule name from the instance ID, for this property.
+     *
+     * @param  instanceId the instance ID
+     * @return            the default value, containing rule names
+     */
     public Value getDefault(String instanceId) {
         return new Value(buildRuleName(instanceId));
     }
 
+    /**
+     * Derives the default CloudWatch rule name from the instance ID, for this property.
+     *
+     * @param  instanceId the instance ID
+     * @return            the default rule name
+     */
     public String buildRuleName(String instanceId) {
         String name = String.format(nameFormat, instanceId);
         if (name.length() > 64) {
@@ -121,6 +161,9 @@ public class SleeperScheduleRule {
         return property;
     }
 
+    /**
+     * A wrapper for the instance property value for this CloudWatch rule name.
+     */
     public class Value {
         private final String propertyValue;
 
@@ -128,6 +171,11 @@ public class SleeperScheduleRule {
             this.propertyValue = propertyValue;
         }
 
+        /**
+         * Lists the CloudWatch rule names held in this property value.
+         *
+         * @return the rule names
+         */
         public List<String> getRuleNames() {
             if (propertyValue == null || propertyValue.isBlank()) {
                 return Collections.emptyList();
