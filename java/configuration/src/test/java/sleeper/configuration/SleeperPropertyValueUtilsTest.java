@@ -24,7 +24,7 @@ import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PropertyValidationUtilsTest {
+class SleeperPropertyValueUtilsTest {
 
     @Nested
     @DisplayName("Validate numbers")
