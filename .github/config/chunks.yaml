@@ -25,6 +25,9 @@ chunks:
       - ingest/ingest-batcher-submitter
       - ingest/ingest-batcher-job-creator
       - ingest/ingest-runner
+      - bulk-import/bulk-import-common
+      - bulk-import/bulk-import-starter
+      - bulk-import/bulk-import-runner
       - query/query-core
       - query/query-runner
       - query/query-lambda
