@@ -42,16 +42,12 @@ public class FixedStateStoreProvider extends StateStoreProvider {
         });
     }
 
-    public FixedStateStoreProvider(Map<String, StateStore> stateStoreByTableName) {
-        super(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
-            String tableName = tableProperties.get(TABLE_NAME);
-            if (!stateStoreByTableName.containsKey(tableName)) {
-                throw new IllegalArgumentException("Table not found: " + tableName);
-            }
-            return stateStoreByTableName.get(tableName);
-        });
-    }
-
+    /**
+     * Creates a state store provider that will load the given state stores.
+     *
+     * @param  stateStoreByTableId a map of table ID to state store
+     * @return                     the provider
+     */
     public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
         return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
             String tableId = tableProperties.get(TABLE_ID);
@@ -59,6 +55,22 @@ public class FixedStateStoreProvider extends StateStoreProvider {
                 throw new IllegalArgumentException("Table not found by ID: " + tableId);
             }
             return stateStoreByTableId.get(tableId);
+        });
+    }
+
+    /**
+     * Creates a state store provider that will load the given state stores.
+     *
+     * @param  stateStoreByTableName a map of table name to state store
+     * @return                       the provider
+     */
+    public static StateStoreProvider byTableName(Map<String, StateStore> stateStoreByTableName) {
+        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
+            if (!stateStoreByTableName.containsKey(tableName)) {
+                throw new IllegalArgumentException("Table not found by name: " + tableName);
+            }
+            return stateStoreByTableName.get(tableName);
         });
     }
 }

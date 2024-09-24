@@ -26,15 +26,32 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
+/**
+ * Valid values for default behaviour to determine whether commits to the state store should be done asynchronously.
+ */
 public enum DefaultAsyncCommitBehaviour {
     DISABLED,
     PER_IMPLEMENTATION,
     ALL_IMPLEMENTATIONS;
 
+    /**
+     * Checks if the value is a valid default behaviour for asynchronous state store commits.
+     *
+     * @param  behaviour the value
+     * @return           true if it is valid
+     */
     public static boolean isValid(String behaviour) {
         return EnumUtils.isValidEnumIgnoreCase(DefaultAsyncCommitBehaviour.class, behaviour);
     }
 
+    /**
+     * Determines the default value for whether asynchronous commit should be enabled for a given Sleeper table. This
+     * depends on the default behaviour set in the Sleeper instance.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @return                    true if asynchronous by default, false otherwise
+     */
     public static String getDefaultAsyncCommitEnabled(InstanceProperties instanceProperties, TableProperties tableProperties) {
         DefaultAsyncCommitBehaviour behaviour = instanceProperties.getEnumValue(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.class);
         switch (behaviour) {
@@ -49,6 +66,14 @@ public enum DefaultAsyncCommitBehaviour {
         }
     }
 
+    /**
+     * Creates behaviour for a table property that sets whether asynchronous commit is enabled for a specific state
+     * store update type. May be disabled at the table level. Applies defaults from the instance level.
+     *
+     * @param  defaultUpdateEnabledProperty the instance property that sets whether asynchronous commit is enabled by
+     *                                      default for the same state store update type
+     * @return                              the behaviour
+     */
     public static TablePropertyComputeValue computeAsyncCommitForUpdate(InstanceProperty defaultUpdateEnabledProperty) {
         return (typeEnabledStr, instanceProperties, tableProperties) -> {
             if (typeEnabledStr == null) {

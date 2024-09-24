@@ -24,6 +24,9 @@ import java.util.List;
 
 import static sleeper.configuration.properties.PropertyGroup.group;
 
+/**
+ * Definitions of groups used to organise instance properties.
+ */
 public class InstancePropertyGroup {
     private InstancePropertyGroup() {
     }

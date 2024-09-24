@@ -20,22 +20,20 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.SleeperPropertyValues;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * An instance property definition. This file also contains an index of definitions of all instance properties, which
+ * can be accessed via {@link InstanceProperties#getPropertiesIndex}.
+ */
 public interface InstanceProperty extends SleeperProperty {
 
     static List<InstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
-    static Optional<InstanceProperty> getByName(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName);
-    }
-
+    /**
+     * An index of all instance property definitions.
+     */
     class Index {
         private Index() {
         }
@@ -50,6 +48,14 @@ public interface InstanceProperty extends SleeperProperty {
         }
     }
 
+    /**
+     * Performs post-processing on the value of this index property. For properties that default to the value of another
+     * property, that is retrieved here. Querying for the value of this property will create an infinite loop.
+     *
+     * @param  value              the value before post-processing
+     * @param  instanceProperties the values of all instance properties (do not query for this property)
+     * @return                    the value of this property
+     */
     default String computeValue(String value, SleeperPropertyValues<InstanceProperty> instanceProperties) {
         return value;
     }

@@ -338,7 +338,7 @@ public class QueryClientIT {
     private void runQueryClient(List<TableProperties> tablePropertiesList, Map<String, StateStore> stateStoreByTableName) throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
-                new FixedStateStoreProvider(stateStoreByTableName))
+                FixedStateStoreProvider.byTableName(stateStoreByTableName))
                 .run();
     }
 

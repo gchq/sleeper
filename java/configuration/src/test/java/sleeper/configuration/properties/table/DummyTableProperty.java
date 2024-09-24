@@ -19,6 +19,9 @@ import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+/**
+ * A fake table property to test working with table property values.
+ */
 public class DummyTableProperty implements TableProperty {
 
     private final TablePropertyComputeValue computeValue;
@@ -29,10 +32,22 @@ public class DummyTableProperty implements TableProperty {
         this.defaultProperty = defaultProperty;
     }
 
+    /**
+     * Creates an instance of this class to read the default value from another property.
+     *
+     * @param  defaultProperty the default property
+     * @return                 the new property
+     */
     public static DummyTableProperty defaultedFrom(SleeperProperty defaultProperty) {
         return new DummyTableProperty(TablePropertyComputeValue.defaultProperty(defaultProperty), defaultProperty);
     }
 
+    /**
+     * Creates an instance of this class with custom behaviour to post-process the property's values.
+     *
+     * @param  computeValue the post-processing behaviour
+     * @return              the new property
+     */
     public static DummyTableProperty customCompute(TablePropertyComputeValue computeValue) {
         return new DummyTableProperty(computeValue, null);
     }

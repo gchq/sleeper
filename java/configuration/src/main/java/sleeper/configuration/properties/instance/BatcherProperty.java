@@ -16,11 +16,14 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to the ingest batcher.
+ */
 public interface BatcherProperty {
     UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
             .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
@@ -45,7 +48,7 @@ public interface BatcherProperty {
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
             .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 
@@ -53,10 +56,9 @@ public interface BatcherProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

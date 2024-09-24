@@ -16,14 +16,17 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 
+/**
+ * Definitions of instance properties relating to garbage collection.
+ */
 public interface GarbageCollectionProperty {
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.gc.period.minutes")
             .description("The frequency in minutes with which the garbage collector lambda is run.")
@@ -34,7 +37,7 @@ public interface GarbageCollectionProperty {
             .description("The configurable timeout wait in minutes for the garbage collector lambda.")
             .defaultValue("14")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
-            .validationPredicate(Utils::isPositiveIntegerLtEq15)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq15)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
             .description("The amount of memory in MB for the lambda function used to perform garbage collection.")
@@ -55,12 +58,12 @@ public interface GarbageCollectionProperty {
             .description("The number of tables to perform garbage collection for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
-            .validationPredicate(Utils::isPositiveIntegerLtEq10)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.gc.offline.enabled")
             .description("Whether to perform garbage collection for offline tables.")
             .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.batch.size")
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
@@ -78,10 +81,9 @@ public interface GarbageCollectionProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

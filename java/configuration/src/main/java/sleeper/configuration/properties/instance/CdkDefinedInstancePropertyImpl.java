@@ -23,6 +23,9 @@ import sleeper.configuration.properties.PropertyGroup;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * A Sleeper instance property which is set at deploy time by the Sleeper CDK app.
+ */
 class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
 
     private final String propertyName;
@@ -72,6 +75,9 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
         return true;
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private String propertyName;
         private String description;

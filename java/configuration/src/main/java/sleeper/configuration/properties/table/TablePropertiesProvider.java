@@ -65,10 +65,22 @@ public class TablePropertiesProvider {
         this.timeSupplier = timeSupplier;
     }
 
+    /**
+     * Retrieves properties by table name.
+     *
+     * @param  tableName the name of the table
+     * @return           the table properties
+     */
     public TableProperties getByName(String tableName) {
         return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName));
     }
 
+    /**
+     * Retrieves properties by table unique ID.
+     *
+     * @param  tableId the unique ID of the table
+     * @return         the table properties
+     */
     public TableProperties getById(String tableId) {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
@@ -107,21 +119,37 @@ public class TablePropertiesProvider {
         cacheByName.put(properties.get(TABLE_NAME), entry);
     }
 
+    /**
+     * Retrieves properties of all tables in the Sleeper instance.
+     *
+     * @return the table properties
+     */
     public Stream<TableProperties> streamAllTables() {
         return propertiesStore.streamAllTableStatuses()
                 .map(this::get);
     }
 
+    /**
+     * Retrieves properties of all online tables in the Sleeper instance.
+     *
+     * @return the table properties
+     */
     public Stream<TableProperties> streamOnlineTables() {
         return propertiesStore.streamOnlineTableIds()
                 .map(this::get);
     }
 
+    /**
+     * Deletes all locally cached table properties. Further calls will reload properties.
+     */
     public void clearCache() {
         cacheByName.clear();
         cacheById.clear();
     }
 
+    /**
+     * An entry in the provider cache for a given Sleeper table.
+     */
     private static class CacheEntry {
         private final TableProperties tableProperties;
         private final Instant expiryTime;

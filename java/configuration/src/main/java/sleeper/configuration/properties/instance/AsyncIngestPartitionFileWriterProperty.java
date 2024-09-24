@@ -16,11 +16,14 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to ingest writing files asynchronously.
+ */
 public interface AsyncIngestPartitionFileWriterProperty {
     UserDefinedInstanceProperty ASYNC_INGEST_CLIENT_TYPE = Index.propertyBuilder("sleeper.ingest.async.client.type")
             .description("The implementation of the async S3 client to use for upload during ingest.\n" +
@@ -39,23 +42,22 @@ public interface AsyncIngestPartitionFileWriterProperty {
             .description("The part size in bytes to use for multipart uploads.\n" +
                     "(CRT async ingest only) [128MB]")
             .defaultValue("134217728") // 128M
-            .validationPredicate(Utils::isPositiveLong)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS = Index.propertyBuilder("sleeper.ingest.async.crt.target.throughput.gbps")
             .description("The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded simultaneously.\n" +
                     "(CRT async ingest only)")
             .defaultValue("10")
-            .validationPredicate(Utils::isPositiveDouble)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveDouble)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

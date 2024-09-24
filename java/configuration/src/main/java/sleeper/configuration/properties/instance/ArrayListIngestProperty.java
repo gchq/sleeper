@@ -20,6 +20,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to ingest backed by an array list.
+ */
 public interface ArrayListIngestProperty {
     UserDefinedInstanceProperty MAX_RECORDS_TO_WRITE_LOCALLY = Index.propertyBuilder("sleeper.ingest.max.local.records")
             .description("The maximum number of records written to local file in an ingest job. (Records are written in sorted order to local " +
@@ -41,10 +44,9 @@ public interface ArrayListIngestProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

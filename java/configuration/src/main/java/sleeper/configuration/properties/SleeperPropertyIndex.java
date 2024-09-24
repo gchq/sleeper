@@ -23,6 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * An index of Sleeper configuration property definitions. Allows lookup by property name or group, or listing of all
+ * properties, or properties defined by the user. Retains ordering of properties in the order in which they were
+ * defined.
+ *
+ * @param <T> the type of property indexed
+ */
 public class SleeperPropertyIndex<T extends SleeperProperty> {
 
     private final Map<String, T> allMap = new HashMap<>();
@@ -31,6 +38,11 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
     private final List<T> userDefined = new ArrayList<>();
     private final List<T> cdkDefined = new ArrayList<>();
 
+    /**
+     * Adds a property to the index.
+     *
+     * @param property the property
+     */
     public void add(T property) {
         allMap.put(property.getPropertyName(), property);
         all.add(property);
@@ -44,6 +56,11 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
         }
     }
 
+    /**
+     * Adds a collection of properties to the index.
+     *
+     * @param properties the properties
+     */
     public void addAll(Collection<? extends T> properties) {
         properties.forEach(this::add);
     }
@@ -60,10 +77,22 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
         return Collections.unmodifiableList(cdkDefined);
     }
 
+    /**
+     * Retrieves a property by its name.
+     *
+     * @param  propertyName the property name
+     * @return              the property, if it exists in the index
+     */
     public Optional<T> getByName(String propertyName) {
         return Optional.ofNullable(allMap.get(propertyName));
     }
 
+    /**
+     * Retrieves all properties in a given property group.
+     *
+     * @param  propertyGroup the property group
+     * @return               the list of properties in the group
+     */
     public List<T> getAllInGroup(PropertyGroup propertyGroup) {
         return byGroup.getOrDefault(propertyGroup, Collections.emptyList());
     }

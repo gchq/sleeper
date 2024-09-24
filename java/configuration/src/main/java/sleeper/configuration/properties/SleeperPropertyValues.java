@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +27,41 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Provides access to values of Sleeper configuration properties.
+ *
+ * @param <T> the type of properties whose values are held
+ */
 @FunctionalInterface
 public interface SleeperPropertyValues<T extends SleeperProperty> {
 
+    /**
+     * Retrieves the value of a property. Please call the getter relevant to the type of the property, see other methods
+     * on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     String get(T property);
 
+    /**
+     * Retrieves the value of a boolean property. Please call the getter relevant to the type of the property, see other
+     * methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default boolean getBoolean(T property) {
         return Boolean.parseBoolean(get(property));
     }
 
+    /**
+     * Retrieves the value of an integer property. Please call the getter relevant to the type of the property, see
+     * other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default Integer getInt(T property) {
         String val = get(property);
         if (val != null) {
@@ -45,30 +71,82 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         }
     }
 
+    /**
+     * Retrieves the value of a long integer property. Please call the getter relevant to the type of the property, see
+     * other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default long getLong(T property) {
         return Long.parseLong(get(property));
     }
 
+    /**
+     * Retrieves the value of a double precision floating point property. Please call the getter relevant to the type of
+     * the property, see other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default double getDouble(T property) {
         return Double.parseDouble(get(property));
     }
 
+    /**
+     * Retrieves the value of a property for a number of bytes. Please call the getter relevant to the type of the
+     * property, see other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default long getBytes(T property) {
-        return Utils.readBytes(get(property));
+        return SleeperPropertyValueUtils.readBytes(get(property));
     }
 
+    /**
+     * Retrieves the value of a property for a list of strings. Please call the getter relevant to the type of the
+     * property, see other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
     default List<String> getList(T property) {
         return SleeperPropertyValues.readList(get(property));
     }
 
+    /**
+     * Retrieves the value of a property for a list of an enum type. Please call the getter relevant to the
+     * type of the property, see other methods on this class.
+     *
+     * @param  property  the property
+     * @param  enumClass the enum type
+     * @return           the value of the property
+     */
     default <E extends Enum<E>> List<E> getEnumList(T property, Class<E> enumClass) {
         return streamEnumList(property, enumClass).collect(toUnmodifiableList());
     }
 
+    /**
+     * Streams the values of a property for a list of an enum type. Please call the getter relevant to the
+     * type of the property, see other methods on this class.
+     *
+     * @param  property  the property
+     * @param  enumClass the enum type
+     * @return           the values of the property
+     */
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
         return streamEnumList(property, get(property), enumClass);
     }
 
+    /**
+     * Retrieves the value of a property of an enum type. Please call the getter relevant to the type of the property,
+     * see other methods on this class.
+     *
+     * @param  property  the property
+     * @param  enumClass the enum type
+     * @return           the value of the property
+     */
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
         String value = get(property);
         return Optional.ofNullable(value)
@@ -76,6 +154,12 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
                 .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value));
     }
 
+    /**
+     * Reads the value of a property for a list of strings.
+     *
+     * @param  value the value
+     * @return       the list of strings
+     */
     static List<String> readList(String value) {
         if (value == null || value.length() < 1) {
             return List.of();
@@ -84,6 +168,12 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         }
     }
 
+    /**
+     * Streams the values of a property for a list of an enum type.
+     *
+     * @param  value the value
+     * @return       the list of enum values
+     */
     static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
         return readList(value).stream()
                 .map(item -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, item))

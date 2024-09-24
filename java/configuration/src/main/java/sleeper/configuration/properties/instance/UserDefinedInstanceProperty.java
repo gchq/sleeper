@@ -34,10 +34,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of definitions of all user-defined instance properties.
+     */
     class Index {
         private Index() {
         }

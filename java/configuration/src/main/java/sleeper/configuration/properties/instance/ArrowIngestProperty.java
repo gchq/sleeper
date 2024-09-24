@@ -20,6 +20,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to ingest backed by an Arrow buffer.
+ */
 public interface ArrowIngestProperty {
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = Index.propertyBuilder("sleeper.ingest.arrow.working.buffer.bytes")
             .description("The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry " +
@@ -54,10 +57,9 @@ public interface ArrowIngestProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

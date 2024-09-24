@@ -27,6 +27,12 @@ public enum CompactionMethod {
     /** Uses a native library written in Rust to perform a compaction with Apache DataFusion. */
     DATAFUSION;
 
+    /**
+     * Checks if the value is a valid compaction method.
+     *
+     * @param  value the value
+     * @return       true if it is valid
+     */
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
     }

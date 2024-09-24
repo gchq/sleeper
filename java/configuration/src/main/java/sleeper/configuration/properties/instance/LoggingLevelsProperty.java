@@ -20,6 +20,9 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 
+/**
+ * Definitions of instance properties relating to logging levels.
+ */
 public interface LoggingLevelsProperty {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
@@ -46,10 +49,9 @@ public interface LoggingLevelsProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static boolean has(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName).isPresent();
-    }
-
+    /**
+     * An index of property definitions in this file.
+     */
     class Index {
         private Index() {
         }

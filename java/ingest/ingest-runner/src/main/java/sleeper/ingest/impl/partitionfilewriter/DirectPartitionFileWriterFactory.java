@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import sleeper.configuration.TableFilePaths;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -32,14 +33,14 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
     private final ParquetConfiguration parquetConfiguration;
-    private final String filePathPrefix;
+    private final TableFilePaths filePaths;
     private final Supplier<String> fileNameGenerator;
 
     private DirectPartitionFileWriterFactory(
-            ParquetConfiguration parquetConfiguration, String filePathPrefix,
+            ParquetConfiguration parquetConfiguration, TableFilePaths filePaths,
             Supplier<String> fileNameGenerator) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
-        this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
+        this.filePaths = Objects.requireNonNull(filePaths, "filePaths must not be null");
         this.fileNameGenerator = Objects.requireNonNull(fileNameGenerator, "fileNameGenerator must not be null");
     }
 
@@ -50,7 +51,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     public static DirectPartitionFileWriterFactory from(
             ParquetConfiguration configuration, String filePathPrefix,
             Supplier<String> fileNameGenerator) {
-        return new DirectPartitionFileWriterFactory(configuration, filePathPrefix, fileNameGenerator);
+        return new DirectPartitionFileWriterFactory(configuration, TableFilePaths.fromPrefix(filePathPrefix), fileNameGenerator);
     }
 
     public static DirectPartitionFileWriterFactory from(
@@ -77,7 +78,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             return new DirectPartitionFileWriter(
                     partition,
                     parquetConfiguration,
-                    filePathPrefix,
+                    filePaths,
                     fileNameGenerator.get());
         } catch (IOException e) {
             throw new RuntimeException(e);

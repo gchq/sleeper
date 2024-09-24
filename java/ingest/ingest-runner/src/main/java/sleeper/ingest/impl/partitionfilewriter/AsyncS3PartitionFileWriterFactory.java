@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
+import sleeper.configuration.TableFilePaths;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -45,7 +46,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
-    private final String filePathPrefix;
+    private final TableFilePaths filePaths;
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
     private final S3TransferManager s3TransferManager;
@@ -55,7 +56,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
-        filePathPrefix = Objects.requireNonNull(builder.filePathPrefix, "filePathPrefix must not be null");
+        filePaths = Objects.requireNonNull(builder.filePaths, "filePaths must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
         s3AsyncClient = builder.s3AsyncClient;
@@ -131,7 +132,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
             return new AsyncS3PartitionFileWriter(
                     partition,
                     parquetConfiguration,
-                    s3BucketName, filePathPrefix,
+                    s3BucketName, filePaths,
                     s3TransferManager,
                     localWorkingDirectory,
                     fileNameGenerator.get());
@@ -152,7 +153,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private ParquetConfiguration parquetConfiguration;
         private S3AsyncClient s3AsyncClient;
         private String s3BucketName;
-        private String filePathPrefix = "";
+        private TableFilePaths filePaths;
         private String localWorkingDirectory;
         private boolean closeS3AsyncClient;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
@@ -187,7 +188,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
 
         public Builder filePathPrefix(String filePathPrefix) {
-            this.filePathPrefix = filePathPrefix;
+            this.filePaths = TableFilePaths.fromPrefix(filePathPrefix);
             return this;
         }
 

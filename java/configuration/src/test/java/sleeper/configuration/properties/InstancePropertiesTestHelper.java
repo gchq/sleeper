@@ -60,16 +60,34 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 
+/**
+ * Helpers to create instance properties.
+ */
 public class InstancePropertiesTestHelper {
 
     private InstancePropertiesTestHelper() {
     }
 
+    /**
+     * Creates properties for a Sleeper instance and saves them to S3. Generates a random instance ID and pre-populates
+     * various properties set during deployment.
+     *
+     * @param  s3 the S3 client
+     * @return    the instance properties
+     */
     public static InstanceProperties createTestInstanceProperties(AmazonS3 s3) {
         return createTestInstanceProperties(s3, properties -> {
         });
     }
 
+    /**
+     * Creates properties for a Sleeper instance and saves them to S3. Generates a random instance ID and pre-populates
+     * various properties set during deployment.
+     *
+     * @param  s3              the S3 client
+     * @param  extraProperties extra configuration to apply before saving to S3
+     * @return                 the instance properties
+     */
     public static InstanceProperties createTestInstanceProperties(
             AmazonS3 s3, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -83,6 +101,12 @@ public class InstancePropertiesTestHelper {
         return instanceProperties;
     }
 
+    /**
+     * Creates properties for a Sleeper instance. Generates a random instance ID and pre-populates various properties
+     * set during deployment.
+     *
+     * @return the instance properties
+     */
     public static InstanceProperties createTestInstanceProperties() {
         String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -123,6 +147,12 @@ public class InstancePropertiesTestHelper {
         return instanceProperties;
     }
 
+    /**
+     * Writes a properties file as a string.
+     *
+     * @param  properties the properties
+     * @return            the properties file contents
+     */
     public static String propertiesString(Properties properties) throws IOException {
         StringWriter writer = new StringWriter();
         properties.store(writer, "");

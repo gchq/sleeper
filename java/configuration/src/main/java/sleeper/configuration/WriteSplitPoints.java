@@ -25,11 +25,21 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Writes a file storing split points to initialise a Sleeper table partition tree.
+ */
 public class WriteSplitPoints {
 
     private WriteSplitPoints() {
     }
 
+    /**
+     * Writes the split points to a string.
+     *
+     * @param  splitPoints          the split points
+     * @param  stringsBase64Encoded true if string values should be Base64 encoded
+     * @return                      the split points file contents
+     */
     public static String toString(List<Object> splitPoints, boolean stringsBase64Encoded) {
         StringWriter writer = new StringWriter();
         try {
@@ -40,6 +50,14 @@ public class WriteSplitPoints {
         return writer.toString();
     }
 
+    /**
+     * Writes the split points to a writer.
+     *
+     * @param  splitPoints          the split points
+     * @param  writer               writer
+     * @param  stringsBase64Encoded true if string values should be Base64 encoded
+     * @throws IOException          if data could not be written to the writer
+     */
     public static void writeSplitPoints(List<Object> splitPoints, Writer writer, boolean stringsBase64Encoded) throws IOException {
         for (Object splitPoint : splitPoints) {
             if (splitPoint instanceof ByteArray) {

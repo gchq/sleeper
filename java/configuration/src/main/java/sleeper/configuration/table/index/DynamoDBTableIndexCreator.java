@@ -35,6 +35,10 @@ import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ID_FIEL
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_NAME_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ONLINE_FIELD;
 
+/**
+ * Creates the DynamoDB tables required to implement a Sleeper table index. Usually this will be done by the CDK. This
+ * is used for a local instance or integration tests.
+ */
 public class DynamoDBTableIndexCreator {
     private final InstanceProperties instanceProperties;
     private final AmazonDynamoDB dynamoDB;
@@ -44,11 +48,17 @@ public class DynamoDBTableIndexCreator {
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
 
+    /**
+     * Creates the DynamoDB tables for a Sleeper table index.
+     *
+     * @param dynamoDBClient     the DynamoDB client
+     * @param instanceProperties the instance properties
+     */
     public static void create(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         new DynamoDBTableIndexCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    public void create() {
+    private void create() {
         initialiseTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 List.of(new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
                 List.of(new KeySchemaElement(TABLE_NAME_FIELD, KeyType.HASH)));
