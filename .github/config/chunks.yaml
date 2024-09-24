@@ -1,55 +1,94 @@
 chunks:
-  athena:
-    name: Athena
-    workflow: chunk-athena.yaml
-    modules: [ athena ]
-  bulk-import:
-    name: Bulk Import
-    workflow: chunk-bulk-import.yaml
-    modules: [ bulk-import/bulk-import-common, bulk-import/bulk-import-starter, bulk-import/bulk-import-runner ]
   cdk:
     name: CDK
     workflow: chunk-cdk.yaml
-    modules: [ cdk, cdk-custom-resources, cdk-environment, system-test/system-test-cdk, system-test/system-test-configuration, system-test/system-test-data-generation, system-test/system-test-dsl, system-test/system-test-drivers, system-test/system-test-suite ]
+    modules:
+      - cdk
+      - cdk-custom-resources
+      - cdk-environment
+      - system-test/system-test-cdk
+      - system-test/system-test-configuration
+      - system-test/system-test-data-generation
+      - system-test/system-test-dsl
+      - system-test/system-test-drivers
+      - system-test/system-test-suite
   clients:
     name: Clients
     workflow: chunk-clients.yaml
-    modules: [ clients ]
+    modules:
+      - clients
   common:
     name: Common
     workflow: chunk-common.yaml
-    modules: [ core, configuration, sketches, parquet, common/common-job, common/common-task, common/common-invoke-tables, build, common/dynamodb-tools, common/dynamodb-test ]
+    modules:
+      - core
+      - configuration
+      - sketches
+      - parquet
+      - common/common-job
+      - common/common-task
+      - common/common-invoke-tables
+      - build
+      - common/dynamodb-tools
+      - common/dynamodb-test
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
-    modules: [ compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-job-creation-lambda, compaction/compaction-status-store, compaction/compaction-core, splitter/splitter-core, splitter/splitter-lambda ]
+    modules:
+      - compaction/compaction-job-execution
+      - compaction/compaction-task-creation
+      - compaction/compaction-job-creation
+      - compaction/compaction-job-creation-lambda
+      - compaction/compaction-status-store
+      - compaction/compaction-core
+      - splitter/splitter-core
+      - splitter/splitter-lambda
+      - garbage-collector
   rust:
     name: Rust
     workflow: chunk-rust.yaml
-    modules: [ compaction/compaction-rust ]
-  data:
-    name: Data
-    workflow: chunk-data.yaml
-    modules: [ garbage-collector, metrics ]
+    modules:
+      - compaction/compaction-rust
   ingest-common:
     name: Ingest Common
     workflow: chunk-ingest-common.yaml
-    modules: [ ingest/ingest-core, ingest/ingest-status-store, ingest/ingest-starter, ingest/ingest-batcher-core, ingest/ingest-batcher-store, ingest/ingest-batcher-submitter, ingest/ingest-batcher-job-creator ]
+    modules:
+      - ingest/ingest-core
+      - ingest/ingest-status-store
+      - ingest/ingest-starter
+      - ingest/ingest-batcher-core
+      - ingest/ingest-batcher-store
+      - ingest/ingest-batcher-submitter
+      - ingest/ingest-batcher-job-creator
+      - bulk-import/bulk-import-common
+      - bulk-import/bulk-import-starter
+      - bulk-import/bulk-import-runner
   ingest-runner:
     name: Ingest Runner
     workflow: chunk-ingest-runner.yaml
-    modules: [ ingest/ingest-runner ]
+    modules:
+      - ingest/ingest-runner
   query:
     name: Query
     workflow: chunk-query.yaml
-    modules: [ query/query-core, query/query-runner, query/query-lambda ]
+    modules:
+      - query/query-core
+      - query/query-runner
+      - query/query-lambda
+      - athena
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
-    modules: [ statestore, statestore-commit, statestore-lambda, statestore  ]
+    modules:
+      - statestore
+      - statestore-commit
+      - statestore-lambda
+      - statestore
+      - metrics
   trino:
     name: Trino
     workflow: chunk-trino.yaml
-    modules: [ trino ]
+    modules:
+      - trino
 
 

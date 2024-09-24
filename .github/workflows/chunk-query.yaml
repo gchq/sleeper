@@ -1,4 +1,4 @@
-name: Build Query Module
+name: Build Query Modules
 on:
   pull_request:
     paths:
@@ -8,10 +8,12 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
+      - 'java/athena/**'
       - 'java/query/pom.xml'
       - 'java/query/query-core/**'
       - 'java/query/query-runner/**'
       - 'java/query/query-lambda/**'
+      - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
       - 'java/ingest/ingest-status-store/**'
