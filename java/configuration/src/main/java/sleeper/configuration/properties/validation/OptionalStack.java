@@ -17,8 +17,6 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperPropertyValues;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,7 +100,7 @@ public enum OptionalStack {
      * @return       true if it is valid
      */
     public static boolean isValid(String value) {
-        return SleeperPropertyValues.readList(value).stream()
+        return SleeperPropertyValueUtils.readList(value).stream()
                 .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));
     }
 

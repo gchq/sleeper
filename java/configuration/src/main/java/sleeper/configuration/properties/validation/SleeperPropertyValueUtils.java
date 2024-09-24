@@ -15,11 +15,14 @@
  */
 package sleeper.configuration.properties.validation;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperPropertyValues;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -320,7 +323,7 @@ public class SleeperPropertyValueUtils {
      * @return         true if the value meets the requirement
      */
     public static boolean isListWithMaxSize(String input, int maxSize) {
-        List<String> values = SleeperPropertyValues.readList(input);
+        List<String> values = SleeperPropertyValueUtils.readList(input);
         return values.size() <= maxSize;
     }
 
@@ -371,6 +374,32 @@ public class SleeperPropertyValueUtils {
      */
     public static <T extends Enum<T>> String describeEnumValues(Class<T> cls) {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString).collect(Collectors.toList()).toString();
+    }
+
+    /**
+     * Streams the values of a property for a list of an enum type.
+     *
+     * @param  value the value
+     * @return       the list of enum values
+     */
+    public static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
+        return readList(value).stream()
+                .map(item -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, item))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + item)));
+    }
+
+    /**
+     * Reads the value of a property for a list of strings.
+     *
+     * @param  value the value
+     * @return       the list of strings
+     */
+    public static List<String> readList(String value) {
+        if (value == null || value.length() < 1) {
+            return List.of();
+        } else {
+            return Lists.newArrayList(value.split(","));
+        }
     }
 
 }

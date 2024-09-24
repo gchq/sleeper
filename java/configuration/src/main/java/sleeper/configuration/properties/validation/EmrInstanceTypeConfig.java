@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
@@ -103,7 +102,7 @@ public class EmrInstanceTypeConfig {
             return false;
         }
         try {
-            List<String> instanceTypes = readInstanceTypesProperty(readList(value), X86_64)
+            List<String> instanceTypes = readInstanceTypesProperty(SleeperPropertyValueUtils.readList(value), X86_64)
                     .map(EmrInstanceTypeConfig::getInstanceType)
                     .collect(Collectors.toUnmodifiableList());
             return instanceTypes.size() == instanceTypes.stream().distinct().count();

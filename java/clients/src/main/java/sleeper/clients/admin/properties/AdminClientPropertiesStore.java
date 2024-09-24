@@ -29,7 +29,6 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.S3InstanceProperties;
@@ -38,6 +37,7 @@ import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreFactory;
@@ -139,10 +139,10 @@ public class AdminClientPropertiesStore {
             return false;
         }
         PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<OptionalStack> stacksBefore = SleeperPropertyValues
+        Set<OptionalStack> stacksBefore = SleeperPropertyValueUtils
                 .streamEnumList(OPTIONAL_STACKS, stackDiff.getOldValue(), OptionalStack.class)
                 .collect(toUnmodifiableSet());
-        Set<OptionalStack> newStacks = SleeperPropertyValues
+        Set<OptionalStack> newStacks = SleeperPropertyValueUtils
                 .streamEnumList(OPTIONAL_STACKS, stackDiff.getNewValue(), OptionalStack.class)
                 .filter(not(stacksBefore::contains))
                 .collect(toUnmodifiableSet());

@@ -16,7 +16,6 @@
 
 package sleeper.configuration.properties;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
@@ -113,7 +112,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * @return          the value of the property
      */
     default List<String> getList(T property) {
-        return SleeperPropertyValues.readList(get(property));
+        return SleeperPropertyValueUtils.readList(get(property));
     }
 
     /**
@@ -137,7 +136,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * @return           the values of the property
      */
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
-        return streamEnumList(property, get(property), enumClass);
+        return SleeperPropertyValueUtils.streamEnumList(property, get(property), enumClass);
     }
 
     /**
@@ -153,31 +152,5 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
         return Optional.ofNullable(value)
                 .map(mode -> EnumUtils.getEnumIgnoreCase(enumClass, mode))
                 .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value));
-    }
-
-    /**
-     * Reads the value of a property for a list of strings.
-     *
-     * @param  value the value
-     * @return       the list of strings
-     */
-    static List<String> readList(String value) {
-        if (value == null || value.length() < 1) {
-            return List.of();
-        } else {
-            return Lists.newArrayList(value.split(","));
-        }
-    }
-
-    /**
-     * Streams the values of a property for a list of an enum type.
-     *
-     * @param  value the value
-     * @return       the list of enum values
-     */
-    static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
-        return readList(value).stream()
-                .map(item -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(enumClass, item))
-                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + item)));
     }
 }

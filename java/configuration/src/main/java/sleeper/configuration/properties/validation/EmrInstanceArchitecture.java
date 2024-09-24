@@ -18,8 +18,6 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperPropertyValues;
-
 /**
  * Valid values for AWS EMR instance architecture.
  */
@@ -36,7 +34,7 @@ public enum EmrInstanceArchitecture {
         if (input == null) {
             return false;
         }
-        return SleeperPropertyValues.readList(input).stream()
+        return SleeperPropertyValueUtils.readList(input).stream()
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 }
