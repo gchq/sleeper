@@ -19,7 +19,6 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
@@ -70,21 +69,6 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         return builder().properties(properties, groups)
                 .writer(writer).printTemplate(true).build();
-    }
-
-    /**
-     * Creates a printer to be used to display table properties in a given group.
-     *
-     * @param  writer the writer to write to
-     * @param  group  the group to display
-     * @return        the pretty printer
-     */
-    public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
-            PrintWriter writer, PropertyGroup group) {
-        return builder().sortedProperties(TableProperty.getAll().stream()
-                .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()))
-                .writer(writer).hideUnknownProperties(true).build();
     }
 
     /**

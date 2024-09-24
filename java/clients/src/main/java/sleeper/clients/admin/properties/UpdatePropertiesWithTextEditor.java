@@ -70,7 +70,7 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> TableProperties.forTablePropertiesWithGroup(writer, propertyGroup));
         return buildRequest(properties, TableProperties.recreateWithoutValidation(properties, after));
     }
 

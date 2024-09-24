@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.schema.Schema;
@@ -32,6 +33,7 @@ import sleeper.core.table.TableStatus;
 import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -59,17 +61,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         schema = loadSchema(properties);
-    }
-
-    /**
-     * Creates a printer to be used to display all table properties.
-     *
-     * @param  writer the writer to write to
-     * @return        the pretty printer
-     */
-    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
-        return SleeperPropertiesPrettyPrinter.builder().properties(TableProperty.getAll(), TablePropertyGroup.getAll())
-                .writer(writer).build();
     }
 
     /**
@@ -165,6 +156,32 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     @Override
     protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
         return forTableProperties(writer);
+    }
+
+    /**
+     * Creates a printer to be used to display all table properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.builder().properties(TableProperty.getAll(), TablePropertyGroup.getAll())
+                .writer(writer).build();
+    }
+
+    /**
+     * Creates a printer to be used to display table properties in a given group.
+     *
+     * @param  writer the writer to write to
+     * @param  group  the group to display
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return SleeperPropertiesPrettyPrinter.builder().sortedProperties(TableProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()))
+                .writer(writer).hideUnknownProperties(true).build();
     }
 
     public TableStatus getStatus() {
