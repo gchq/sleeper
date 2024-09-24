@@ -15,6 +15,8 @@
  */
 package sleeper.clients.testutil;
 
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
@@ -24,12 +26,21 @@ import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import static sleeper.task.common.WiremockTestHelper.wiremockAwsV2Client;
+import static sleeper.task.common.WiremockTestHelper.wiremockCredentialsProvider;
+import static sleeper.task.common.WiremockTestHelper.wiremockEndpointConfiguration;
 
 public class ClientWiremockTestHelper {
 
     public static final String OPERATION_HEADER = "X-Amz-Target";
 
     private ClientWiremockTestHelper() {
+    }
+
+    public static AmazonECS wiremockEcsClientV1(WireMockRuntimeInfo runtimeInfo) {
+        return AmazonECSClientBuilder.standard()
+                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
+                .withCredentials(wiremockCredentialsProvider())
+                .build();
     }
 
     public static EcrClient wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {

@@ -18,10 +18,10 @@ package sleeper.systemtest.drivers.compaction;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
@@ -57,7 +57,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final AmazonAutoScaling asClient;
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

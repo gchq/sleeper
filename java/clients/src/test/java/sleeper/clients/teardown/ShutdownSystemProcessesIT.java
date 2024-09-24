@@ -39,6 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcsClientV1;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequestedForCloudWatchEvents;
@@ -84,7 +85,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -94,7 +94,7 @@ class ShutdownSystemProcessesIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
+        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClientV1(runtimeInfo),
                 wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none());
     }
 

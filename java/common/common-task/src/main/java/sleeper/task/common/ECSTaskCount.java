@@ -15,9 +15,8 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.Cluster;
-import com.amazonaws.services.ecs.model.DescribeClustersRequest;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.Cluster;
 
 import java.util.List;
 
@@ -26,12 +25,11 @@ public class ECSTaskCount {
     private ECSTaskCount() {
     }
 
-    public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
-        DescribeClustersRequest describeClustersRequest = new DescribeClustersRequest().withClusters(clusterName);
-        List<Cluster> clusters = ecsClient.describeClusters(describeClustersRequest).getClusters();
+    public static int getNumPendingAndRunningTasks(String clusterName, EcsClient ecsClient) throws DescribeClusterException {
+        List<Cluster> clusters = ecsClient.describeClusters(request -> request.clusters(clusterName)).clusters();
         if (null == clusters || clusters.size() != 1) {
             throw new DescribeClusterException("Unable to retrieve details of cluster " + clusterName);
         }
-        return clusters.get(0).getPendingTasksCount() + clusters.get(0).getRunningTasksCount();
+        return clusters.get(0).pendingTasksCount() + clusters.get(0).runningTasksCount();
     }
 }

@@ -15,15 +15,15 @@
  */
 package sleeper.systemtest.drivers.ingest.json;
 
-import com.amazonaws.services.ecs.model.Container;
-import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.ecs.model.Container;
+import software.amazon.awssdk.services.ecs.model.Task;
+import software.amazon.awssdk.services.ecs.model.TaskStopCode;
 
 import sleeper.clients.util.ClientsGsonConfig;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,30 +41,22 @@ public class TaskStatusJson {
     private final Instant startedAt;
     private final Instant stoppingAt;
     private final Instant stoppedAt;
-    private final String stopCode;
+    private final TaskStopCode stopCode;
     private final String stoppedReason;
 
     public TaskStatusJson(Task task) {
-        taskArn = task.getTaskArn();
-        clusterArn = task.getClusterArn();
-        desiredStatus = task.getDesiredStatus();
-        lastStatus = task.getLastStatus();
-        containersLastStatus = task.getContainers().stream()
-                .collect(Collectors.toMap(Container::getName, Container::getLastStatus));
-        createdAt = instantOrNull(task.getCreatedAt());
-        startedAt = instantOrNull(task.getStartedAt());
-        stoppingAt = instantOrNull(task.getStoppingAt());
-        stoppedAt = instantOrNull(task.getStoppedAt());
-        stopCode = task.getStopCode();
-        stoppedReason = task.getStoppedReason();
-    }
-
-    private static Instant instantOrNull(Date date) {
-        if (date == null) {
-            return null;
-        } else {
-            return date.toInstant();
-        }
+        taskArn = task.taskArn();
+        clusterArn = task.clusterArn();
+        desiredStatus = task.desiredStatus();
+        lastStatus = task.lastStatus();
+        containersLastStatus = task.containers().stream()
+                .collect(Collectors.toMap(Container::name, Container::lastStatus));
+        createdAt = task.createdAt();
+        startedAt = task.startedAt();
+        stoppingAt = task.stoppingAt();
+        stoppedAt = task.stoppedAt();
+        stopCode = task.stopCode();
+        stoppedReason = task.stoppedReason();
     }
 
     public String toString() {

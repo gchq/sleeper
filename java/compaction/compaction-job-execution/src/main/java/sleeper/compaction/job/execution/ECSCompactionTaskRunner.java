@@ -17,8 +17,6 @@ package sleeper.compaction.job.execution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -27,6 +25,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
@@ -57,6 +56,7 @@ import java.util.UUID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultCompactionRunnerFactory},
@@ -79,9 +79,8 @@ public class ECSCompactionTaskRunner {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
-        try {
+        try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             // Log some basic data if running on EC2 inside ECS
@@ -117,13 +116,11 @@ public class ECSCompactionTaskRunner {
             LOGGER.info("Shut down dynamoDBClient");
             s3Client.shutdown();
             LOGGER.info("Shut down s3Client");
-            ecsClient.shutdown();
-            LOGGER.info("Shut down ecsClient");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
     }
 
-    public static void logEC2Metadata(InstanceProperties instanceProperties, AmazonECS ecsClient) {
+    public static void logEC2Metadata(InstanceProperties instanceProperties, EcsClient ecsClient) {
         // Log some basic data if running on EC2 inside ECS
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
