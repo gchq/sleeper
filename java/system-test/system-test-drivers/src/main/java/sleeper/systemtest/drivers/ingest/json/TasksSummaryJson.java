@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.drivers.ingest.json;
 
-import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.clients.util.ClientsGsonConfig;
 
@@ -38,9 +38,9 @@ public class TasksSummaryJson {
     public TasksSummaryJson(List<Task> tasks) {
         numTasks = tasks.size();
         for (Task task : tasks) {
-            countByDesiredStatus.compute(task.getDesiredStatus(),
+            countByDesiredStatus.compute(task.desiredStatus(),
                     (key, count) -> count == null ? 1 : count + 1);
-            countByLastStatus.compute(task.getLastStatus(),
+            countByLastStatus.compute(task.lastStatus(),
                     (key, count) -> count == null ? 1 : count + 1);
         }
     }

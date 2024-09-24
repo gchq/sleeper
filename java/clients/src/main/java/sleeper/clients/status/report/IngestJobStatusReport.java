@@ -18,12 +18,11 @@ package sleeper.clients.status.report;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.IngestQueueMessages;
@@ -33,9 +32,9 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RejectedJobsQuery;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -49,6 +48,7 @@ import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -114,9 +114,8 @@ public class IngestJobStatusReport {
             AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
             AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
             AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-            AmazonElasticMapReduce emrClient = buildAwsV1Client(AmazonElasticMapReduceClientBuilder.standard());
-            try {
-                InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            try (EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
@@ -128,7 +127,6 @@ public class IngestJobStatusReport {
                 s3Client.shutdown();
                 dynamoDBClient.shutdown();
                 sqsClient.shutdown();
-                emrClient.shutdown();
             }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());

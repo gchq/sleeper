@@ -15,17 +15,17 @@
  */
 package sleeper.ingest.starter;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.core.ContainerConstants;
 import sleeper.task.common.RunIngestTasks;
 
@@ -40,12 +40,11 @@ public class RunIngestTasksLambda {
 
     public RunIngestTasksLambda() {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        EcsClient ecsClient = EcsClient.create();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         this.runTasks = new RunIngestTasks(sqsClient,
                 ecsClient, instanceProperties,

@@ -17,7 +17,6 @@
 package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.slf4j.Logger;
@@ -26,6 +25,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
@@ -35,6 +35,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -60,7 +61,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
@@ -75,11 +76,11 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        S3InstanceProperties.reloadGivenInstanceId(s3, instanceProperties, instanceId);
     }
 
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
-        instanceProperties.saveToS3(s3);
+        S3InstanceProperties.saveToS3(s3, instanceProperties);
     }
 
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {

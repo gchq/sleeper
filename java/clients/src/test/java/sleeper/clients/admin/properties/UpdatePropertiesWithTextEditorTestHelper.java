@@ -45,7 +45,8 @@ public class UpdatePropertiesWithTextEditorTestHelper {
     }
 
     public InstanceProperties openInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
-        return new InstanceProperties(openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties)));
+        return InstanceProperties.createWithoutValidation(
+                openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties)));
     }
 
     public Path openInstancePropertiesGetPathToFile(InstanceProperties properties) throws Exception {

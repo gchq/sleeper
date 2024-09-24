@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -71,15 +72,13 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
         super(SOURCE_TYPE);
-        this.instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
     }
 
     public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, secretsManager, athena, SOURCE_TYPE);
-        this.instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
     }
 

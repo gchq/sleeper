@@ -17,20 +17,19 @@ package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
-import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
-import com.amazonaws.services.ecs.model.ContainerOverride;
-import com.amazonaws.services.ecs.model.LaunchType;
-import com.amazonaws.services.ecs.model.NetworkConfiguration;
-import com.amazonaws.services.ecs.model.PropagateTags;
-import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
+import software.amazon.awssdk.services.ecs.model.ContainerOverride;
+import software.amazon.awssdk.services.ecs.model.LaunchType;
+import software.amazon.awssdk.services.ecs.model.NetworkConfiguration;
+import software.amazon.awssdk.services.ecs.model.PropagateTags;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
+import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -66,10 +65,10 @@ public class RunWriteRandomDataTaskOnECS {
 
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final List<String> args;
 
-    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties, AmazonECS ecsClient) {
+    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties, EcsClient ecsClient) {
         this.instanceProperties = systemTestProperties;
         this.systemTestProperties = systemTestProperties.testPropertiesOnly();
         this.ecsClient = ecsClient;
@@ -81,7 +80,7 @@ public class RunWriteRandomDataTaskOnECS {
 
     public RunWriteRandomDataTaskOnECS(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
+            SystemTestStandaloneProperties systemTestProperties, EcsClient ecsClient) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.ecsClient = ecsClient;
@@ -92,39 +91,39 @@ public class RunWriteRandomDataTaskOnECS {
                 systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
-    public List<RunTaskResult> run() {
+    public List<RunTaskResponse> run() {
 
-        ContainerOverride containerOverride = new ContainerOverride()
-                .withName(SYSTEM_TEST_CONTAINER)
-                .withCommand(args);
-
-        TaskOverride override = new TaskOverride()
-                .withContainerOverrides(containerOverride);
-
-        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(instanceProperties.getList(SUBNETS))
-                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
-
-        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                .withAwsvpcConfiguration(vpcConfiguration);
-
-        RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(systemTestProperties.get(SYSTEM_TEST_CLUSTER_NAME))
-                .withLaunchType(LaunchType.FARGATE)
-                .withTaskDefinition(systemTestProperties.get(WRITE_DATA_TASK_DEFINITION_FAMILY))
-                .withNetworkConfiguration(networkConfiguration)
-                .withOverrides(override)
-                .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                .withPlatformVersion(instanceProperties.get(FARGATE_VERSION));
-
-        List<RunTaskResult> results = new ArrayList<>();
+        ContainerOverride containerOverride = ContainerOverride.builder()
+                .name(SYSTEM_TEST_CONTAINER)
+                .command(args)
+                .build();
+        TaskOverride override = TaskOverride.builder()
+                .containerOverrides(containerOverride)
+                .build();
+        AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
+                .subnets(instanceProperties.getList(SUBNETS))
+                .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
+                .build();
+        NetworkConfiguration networkConfiguration = NetworkConfiguration.builder()
+                .awsvpcConfiguration(vpcConfiguration)
+                .build();
+        RunTaskRequest runTaskRequest = RunTaskRequest.builder()
+                .cluster(systemTestProperties.get(SYSTEM_TEST_CLUSTER_NAME))
+                .launchType(LaunchType.FARGATE)
+                .taskDefinition(systemTestProperties.get(WRITE_DATA_TASK_DEFINITION_FAMILY))
+                .networkConfiguration(networkConfiguration)
+                .overrides(override)
+                .propagateTags(PropagateTags.TASK_DEFINITION)
+                .platformVersion(instanceProperties.get(FARGATE_VERSION))
+                .build();
+        List<RunTaskResponse> responses = new ArrayList<>();
         RunECSTasks.runTasksOrThrow(builder -> builder
                 .ecsClient(ecsClient)
                 .runTaskRequest(runTaskRequest)
                 .numberOfTasksToCreate(systemTestProperties.getInt(NUMBER_OF_WRITERS))
-                .resultConsumer(results::add));
+                .responseConsumer(responses::add));
         LOGGER.debug("Ran {} tasks", systemTestProperties.getInt(NUMBER_OF_WRITERS));
-        return results;
+        return responses;
     }
 
     public static void main(String[] args) throws IOException {
@@ -135,20 +134,17 @@ public class RunWriteRandomDataTaskOnECS {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        try {
-            SystemTestProperties systemTestProperties = new SystemTestProperties();
-            systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+        try (EcsClient ecsClient = EcsClient.create()) {
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
-            List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
+            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.run();
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
-            ecsClient.shutdown();
         }
     }
 }

@@ -15,11 +15,8 @@
  */
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
@@ -46,7 +43,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 /**
  * Holds values for Sleeper configuration properties. Abstract class which backs both
@@ -56,7 +52,6 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
  * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
 public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
     private final Properties properties;
 
     protected SleeperProperties() {
@@ -196,16 +191,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         properties.clear();
         properties.putAll(newProperties);
         init();
-    }
-
-    protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
-        LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, key, saveAsString());
-    }
-
-    protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
-        String propertiesString = s3Client.getObjectAsString(bucket, key);
-        resetAndValidate(loadProperties(propertiesString));
     }
 
     public Stream<Map.Entry<String, String>> getUnknownProperties() {

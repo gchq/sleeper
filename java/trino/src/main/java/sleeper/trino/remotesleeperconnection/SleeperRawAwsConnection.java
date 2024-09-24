@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
@@ -123,8 +124,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // Member variables related to the Sleeper service
         // Note that the state-store provider is NOT thread-safe and so occasionally the state-store factory
         // will be used to create a new state store for each thread.
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, sleeperConfig.getConfigBucket());
         this.stateStoreProvider = StateStoreFactory.createProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient,

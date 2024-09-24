@@ -15,26 +15,37 @@
  */
 package sleeper.systemtest.drivers.ingest.json;
 
-import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.clients.util.ClientsGsonConfig;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class TasksJson {
 
     private static final Gson GSON = ClientsGsonConfig.standardBuilder()
-            .registerTypeAdapter(Date.class, dateSerializer())
+            .registerTypeAdapter(List.class, new ListAdapter())
             .create();
 
     private final List<Task> tasks;
@@ -47,8 +58,8 @@ public class TasksJson {
         return GSON.toJson(tasks);
     }
 
-    public static void writeToFile(List<RunTaskResult> results, Path path) throws IOException {
-        Files.write(path, from(results).getBytes(StandardCharsets.UTF_8));
+    public static void writeToFile(List<RunTaskResponse> responses, Path path) throws IOException {
+        Files.write(path, from(responses).getBytes(StandardCharsets.UTF_8));
     }
 
     public static List<Task> readTasksFromFile(Path path) throws IOException {
@@ -57,25 +68,57 @@ public class TasksJson {
         }
     }
 
-    public static String from(List<RunTaskResult> results) {
-        return fromTaskJson(results.stream()
-                .flatMap(result -> result.getTasks().stream())
+    public static String from(List<RunTaskResponse> responses) {
+        return fromTaskJson(responses.stream()
+                .flatMap(result -> result.tasks().stream())
                 .collect(Collectors.toList()));
     }
 
     public static List<Task> readTasks(Reader json) {
-        return GSON.fromJson(json, TasksJson.class).getTasks();
+        return GSON.fromJson(json, TasksJson.class)
+                .getTasks().stream()
+                .map(task -> task.toBuilder().build())
+                .collect(toUnmodifiableList());
     }
 
     private static String fromTaskJson(List<Task> tasks) {
         return GSON.toJson(new TasksJson(tasks));
     }
 
-    private static JsonSerializer<Date> dateSerializer() {
-        return (date, type, context) -> context.serialize(date.toInstant());
-    }
-
     public List<Task> getTasks() {
         return tasks;
+    }
+
+    private static class ListAdapter implements JsonSerializer<List<?>>, JsonDeserializer<List<?>> {
+
+        @Override
+        public List<?> deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
+            JsonArray array = element.getAsJsonArray();
+            if (array == null || array.isEmpty()) {
+                return DefaultSdkAutoConstructList.getInstance();
+            }
+            Type itemType = itemType(type);
+            return array.asList().stream()
+                    .map(item -> context.deserialize(item, itemType))
+                    .collect(toUnmodifiableList());
+        }
+
+        @Override
+        public JsonElement serialize(List<?> list, Type type, JsonSerializationContext context) {
+            if (list == null || list.isEmpty()) {
+                return JsonNull.INSTANCE;
+            }
+            JsonArray array = new JsonArray(list.size());
+            Type itemType = itemType(type);
+            for (Object item : list) {
+                array.add(context.serialize(item, itemType));
+            }
+            return array;
+        }
+
+        private static Type itemType(Type listType) {
+            ParameterizedType paramType = (ParameterizedType) listType;
+            return paramType.getActualTypeArguments()[0];
+        }
     }
 }

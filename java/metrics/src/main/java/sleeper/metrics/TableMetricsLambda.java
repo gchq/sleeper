@@ -35,6 +35,7 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
@@ -60,7 +61,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.METRICS_N
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
 
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final PropertiesReloader propertiesReloader;
@@ -69,7 +70,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));

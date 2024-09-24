@@ -15,16 +15,14 @@
  */
 package sleeper.clients.status.update;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
-import com.amazonaws.services.cloudwatchevents.model.EnableRuleRequest;
-import com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
+import software.amazon.awssdk.services.cloudwatchevents.model.ResourceNotFoundException;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.util.List;
 
@@ -39,18 +37,16 @@ public class RestartSystem {
         }
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
-        try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+        try (CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             SleeperScheduleRule.getCloudWatchRules(instanceProperties)
                     .forEach(rules -> enableRule(cwClient, rules));
         } finally {
             s3Client.shutdown();
-            cwClient.shutdown();
         }
     }
 
-    private static void enableRule(AmazonCloudWatchEvents cwClient, SleeperScheduleRule.Value rules) {
+    private static void enableRule(CloudWatchEventsClient cwClient, SleeperScheduleRule.Value rules) {
         List<String> ruleNames = rules.getRuleNames();
         if (ruleNames.isEmpty()) {
             System.out.println("No rule found for property " + rules.getProperty() + ", not enabling");
@@ -59,10 +55,9 @@ public class RestartSystem {
         }
     }
 
-    private static void enableRule(AmazonCloudWatchEvents cwClient, String ruleName) {
+    private static void enableRule(CloudWatchEventsClient cwClient, String ruleName) {
         try {
-            cwClient.enableRule(new EnableRuleRequest()
-                    .withName(ruleName));
+            cwClient.enableRule(request -> request.name(ruleName));
             System.out.println("Enabled rule " + ruleName);
         } catch (ResourceNotFoundException e) {
             System.out.println("Rule not found: " + ruleName);

@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -49,7 +49,8 @@ public class SystemTestStandaloneProperties
 
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String propertiesString = s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        properties.resetAndValidate(loadProperties(propertiesString));
         return properties;
     }
 
@@ -62,9 +63,11 @@ public class SystemTestStandaloneProperties
     }
 
     public void saveToS3(AmazonS3 s3Client) {
-        saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String bucket = get(SYSTEM_TEST_BUCKET_NAME);
+        LOGGER.debug("Uploading config to bucket {}", bucket);
+        s3Client.putObject(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, saveAsString());
         LOGGER.info("Saved system test properties to bucket {}, key {}",
-                get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+                bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override

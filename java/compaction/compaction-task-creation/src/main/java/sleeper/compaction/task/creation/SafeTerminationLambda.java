@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.task.creation;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.s3.AmazonS3;
@@ -30,8 +28,10 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.task.common.EC2InstanceDetails;
 
 import java.io.BufferedReader;
@@ -65,18 +65,17 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      */
     private static final int SAFE_TIME_LIMIT = 200;
 
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final String ecsClusterName;
 
     public SafeTerminationLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.ecsClient = AmazonECSClientBuilder.defaultClient();
+        this.ecsClient = EcsClient.create();
 
         // Find the instance properties from S3
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         // Find ECS cluster name
         this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);
@@ -195,7 +194,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
 
-            suggestIDsToTerminate(reader, out, EC2InstanceDetails.iterateInstances(ecsClusterName, ecsClient), context);
+            suggestIDsToTerminate(reader, out, () -> EC2InstanceDetails.streamInstances(ecsClusterName, ecsClient).iterator(), context);
 
         } catch (IllegalStateException | JsonSyntaxException e) {
             LOGGER.error("Error reading/writing JSON response", e);

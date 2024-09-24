@@ -184,7 +184,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldInferSystemTestDeploymentWhenSystemTestPropertyIsSet() throws IOException, InterruptedException {
             // Given
-            InstanceProperties instanceProperties = new InstanceProperties(loadProperties(
+            InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(
                     createTestInstanceProperties().saveAsString() + "\n" +
                             "sleeper.systemtest.writers=123"));
 

@@ -108,14 +108,14 @@
         The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
         we can use that instead.
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.202\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-[.0-9]+\.jar/.*$</filePath>
         <cve>CVE-2021-23497</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
         The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.202\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-[.0-9]+\.jar/.*$</filePath>
         <cve>CVE-2020-10663</cve>
     </suppress>
     <suppress>
