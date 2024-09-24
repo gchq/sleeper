@@ -16,7 +16,6 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -527,12 +526,12 @@ public class CompactionStack extends NestedStack {
 
     private FargateTaskDefinition compactionFargateTaskDefinition() {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, "CompactionFargateTaskDefinition")
                 .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
+                .cpu(requirements.getCpu())
+                .memoryLimitMiB(requirements.getMemoryLimitMiB())
                 .runtimePlatform(RuntimePlatform.builder()
                         .cpuArchitecture(CpuArchitecture.of(architecture))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
@@ -551,12 +550,12 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
+                .cpu(requirements.getCpu())
+                .memoryLimitMiB(requirements.getMemoryLimitMiB())
                 .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
                 .build();
     }
@@ -564,15 +563,15 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createEC2ContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
+                .cpu(requirements.getCpu())
                 // bit hacky: Reduce memory requirement for EC2 to prevent
                 // container allocation failing when we need almost entire resources
                 // of machine
-                .memoryLimitMiB((int) (requirements.getRight() * 0.95))
+                .memoryLimitMiB((int) (requirements.getMemoryLimitMiB() * 0.95))
                 .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
                 .build();
     }

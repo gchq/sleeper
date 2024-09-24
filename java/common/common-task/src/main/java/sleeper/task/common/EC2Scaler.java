@@ -21,7 +21,6 @@ import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.ecs.AmazonECS;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,15 +67,15 @@ public class EC2Scaler {
 
     public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
-        requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
+        int memoryLimitMiB = (int) (requirements.getMemoryLimitMiB() * 0.95);
 
         return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
-                instanceProperties.get(COMPACTION_CLUSTER), requirements.getLeft(), requirements.getRight());
+                instanceProperties.get(COMPACTION_CLUSTER), requirements.getCpu(), memoryLimitMiB);
     }
 
     public EC2Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,

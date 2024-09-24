@@ -15,8 +15,6 @@
  */
 package sleeper.configuration;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
@@ -26,18 +24,22 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 
 public final class CompactionTaskRequirements {
 
-    private CompactionTaskRequirements() {
+    private final int cpu;
+    private final int memoryLimitMiB;
+
+    public CompactionTaskRequirements(int cpu, int memoryLimitMiB) {
+        this.cpu = cpu;
+        this.memoryLimitMiB = memoryLimitMiB;
     }
 
     /**
-     * Retrieves architecture specific CPU and memory requirements. This returns a triple containing
-     * the CPU requirement in the left element and memory requirement in the right element.
+     * Retrieves architecture specific CPU and memory requirements for a compaction task.
      *
      * @param  architecture       CPU architecture
      * @param  instanceProperties Sleeper instance properties
      * @return                    CPU and memory requirements as per the CPU architecture
      */
-    public static Pair<Integer, Integer> getArchRequirements(String architecture, InstanceProperties instanceProperties) {
+    public static CompactionTaskRequirements getArchRequirements(String architecture, InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
         if (architecture.startsWith("ARM")) {
@@ -47,6 +49,14 @@ public final class CompactionTaskRequirements {
             cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
         }
-        return Pair.of(cpu, memoryLimitMiB);
+        return new CompactionTaskRequirements(cpu, memoryLimitMiB);
+    }
+
+    public int getCpu() {
+        return cpu;
+    }
+
+    public int getMemoryLimitMiB() {
+        return memoryLimitMiB;
     }
 }
