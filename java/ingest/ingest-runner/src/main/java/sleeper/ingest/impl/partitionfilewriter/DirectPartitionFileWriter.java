@@ -67,20 +67,19 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * @param  parquetConfiguration Hadoop, schema and Parquet configuration for writing files. The Hadoop
      *                              configuration is used to find the classes required to support the file system
      *                              specified in the filePathPrefix.
-     * @param  filePathPrefix       the prefix to apply to the partition files, such as 's3a://mybucket' or
-     *                              'file://mydirectory'
+     * @param  filePaths            the file path generator for S3 objects to write
      * @throws IOException          if there was a failure writing the file
      */
     public DirectPartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
-            String filePathPrefix,
+            TableFilePaths filePaths,
             String fileName) throws IOException {
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
-        this.partitionParquetFileName = TableFilePaths.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
-        this.quantileSketchesFileName = TableFilePaths.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
+        this.partitionParquetFileName = filePaths.constructPartitionParquetFilePath(partition, fileName);
+        this.quantileSketchesFileName = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);

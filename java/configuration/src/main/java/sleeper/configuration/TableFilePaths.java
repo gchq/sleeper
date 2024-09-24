@@ -25,22 +25,34 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
 public class TableFilePaths {
-    private TableFilePaths() {
+
+    private final String filePathPrefix;
+
+    private TableFilePaths(String filePathPrefix) {
+        this.filePathPrefix = filePathPrefix;
     }
 
-    public static String buildDataFilePathPrefix(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_ID);
+    public static TableFilePaths fromPrefix(String prefix) {
+        return new TableFilePaths(prefix);
     }
 
-    public static String constructPartitionParquetFilePath(String filePathPrefix, Partition partition, String fileName) {
-        return constructPartitionParquetFilePath(filePathPrefix, partition.getId(), fileName);
+    public static TableFilePaths buildDataFilePathPrefix(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new TableFilePaths(instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_ID));
     }
 
-    public static String constructPartitionParquetFilePath(String filePathPrefix, String partitionId, String fileName) {
+    public String constructPartitionParquetFilePath(Partition partition, String fileName) {
+        return constructPartitionParquetFilePath(partition.getId(), fileName);
+    }
+
+    public String constructPartitionParquetFilePath(String partitionId, String fileName) {
         return String.format("%s/data/partition_%s/%s.parquet", filePathPrefix, partitionId, fileName);
     }
 
-    public static String constructQuantileSketchesFilePath(String filePathPrefix, Partition partition, String fileName) {
+    public String constructQuantileSketchesFilePath(Partition partition, String fileName) {
         return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
+    }
+
+    public String getFilePathPrefix() {
+        return filePathPrefix;
     }
 }

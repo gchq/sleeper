@@ -51,10 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-
 public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);
 
@@ -194,10 +190,8 @@ public class SingleFileWritingIterator implements Iterator<Row> {
 
     private ParquetWriter<Record> createWriter(String partitionId) throws IOException {
         numRecords = 0L;
-        String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TABLE_ID);
-        path = TableFilePaths.constructPartitionParquetFilePath(filePathPrefix, partitionId, outputFilename);
+        path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, outputFilename);
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
         return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);

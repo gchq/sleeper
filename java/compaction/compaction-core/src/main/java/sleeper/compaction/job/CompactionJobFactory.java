@@ -32,7 +32,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class CompactionJobFactory {
 
     private final String tableId;
-    private final String outputFilePrefix;
+    private final TableFilePaths outputFilePaths;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
@@ -43,14 +43,14 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        outputFilePrefix = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        outputFilePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
     }
 
     public String getOutputFilePrefix() {
-        return outputFilePrefix;
+        return outputFilePaths.getFilePathPrefix();
     }
 
     public CompactionJob createCompactionJob(
@@ -73,7 +73,7 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJobWithFilenames(
             String jobId, List<String> filenames, String partitionId) {
-        String outputFile = TableFilePaths.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
+        String outputFile = outputFilePaths.constructPartitionParquetFilePath(partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)

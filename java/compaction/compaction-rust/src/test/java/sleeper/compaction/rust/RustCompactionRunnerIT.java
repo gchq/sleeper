@@ -276,8 +276,8 @@ public class RustCompactionRunnerIT {
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
-        String prefix = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
-        return TableFilePaths.constructPartitionParquetFilePath(prefix, partitionId, filename);
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, filename);
     }
 
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {
