@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
@@ -184,7 +183,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // Then
             StringWriter writer = new StringWriter();
-            SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(
+            InstanceProperties.createPrettyPrinterWithGroup(
                     new PrintWriter(writer), InstancePropertyGroup.LOGGING)
                     .print(properties);
             assertThat(tempFileString).isEqualTo(writer.toString());

@@ -17,6 +17,7 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
@@ -149,6 +151,22 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     @Override
     protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
         return createPrettyPrinter(writer);
+    }
+
+    /**
+     * Creates a printer to be used to display instance properties in a given group.
+     *
+     * @param  writer the writer to write to
+     * @param  group  the group to display
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinterWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .sortedProperties(InstanceProperty.getAll().stream()
+                        .filter(property -> property.getPropertyGroup().equals(group))
+                        .collect(Collectors.toList()))
+                .writer(writer).hideUnknownProperties(true).build();
     }
 
     /**

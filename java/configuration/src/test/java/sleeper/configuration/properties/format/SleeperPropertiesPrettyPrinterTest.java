@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -373,7 +372,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
-        return print(writer -> forInstancePropertiesWithGroup(writer, group), properties);
+        return print(writer -> InstanceProperties.createPrettyPrinterWithGroup(writer, group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
