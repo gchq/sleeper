@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public interface DashboardProperty {
     UserDefinedInstanceProperty DASHBOARD_TIME_WINDOW_MINUTES = Index.propertyBuilder("sleeper.dashboard.time.window.minutes")
             .description("The period in minutes used in the dashboard.")
             .defaultValue("5")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DASHBOARD)
             .runCdkDeployWhenChanged(true).build();
 

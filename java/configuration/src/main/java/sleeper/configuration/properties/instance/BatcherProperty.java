@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public interface BatcherProperty {
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
             .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 

@@ -19,7 +19,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -91,7 +91,7 @@ public interface PersistentEMRProperty {
                     "If managed scaling is not used then the cluster will be of fixed size, with a number of " +
                     "instances equal to this value.")
             .defaultValue("1")
-            .validationPredicate(PropertyValidationUtils::isNonNegativeInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.max.capacity")
@@ -102,13 +102,13 @@ public interface PersistentEMRProperty {
                     "the number of instances.\n" +
                     "This value is only used if managed scaling is used.")
             .defaultValue("10")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.step.concurrency.level")
             .description("(Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.")
             .defaultValue("2")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 

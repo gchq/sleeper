@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ public interface IngestProperty {
             .description("The frequency in minutes with which an EventBridge rule runs to trigger a lambda that, if necessary, runs more ECS " +
                     "tasks to perform ingest jobs.")
             .defaultValue("1")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.period.seconds")
@@ -53,7 +53,7 @@ public interface IngestProperty {
                     "values are \"normal\", \"sequential\" and \"random\". More information is available here:\n" +
                     "https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/performance.html#fadvise.")
             .defaultValue("sequential")
-            .validationPredicate(PropertyValidationUtils::isValidFadvise)
+            .validationPredicate(SleeperPropertyValueUtils::isValidFadvise)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_CPU = Index.propertyBuilder("sleeper.ingest.task.cpu")
             .description("The amount of CPU used by Fargate tasks that perform ingest jobs.\n" +
@@ -91,20 +91,20 @@ public interface IngestProperty {
             .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.task.status.ttl")
             .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_JOB_QUEUE_WAIT_TIME = IngestProperty.Index.propertyBuilder("sleeper.ingest.job.queue.wait.time")
             .description("The time in seconds to wait for ingest jobs to appear on the queue before an ingest task terminates.\n" +
                     "Must be >= 0 and <= 20.\n" +
                     "See also https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html")
             .defaultValue("20")
-            .validationPredicate(val -> PropertyValidationUtils.isNonNegativeIntLtEqValue(val, 20))
+            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

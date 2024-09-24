@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -42,13 +42,13 @@ public interface AsyncIngestPartitionFileWriterProperty {
             .description("The part size in bytes to use for multipart uploads.\n" +
                     "(CRT async ingest only) [128MB]")
             .defaultValue("134217728") // 128M
-            .validationPredicate(PropertyValidationUtils::isPositiveLong)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS = Index.propertyBuilder("sleeper.ingest.async.crt.target.throughput.gbps")
             .description("The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded simultaneously.\n" +
                     "(CRT async ingest only)")
             .defaultValue("10")
-            .validationPredicate(PropertyValidationUtils::isPositiveDouble)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveDouble)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

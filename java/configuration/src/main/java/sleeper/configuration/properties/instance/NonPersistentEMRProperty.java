@@ -19,7 +19,7 @@ package sleeper.configuration.properties.instance;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -86,7 +86,7 @@ public interface NonPersistentEMRProperty {
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
             .defaultValue("2")
-            .validationPredicate(PropertyValidationUtils::isNonNegativeInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.max.instances")
             .description("(Non-persistent EMR mode only) The default maximum number of capacity units to provision as EC2 " +
@@ -97,7 +97,7 @@ public interface NonPersistentEMRProperty {
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
             .defaultValue("10")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

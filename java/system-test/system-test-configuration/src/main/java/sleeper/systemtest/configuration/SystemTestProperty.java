@@ -21,12 +21,12 @@ import org.apache.commons.lang3.EnumUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.validation.IngestQueue;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.validation.PropertyValidationUtils.describeEnumValuesInLowerCase;
+import static sleeper.configuration.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -53,7 +53,7 @@ public interface SystemTestProperty extends InstanceProperty {
             .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster.enabled")
             .description("Whether to deploy the system test cluster for data generation")
-            .defaultValue("true").validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .defaultValue("true").validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
             .description("The name of the ECS cluster where system test tasks will run")
@@ -96,39 +96,39 @@ public interface SystemTestProperty extends InstanceProperty {
             .build();
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
-            .defaultValue("1").validationPredicate(PropertyValidationUtils::isPositiveInteger).build();
+            .defaultValue("1").validationPredicate(SleeperPropertyValueUtils::isPositiveInteger).build();
     SystemTestProperty NUMBER_OF_INGESTS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.ingests.per.writer")
             .description("The number of ingests to run for each writer")
-            .defaultValue("1").validationPredicate(PropertyValidationUtils::isPositiveInteger).build();
+            .defaultValue("1").validationPredicate(SleeperPropertyValueUtils::isPositiveInteger).build();
     SystemTestProperty NUMBER_OF_RECORDS_PER_INGEST = Index.propertyBuilder("sleeper.systemtest.records.per.ingest")
             .description("The number of random records that each ingest should write")
-            .defaultValue("100").validationPredicate(PropertyValidationUtils::isPositiveInteger).build();
+            .defaultValue("100").validationPredicate(SleeperPropertyValueUtils::isPositiveInteger).build();
     SystemTestProperty MIN_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.min")
             .description("The minimum value of integers generated randomly during random record generation")
-            .defaultValue("0").validationPredicate(PropertyValidationUtils::isInteger).build();
+            .defaultValue("0").validationPredicate(SleeperPropertyValueUtils::isInteger).build();
     SystemTestProperty MAX_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.max")
             .description("The maximum value of integers generated randomly during random record generation")
-            .defaultValue("100000000").validationPredicate(PropertyValidationUtils::isInteger).build();
+            .defaultValue("100000000").validationPredicate(SleeperPropertyValueUtils::isInteger).build();
     SystemTestProperty MIN_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.min")
             .description("The minimum value of longs generated randomly during random record generation")
-            .defaultValue("0").validationPredicate(PropertyValidationUtils::isLong).build();
+            .defaultValue("0").validationPredicate(SleeperPropertyValueUtils::isLong).build();
     SystemTestProperty MAX_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.max")
             .description("The maximum value of longs generated randomly during random record generation")
-            .defaultValue("10000000000").validationPredicate(PropertyValidationUtils::isLong).build();
+            .defaultValue("10000000000").validationPredicate(SleeperPropertyValueUtils::isLong).build();
     SystemTestProperty RANDOM_STRING_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.string.length")
             .description("The length of strings generated randomly during random record generation")
-            .defaultValue("10").validationPredicate(PropertyValidationUtils::isNonNegativeInteger).build();
+            .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty RANDOM_BYTE_ARRAY_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.bytearray.length")
             .description("The length of byte arrays generated randomly during random record generation")
-            .defaultValue("10").validationPredicate(PropertyValidationUtils::isNonNegativeInteger).build();
+            .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_MAP = Index.propertyBuilder("sleeper.systemtest.random.map.length")
             .description("The maximum number of entries in maps generated randomly during random record generation\n" +
                     "(the number of entries in the map will range randomly from 0 to this number)")
-            .defaultValue("10").validationPredicate(PropertyValidationUtils::isNonNegativeInteger).build();
+            .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_LIST = Index.propertyBuilder("sleeper.systemtest.random.list.length")
             .description("The maximum number of entries in lists generated randomly during random record generation\n" +
                     "(the number of entries in the list will range randomly from 0 to this number)")
-            .defaultValue("10").validationPredicate(PropertyValidationUtils::isNonNegativeInteger).build();
+            .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
 
     static List<SystemTestProperty> getAll() {
         return Index.INSTANCE.getAll();

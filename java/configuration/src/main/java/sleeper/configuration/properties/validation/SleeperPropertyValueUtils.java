@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility methods for validating Sleeper configuration properties.
+ * Utility methods for validating & reading Sleeper configuration properties.
  */
-public class PropertyValidationUtils {
+public class SleeperPropertyValueUtils {
 
-    private PropertyValidationUtils() {
+    private SleeperPropertyValueUtils() {
     }
 
     private static final Set<String> VALID_LOG_RETENTION_VALUES = Sets.newHashSet("-1", "1", "3", "5", "7", "14",

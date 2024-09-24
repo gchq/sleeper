@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public interface PartitionSplittingProperty {
             .description("The number of tables to find partitions to split for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
-            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.partition.splitting.finder.memory")

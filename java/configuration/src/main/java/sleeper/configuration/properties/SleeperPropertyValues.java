@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +101,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * @return          the value of the property
      */
     default long getBytes(T property) {
-        return PropertyValidationUtils.readBytes(get(property));
+        return SleeperPropertyValueUtils.readBytes(get(property));
     }
 
     /**

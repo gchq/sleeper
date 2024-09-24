@@ -18,7 +18,7 @@ package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.configuration.properties.validation.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -54,7 +54,7 @@ public interface EMRServerlessProperty {
             .description("Set to true to allow an EMR Serverless Application to start "
                     + "automatically when a job is submitted.")
             .defaultValue("true")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP = Index
@@ -63,14 +63,14 @@ public interface EMRServerlessProperty {
                     + "automatically when there are no jobs to process.\n"
                     + "Turning this off with pre-initialised capacity turned off is not recommended.")
             .defaultValue("true")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.autostop.timeout")
             .description("The number of minutes of inactivity before EMR Serverless stops the application.")
             .defaultValue("15")
-            .validationPredicate(PropertyValidationUtils::isInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
@@ -119,25 +119,25 @@ public interface EMRServerlessProperty {
             .description("Whether Spark should use dynamic allocation to scale resources up and down. "
                     + "Used to set spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_RDD_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.rdd.compress")
             .description("Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.shuffle.compress")
             .description("Whether to compress map output files. Used to set spark.shuffle.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_SPILL_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress")
             .description("Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_DEFAULT_PARALLELISM = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.default.parallelism")
             .description("The default parallelism for Spark job. Used to set spark.default.parallelism.\n" +
@@ -174,7 +174,7 @@ public interface EMRServerlessProperty {
             .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION_QUANTILE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation.quantile")
             .description("Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used to set spark.speculation.quantile.\n" +
@@ -192,7 +192,7 @@ public interface EMRServerlessProperty {
             .description("Set to enable the pre-initialise capacity option for EMR Serverless application.\n" +
                     "See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html")
             .defaultValue("false")
-            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_COUNT = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.initial.capacity.executor.count")
