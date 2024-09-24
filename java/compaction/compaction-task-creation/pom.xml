@@ -43,11 +43,6 @@
             <artifactId>aws-java-sdk-autoscaling</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecs</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

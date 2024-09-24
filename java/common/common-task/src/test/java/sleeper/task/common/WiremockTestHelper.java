@@ -19,12 +19,11 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import java.net.URI;
 
@@ -47,11 +46,8 @@ public class WiremockTestHelper {
                 .build();
     }
 
-    public static AmazonECS wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonECSClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static EcsClient wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
     public static AwsClientBuilder.EndpointConfiguration wiremockEndpointConfiguration(WireMockRuntimeInfo runtimeInfo) {

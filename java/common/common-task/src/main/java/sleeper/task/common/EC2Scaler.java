@@ -20,9 +20,9 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.ecs.AmazonECS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
  */
 public class EC2Scaler {
     private final AmazonAutoScaling asClient;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     /**
      * The name of the EC2 Auto Scaling group instances belong to.
      */
@@ -65,7 +65,7 @@ public class EC2Scaler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
 
-    public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
+    public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
@@ -78,7 +78,7 @@ public class EC2Scaler {
                 instanceProperties.get(COMPACTION_CLUSTER), requirements.getCpu(), memoryLimitMiB);
     }
 
-    public EC2Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
+    public EC2Scaler(AmazonAutoScaling asClient, EcsClient ecsClient, String asGroupName,
             String ecsClusterName, int cpuReservation, int memoryReservation) {
         this.asClient = asClient;
         this.ecsClient = ecsClient;

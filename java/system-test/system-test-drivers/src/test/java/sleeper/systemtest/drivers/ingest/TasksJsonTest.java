@@ -15,16 +15,14 @@
  */
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.Task;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.StringReader;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -35,13 +33,15 @@ public class TasksJsonTest {
     @Test
     public void shouldOutputJson() {
         // Given
-        List<RunTaskResult> results = Collections.singletonList(new RunTaskResult()
-                .withTasks(new Task()
-                        .withTaskArn("some-task").withClusterArn("some-cluster")
-                        .withCreatedAt(Date.from(Instant.parse("2022-12-22T10:08:01Z")))));
+        List<RunTaskResponse> responses = List.of(RunTaskResponse.builder()
+                .tasks(Task.builder()
+                        .taskArn("some-task").clusterArn("some-cluster")
+                        .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
+                        .build())
+                .build());
 
         // When
-        String json = TasksJson.from(results);
+        String json = TasksJson.from(responses);
 
         // Then
         assertThatJson(json).isEqualTo("{\"tasks\":[" +
@@ -53,9 +53,10 @@ public class TasksJsonTest {
         List<Task> results = TasksJson.readTasks(new StringReader("{\"tasks\":[" +
                 "{\"taskArn\":\"some-task\",\"clusterArn\":\"some-cluster\",\"createdAt\":\"2022-12-22T10:08:01Z\"}]}"));
 
-        assertThat(results).usingRecursiveFieldByFieldElementComparator()
-                .containsExactly(new Task()
-                        .withTaskArn("some-task").withClusterArn("some-cluster")
-                        .withCreatedAt(Date.from(Instant.parse("2022-12-22T10:08:01Z"))));
+        assertThat(results)
+                .containsExactly(Task.builder()
+                        .taskArn("some-task").clusterArn("some-cluster")
+                        .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
+                        .build());
     }
 }

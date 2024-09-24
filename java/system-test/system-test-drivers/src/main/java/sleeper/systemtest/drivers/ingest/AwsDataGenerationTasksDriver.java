@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.Task;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
@@ -33,10 +33,10 @@ import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatu
 public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
 
     public AwsDataGenerationTasksDriver(
-            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, AmazonECS ecsClient) {
+            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, EcsClient ecsClient) {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = ecsClient;
@@ -53,11 +53,11 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     }
 
     private List<Task> startTasks() {
-        List<RunTaskResult> results = new RunWriteRandomDataTaskOnECS(
+        List<RunTaskResponse> responses = new RunWriteRandomDataTaskOnECS(
                 instance.getInstanceProperties(), instance.getTableProperties(), systemTest.getProperties(), ecsClient)
                 .run();
-        return results.stream()
-                .flatMap(result -> result.getTasks().stream())
+        return responses.stream()
+                .flatMap(response -> response.tasks().stream())
                 .collect(Collectors.toUnmodifiableList());
     }
 
