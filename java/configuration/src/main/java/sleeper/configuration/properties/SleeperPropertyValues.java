@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.List;
 import java.util.Optional;

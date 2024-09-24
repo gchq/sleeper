@@ -15,6 +15,9 @@
  */
 package sleeper.configuration.properties;
 
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperty;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

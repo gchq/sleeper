@@ -17,8 +17,8 @@ package sleeper.configuration.properties.validation;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 
 import java.util.List;
 

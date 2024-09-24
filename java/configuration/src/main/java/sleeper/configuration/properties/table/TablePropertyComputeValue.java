@@ -15,9 +15,9 @@
  */
 package sleeper.configuration.properties.table;
 
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.function.BiFunction;
 

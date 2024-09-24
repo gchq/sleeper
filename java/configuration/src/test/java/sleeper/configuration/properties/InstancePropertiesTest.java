@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 
 import java.io.File;
 import java.io.IOException;

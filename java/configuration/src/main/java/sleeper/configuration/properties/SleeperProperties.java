@@ -19,6 +19,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperProperty;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;

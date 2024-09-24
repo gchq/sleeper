@@ -15,15 +15,15 @@
  */
 package sleeper.configuration.properties.format;
 
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperty;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

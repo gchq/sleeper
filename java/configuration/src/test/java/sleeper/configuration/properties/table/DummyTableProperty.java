@@ -15,9 +15,9 @@
  */
 package sleeper.configuration.properties.table;
 
-import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperty;
 
 /**
  * A fake table property to test working with table property values.

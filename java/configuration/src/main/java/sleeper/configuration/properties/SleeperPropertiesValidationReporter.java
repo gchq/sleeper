@@ -15,6 +15,9 @@
  */
 package sleeper.configuration.properties;
 
+import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperProperty;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

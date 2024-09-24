@@ -18,7 +18,7 @@ package sleeper.configuration.properties.instance;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.core.properties.PropertyGroup;
 
 import java.util.ArrayList;
 import java.util.List;

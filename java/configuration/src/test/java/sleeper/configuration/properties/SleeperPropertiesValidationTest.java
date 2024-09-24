@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 
 import java.util.Map;
 import java.util.Properties;

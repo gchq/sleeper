@@ -18,10 +18,10 @@ package sleeper.systemtest.configuration;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.PropertyGroup;
 
 import java.util.Objects;
 import java.util.function.Consumer;

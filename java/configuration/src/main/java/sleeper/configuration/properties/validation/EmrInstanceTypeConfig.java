@@ -16,7 +16,7 @@
 package sleeper.configuration.properties.validation;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.ArrayList;
 import java.util.List;

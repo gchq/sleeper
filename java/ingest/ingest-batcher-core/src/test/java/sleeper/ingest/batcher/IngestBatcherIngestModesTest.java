@@ -17,8 +17,8 @@ package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;

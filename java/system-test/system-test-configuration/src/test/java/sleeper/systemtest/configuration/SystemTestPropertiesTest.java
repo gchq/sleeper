@@ -17,7 +17,7 @@ package sleeper.systemtest.configuration;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.core.properties;
 
 import java.util.ArrayList;
 import java.util.Comparator;

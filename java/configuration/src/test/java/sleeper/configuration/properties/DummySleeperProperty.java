@@ -16,6 +16,8 @@
 package sleeper.configuration.properties;
 
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperty;
 
 /**
  * A fake Sleeper configuration property to test working with property values.

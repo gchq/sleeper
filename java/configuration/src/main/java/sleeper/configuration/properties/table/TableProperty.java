@@ -17,7 +17,6 @@ package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.configuration.properties.validation.CompressionCodec;
@@ -25,6 +24,7 @@ import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.List;
 import java.util.Objects;

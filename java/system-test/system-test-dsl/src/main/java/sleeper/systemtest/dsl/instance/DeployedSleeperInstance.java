@@ -20,12 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 

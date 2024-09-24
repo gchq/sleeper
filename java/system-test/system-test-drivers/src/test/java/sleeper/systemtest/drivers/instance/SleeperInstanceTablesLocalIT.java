@@ -21,11 +21,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;

@@ -16,13 +16,13 @@
 
 package sleeper.configuration.properties.table;
 
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.core.properties.PropertyGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.configuration.properties.PropertyGroup.group;
+import static sleeper.core.properties.PropertyGroup.group;
 
 /**
  * Definitions of groups used to organise table properties.

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.properties.SleeperProperty;
 
 import java.io.PrintWriter;
 import java.util.List;
