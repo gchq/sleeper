@@ -93,7 +93,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         addInstanceIfNotPresent(instanceId);
-        return new FixedStateStoreProvider(stateStoresByInstanceId.get(instanceId));
+        return FixedStateStoreProvider.byTableName(stateStoresByInstanceId.get(instanceId));
     }
 
     @Override
