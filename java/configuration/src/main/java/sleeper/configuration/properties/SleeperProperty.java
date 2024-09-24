@@ -33,7 +33,7 @@ public interface SleeperProperty {
 
     /**
      * Retrieves the default value of the property. May be null if the property has no default value. This is usually
-     * the value the property will have if it is not set, but some properties have other behaviour to compute thier
+     * the value the property will have if it is not set, but some properties have other behaviour to compute their
      * value, e.g. to retrieve the value from another property.
      *
      * @return the default value
