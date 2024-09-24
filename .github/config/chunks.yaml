@@ -1,9 +1,4 @@
 chunks:
-  athena:
-    name: Athena
-    workflow: chunk-athena.yaml
-    modules:
-      - athena
   bulk-import:
     name: Bulk Import
     workflow: chunk-bulk-import.yaml
@@ -89,6 +84,7 @@ chunks:
       - query/query-core
       - query/query-runner
       - query/query-lambda
+      - athena
   statestore:
     name: State Store
     workflow: chunk-statestore.yaml
