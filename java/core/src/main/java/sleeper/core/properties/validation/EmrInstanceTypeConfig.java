@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.validation;
+package sleeper.core.properties.validation;
 
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.ArrayList;
 import java.util.List;

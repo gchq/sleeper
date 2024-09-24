@@ -67,7 +67,7 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
-import static sleeper.configuration.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
+import static sleeper.core.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
 /**
  * Deploys a persistent EMR cluster to perform bulk import jobs. Bulk import jobs are sent to a queue. This triggers

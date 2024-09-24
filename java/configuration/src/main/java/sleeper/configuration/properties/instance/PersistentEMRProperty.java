@@ -16,9 +16,9 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.validation.EmrInstanceTypeConfig;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;

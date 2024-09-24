@@ -44,7 +44,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
+import static sleeper.core.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
