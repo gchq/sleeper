@@ -73,10 +73,6 @@ chunks:
       - query/query-runner
       - query/query-lambda
       - athena
-  trino:
-    name: Trino
-    workflow: chunk-trino.yaml
-    modules:
       - trino
 
 

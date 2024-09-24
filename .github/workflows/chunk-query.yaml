@@ -9,6 +9,7 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/athena/**'
+      - 'java/trino/**'
       - 'java/query/pom.xml'
       - 'java/query/query-core/**'
       - 'java/query/query-runner/**'
