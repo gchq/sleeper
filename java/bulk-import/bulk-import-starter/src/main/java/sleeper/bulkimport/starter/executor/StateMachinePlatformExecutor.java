@@ -23,7 +23,7 @@ import com.google.gson.Gson;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -36,7 +36,7 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;

@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.validation;
+package sleeper.core.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Determines how files are created and referenced during standard ingest.
+ * Valid values for AWS EMR instance architecture.
  */
-public enum IngestFileWritingStrategy {
-    /**
-     * Write a new file in each relevant leaf partition.
-     */
-    ONE_FILE_PER_LEAF,
-    /**
-     * Write one file, and add references to that file to all relevant leaf partitions.
-     */
-    ONE_REFERENCE_PER_LEAF;
+public enum EmrInstanceArchitecture {
+    X86_64, ARM64;
 
     /**
-     * Checks if the value is a valid ingest file writing strategy.
+     * Checks if the value is a valid AWS EMR instance architecture.
      *
-     * @param  value the value
+     * @param  input the value
      * @return       true if it is valid
      */
-    public static boolean isValid(String value) {
-        return EnumUtils.isValidEnumIgnoreCase(IngestFileWritingStrategy.class, value);
+    public static boolean isValid(String input) {
+        if (input == null) {
+            return false;
+        }
+        return SleeperPropertyValueUtils.readList(input).stream()
+                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 }

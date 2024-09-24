@@ -16,7 +16,7 @@
 
 package sleeper.clients.deploy;
 
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Collection;
 import java.util.List;

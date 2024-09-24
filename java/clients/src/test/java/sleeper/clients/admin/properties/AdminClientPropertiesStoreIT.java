@@ -29,7 +29,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;

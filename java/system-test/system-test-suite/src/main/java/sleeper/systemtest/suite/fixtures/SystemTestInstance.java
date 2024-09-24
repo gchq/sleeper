@@ -19,8 +19,8 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.HashMap;

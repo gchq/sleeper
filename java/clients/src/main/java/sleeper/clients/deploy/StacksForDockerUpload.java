@@ -17,7 +17,7 @@
 package sleeper.clients.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.List;
 import java.util.Objects;

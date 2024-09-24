@@ -17,6 +17,7 @@ package sleeper.configuration.properties.validation;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.ArrayList;
@@ -25,8 +26,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
 
 /**
  * Reads and validates EMR instance types set in Sleeper configuration properties.

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -33,8 +34,8 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
 
 public class EmrInstanceTypeConfigTest {
 

@@ -39,7 +39,7 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.Collections;

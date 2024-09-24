@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
+import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;

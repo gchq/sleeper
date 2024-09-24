@@ -25,7 +25,7 @@ import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.CompactionMethod;
+import sleeper.core.properties.validation.CompactionMethod;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_METHOD;
 

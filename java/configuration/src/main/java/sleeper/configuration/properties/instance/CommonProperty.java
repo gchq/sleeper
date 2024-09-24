@@ -16,8 +16,8 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.validation.OptionalStack;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;

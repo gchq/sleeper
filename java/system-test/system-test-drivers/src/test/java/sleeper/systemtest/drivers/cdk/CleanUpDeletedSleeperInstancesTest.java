@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.cdk;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Map;
 import java.util.stream.Stream;

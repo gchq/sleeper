@@ -16,11 +16,11 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.CompressionCodec;
+import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 

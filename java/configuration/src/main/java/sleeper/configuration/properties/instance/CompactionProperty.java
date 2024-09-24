@@ -16,9 +16,9 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.validation.CompactionECSLaunchType;
-import sleeper.configuration.properties.validation.CompactionMethod;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.CompactionECSLaunchType;
+import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;

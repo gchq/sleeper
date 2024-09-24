@@ -26,7 +26,7 @@ import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;

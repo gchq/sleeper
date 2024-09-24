@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;

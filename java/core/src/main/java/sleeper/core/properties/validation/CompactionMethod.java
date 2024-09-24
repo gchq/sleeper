@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.validation;
+package sleeper.core.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Valid values for compression codecs of files containing data in a Sleeper table.
+ * Different compaction methods for Sleeper which support different capabilities and must be
+ * selected based on need.
  */
-public enum CompressionCodec {
-    UNCOMPRESSED,
-    SNAPPY,
-    GZIP,
-    LZO,
-    BROTLI,
-    LZ4,
-    ZSTD;
+public enum CompactionMethod {
+    /** Pure Java compaction implementation. */
+    JAVA,
+    /** Uses a native library written in Rust to perform a compaction with Apache DataFusion. */
+    DATAFUSION;
 
     /**
-     * Checks if the value is a valid compression codec.
+     * Checks if the value is a valid compaction method.
      *
-     * @param  codec the value
+     * @param  value the value
      * @return       true if it is valid
      */
-    public static boolean isValid(String codec) {
-        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
+    public static boolean isValid(String value) {
+        return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
     }
 }
