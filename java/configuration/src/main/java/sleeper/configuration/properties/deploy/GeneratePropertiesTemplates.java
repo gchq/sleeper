@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.format;
+package sleeper.configuration.properties.deploy;
 
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;

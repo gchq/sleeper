@@ -18,7 +18,6 @@ package sleeper.configuration.properties;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;

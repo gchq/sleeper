@@ -18,7 +18,7 @@ package sleeper.clients.admin.properties;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.properties.PropertyGroup;

@@ -16,7 +16,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
 

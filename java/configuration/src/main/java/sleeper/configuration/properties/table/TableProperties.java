@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
