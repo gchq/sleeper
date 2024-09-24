@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.format;
+package sleeper.configuration.properties.deploy;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import sleeper.configuration.properties.deploy.GeneratePropertiesTemplates;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;

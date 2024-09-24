@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.format;
+package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
