@@ -1092,7 +1092,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <parallel>methods</parallel>
+                    <parallel>classesAndMethods</parallel>
                     <threadCount>10</threadCount>
                 </configuration>
             </plugin>
@@ -1441,6 +1441,7 @@
                             <includes>
                                 <include>QuickSystemTestSuite</include>
                             </includes>
+                            <parallel>none</parallel>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
