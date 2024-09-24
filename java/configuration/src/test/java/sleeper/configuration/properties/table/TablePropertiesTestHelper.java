@@ -24,6 +24,9 @@ import java.util.UUID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+/**
+ * Helpers to create table properties.
+ */
 public class TablePropertiesTestHelper {
 
     private TablePropertiesTestHelper() {
@@ -31,12 +34,26 @@ public class TablePropertiesTestHelper {
 
     private static final TableIdGenerator TABLE_ID_GENERATOR = new TableIdGenerator();
 
+    /**
+     * Creates properties for a Sleeper table with the given schema. Generates a random table name and ID.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  schema             the schema
+     * @return                    the table properties
+     */
     public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
         tableProperties.setSchema(schema);
         return tableProperties;
     }
 
+    /**
+     * Creates properties for a Sleeper table with no schema. Generates a random table name and ID. Usually used for
+     * tests where the schema will be set later on.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the table properties
+     */
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         String tableId = TABLE_ID_GENERATOR.generateString();

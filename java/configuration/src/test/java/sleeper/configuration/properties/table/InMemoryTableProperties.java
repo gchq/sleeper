@@ -28,6 +28,9 @@ import java.util.Optional;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
+/**
+ * A fake implementation for a table properties store that holds the table properties in memory.
+ */
 public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
@@ -37,22 +40,63 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
         this.defensiveCopy = defensiveCopy;
     }
 
+    /**
+     * Creates an empty table properties store with an empty table index. The store will create a copy of any table
+     * properties passed in, so that any changes outside the store are not reflected in future loads.
+     *
+     * @return the store
+     */
     public static TablePropertiesStore getStore() {
         return getStore(new InMemoryTableIndex());
     }
 
+    /**
+     * Creates an empty table properties store with the given table index. The store will create a copy of any table
+     * properties passed in, so that any changes outside the store are not reflected in future loads. The store will
+     * update the table index as properties are added, removed and updated.
+     *
+     * @param  tableIndex the Sleeper table index
+     * @return            the store
+     */
     public static TablePropertiesStore getStore(TableIndex tableIndex) {
         return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(true));
     }
 
+    /**
+     * Creates an empty table properties store with an empty table index. The store will hold references to any table
+     * properties passed in, so that any changes outside the store are reflected in future loads, even if the properties
+     * are not changed in the store. This can be used to avoid the need to update the store when changing properties in
+     * tests, where that is not relevant to the test.
+     *
+     * @return the store
+     */
     public static TablePropertiesStore getStoreReturningExactInstance() {
         return getStoreReturningExactInstance(new InMemoryTableIndex());
     }
 
+    /**
+     * Creates an empty table properties store with the given table index. The store will hold references to any table
+     * properties passed in, so that any changes outside the store are reflected in future loads, even if the properties
+     * are not changed in the store. This can be used to avoid the need to update the store when changing properties in
+     * tests, where that is not relevant to the test. The store will update the table index as properties are added,
+     * removed and updated.
+     *
+     * @param  tableIndex the Sleeper table index
+     * @return            the store
+     */
     public static TablePropertiesStore getStoreReturningExactInstance(TableIndex tableIndex) {
         return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(false));
     }
 
+    /**
+     * Creates a table properties store holding the given tables. The store will hold references to any table properties
+     * passed in, so that any changes outside the store are reflected in future loads, even if the properties are not
+     * changed in the store. This can be used to avoid the need to update the store when changing properties in tests,
+     * where that is not relevant to the test.
+     *
+     * @param  properties the Sleeper table properties
+     * @return            the store
+     */
     public static TablePropertiesStore getStoreReturningExactInstances(Collection<TableProperties> properties) {
         TablePropertiesStore store = getStoreReturningExactInstance();
         properties.forEach(store::save);

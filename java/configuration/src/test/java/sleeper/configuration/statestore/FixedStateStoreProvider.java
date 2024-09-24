@@ -52,6 +52,12 @@ public class FixedStateStoreProvider extends StateStoreProvider {
         });
     }
 
+    /**
+     * Creates a state store provider that will load the given state stores.
+     *
+     * @param  stateStoreByTableId a map of table ID to state store
+     * @return                     the provider
+     */
     public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
         return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
             String tableId = tableProperties.get(TABLE_ID);

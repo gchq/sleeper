@@ -20,6 +20,9 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * A fake table properties provider that holds the table properties in memory.
+ */
 public class FixedTablePropertiesProvider extends TablePropertiesProvider {
     public FixedTablePropertiesProvider(TableProperties tableProperties) {
         this(List.of(tableProperties));
