@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.PropertyValidationUtils;
+import sleeper.configuration.properties.validation.PropertyValidationUtils;
 
 import java.util.List;
 import java.util.Optional;

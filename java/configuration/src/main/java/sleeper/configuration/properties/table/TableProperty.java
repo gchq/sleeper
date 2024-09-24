@@ -17,7 +17,6 @@ package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionMethod;
@@ -25,11 +24,11 @@ import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.configuration.properties.validation.PropertyValidationUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.PropertyValidationUtils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
@@ -87,6 +86,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
+import static sleeper.configuration.properties.validation.PropertyValidationUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of the table properties which are stored separately to the instance properties. Each Sleeper table has

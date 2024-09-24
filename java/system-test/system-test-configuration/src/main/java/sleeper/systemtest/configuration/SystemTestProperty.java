@@ -18,15 +18,15 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.configuration.properties.validation.PropertyValidationUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.PropertyValidationUtils.describeEnumValuesInLowerCase;
+import static sleeper.configuration.properties.validation.PropertyValidationUtils.describeEnumValuesInLowerCase;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")

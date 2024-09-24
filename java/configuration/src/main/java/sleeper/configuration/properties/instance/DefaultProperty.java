@@ -16,18 +16,18 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompressionCodec;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.configuration.properties.validation.PropertyValidationUtils;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
 import java.util.Locale;
 
-import static sleeper.configuration.PropertyValidationUtils.describeEnumValuesInLowerCase;
+import static sleeper.configuration.properties.validation.PropertyValidationUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties that are defaults for other properties, particularly table properties.
