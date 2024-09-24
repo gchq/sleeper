@@ -38,6 +38,7 @@ import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -164,7 +165,7 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();

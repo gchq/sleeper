@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
@@ -45,13 +46,13 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
 
     private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final PropertiesReloader propertiesReloader;
 
     public TableMetricsTriggerLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 

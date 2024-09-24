@@ -19,9 +19,9 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 
 public interface PropertiesReloader {
@@ -36,7 +36,7 @@ public interface PropertiesReloader {
             AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         return () -> {
             if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
-                instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
+                S3InstanceProperties.reload(s3Client, instanceProperties);
                 if (tablePropertiesProvider != null) {
                     tablePropertiesProvider.clearCache();
                 }
@@ -51,7 +51,7 @@ public interface PropertiesReloader {
 
     static PropertiesReloader alwaysReload(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         return () -> {
-            instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
+            S3InstanceProperties.reload(s3Client, instanceProperties);
         };
     }
 }

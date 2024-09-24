@@ -32,9 +32,9 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RejectedJobsQuery;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -115,7 +115,7 @@ public class IngestJobStatusReport {
             AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
             AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
             try (EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
-                InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));

@@ -25,9 +25,9 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
@@ -103,7 +103,7 @@ public class DeadLettersStatusReport {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
             DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
             statusReport.run();

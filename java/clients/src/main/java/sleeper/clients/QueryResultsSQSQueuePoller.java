@@ -25,8 +25,8 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
@@ -88,7 +88,7 @@ public class QueryResultsSQSQueuePoller {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties;
         try {
-            instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
         } finally {
             s3Client.shutdown();
         }

@@ -33,6 +33,7 @@ import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
@@ -60,7 +61,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarterLambda() {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = loadInstanceProperties(s3);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, CONFIG_BUCKET.toEnvironmentVariable());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
@@ -100,11 +101,5 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 .flatMap(message -> ingestJobMessageHandler.deserialiseAndValidate(message).stream())
                 .forEach(executor::runJob);
         return null;
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-        return instanceProperties;
     }
 }

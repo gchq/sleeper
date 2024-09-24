@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
@@ -104,8 +105,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) {
         super(SOURCE_TYPE);
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
@@ -116,8 +116,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
             AmazonAthena athena, String spillBucket, String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());

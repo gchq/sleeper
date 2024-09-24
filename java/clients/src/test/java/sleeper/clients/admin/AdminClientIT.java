@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,8 +111,7 @@ class AdminClientIT extends AdminClientITBase {
                         PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                         DISPLAY_MAIN_SCREEN);
 
-        InstanceProperties found = new InstanceProperties();
-        found.loadFromS3(s3, before.get(CONFIG_BUCKET));
+        InstanceProperties found = S3InstanceProperties.loadFromBucket(s3, before.get(CONFIG_BUCKET));
         assertThat(found.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(2);
     }
 

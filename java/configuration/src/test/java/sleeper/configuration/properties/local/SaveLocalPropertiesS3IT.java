@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -58,7 +59,7 @@ class SaveLocalPropertiesS3IT {
     private Path tempDir;
 
     private InstanceProperties saveFromS3(String instanceId) throws IOException {
-        return SaveLocalProperties.saveFromS3(s3Client, dynamoClient, instanceId, tempDir);
+        return S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, tempDir);
     }
 
     @Test
@@ -115,7 +116,7 @@ class SaveLocalPropertiesS3IT {
 
     private InstanceProperties createTestInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties(s3Client);
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         return instanceProperties;
     }

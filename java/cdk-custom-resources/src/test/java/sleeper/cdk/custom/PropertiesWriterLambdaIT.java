@@ -25,6 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
@@ -40,7 +41,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -89,8 +89,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
@@ -105,7 +104,7 @@ public class PropertiesWriterLambdaIT {
         client.createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
 
-        client.putObject(bucketName, S3_INSTANCE_PROPERTIES_FILE, "foo");
+        client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("bar", bucketName);
@@ -121,8 +120,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
 
         client.shutdown();
@@ -153,8 +151,7 @@ public class PropertiesWriterLambdaIT {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = new InstanceProperties();
-        loadedProperties.loadFromS3(client, alternativeBucket);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(client, alternativeBucket);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
@@ -166,7 +163,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        client.putObject(bucketName, S3_INSTANCE_PROPERTIES_FILE, "foo");
+        client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);

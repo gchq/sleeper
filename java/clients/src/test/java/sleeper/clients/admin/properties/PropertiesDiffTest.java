@@ -124,9 +124,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectNoChanges() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
 
             // When / Then
@@ -136,9 +136,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=2"));
 
             // When / Then
@@ -150,7 +150,7 @@ public class PropertiesDiffTest {
         void shouldDetectPropertyIsNewlySet() {
             // Given
             InstanceProperties before = new InstanceProperties();
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=12"));
 
             // When / Then
@@ -161,7 +161,7 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsUnset() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=12"));
             InstanceProperties after = new InstanceProperties();
 

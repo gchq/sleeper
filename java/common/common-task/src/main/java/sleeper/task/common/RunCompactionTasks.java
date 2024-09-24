@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 
 import java.util.List;
@@ -258,8 +259,7 @@ public class RunCompactionTasks {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
         try (EcsClient ecsClient = EcsClient.create()) {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {

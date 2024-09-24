@@ -40,14 +40,18 @@ public class LoadLocalProperties {
 
     public static InstanceProperties loadInstancePropertiesFromDirectory(Path directory) {
         Path file = directory.resolve("instance.properties");
-        return loadInstanceProperties(InstanceProperties::new, file);
+        return loadInstanceProperties(InstanceProperties::createWithoutValidation, file);
     }
 
     public static InstanceProperties loadInstanceProperties(Path file) {
-        return loadInstanceProperties(InstanceProperties::new, file);
+        return loadInstanceProperties(InstanceProperties::createWithoutValidation, file);
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> constructor, Path file) {
+    public static InstanceProperties loadInstancePropertiesNoValidation(Path file) {
+        return loadInstancePropertiesNoValidation(InstanceProperties::createWithoutValidation, file);
+    }
+
+    private static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> constructor, Path file) {
         T properties = loadInstancePropertiesNoValidation(constructor, file);
         properties.validate();
         return properties;
