@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration;
+package sleeper.configuration.properties.validation;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperPropertyValues;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.Set;
