@@ -1,0 +1,38 @@
+name: Build Clients Module
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-clients.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/clients/**'
+      - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-status-store/**'
+      - 'java/splitter/splitter-core/**'
+      - 'java/ingest/ingest-batcher-store/**'
+      - 'java/common/common-invoke-tables/**'
+      - 'java/common/common-task/**'
+      - 'java/ingest/ingest-batcher-core/**'
+      - 'java/compaction/compaction-core/**'
+      - 'java/query/query-runner/**'
+      - 'java/query/query-core/**'
+      - 'java/ingest/ingest-runner/**'
+      - 'java/common/common-job/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/sketches/**'
+      - 'java/statestore/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: clients

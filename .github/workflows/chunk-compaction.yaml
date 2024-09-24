@@ -1,0 +1,40 @@
+name: Build Compaction Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-compaction.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/compaction/pom.xml'
+      - 'java/splitter/pom.xml'
+      - 'java/compaction/compaction-job-execution/**'
+      - 'java/compaction/compaction-task-creation/**'
+      - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-job-creation-lambda/**'
+      - 'java/compaction/compaction-status-store/**'
+      - 'java/compaction/compaction-core/**'
+      - 'java/splitter/splitter-core/**'
+      - 'java/splitter/splitter-lambda/**'
+      - 'java/compaction/compaction-rust/**'
+      - 'java/common/common-task/**'
+      - 'java/common/common-invoke-tables/**'
+      - 'java/ingest/ingest-runner/**'
+      - 'java/common/common-job/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/sketches/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: compaction

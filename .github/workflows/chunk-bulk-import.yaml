@@ -1,0 +1,29 @@
+name: Build Bulk Import Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-bulk-import.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/bulk-import/pom.xml'
+      - 'java/bulk-import/bulk-import-common/**'
+      - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/bulk-import/bulk-import-runner/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/sketches/**'
+      - 'java/statestore/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: bulk-import
