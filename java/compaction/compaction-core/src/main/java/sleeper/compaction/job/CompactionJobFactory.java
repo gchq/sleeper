@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.configuration.TableUtils;
+import sleeper.configuration.TableFilePaths;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
@@ -43,7 +43,7 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        outputFilePrefix = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
@@ -73,7 +73,7 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJobWithFilenames(
             String jobId, List<String> filenames, String partitionId) {
-        String outputFile = TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
+        String outputFile = TableFilePaths.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)

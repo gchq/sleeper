@@ -25,7 +25,7 @@ import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.TableUtils;
+import sleeper.configuration.TableFilePaths;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -214,7 +214,7 @@ public class FileWritingIterator implements Iterator<Row> {
         String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TABLE_ID);
-        path = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partitionId, outputFilenameSupplier.get());
+        path = TableFilePaths.constructPartitionParquetFilePath(filePathPrefix, partitionId, outputFilenameSupplier.get());
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
 

@@ -24,8 +24,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
-public class TableUtils {
-    private TableUtils() {
+public class TableFilePaths {
+    private TableFilePaths() {
     }
 
     public static String buildDataFilePathPrefix(InstanceProperties instanceProperties, TableProperties tableProperties) {
