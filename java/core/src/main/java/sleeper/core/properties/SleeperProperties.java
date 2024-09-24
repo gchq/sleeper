@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+package sleeper.core.properties;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-
-import sleeper.core.properties.PropertiesUtils;
-import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
-import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.SleeperPropertyValues;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;

@@ -17,10 +17,10 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.CommandRunner;
-import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;

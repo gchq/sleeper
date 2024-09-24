@@ -16,7 +16,7 @@
 
 package sleeper.clients.admin.properties;
 
-import sleeper.configuration.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperties;
 
 public class UpdatePropertiesRequestTestHelper {
     private UpdatePropertiesRequestTestHelper() {

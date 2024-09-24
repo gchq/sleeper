@@ -20,10 +20,10 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.schema.Schema;

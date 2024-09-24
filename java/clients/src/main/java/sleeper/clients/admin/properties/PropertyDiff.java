@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static sleeper.configuration.properties.SleeperPropertiesPrettyPrinter.formatDescription;
+import static sleeper.core.properties.SleeperPropertiesPrettyPrinter.formatDescription;
 
 public class PropertyDiff {
     private final String propertyName;

@@ -19,8 +19,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -30,6 +28,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

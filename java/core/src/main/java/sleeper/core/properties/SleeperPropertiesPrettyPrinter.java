@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+package sleeper.core.properties;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.lang.WordUtils;
-
-import sleeper.core.properties.PropertiesUtils;
-import sleeper.core.properties.PropertyGroup;
-import sleeper.core.properties.SleeperProperty;
+import org.apache.commons.text.WordUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;

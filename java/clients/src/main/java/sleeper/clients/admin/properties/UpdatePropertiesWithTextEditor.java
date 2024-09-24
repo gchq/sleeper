@@ -17,11 +17,11 @@ package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandRunner;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperProperty;
 
 import java.io.BufferedWriter;

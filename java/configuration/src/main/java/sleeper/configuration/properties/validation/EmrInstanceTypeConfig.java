@@ -15,7 +15,7 @@
  */
 package sleeper.configuration.properties.validation;
 
-import sleeper.configuration.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;

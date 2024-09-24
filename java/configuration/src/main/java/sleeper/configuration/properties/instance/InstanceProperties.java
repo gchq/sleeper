@@ -15,9 +15,9 @@
  */
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.io.IOException;

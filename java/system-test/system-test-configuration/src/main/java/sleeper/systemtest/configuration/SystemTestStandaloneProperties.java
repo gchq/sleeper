@@ -20,10 +20,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.io.PrintWriter;

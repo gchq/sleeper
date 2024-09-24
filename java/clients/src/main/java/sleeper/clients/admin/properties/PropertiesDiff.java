@@ -17,7 +17,7 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
 
