@@ -27,6 +27,11 @@ chunks:
       - build
       - common/dynamodb-tools
       - common/dynamodb-test
+      - statestore
+      - statestore-commit
+      - statestore-lambda
+      - statestore
+      - metrics
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
@@ -68,15 +73,6 @@ chunks:
       - query/query-runner
       - query/query-lambda
       - athena
-  statestore:
-    name: State Store
-    workflow: chunk-statestore.yaml
-    modules:
-      - statestore
-      - statestore-commit
-      - statestore-lambda
-      - statestore
-      - metrics
   trino:
     name: Trino
     workflow: chunk-trino.yaml
