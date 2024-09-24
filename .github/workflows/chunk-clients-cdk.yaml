@@ -2,19 +2,34 @@ name: Build Clients Module
 on:
   pull_request:
     paths:
-      - '.github/workflows/chunk-clients.yaml'
+      - '.github/workflows/chunk-clients-cdk.yaml'
       - '.github/workflows/chunk.yaml'
       - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/clients/**'
+      - 'java/system-test/pom.xml'
+      - 'java/cdk/**'
+      - 'java/cdk-custom-resources/**'
+      - 'java/cdk-environment/**'
+      - 'java/system-test/system-test-cdk/**'
+      - 'java/system-test/system-test-configuration/**'
+      - 'java/system-test/system-test-data-generation/**'
+      - 'java/system-test/system-test-dsl/**'
+      - 'java/system-test/system-test-drivers/**'
+      - 'java/system-test/system-test-suite/**'
+      - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-job-execution/**'
+      - 'java/compaction/compaction-rust/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/common/common-task/**'
+      - 'java/bulk-import/bulk-import-common/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/compaction/compaction-core/**'
       - 'java/query/query-runner/**'
@@ -35,4 +50,4 @@ jobs:
   chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkId: clients
+      chunkId: clients-cdk
