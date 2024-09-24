@@ -84,7 +84,7 @@ public class SaveLocalProperties {
 
     private static void writeTableProperties(TableProperties tableProperties, Path file) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
-            TableProperties.forTableProperties(new PrintWriter(writer))
+            TableProperties.createPrettyPrinter(new PrintWriter(writer))
                     .print(tableProperties);
         }
     }

@@ -58,7 +58,7 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
         TableProperties updatedProperties = TableProperties.recreateWithoutValidation(properties,
-                editProperties(properties, TableProperties::forTableProperties));
+                editProperties(properties, TableProperties::createPrettyPrinter));
         return buildRequest(properties, updatedProperties);
     }
 
@@ -70,7 +70,7 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> TableProperties.forTablePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> TableProperties.createPrettyPrinterWithGroup(writer, propertyGroup));
         return buildRequest(properties, TableProperties.recreateWithoutValidation(properties, after));
     }
 

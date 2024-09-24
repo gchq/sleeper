@@ -155,7 +155,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
-        return forTableProperties(writer);
+        return createPrettyPrinter(writer);
     }
 
     /**
@@ -164,7 +164,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @param  writer the writer to write to
      * @return        the pretty printer
      */
-    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
+    public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinter(PrintWriter writer) {
         return SleeperPropertiesPrettyPrinter.builder().properties(TableProperty.getAll(), TablePropertyGroup.getAll())
                 .writer(writer).build();
     }
@@ -176,7 +176,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @param  group  the group to display
      * @return        the pretty printer
      */
-    public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
+    public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinterWithGroup(
             PrintWriter writer, PropertyGroup group) {
         return SleeperPropertiesPrettyPrinter.builder().sortedProperties(TableProperty.getAll().stream()
                 .filter(property -> property.getPropertyGroup().equals(group))

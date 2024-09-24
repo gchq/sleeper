@@ -380,11 +380,11 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printTableProperties(TableProperties tableProperties) {
-        return print(TableProperties::forTableProperties, tableProperties);
+        return print(TableProperties::createPrettyPrinter, tableProperties);
     }
 
     private static String printTablePropertiesByGroup(TableProperties tableProperties, PropertyGroup group) {
-        return print(writer -> TableProperties.forTablePropertiesWithGroup(writer, group), tableProperties);
+        return print(writer -> TableProperties.createPrettyPrinterWithGroup(writer, group), tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
