@@ -22,6 +22,9 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 
+/**
+ * Resource requirements for a compaction task. This determines the resources to request from AWS Fargate or EC2.
+ */
 public final class CompactionTaskRequirements {
 
     private final int cpu;
