@@ -16,7 +16,7 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -44,7 +44,7 @@ public interface AthenaProperty {
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.athena.handler.timeout.seconds")
             .description("The timeout in seconds for the athena composite handler.")
             .defaultValue("900")
-            .validationPredicate(Utils::isValidLambdaTimeout)
+            .validationPredicate(PropertyValidationUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
 

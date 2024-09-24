@@ -16,7 +16,7 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public interface BulkImportProperty {
             .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
+            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION_QUANTILE = Index.propertyBuilder("sleeper.bulk.import.spark.speculation.quantile")

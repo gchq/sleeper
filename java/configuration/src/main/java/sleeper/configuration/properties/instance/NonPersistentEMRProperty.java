@@ -16,7 +16,7 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
 
@@ -38,7 +38,7 @@ public interface NonPersistentEMRProperty {
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .defaultValue("x86_64")
-            .validationPredicate(Utils::isValidArchitecture)
+            .validationPredicate(PropertyValidationUtils::isValidArchitecture)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.x86.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be " +
@@ -85,7 +85,7 @@ public interface NonPersistentEMRProperty {
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
             .defaultValue("2")
-            .validationPredicate(Utils::isNonNegativeInteger)
+            .validationPredicate(PropertyValidationUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.max.instances")
             .description("(Non-persistent EMR mode only) The default maximum number of capacity units to provision as EC2 " +
@@ -96,7 +96,7 @@ public interface NonPersistentEMRProperty {
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
             .defaultValue("10")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(PropertyValidationUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

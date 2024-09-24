@@ -16,7 +16,7 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -180,20 +180,20 @@ public interface EMRProperty {
             .description("(Non-persistent or persistent EMR mode only) The size of the EBS volume in gibibytes (GiB).\n" +
                     "This can be a number from 10 to 1024.")
             .defaultValue("256")
-            .validationPredicate(Utils::isValidEbsSize)
+            .validationPredicate(PropertyValidationUtils::isValidEbsSize)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.type")
             .description("(Non-persistent or persistent EMR mode only) The type of the EBS volume.\n" +
                     "Valid values are 'gp2', 'gp3', 'io1', 'io2'.")
             .defaultValue("gp2")
-            .validationPredicate(Utils::isValidEbsVolumeType)
+            .validationPredicate(PropertyValidationUtils::isValidEbsVolumeType)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volumes.per.instance")
             .description("(Non-persistent or persistent EMR mode only) The number of EBS volumes per instance.\n" +
                     "This can be a number from 1 to 25.")
-            .defaultValue("4").validationPredicate(s -> Utils.isPositiveIntLtEqValue(s, 25))
+            .defaultValue("4").validationPredicate(s -> PropertyValidationUtils.isPositiveIntLtEqValue(s, 25))
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 

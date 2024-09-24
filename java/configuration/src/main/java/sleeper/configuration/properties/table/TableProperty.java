@@ -17,7 +17,7 @@ package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.Utils;
+import sleeper.configuration.PropertyValidationUtils;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionMethod;
@@ -29,7 +29,7 @@ import sleeper.configuration.properties.validation.IngestQueue;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
+import static sleeper.configuration.PropertyValidationUtils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
@@ -112,7 +112,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "jobs that are running. Additionally, you are still able to ingest data to offline tables and perform " +
                     "queries against them.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .validationPredicate(Utils::isTrueOrFalse)
+            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
             .defaultValue("true")
             .setBySleeper(false).build();
     TableProperty SCHEMA = Index.propertyBuilder("sleeper.table.schema")
@@ -137,7 +137,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
+            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
@@ -312,7 +312,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This is separate from the properties that determine which state store updates will be done as " +
                     "asynchronous commits. Those properties will only be applied when asynchronous commits are " +
                     "enabled.")
-            .validationPredicate(Utils::isTrueOrFalse)
+            .validationPredicate(PropertyValidationUtils::isTrueOrFalse)
             .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT = Index.propertyBuilder("sleeper.table.statestore.committer.update.every.commit")
             .defaultProperty(DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT)
