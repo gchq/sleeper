@@ -49,9 +49,9 @@ chunks:
     workflow: chunk-rust.yaml
     modules:
       - compaction/compaction-rust
-  ingest-common:
-    name: Ingest Common
-    workflow: chunk-ingest-common.yaml
+  ingest:
+    name: Ingest
+    workflow: chunk-ingest.yaml
     modules:
       - ingest/ingest-core
       - ingest/ingest-status-store
@@ -63,10 +63,6 @@ chunks:
       - bulk-import/bulk-import-common
       - bulk-import/bulk-import-starter
       - bulk-import/bulk-import-runner
-  ingest-runner:
-    name: Ingest Runner
-    workflow: chunk-ingest-runner.yaml
-    modules:
       - ingest/ingest-runner
   query:
     name: Query
