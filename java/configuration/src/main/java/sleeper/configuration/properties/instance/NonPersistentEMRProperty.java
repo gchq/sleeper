@@ -17,6 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.configuration.properties.validation.EmrInstanceTypeConfig;
 import sleeper.configuration.properties.validation.PropertyValidationUtils;
 
@@ -38,7 +39,7 @@ public interface NonPersistentEMRProperty {
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .defaultValue("x86_64")
-            .validationPredicate(PropertyValidationUtils::isValidArchitecture)
+            .validationPredicate(EmrInstanceArchitecture::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.x86.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be " +

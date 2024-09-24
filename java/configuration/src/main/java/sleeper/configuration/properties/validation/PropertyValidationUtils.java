@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.validation;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperPropertyValues;
 
@@ -45,66 +44,166 @@ public class PropertyValidationUtils {
 
     private static final Set<String> VALID_EBS_VOLUME_TYPES = Sets.newHashSet("gp2", "gp3", "io1", "io2");
 
+    /**
+     * Checks if a property value is a positive integer.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isPositiveInteger(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0);
     }
 
+    /**
+     * Checks if a property value is unset or a positive integer.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isPositiveIntegerOrNull(String integer) {
         return (integer == null) || (isPositiveInteger(integer));
     }
 
+    /**
+     * Checks if a property value is within the maximum batch size for processing messages from an AWS SQS FIFO queue.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isPositiveIntegerLtEq10(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0 && num <= 10);
     }
 
+    /**
+     * Checks if a property value is a whole positive number of minutes within the maximum timeout for an invocation of
+     * AWS Lambda.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isPositiveIntegerLtEq15(String integer) {
         return parseAndCheckInteger(integer, num -> num > 0 && num <= 15);
     }
 
+    /**
+     * Checks if a property value is an integer greater than or equal to 0.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isNonNegativeInteger(String integer) {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
 
+    /**
+     * Checks if a property value is an integer.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isInteger(String integer) {
         return parseAndCheckInteger(integer, num -> true);
     }
 
+    /**
+     * Checks if a property value is a long integer greater than zero.
+     *
+     * @param  value the value
+     * @return       true if the value meets the requirement
+     */
     public static boolean isPositiveLong(String value) {
         return parseAndCheckLong(value, num -> num > 0);
     }
 
+    /**
+     * Checks if a property value is a long integer.
+     *
+     * @param  value the value
+     * @return       true if the value meets the requirement
+     */
     public static boolean isLong(String value) {
         return parseAndCheckLong(value, num -> true);
     }
 
+    /**
+     * Checks if a property value is a positive double precision decimal number.
+     *
+     * @param  value the value
+     * @return       true if the value meets the requirement
+     */
     public static boolean isPositiveDouble(String value) {
         return parseAndCheckDouble(value, num -> num > 0);
     }
 
+    /**
+     * Checks if a property value is a non-empty string.
+     *
+     * @param  string the value
+     * @return        true if the value meets the requirement
+     */
     public static boolean isNonNullNonEmptyString(String string) {
         return null != string && !string.isEmpty();
     }
 
+    /**
+     * Checks if a property value is a non-empty string with a maximum length.
+     *
+     * @param  string the value
+     * @param  length the maximum length
+     * @return        true if the value meets the requirement
+     */
     public static boolean isNonNullNonEmptyStringWithMaxLength(String string, int length) {
         return isNonNullNonEmptyString(string) && string.length() <= length;
     }
 
+    /**
+     * Checks if a property value is a boolean. Must be true or false in lower case.
+     *
+     * @param  string the value
+     * @return        true if the value meets the requirement
+     */
     public static boolean isTrueOrFalse(String string) {
         return "true".equalsIgnoreCase(string) || "false".equalsIgnoreCase(string);
     }
 
+    /**
+     * Checks if a property value is a whole positive number of seconds within the maximum timeout for an invocation of
+     * AWS Lambda.
+     *
+     * @param  timeout the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isValidLambdaTimeout(String timeout) {
         return parseAndCheckInteger(timeout, num -> num <= 900 && num > 0);
     }
 
+    /**
+     * Checks if a property value is a valid setting for the Hadoop configuration property
+     * `fs.s3a.experimental.input.fadvise`.
+     *
+     * @param  fadvise the value
+     * @return         true if the value meets the requirement
+     */
     public static boolean isValidFadvise(String fadvise) {
         return VALID_FADVISE_VALUES.contains(fadvise);
     }
 
+    /**
+     * Checks if a property value is a valid setting for log retention in days for an AWS CloudWatch log group.
+     *
+     * @param  logRetention the value
+     * @return              true if the value meets the requirement
+     */
     public static boolean isValidLogRetention(String logRetention) {
         return VALID_LOG_RETENTION_VALUES.contains(logRetention);
     }
 
+    /**
+     * Checks if a property value is a valid number of bytes to configure the Hadoop AWS integration.
+     *
+     * @param  numberOfBytes the value
+     * @return               true if the value meets the requirement
+     */
     public static boolean isValidHadoopLongBytes(String numberOfBytes) {
         if (!isNonNullNonEmptyString(numberOfBytes)) {
             return false;
@@ -114,6 +213,12 @@ public class PropertyValidationUtils {
 
     private static final Pattern BYTES_PATTERN = Pattern.compile("(\\d+)([KMGTPE]?)");
 
+    /**
+     * Checks if a property value is a valid number of bytes to configure Sleeper.
+     *
+     * @param  numberOfBytes the value
+     * @return               true if the value meets the requirement
+     */
     public static boolean isValidNumberOfBytes(String numberOfBytes) {
         if (!isNonNullNonEmptyString(numberOfBytes)) {
             return false;
@@ -121,6 +226,12 @@ public class PropertyValidationUtils {
         return BYTES_PATTERN.matcher(numberOfBytes).matches();
     }
 
+    /**
+     * Reads a Sleeper property value that sets a number of bytes within Sleeper.
+     *
+     * @param  value the value
+     * @return       the number of bytes
+     */
     public static long readBytes(String value) {
         Matcher matcher = BYTES_PATTERN.matcher(value);
         matcher.matches();
@@ -148,6 +259,12 @@ public class PropertyValidationUtils {
         }
     }
 
+    /**
+     * Checks if a property value is a valid size for an AWS EBS volume for AWS EMR.
+     *
+     * @param  ebsSizeInGb the value
+     * @return             true if the value meets the requirement
+     */
     public static boolean isValidEbsSize(String ebsSizeInGb) {
         if (!isNonNullNonEmptyString(ebsSizeInGb)) {
             return false;
@@ -157,10 +274,23 @@ public class PropertyValidationUtils {
         return parseAndCheckInteger(ebsSizeInGb, num -> num >= 10 && num <= 1024);
     }
 
+    /**
+     * Checks if a property value is a valid type of an AWS EBS volume for AWS EMR.
+     *
+     * @param  ebsVolumeType the value
+     * @return               true if the value meets the requirement
+     */
     public static boolean isValidEbsVolumeType(String ebsVolumeType) {
         return VALID_EBS_VOLUME_TYPES.contains(ebsVolumeType);
     }
 
+    /**
+     * Checks if a property value is an integer between one and a maximum value (inclusive).
+     *
+     * @param  string   the value
+     * @param  maxValue the maximum value
+     * @return          true if the value meets the requirement
+     */
     public static boolean isPositiveIntLtEqValue(String string, int maxValue) {
         if (!isNonNullNonEmptyString(string)) {
             return false;
@@ -168,14 +298,13 @@ public class PropertyValidationUtils {
         return parseAndCheckInteger(string, num -> num >= 1 && num <= maxValue);
     }
 
-    public static boolean isValidArchitecture(String input) {
-        if (input == null) {
-            return false;
-        }
-        return SleeperPropertyValues.readList(input).stream()
-                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
-    }
-
+    /**
+     * Checks if a property value is an integer between zero and a maximum value (inclusive).
+     *
+     * @param  string   the value
+     * @param  maxValue the maximum value
+     * @return          true if the value meets the requirement
+     */
     public static boolean isNonNegativeIntLtEqValue(String string, int maxValue) {
         if (!isNonNullNonEmptyString(string)) {
             return false;
@@ -183,6 +312,13 @@ public class PropertyValidationUtils {
         return parseAndCheckInteger(string, num -> num >= 0 && num <= maxValue);
     }
 
+    /**
+     * Checks if a property value is a comma-separated list of strings, with a maximum number of values.
+     *
+     * @param  input   the value
+     * @param  maxSize the maximum number of values
+     * @return         true if the value meets the requirement
+     */
     public static boolean isListWithMaxSize(String input, int maxSize) {
         List<String> values = SleeperPropertyValues.readList(input);
         return values.size() <= maxSize;
@@ -212,11 +348,27 @@ public class PropertyValidationUtils {
         }
     }
 
+    /**
+     * Generates a list of valid values for an enum, to be used in a Sleeper property description. Converts each value
+     * to lower case.
+     *
+     * @param  <T> the enum type
+     * @param  cls the num class
+     * @return     the valid values description, in lower case
+     */
     public static <T extends Enum<T>> String describeEnumValuesInLowerCase(Class<T> cls) {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString)
                 .map(String::toLowerCase).collect(Collectors.toList()).toString();
     }
 
+    /**
+     * Generates a list of valid values for an enum, to be used in a Sleeper property description. Uses each value as it
+     * appears in the enum.
+     *
+     * @param  <T> the enum type
+     * @param  cls the num class
+     * @return     the valid values description
+     */
     public static <T extends Enum<T>> String describeEnumValues(Class<T> cls) {
         return Stream.of(cls.getEnumConstants()).map(Enum::toString).collect(Collectors.toList()).toString();
     }
