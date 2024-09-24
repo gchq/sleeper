@@ -29,7 +29,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithTextEditorTestHelper {
     private final Path tempDir;

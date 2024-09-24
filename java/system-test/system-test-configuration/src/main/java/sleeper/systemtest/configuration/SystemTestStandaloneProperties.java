@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class SystemTestStandaloneProperties

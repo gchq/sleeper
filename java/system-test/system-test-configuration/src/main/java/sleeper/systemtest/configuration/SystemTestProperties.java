@@ -24,7 +24,7 @@ import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Holds properties for a Sleeper instance as well as properties needed to run system test data generation tasks.

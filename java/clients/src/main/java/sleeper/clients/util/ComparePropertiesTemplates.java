@@ -34,7 +34,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class ComparePropertiesTemplates {
 

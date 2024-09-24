@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Saves and loads instance properties in AWS S3.

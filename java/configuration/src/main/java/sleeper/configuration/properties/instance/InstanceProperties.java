@@ -26,8 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Contains values of the properties to configure an instance of Sleeper.

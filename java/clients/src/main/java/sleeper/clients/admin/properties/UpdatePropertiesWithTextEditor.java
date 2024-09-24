@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithTextEditor {
 

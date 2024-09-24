@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.Iterator;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.record.Record} belonging to a

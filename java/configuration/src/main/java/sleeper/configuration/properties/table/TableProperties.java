@@ -33,13 +33,13 @@ import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Contains values of the properties to configure a Sleeper table.

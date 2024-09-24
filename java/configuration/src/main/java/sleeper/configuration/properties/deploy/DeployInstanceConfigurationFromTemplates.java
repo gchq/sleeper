@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Settings to create a configuration for a Sleeper instance by combining templates with configuration files.

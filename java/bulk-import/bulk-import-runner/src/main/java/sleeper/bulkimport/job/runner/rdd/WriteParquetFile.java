@@ -30,7 +30,7 @@ import sleeper.core.partition.PartitionTree;
 import java.util.Iterator;
 import java.util.List;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Writes sorted rows to a Parquet file.

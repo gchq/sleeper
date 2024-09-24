@@ -42,11 +42,11 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SleeperPropertiesPrettyPrinterTest {

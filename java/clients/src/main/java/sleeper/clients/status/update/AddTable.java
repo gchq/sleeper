@@ -35,8 +35,8 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class AddTable {

@@ -31,7 +31,6 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
@@ -46,6 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 class SleeperPropertiesTest {
 
