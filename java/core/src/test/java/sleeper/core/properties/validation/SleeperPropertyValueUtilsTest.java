@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.core.properties.validation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
