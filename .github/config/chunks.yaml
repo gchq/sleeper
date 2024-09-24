@@ -7,14 +7,14 @@ chunks:
   bulk-import:
     name: Bulk Import
     workflow: chunk-bulk-import.yaml
-    modules: 
+    modules:
       - bulk-import/bulk-import-common
       - bulk-import/bulk-import-starter
       - bulk-import/bulk-import-runner
   cdk:
     name: CDK
     workflow: chunk-cdk.yaml
-    modules: 
+    modules:
       - cdk
       - cdk-custom-resources
       - cdk-environment
