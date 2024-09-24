@@ -43,17 +43,12 @@ chunks:
       - compaction/compaction-core
       - splitter/splitter-core
       - splitter/splitter-lambda
+      - garbage-collector
   rust:
     name: Rust
     workflow: chunk-rust.yaml
     modules:
       - compaction/compaction-rust
-  data:
-    name: Data
-    workflow: chunk-data.yaml
-    modules:
-      - garbage-collector
-      - metrics
   ingest-common:
     name: Ingest Common
     workflow: chunk-ingest-common.yaml
@@ -89,6 +84,7 @@ chunks:
       - statestore-commit
       - statestore-lambda
       - statestore
+      - metrics
   trino:
     name: Trino
     workflow: chunk-trino.yaml

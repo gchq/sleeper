@@ -19,6 +19,7 @@ on:
       - 'java/splitter/splitter-core/**'
       - 'java/splitter/splitter-lambda/**'
       - 'java/compaction/compaction-rust/**'
+      - 'java/garbage-collector/**'
       - 'java/common/common-task/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/ingest/ingest-runner/**'

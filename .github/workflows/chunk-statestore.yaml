@@ -11,7 +11,7 @@ on:
       - 'java/statestore/**'
       - 'java/statestore-commit/**'
       - 'java/statestore-lambda/**'
-      - 'java/statestore/**'
+      - 'java/metrics/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/compaction/compaction-core/**'
