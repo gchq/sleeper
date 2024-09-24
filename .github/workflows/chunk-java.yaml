@@ -1,8 +1,8 @@
-name: Build CDK Modules
+name: Build Java Modules
 on:
   pull_request:
     paths:
-      - '.github/workflows/chunk-cdk.yaml'
+      - '.github/workflows/chunk-java.yaml'
       - '.github/workflows/chunk.yaml'
       - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
@@ -52,4 +52,4 @@ jobs:
   chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkId: cdk
+      chunkId: java
