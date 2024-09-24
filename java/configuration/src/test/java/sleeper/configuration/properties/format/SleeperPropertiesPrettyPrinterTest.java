@@ -369,7 +369,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(InstanceProperties properties) {
-        return print(SleeperPropertiesPrettyPrinter::forInstanceProperties, properties);
+        return print(InstanceProperties::createPrettyPrinter, properties);
     }
 
     private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {

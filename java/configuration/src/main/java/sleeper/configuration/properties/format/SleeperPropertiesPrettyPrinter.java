@@ -20,7 +20,6 @@ import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.properties.PropertiesUtils;
@@ -73,17 +72,6 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         return builder().properties(properties, groups)
                 .writer(writer).printTemplate(true).build();
-    }
-
-    /**
-     * Creates a printer to be used to display all instance properties.
-     *
-     * @param  writer the writer to write to
-     * @return        the pretty printer
-     */
-    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
-        return builder().properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll())
-                .writer(writer).build();
     }
 
     /**

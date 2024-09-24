@@ -148,7 +148,19 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     @Override
     protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
-        return SleeperPropertiesPrettyPrinter.forInstanceProperties(writer);
+        return createPrettyPrinter(writer);
+    }
+
+    /**
+     * Creates a printer to be used to display all instance properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinter(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll())
+                .writer(writer).build();
     }
 
     /**

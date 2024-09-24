@@ -78,7 +78,7 @@ public class SaveLocalProperties {
 
     private static void writeInstanceProperties(InstanceProperties instanceProperties, Path file) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
-            SleeperPropertiesPrettyPrinter.forInstanceProperties(new PrintWriter(writer))
+            InstanceProperties.createPrettyPrinter(new PrintWriter(writer))
                     .print(instanceProperties);
         }
     }

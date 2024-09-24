@@ -52,7 +52,7 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
         InstanceProperties updatedProperties = InstanceProperties.createWithoutValidation(
-                editProperties(properties, SleeperPropertiesPrettyPrinter::forInstanceProperties));
+                editProperties(properties, InstanceProperties::createPrettyPrinter));
         return buildRequest(properties, updatedProperties);
     }
 
