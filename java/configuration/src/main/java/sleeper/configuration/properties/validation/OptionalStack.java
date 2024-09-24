@@ -17,6 +17,8 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

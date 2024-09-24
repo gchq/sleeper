@@ -18,7 +18,7 @@ package sleeper.bulkimport.configuration;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Map;

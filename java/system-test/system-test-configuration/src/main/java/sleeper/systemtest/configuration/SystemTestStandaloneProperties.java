@@ -21,10 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;

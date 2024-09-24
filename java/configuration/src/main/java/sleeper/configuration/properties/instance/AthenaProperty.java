@@ -16,8 +16,8 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 

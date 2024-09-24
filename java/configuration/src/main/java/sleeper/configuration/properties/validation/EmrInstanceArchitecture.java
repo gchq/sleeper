@@ -18,6 +18,8 @@ package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+
 /**
  * Valid values for AWS EMR instance architecture.
  */

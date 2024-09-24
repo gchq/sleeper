@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.configuration;
 
-import sleeper.configuration.properties.SleeperPropertyValues;
+import sleeper.core.properties.SleeperPropertyValues;
 
 public interface SystemTestPropertyValues extends SleeperPropertyValues<SystemTestProperty> {
 }

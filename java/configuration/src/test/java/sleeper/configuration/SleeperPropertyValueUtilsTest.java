@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -18,8 +18,8 @@ package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.ArrayList;
 import java.util.Collections;

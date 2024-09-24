@@ -20,7 +20,10 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.SleeperPropertyValues;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;

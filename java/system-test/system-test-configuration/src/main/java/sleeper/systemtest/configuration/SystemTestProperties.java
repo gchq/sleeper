@@ -17,10 +17,10 @@ package sleeper.systemtest.configuration;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Properties;
 

@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
-
-import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.SleeperProperty;
+package sleeper.core.properties;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

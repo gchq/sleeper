@@ -16,16 +16,16 @@
 
 package sleeper.configuration.properties.instance;
 
-import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.validation.CompactionECSLaunchType;
 import sleeper.configuration.properties.validation.CompactionMethod;
-import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.configuration.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
+import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties relating to compaction.

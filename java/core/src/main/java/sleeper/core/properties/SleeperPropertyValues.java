@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.core.properties;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.validation.SleeperPropertyValueUtils;
-import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Optional;
