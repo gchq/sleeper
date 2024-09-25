@@ -17,7 +17,7 @@ package sleeper.systemtest.configuration;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;

@@ -20,7 +20,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;

@@ -34,7 +34,7 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.deploy.DeployInstanceConfigurationFromTemplates;

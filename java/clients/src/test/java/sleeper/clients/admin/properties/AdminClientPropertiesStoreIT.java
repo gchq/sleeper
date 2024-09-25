@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;

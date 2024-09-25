@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.s3properties;
+package sleeper.configuration.properties;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;

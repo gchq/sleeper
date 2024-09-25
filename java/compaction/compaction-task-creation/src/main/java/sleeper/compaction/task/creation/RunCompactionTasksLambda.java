@@ -25,7 +25,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.QueueMessageCount;
 import sleeper.task.common.RunCompactionTasks;

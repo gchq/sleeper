@@ -37,7 +37,7 @@ import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;

@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.QueryLambdaClient;
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;

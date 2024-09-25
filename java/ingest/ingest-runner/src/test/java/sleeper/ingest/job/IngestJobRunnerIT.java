@@ -38,8 +38,8 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.CommonTestConstants;

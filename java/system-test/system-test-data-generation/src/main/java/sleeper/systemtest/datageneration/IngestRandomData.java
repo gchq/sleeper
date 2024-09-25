@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.AssumeSleeperRole;
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;

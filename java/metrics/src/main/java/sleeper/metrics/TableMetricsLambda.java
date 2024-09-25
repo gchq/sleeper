@@ -33,9 +33,9 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
-import sleeper.configuration.s3properties.PropertiesReloader;
-import sleeper.configuration.s3properties.S3InstanceProperties;
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.PropertiesReloader;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.instance.InstanceProperties;

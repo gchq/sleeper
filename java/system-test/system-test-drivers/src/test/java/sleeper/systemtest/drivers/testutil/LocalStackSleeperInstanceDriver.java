@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.docker.DeployDockerInstance;
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;

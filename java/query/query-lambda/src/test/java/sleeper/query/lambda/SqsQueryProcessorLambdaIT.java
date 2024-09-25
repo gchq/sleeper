@@ -45,8 +45,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.s3properties.S3InstanceProperties;
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorCreationException;

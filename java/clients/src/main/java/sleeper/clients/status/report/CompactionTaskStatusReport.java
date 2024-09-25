@@ -25,7 +25,7 @@ import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportA
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporter;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;

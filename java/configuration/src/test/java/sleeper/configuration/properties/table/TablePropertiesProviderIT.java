@@ -18,7 +18,7 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

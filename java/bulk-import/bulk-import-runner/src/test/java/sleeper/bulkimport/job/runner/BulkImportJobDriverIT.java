@@ -49,7 +49,7 @@ import sleeper.bulkimport.job.runner.BulkImportJobDriver.AddFilesAsynchronously;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver;
-import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;

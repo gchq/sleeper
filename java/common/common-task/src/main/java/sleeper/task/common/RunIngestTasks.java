@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecs.model.LaunchType;
 import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 
-import sleeper.configuration.s3properties.PropertiesReloader;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;

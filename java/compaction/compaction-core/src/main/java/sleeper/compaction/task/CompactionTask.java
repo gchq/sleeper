@@ -23,7 +23,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.configuration.s3properties.PropertiesReloader;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
