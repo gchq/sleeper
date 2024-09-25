@@ -31,13 +31,13 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.core.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SaveLocalPropertiesIT {

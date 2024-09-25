@@ -29,11 +29,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 class IngestQueueMessagesTest {

@@ -32,8 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrClustersRequest;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listStepsRequestWithClusterId;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
 class PersistentEMRStepCountIT {

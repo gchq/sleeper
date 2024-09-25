@@ -24,11 +24,11 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.UUID;
 
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class IngestStatusStoreTestUtils {
     private IngestStatusStoreTestUtils() {

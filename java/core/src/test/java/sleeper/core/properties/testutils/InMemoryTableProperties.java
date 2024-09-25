@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.table;
+package sleeper.core.properties.testutils;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;

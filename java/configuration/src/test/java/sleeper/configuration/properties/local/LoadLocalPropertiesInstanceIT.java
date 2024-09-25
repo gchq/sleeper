@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstancePropertiesNoValidation;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.propertiesString;
 
 class LoadLocalPropertiesInstanceIT {
 

@@ -51,13 +51,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;

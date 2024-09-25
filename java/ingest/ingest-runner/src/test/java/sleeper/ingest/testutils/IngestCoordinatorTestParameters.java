@@ -41,8 +41,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -50,6 +48,8 @@ import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_RE
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class IngestCoordinatorTestParameters {
 

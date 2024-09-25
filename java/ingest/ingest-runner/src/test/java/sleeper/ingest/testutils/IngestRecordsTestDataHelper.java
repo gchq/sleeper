@@ -42,8 +42,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -54,6 +52,8 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_R
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class IngestRecordsTestDataHelper {
 

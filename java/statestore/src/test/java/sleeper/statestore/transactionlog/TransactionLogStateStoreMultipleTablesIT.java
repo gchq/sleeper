@@ -30,7 +30,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStateStoreTestBase {

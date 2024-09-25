@@ -28,10 +28,10 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class ReadSplitPointsIT {

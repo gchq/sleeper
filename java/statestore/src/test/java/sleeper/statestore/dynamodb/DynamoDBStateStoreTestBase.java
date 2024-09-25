@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class DynamoDBStateStoreTestBase extends DynamoDBTestBase {
 

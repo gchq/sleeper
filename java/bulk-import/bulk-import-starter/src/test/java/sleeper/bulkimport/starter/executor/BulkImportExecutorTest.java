@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -44,11 +44,11 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedAndFailedToStartIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;

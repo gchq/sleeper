@@ -18,6 +18,7 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.testutils.InstancePropertiesTestHelper;
 
 import java.util.function.Consumer;
 

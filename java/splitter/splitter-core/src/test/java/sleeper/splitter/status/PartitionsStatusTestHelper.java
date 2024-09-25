@@ -27,9 +27,9 @@ import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class PartitionsStatusTestHelper {
     private static final Schema DEFAULT_SCHEMA = Schema.builder()

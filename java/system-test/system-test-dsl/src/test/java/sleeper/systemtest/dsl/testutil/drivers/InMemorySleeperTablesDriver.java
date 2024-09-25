@@ -16,13 +16,13 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.table.InMemoryTableProperties;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.InMemoryTableIndex;

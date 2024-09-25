@@ -21,9 +21,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -40,10 +40,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryMessageHandlerIT extends DynamoDBTestBase {

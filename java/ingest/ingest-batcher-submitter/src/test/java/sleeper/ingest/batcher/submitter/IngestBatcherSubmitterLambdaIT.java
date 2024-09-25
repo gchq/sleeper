@@ -41,8 +41,8 @@ import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @Testcontainers
 public class IngestBatcherSubmitterLambdaIT {
