@@ -1,11 +1,9 @@
-name: Full Maven Compile
+name: Java Build Status
 on:
-  workflow_dispatch: # Allow manual running to refresh/check cache
-  schedule: # Cache will never be created unless this is run on develop, so run it once per day
-    - cron: '0 2 * * *'
   pull_request:
     paths:
-      - '.github/workflows/maven-full.yaml'
+      - '.github/workflows/java-status.yaml'
+      - '.github/config/chunks.yaml'
       - 'java/**'
 
 jobs:
@@ -31,6 +29,14 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
+      - name: Validate chunk build configuration
+        working-directory: ./java/build
+        run: |
+          CHUNKS_YAML=${{ github.workspace }}/.github/config/chunks.yaml
+          MAVEN_PROJECT=${{ github.workspace }}/java
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
+            -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
+            -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
       - name: Validate properties templates are up to date
         working-directory: ./java
         run: |
