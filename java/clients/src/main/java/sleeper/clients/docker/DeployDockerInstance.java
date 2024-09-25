@@ -34,6 +34,7 @@ import sleeper.clients.status.update.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -55,6 +56,7 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
@@ -138,6 +140,7 @@ public class DeployDockerInstance {
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
+        instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
