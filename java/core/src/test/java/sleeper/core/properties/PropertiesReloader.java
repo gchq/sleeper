@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.core.properties;
 
 /**
  * Reloads cached configuration properties when trigged if configured to do so.

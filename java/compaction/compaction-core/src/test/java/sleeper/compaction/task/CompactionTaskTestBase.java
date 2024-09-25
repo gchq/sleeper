@@ -26,7 +26,7 @@ import sleeper.compaction.task.CompactionTask.MessageReceiver;
 import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
-import sleeper.configuration.properties.PropertiesReloader;
+import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;

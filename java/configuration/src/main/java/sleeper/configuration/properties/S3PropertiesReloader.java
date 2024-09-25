@@ -17,6 +17,7 @@ package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 
+import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 
