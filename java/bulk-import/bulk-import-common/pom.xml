@@ -29,18 +29,13 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>ingest-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>net.javacrumbs.json-unit</groupId>
             <artifactId>json-unit-assertj</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-core</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 </project>
