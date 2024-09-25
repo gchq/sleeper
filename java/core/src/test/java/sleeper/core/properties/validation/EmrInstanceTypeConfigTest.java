@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.validation;
+package sleeper.core.properties.validation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.properties.validation.EmrInstanceTypeConfig;
 
 import java.util.List;
 import java.util.stream.Stream;

@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.deploy;
+package sleeper.core.properties.deploy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
-import sleeper.core.properties.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.SchemaSerDe;
