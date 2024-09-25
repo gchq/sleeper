@@ -25,9 +25,16 @@ import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPE
 /**
  * Reloads cached configuration properties from S3 when trigged if configured to do so.
  */
-public class S3PropertiesReloader {
+public class S3PropertiesReloader implements PropertiesReloader {
 
-    private S3PropertiesReloader() {
+    private final AmazonS3 s3Client;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+
+    private S3PropertiesReloader(AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        this.s3Client = s3Client;
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     /**
@@ -40,14 +47,7 @@ public class S3PropertiesReloader {
      */
     public static PropertiesReloader ifConfigured(
             AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        return () -> {
-            if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
-                S3InstanceProperties.reload(s3Client, instanceProperties);
-                if (tablePropertiesProvider != null) {
-                    tablePropertiesProvider.clearCache();
-                }
-            }
-        };
+        return new S3PropertiesReloader(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     /**
@@ -60,7 +60,17 @@ public class S3PropertiesReloader {
      */
     public static PropertiesReloader ifConfigured(
             AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        return ifConfigured(s3Client, instanceProperties, null);
+        return new S3PropertiesReloader(s3Client, instanceProperties, null);
+    }
+
+    @Override
+    public void reloadIfNeeded() {
+        if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
+            S3InstanceProperties.reload(s3Client, instanceProperties);
+            if (tablePropertiesProvider != null) {
+                tablePropertiesProvider.clearCache();
+            }
+        }
     }
 
 }
