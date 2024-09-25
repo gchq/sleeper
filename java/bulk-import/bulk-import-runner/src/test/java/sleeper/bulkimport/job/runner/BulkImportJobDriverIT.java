@@ -598,7 +598,7 @@ class BulkImportJobDriverIT {
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
+        return S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient);
     }
 
     private static Schema getSchema() {

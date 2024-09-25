@@ -126,7 +126,7 @@ public class SplitPartitionLambdaIT {
     void shouldSendAsyncRequestToStateStoreCommitter() throws Exception {
         // Given
         tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
-        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(tableProperties);
         List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Record(Map.of("key", i))));
 
@@ -182,7 +182,7 @@ public class SplitPartitionLambdaIT {
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
         try {
             stateStoreProvider().getStateStore(tableProperties)
                     .initialise(partitionTree.getAllPartitions());

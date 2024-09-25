@@ -87,7 +87,7 @@ public class AdminClientPropertiesStore {
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+            return S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                     .loadByNameNoValidation(tableName);
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
@@ -95,7 +95,7 @@ public class AdminClientPropertiesStore {
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).streamAllTables();
+        return S3TableProperties.createStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
@@ -164,7 +164,7 @@ public class AdminClientPropertiesStore {
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
-            S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
+            S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {

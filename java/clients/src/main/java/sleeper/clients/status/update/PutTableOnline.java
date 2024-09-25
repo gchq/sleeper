@@ -38,7 +38,7 @@ public class PutTableOnline {
     private final TablePropertiesStore tablePropertiesStore;
 
     public PutTableOnline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
     public void putOnline(String tableName) {

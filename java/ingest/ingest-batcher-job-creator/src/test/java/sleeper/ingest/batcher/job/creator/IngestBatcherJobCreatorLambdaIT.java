@@ -152,7 +152,7 @@ public class IngestBatcherJobCreatorLambdaIT {
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(tableProperties);
         return tableProperties;
     }
 

@@ -48,7 +48,7 @@ public class DeleteTable {
     private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(instanceProperties, s3Client, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB),
+        this(instanceProperties, s3Client, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
     }
 

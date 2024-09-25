@@ -55,7 +55,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @param  dynamoClient       the DynamoDB client
      * @return                    the store
      */
-    public static TablePropertiesStore getStore(
+    public static TablePropertiesStore createStore(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         return new TablePropertiesStore(
                 new DynamoDBTableIndex(instanceProperties, dynamoClient),
@@ -72,7 +72,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      */
     public static TablePropertiesProvider createProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        return new TablePropertiesProvider(instanceProperties, getStore(instanceProperties, s3Client, dynamoClient));
+        return new TablePropertiesProvider(instanceProperties, createStore(instanceProperties, s3Client, dynamoClient));
     }
 
     @Override

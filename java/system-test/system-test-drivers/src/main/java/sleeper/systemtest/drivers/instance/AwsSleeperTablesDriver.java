@@ -142,7 +142,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
     private void clearBucket(String bucketName) {

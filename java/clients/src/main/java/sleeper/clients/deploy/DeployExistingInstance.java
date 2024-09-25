@@ -191,7 +191,7 @@ public class DeployExistingInstance {
 
         public Builder loadPropertiesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
             properties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
-            tablePropertiesList = S3TableProperties.getStore(properties, s3, dynamoDB)
+            tablePropertiesList = S3TableProperties.createStore(properties, s3, dynamoDB)
                     .streamAllTables().collect(Collectors.toList());
             return this;
         }

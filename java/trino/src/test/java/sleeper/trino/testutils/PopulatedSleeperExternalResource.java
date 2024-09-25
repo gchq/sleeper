@@ -134,7 +134,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private TableProperties createTable(InstanceProperties instanceProperties, TableDefinition tableDefinition) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 

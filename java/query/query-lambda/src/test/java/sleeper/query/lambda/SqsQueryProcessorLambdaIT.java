@@ -798,7 +798,7 @@ public class SqsQueryProcessorLambdaIT {
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);

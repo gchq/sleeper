@@ -38,7 +38,7 @@ public class RenameTable {
     private final TablePropertiesStore tablePropertiesStore;
 
     public RenameTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB));
+        this(S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB));
     }
 
     public RenameTable(TablePropertiesStore tablePropertiesStore) {

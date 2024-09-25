@@ -153,7 +153,7 @@ public class StateStoreCommitterThroughputIT {
 
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
         try {
             stateStoreProvider().getStateStore(tableProperties).initialise();
         } catch (StateStoreException e) {

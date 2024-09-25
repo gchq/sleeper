@@ -116,7 +116,7 @@ public class IngestRandomDataToDocker {
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
             new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)

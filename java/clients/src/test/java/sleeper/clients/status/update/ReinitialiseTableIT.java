@@ -106,7 +106,7 @@ public class ReinitialiseTableIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient);
     private final String s3StateStorePath = tableProperties.get(TABLE_ID) + "/statestore";
 
     @TempDir

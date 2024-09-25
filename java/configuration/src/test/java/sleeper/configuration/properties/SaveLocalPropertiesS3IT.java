@@ -121,7 +121,7 @@ class SaveLocalPropertiesS3IT {
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         return tableProperties;
     }
 }

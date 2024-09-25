@@ -342,7 +342,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();

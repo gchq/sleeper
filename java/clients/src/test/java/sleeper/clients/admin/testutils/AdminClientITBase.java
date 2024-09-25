@@ -89,7 +89,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
     @Override

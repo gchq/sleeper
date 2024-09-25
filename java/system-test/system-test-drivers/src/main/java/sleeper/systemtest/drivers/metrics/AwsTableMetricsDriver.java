@@ -151,7 +151,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         Dimensions dimensions;
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient)
                     .loadByName(tableName);
             dimensions = new Dimensions(instanceProperties, tableProperties);
         } finally {

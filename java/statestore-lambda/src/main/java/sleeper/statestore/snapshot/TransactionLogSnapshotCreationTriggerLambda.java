@@ -79,7 +79,7 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
     private Stream<TableStatus> streamOnlineTransactionLogTables() {
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
-                S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient), Instant::now);
+                S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient), Instant::now);
         return tableIndex.streamOnlineTables()
                 .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
                         .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));

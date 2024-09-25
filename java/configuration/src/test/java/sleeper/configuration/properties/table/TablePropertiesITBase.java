@@ -62,7 +62,7 @@ public abstract class TablePropertiesITBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createValidTableProperties();
-    protected final TablePropertiesStore store = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
+    protected final TablePropertiesStore store = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient);
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final String tableId = tableProperties.get(TABLE_ID);
 

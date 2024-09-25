@@ -84,7 +84,7 @@ public class TestUtils {
             Configuration configuration, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
         tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
-        S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
+        S3TableProperties.createStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
             StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);

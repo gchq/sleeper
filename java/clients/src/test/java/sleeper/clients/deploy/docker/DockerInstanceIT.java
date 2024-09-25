@@ -76,7 +76,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
             // Then
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME)))
@@ -118,7 +118,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
             // Then
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(REVISION_TABLENAME)))
@@ -156,7 +156,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
             // Then
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> describeTables(instanceProperties,
@@ -213,7 +213,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId);
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test");
 
             // When

@@ -127,7 +127,7 @@ public class S3InstanceProperties {
             AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = loadGivenInstanceId(s3, instanceId);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
-                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                         .streamAllTables());
         return instanceProperties;
     }

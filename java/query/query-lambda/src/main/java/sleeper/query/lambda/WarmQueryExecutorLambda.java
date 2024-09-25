@@ -112,7 +112,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         LOGGER.info("Starting to build queries for the tables");
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .streamAllTables()
                 .forEach(tableProperties -> {
                     Schema schema = tableProperties.getSchema();
