@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.QueryLambdaClient;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -79,7 +80,7 @@ public class MultipleQueries {
     }
 
     public void run() {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient);
         QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, systemTestProperties);
 
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();

@@ -15,13 +15,10 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
@@ -46,10 +43,6 @@ public class TablePropertiesProvider {
     private final Supplier<Instant> timeSupplier;
     private final Map<String, CacheEntry> cacheById = new HashMap<>();
     private final Map<String, CacheEntry> cacheByName = new HashMap<>();
-
-    public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
-        this(instanceProperties, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient));
-    }
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore) {
         this(instanceProperties, propertiesStore, Instant::now);

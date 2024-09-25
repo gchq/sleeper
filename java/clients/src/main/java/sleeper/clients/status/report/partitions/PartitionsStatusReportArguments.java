@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
@@ -57,7 +58,7 @@ public class PartitionsStatusReportArguments {
 
     public void runReport(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, PrintStream out) throws StateStoreException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);

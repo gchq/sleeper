@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -136,7 +136,7 @@ public class RunWriteRandomDataTaskOnECS {
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         try (EcsClient ecsClient = EcsClient.create()) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-            TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
+            TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
             List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.run();
             if (args.length > 2) {

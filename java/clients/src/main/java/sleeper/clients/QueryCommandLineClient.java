@@ -24,6 +24,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -66,7 +67,7 @@ public abstract class QueryCommandLineClient {
 
     protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
             ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
+        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
     }
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,

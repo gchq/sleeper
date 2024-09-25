@@ -110,7 +110,7 @@ public class PropertiesReloaderIT {
                 .get(TABLE_NAME);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         provider.getByName(tableName);
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
@@ -131,7 +131,7 @@ public class PropertiesReloaderIT {
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         provider.getByName(tableName);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));

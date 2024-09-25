@@ -29,6 +29,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
@@ -77,7 +78,7 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
             ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
+                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient),
                 in, out, objectFactory, stateStoreProvider);
     }
 

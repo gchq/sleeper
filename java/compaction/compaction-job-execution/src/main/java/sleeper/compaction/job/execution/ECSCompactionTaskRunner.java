@@ -43,6 +43,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
@@ -86,7 +87,7 @@ public class ECSCompactionTaskRunner {
             // Log some basic data if running on EC2 inside ECS
             logEC2Metadata(instanceProperties, ecsClient);
 
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));

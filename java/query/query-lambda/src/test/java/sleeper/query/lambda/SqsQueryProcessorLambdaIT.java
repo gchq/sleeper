@@ -47,7 +47,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -719,7 +718,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void processQuery(Query query) {
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
+        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }

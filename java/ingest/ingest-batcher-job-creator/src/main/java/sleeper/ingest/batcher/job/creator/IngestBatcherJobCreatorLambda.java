@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -76,7 +77,7 @@ public class IngestBatcherJobCreatorLambda {
     public void batchFiles() {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         LOGGER.info("Loaded instance properties from bucket {}", configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
         IngestBatcher batcher = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)

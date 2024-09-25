@@ -33,6 +33,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
@@ -75,7 +76,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
 
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));

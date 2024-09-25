@@ -34,6 +34,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
@@ -134,7 +135,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // Note that the table-properties provider is NOT thread-safe.
         tableNames = new DynamoDBTableIndex(instanceProperties, dynamoDbClient).streamAllTables()
                 .map(TableStatus::getTableName).toList();
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         for (String tableName : tableNames) {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);

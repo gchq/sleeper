@@ -138,7 +138,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, configuration);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);

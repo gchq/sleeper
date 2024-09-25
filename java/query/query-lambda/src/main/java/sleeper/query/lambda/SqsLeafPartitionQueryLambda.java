@@ -31,6 +31,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
@@ -58,7 +59,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
 
     public SqsLeafPartitionQueryLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)

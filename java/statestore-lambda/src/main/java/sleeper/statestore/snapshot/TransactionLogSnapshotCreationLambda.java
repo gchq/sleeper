@@ -31,6 +31,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotCreator;
@@ -60,7 +61,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     @Override

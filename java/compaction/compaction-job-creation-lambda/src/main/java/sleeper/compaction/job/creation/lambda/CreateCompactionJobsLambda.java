@@ -43,6 +43,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
@@ -86,7 +87,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);

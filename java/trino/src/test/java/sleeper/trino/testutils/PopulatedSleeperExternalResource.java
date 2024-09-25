@@ -139,7 +139,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     private TableProperties getTableProperties(String tableName) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         return tablePropertiesProvider.getByName(tableName);
     }
 

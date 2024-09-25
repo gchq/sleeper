@@ -31,6 +31,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -104,7 +105,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)

@@ -35,6 +35,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -76,7 +77,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         LOGGER.debug("Loaded InstanceProperties from {}", s3Bucket);
 
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);

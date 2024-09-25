@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
@@ -107,7 +108,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                    new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient),
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out));
             client.run();
         } finally {

@@ -33,6 +33,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -67,7 +68,7 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 

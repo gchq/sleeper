@@ -36,6 +36,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
@@ -83,7 +84,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     public SplitPartitionLambda(InstanceProperties instanceProperties, Configuration conf, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
         this.conf = conf;
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.sqsClient = sqsClient;

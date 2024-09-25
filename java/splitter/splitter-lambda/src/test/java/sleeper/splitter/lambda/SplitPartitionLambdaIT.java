@@ -193,7 +193,7 @@ public class SplitPartitionLambdaIT {
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
-        return new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     }
 
     private StateStore stateStore() {

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesUtils;
@@ -59,6 +60,19 @@ public class S3TableProperties implements TablePropertiesStore.Client {
         return new TablePropertiesStore(
                 new DynamoDBTableIndex(instanceProperties, dynamoClient),
                 new S3TableProperties(instanceProperties, s3Client));
+    }
+
+    /**
+     * Creates a provider for loading and caching table properties from S3, via the table index.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  s3Client           the S3 client
+     * @param  dynamoClient       the DynamoDB client
+     * @return                    the store
+     */
+    public static TablePropertiesProvider createProvider(
+            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+        return new TablePropertiesProvider(instanceProperties, getStore(instanceProperties, s3Client, dynamoClient));
     }
 
     @Override

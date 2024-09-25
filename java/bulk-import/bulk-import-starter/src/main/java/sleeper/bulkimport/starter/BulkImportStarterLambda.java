@@ -35,6 +35,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -62,7 +63,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, CONFIG_BUCKET.toEnvironmentVariable());
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamo);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);

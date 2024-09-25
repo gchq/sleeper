@@ -40,6 +40,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -73,13 +74,13 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
         super(SOURCE_TYPE);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
 
     public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, secretsManager, athena, SOURCE_TYPE);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
 
     /**

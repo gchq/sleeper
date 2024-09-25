@@ -29,6 +29,7 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
@@ -104,7 +105,7 @@ public class DeadLettersStatusReport {
 
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
             statusReport.run();
         } finally {

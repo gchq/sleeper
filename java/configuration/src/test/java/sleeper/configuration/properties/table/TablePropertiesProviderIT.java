@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableNotFoundException;
 
@@ -27,7 +28,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
-    private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
 
     @Test
     void shouldLoadByName() {

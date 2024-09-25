@@ -130,7 +130,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties) {
-        return new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     }
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {

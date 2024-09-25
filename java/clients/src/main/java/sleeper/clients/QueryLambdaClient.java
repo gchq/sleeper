@@ -24,8 +24,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -61,7 +61,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         this.sqsClient = sqsClient;
         this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
         this.queryQueueUrl = instanceProperties.get(QUERY_QUEUE_URL);
-        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
+        this.querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient));
     }
 
     @Override
