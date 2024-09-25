@@ -32,10 +32,10 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.SleeperVersion;
 
 import java.io.IOException;

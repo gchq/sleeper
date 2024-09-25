@@ -18,8 +18,8 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 
 import java.io.IOException;
 import java.io.StringWriter;

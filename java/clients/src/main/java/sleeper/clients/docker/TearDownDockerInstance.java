@@ -28,7 +28,7 @@ import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 

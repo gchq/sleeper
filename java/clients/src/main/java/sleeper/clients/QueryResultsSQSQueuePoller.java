@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;

@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 

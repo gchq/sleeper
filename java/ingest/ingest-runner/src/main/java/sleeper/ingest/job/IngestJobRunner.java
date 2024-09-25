@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;

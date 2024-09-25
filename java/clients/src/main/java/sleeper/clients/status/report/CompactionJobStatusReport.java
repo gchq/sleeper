@@ -30,7 +30,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableStatus;
 

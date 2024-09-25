@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.task.common.EC2InstanceDetails;
 
 import java.io.BufferedReader;

@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;

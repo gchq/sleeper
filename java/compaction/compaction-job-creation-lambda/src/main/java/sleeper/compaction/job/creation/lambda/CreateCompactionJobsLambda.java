@@ -38,11 +38,11 @@ import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueu
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.PropertiesReloader;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;

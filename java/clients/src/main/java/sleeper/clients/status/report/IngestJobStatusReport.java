@@ -34,7 +34,7 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;

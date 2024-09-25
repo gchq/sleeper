@@ -23,7 +23,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 

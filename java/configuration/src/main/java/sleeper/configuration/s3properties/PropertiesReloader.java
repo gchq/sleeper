@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.s3properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;

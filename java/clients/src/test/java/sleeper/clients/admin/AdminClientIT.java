@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;

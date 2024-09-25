@@ -24,7 +24,7 @@ import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportArguments;
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReporter;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 

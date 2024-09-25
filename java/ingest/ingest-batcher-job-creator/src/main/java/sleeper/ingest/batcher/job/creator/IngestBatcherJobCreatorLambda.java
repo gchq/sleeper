@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 

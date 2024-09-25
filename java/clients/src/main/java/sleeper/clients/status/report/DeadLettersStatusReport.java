@@ -27,8 +27,8 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;

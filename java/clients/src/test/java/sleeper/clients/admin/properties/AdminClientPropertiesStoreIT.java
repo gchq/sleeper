@@ -26,9 +26,9 @@ import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;

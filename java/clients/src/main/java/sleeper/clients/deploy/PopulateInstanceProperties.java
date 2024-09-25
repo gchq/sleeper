@@ -23,7 +23,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Optional;

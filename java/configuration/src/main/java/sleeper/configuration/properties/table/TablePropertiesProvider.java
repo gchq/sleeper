@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;

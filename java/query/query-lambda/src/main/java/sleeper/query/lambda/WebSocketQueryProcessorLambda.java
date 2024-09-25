@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.output.ResultsOutputConstants;

@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;

@@ -19,7 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Properties;
