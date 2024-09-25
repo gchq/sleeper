@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
+package sleeper.core.properties.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
+import sleeper.core.properties.testutils.DummySleeperProperty;
+import sleeper.core.properties.testutils.DummyTableProperty;
 
 import java.util.Iterator;
 import java.util.List;

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+package sleeper.core.properties.instance;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.File;
 import java.io.IOException;
