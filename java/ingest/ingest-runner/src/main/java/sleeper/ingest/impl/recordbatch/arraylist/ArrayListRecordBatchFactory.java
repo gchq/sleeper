@@ -19,7 +19,7 @@ package sleeper.ingest.impl.recordbatch.arraylist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
@@ -27,8 +27,8 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 
 public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchFactory.class);

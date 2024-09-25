@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.query;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.QuerySerDe;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

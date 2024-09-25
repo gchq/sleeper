@@ -40,12 +40,12 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.local.LoadLocalProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -61,18 +61,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
-import static sleeper.configuration.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
+import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 
 /**
  * Collection of utility methods related to the CDK deployment.
@@ -118,7 +118,7 @@ public class Utils {
     /**
      * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
      * has a maximum length of 20 characters. See
-     * {@link sleeper.configuration.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
      *
      * @param  properties the instance properties
      * @return            the cleaned up instance ID

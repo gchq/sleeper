@@ -19,9 +19,9 @@ package sleeper.clients.status.report.partitions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;

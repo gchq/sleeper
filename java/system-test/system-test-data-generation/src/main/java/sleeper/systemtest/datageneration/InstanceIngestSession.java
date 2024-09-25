@@ -30,10 +30,10 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.AssumeSleeperRoleHadoop;
 import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 

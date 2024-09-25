@@ -26,10 +26,10 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.s3properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -37,7 +37,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Lambda function to invoke the batcher to create ingest jobs from files in its store.

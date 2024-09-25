@@ -25,7 +25,7 @@ import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
@@ -45,12 +45,12 @@ import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeFor
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesTest {
     private static final Map<OptionalStack, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(

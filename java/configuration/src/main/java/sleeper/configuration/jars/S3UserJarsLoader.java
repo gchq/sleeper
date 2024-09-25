@@ -21,8 +21,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.CommonProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.CommonProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.File;
 import java.net.MalformedURLException;

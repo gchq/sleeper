@@ -34,13 +34,13 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.deploy.DeployInstanceConfigurationFromTemplates;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
+import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.deploy.DeployInstanceConfigurationFromTemplates;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;

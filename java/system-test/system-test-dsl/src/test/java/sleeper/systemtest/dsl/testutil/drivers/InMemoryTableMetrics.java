@@ -24,7 +24,7 @@ import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class InMemoryTableMetrics {
 

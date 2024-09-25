@@ -18,10 +18,10 @@ package sleeper.configuration.s3properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
-import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 
 /**
  * Reloads cached configuration properties when trigged if configured to do so.

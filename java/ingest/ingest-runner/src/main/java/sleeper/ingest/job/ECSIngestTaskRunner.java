@@ -31,13 +31,13 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.s3properties.PropertiesReloader;
 import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -51,8 +51,8 @@ import sleeper.statestore.StateStoreFactory;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 
 /**
  * Runs an ingest task in ECS. Delegates the running of ingest jobs to {@link IngestJobRunner},

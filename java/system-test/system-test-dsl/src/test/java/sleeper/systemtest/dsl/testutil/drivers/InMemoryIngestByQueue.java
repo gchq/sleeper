@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
@@ -55,7 +55,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class InMemoryIngestByQueue {
     private final Queue<IngestJob> jobsQueue = new LinkedList<>();

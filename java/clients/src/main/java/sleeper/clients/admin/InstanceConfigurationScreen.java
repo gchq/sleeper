@@ -26,11 +26,11 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.MenuOption;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

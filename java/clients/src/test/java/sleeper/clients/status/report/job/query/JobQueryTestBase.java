@@ -24,9 +24,9 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -37,7 +37,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class JobQueryTestBase {

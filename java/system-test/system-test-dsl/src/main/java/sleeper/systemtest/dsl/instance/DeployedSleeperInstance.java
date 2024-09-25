@@ -19,13 +19,13 @@ package sleeper.systemtest.dsl.instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.TAGS;
 
 public final class DeployedSleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);

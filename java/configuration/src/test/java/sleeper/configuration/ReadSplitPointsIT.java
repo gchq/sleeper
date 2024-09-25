@@ -19,8 +19,8 @@ package sleeper.configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.type.StringType;
 
 import java.nio.file.Files;
@@ -30,8 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
+import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
+import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class ReadSplitPointsIT {

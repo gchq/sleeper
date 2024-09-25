@@ -15,9 +15,12 @@
  */
 package sleeper.configuration.properties.table;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.core.properties.table.TablePropertyComputeValue;
 import sleeper.core.properties.table.TablePropertyGroup;
 
 /**

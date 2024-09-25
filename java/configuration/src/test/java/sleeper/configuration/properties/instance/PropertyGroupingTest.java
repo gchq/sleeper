@@ -19,6 +19,11 @@ package sleeper.configuration.properties.instance;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.CdkDefinedInstancePropertyImpl;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.instance.UserDefinedInstancePropertyImpl;
 
 import java.util.ArrayList;
 import java.util.List;

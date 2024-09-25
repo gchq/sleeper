@@ -20,16 +20,16 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Saves and loads instance properties in AWS S3.

@@ -15,7 +15,7 @@
  */
 package sleeper.configuration.statestore;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Gathers state for multiple state stores backed by in-memory transaction logs. Helps with independent management of

@@ -21,7 +21,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 

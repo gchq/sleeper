@@ -18,8 +18,8 @@ package sleeper.statestore.s3;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;

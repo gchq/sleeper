@@ -24,20 +24,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.s3properties.S3InstanceProperties;
 import sleeper.configuration.s3properties.S3TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeleteTable {

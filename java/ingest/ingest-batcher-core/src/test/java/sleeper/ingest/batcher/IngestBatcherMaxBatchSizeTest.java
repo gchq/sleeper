@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 
 public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
     @Nested

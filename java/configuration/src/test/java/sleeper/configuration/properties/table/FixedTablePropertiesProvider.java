@@ -15,6 +15,9 @@
  */
 package sleeper.configuration.properties.table;
 
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;

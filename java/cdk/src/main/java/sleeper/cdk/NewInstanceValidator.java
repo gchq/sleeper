@@ -20,16 +20,16 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class NewInstanceValidator {
     private final AmazonS3 amazonS3;

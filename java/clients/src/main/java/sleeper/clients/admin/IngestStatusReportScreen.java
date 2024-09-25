@@ -27,8 +27,8 @@ import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.task.common.QueueMessageCount;
 
@@ -40,7 +40,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
     private final ConsoleOutput out;

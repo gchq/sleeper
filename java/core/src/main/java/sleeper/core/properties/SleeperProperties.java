@@ -44,8 +44,8 @@ import static java.util.function.Predicate.not;
 
 /**
  * Holds values for Sleeper configuration properties. Abstract class which backs both
- * {@link sleeper.configuration.properties.instance.InstanceProperties} and
- * {@link sleeper.configuration.properties.table.TableProperties}.
+ * {@link sleeper.core.properties.instance.configuration.properties.instance.InstanceProperties} and
+ * {@link sleeper.core.properties.table.configuration.properties.table.TableProperties}.
  *
  * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */

@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);

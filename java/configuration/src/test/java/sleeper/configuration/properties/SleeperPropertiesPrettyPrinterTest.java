@@ -19,17 +19,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -44,8 +44,8 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SleeperPropertiesPrettyPrinterTest {

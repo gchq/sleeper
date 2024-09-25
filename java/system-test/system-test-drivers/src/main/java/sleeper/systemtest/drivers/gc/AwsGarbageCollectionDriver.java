@@ -22,7 +22,7 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
 
 public class AwsGarbageCollectionDriver implements GarbageCollectionDriver {
 

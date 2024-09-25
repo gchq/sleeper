@@ -15,15 +15,15 @@
  */
 package sleeper.configuration.statestore;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableStatus;
 
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Test helper to implement state store provider with fixed state stores. Replaces StateStoreFactory with

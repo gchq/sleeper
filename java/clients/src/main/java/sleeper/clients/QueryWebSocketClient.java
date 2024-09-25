@@ -36,9 +36,9 @@ import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -61,7 +61,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
 public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);

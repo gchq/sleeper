@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -47,8 +47,8 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {

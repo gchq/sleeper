@@ -24,9 +24,9 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
@@ -46,11 +46,11 @@ import java.util.function.Consumer;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactionRunnerTestBase {

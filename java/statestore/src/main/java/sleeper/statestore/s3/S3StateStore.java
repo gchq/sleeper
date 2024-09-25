@@ -18,13 +18,13 @@ package sleeper.statestore.s3;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 /**
  * An implementation of StateStore that stores the information in Parquet files in S3. A DynamoDB table is

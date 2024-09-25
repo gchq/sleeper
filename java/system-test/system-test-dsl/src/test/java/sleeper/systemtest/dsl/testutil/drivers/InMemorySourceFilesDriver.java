@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
@@ -31,7 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 

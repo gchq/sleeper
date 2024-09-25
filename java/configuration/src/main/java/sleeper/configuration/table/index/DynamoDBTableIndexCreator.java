@@ -22,18 +22,18 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ID_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_NAME_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ONLINE_FIELD;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 
 /**
  * Creates the DynamoDB tables required to implement a Sleeper table index. Usually this will be done by the CDK. This

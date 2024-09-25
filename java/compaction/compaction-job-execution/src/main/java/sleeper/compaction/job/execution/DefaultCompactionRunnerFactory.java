@@ -24,10 +24,10 @@ import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.CompactionMethod;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_METHOD;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 
 /**
  * Determines which compaction algorithm should be run based on the table and instance configuration properties and

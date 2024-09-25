@@ -41,10 +41,10 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
 import sleeper.configuration.utils.AwsV2ClientHelper;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.task.common.QueueMessageCount;
 

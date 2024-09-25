@@ -33,7 +33,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class DirectEmrServerlessDriver implements DirectBulkImportDriver {

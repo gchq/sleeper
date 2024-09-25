@@ -22,14 +22,14 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
 /**
  * A simple leaf partition compaction strategy to compact all files over the batch size. Iterates through a list of

@@ -22,7 +22,7 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
 
 public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 

@@ -21,15 +21,15 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
+import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);

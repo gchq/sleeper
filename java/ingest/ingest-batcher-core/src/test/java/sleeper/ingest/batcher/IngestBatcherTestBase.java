@@ -17,9 +17,9 @@ package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherQueues;
 import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
@@ -31,13 +31,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;

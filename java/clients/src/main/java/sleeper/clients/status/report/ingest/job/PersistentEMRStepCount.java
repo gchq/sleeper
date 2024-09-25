@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepSummary;
 
 import sleeper.clients.util.EmrUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
 import java.util.Collections;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static sleeper.clients.util.EmrUtils.listActiveClusters;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {

@@ -18,8 +18,10 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.DummySleeperProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 
 import java.util.Iterator;
 import java.util.List;
@@ -29,10 +31,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesTest {
 

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,9 +30,9 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesNoValidation;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.core.properties.local.LoadLocalProperties.loadInstancePropertiesNoValidation;
 
 class LoadLocalPropertiesInstanceIT {
 

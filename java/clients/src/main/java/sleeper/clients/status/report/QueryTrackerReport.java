@@ -27,8 +27,8 @@ import sleeper.clients.status.report.query.StandardQueryTrackerReporter;
 import sleeper.clients.status.report.query.TrackerQuery;
 import sleeper.clients.status.report.query.TrackerQueryPrompt;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.s3properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryTrackerStore;
 

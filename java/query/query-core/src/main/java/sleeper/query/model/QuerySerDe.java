@@ -18,8 +18,8 @@ package sleeper.query.model;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableNotFoundException;
 

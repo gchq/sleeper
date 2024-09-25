@@ -16,8 +16,8 @@
 
 package sleeper.configuration.properties;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 
 /**

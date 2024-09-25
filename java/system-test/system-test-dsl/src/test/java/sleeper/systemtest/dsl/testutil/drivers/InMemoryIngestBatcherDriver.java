@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
 

@@ -19,8 +19,8 @@ package sleeper.configuration.properties.local;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -32,12 +32,12 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
+import static sleeper.core.properties.local.SaveLocalProperties.saveToDirectory;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SaveLocalPropertiesIT {

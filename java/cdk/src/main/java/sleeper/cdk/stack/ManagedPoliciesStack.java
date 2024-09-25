@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
 

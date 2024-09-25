@@ -18,14 +18,14 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.InstanceProperty.getAll;
+import static sleeper.core.properties.instance.InstanceProperty.getAll;
 
 public class InstancePropertyGroupTest {
     @Test

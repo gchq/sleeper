@@ -19,8 +19,8 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -31,7 +31,7 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 
 public class IngestCoordinatorTestHelper {
     private IngestCoordinatorTestHelper() {

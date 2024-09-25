@@ -25,7 +25,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TableSelectHelperIT extends AdminClientITBase {
     @Test

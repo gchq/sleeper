@@ -22,7 +22,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class PythonIngestLocalFileDriver implements IngestLocalFileByAnyQueueDriver {
     private final SystemTestInstanceContext instance;

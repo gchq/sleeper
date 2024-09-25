@@ -18,9 +18,9 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.validation.IngestQueue;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;

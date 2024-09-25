@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Lambda Function which writes properties to an S3 Bucket.

@@ -19,10 +19,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
@@ -34,8 +34,8 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Runs a direct ingest to write random data.

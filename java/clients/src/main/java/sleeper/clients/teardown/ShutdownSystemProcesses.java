@@ -28,17 +28,17 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
 import sleeper.clients.util.EmrUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {

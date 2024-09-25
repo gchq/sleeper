@@ -17,19 +17,20 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 public class TablePropertiesAsyncCommitsTest {
 

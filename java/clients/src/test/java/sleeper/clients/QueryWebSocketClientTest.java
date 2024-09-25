@@ -27,9 +27,9 @@ import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
@@ -57,9 +57,9 @@ import static sleeper.clients.QueryWebSocketClientTestHelper.message;
 import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
 import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryWebSocketClientTest {

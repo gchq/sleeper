@@ -19,8 +19,8 @@ package sleeper.cdk;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;

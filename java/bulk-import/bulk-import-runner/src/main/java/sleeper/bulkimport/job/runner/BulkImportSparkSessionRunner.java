@@ -33,11 +33,11 @@ import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -49,7 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);

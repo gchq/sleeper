@@ -21,13 +21,13 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
-import static sleeper.configuration.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
-import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD_RANGE;
+import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
+import static sleeper.core.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
+import static sleeper.core.properties.table.TableProperty.S3A_READAHEAD_RANGE;
 
 public class HadoopConfigurationProvider {
 

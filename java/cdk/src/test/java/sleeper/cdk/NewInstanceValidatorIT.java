@@ -35,8 +35,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.IOException;
@@ -48,8 +48,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @Testcontainers
 class NewInstanceValidatorIT {

@@ -15,8 +15,8 @@
  */
 package sleeper.configuration.statestore;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
@@ -24,8 +24,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import static sleeper.configuration.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Caches Sleeper table state store objects up to a maximum size. If the cache is full, the oldest state store objects

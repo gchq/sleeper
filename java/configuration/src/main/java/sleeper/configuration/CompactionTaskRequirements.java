@@ -15,12 +15,12 @@
  */
 package sleeper.configuration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 
 /**
  * Resource requirements for a compaction task. This determines the resources to request from AWS Fargate or EC2.
