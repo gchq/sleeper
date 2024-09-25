@@ -15,11 +15,8 @@
  */
 package sleeper.io.parquet.utils;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -34,12 +31,14 @@ public class HadoopConfigurationProvider {
     private HadoopConfigurationProvider() {
     }
 
+    private static final String DEFAULT_CREDENTIALS_PROVIDER = "com.amazonaws.auth.DefaultAWSCredentialsProviderChain";
+
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+            conf.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
         }
         return conf;
     }
@@ -69,14 +68,14 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+            conf.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
         }
         return conf;
     }
 
     public static Configuration getConfigurationForEKS(InstanceProperties instanceProperties) {
         Configuration configuration = getConfigurationForECS(instanceProperties);
-        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        configuration.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
         return configuration;
     }
 
@@ -105,17 +104,8 @@ public class HadoopConfigurationProvider {
     private static void setLocalStackConfiguration(Configuration conf) {
         conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
         conf.set("fs.s3a.path.style.access", "true");
-        conf.set("fs.s3a.aws.credentials.provider", LocalStackCredentialsProvider.class.getName());
-    }
-
-    public static class LocalStackCredentialsProvider implements AWSCredentialsProvider {
-        @Override
-        public AWSCredentials getCredentials() {
-            return new BasicAWSCredentials("test-access-key", "test-secret-key");
-        }
-
-        @Override
-        public void refresh() {
-        }
+        conf.set("fs.s3a.aws.credentials.provider", SimpleAWSCredentialsProvider.class.getName());
+        conf.set("fs.s3a.access.key", "test-access-key");
+        conf.set("fs.s3a.secret.key", "test-secret-key");
     }
 }
