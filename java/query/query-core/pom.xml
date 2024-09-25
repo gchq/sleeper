@@ -26,6 +26,12 @@
     <artifactId>query-core</artifactId>
 
     <dependencies>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
