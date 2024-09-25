@@ -23,8 +23,8 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.core.ContainerConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.RunIngestTasks;
@@ -48,7 +48,7 @@ public class RunIngestTasksLambda {
 
         this.runTasks = new RunIngestTasks(sqsClient,
                 ecsClient, instanceProperties,
-                PropertiesReloader.ifConfigured(s3Client, instanceProperties),
+                S3PropertiesReloader.ifConfigured(s3Client, instanceProperties),
                 ContainerConstants.INGEST_CONTAINER_NAME);
     }
 

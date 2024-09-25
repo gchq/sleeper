@@ -72,7 +72,7 @@ public class PropertiesReloaderIT {
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
+        PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
@@ -88,7 +88,7 @@ public class PropertiesReloaderIT {
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
+        PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
@@ -109,7 +109,7 @@ public class PropertiesReloaderIT {
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
         TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         provider.getByName(tableName);
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
+        PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
         // When
         reloader.reloadIfNeeded();
@@ -132,7 +132,7 @@ public class PropertiesReloaderIT {
         provider.getByName(tableName);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
+        PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
         // When
         reloader.reloadIfNeeded();

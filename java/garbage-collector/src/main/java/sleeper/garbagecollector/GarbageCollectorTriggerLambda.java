@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
@@ -56,7 +57,7 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 
     @Override

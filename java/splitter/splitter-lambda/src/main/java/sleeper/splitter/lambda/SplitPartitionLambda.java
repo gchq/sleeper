@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -86,7 +87,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         this.conf = conf;
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.sqsClient = sqsClient;
         this.idSupplier = idSupplier;
     }

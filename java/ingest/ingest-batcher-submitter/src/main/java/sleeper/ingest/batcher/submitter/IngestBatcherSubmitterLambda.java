@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -60,7 +61,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
 
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));

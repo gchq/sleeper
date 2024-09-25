@@ -33,6 +33,7 @@ import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -72,7 +73,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfig),
                 ingestJobStatusStore, new BulkImportJobWriterToS3(instanceProperties, s3),
                 platformExecutor, Instant::now);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobStatusStore(ingestJobStatusStore)

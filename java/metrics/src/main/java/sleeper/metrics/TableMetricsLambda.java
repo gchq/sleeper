@@ -35,6 +35,7 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -75,7 +76,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override
