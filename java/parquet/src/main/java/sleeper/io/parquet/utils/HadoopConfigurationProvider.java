@@ -15,6 +15,7 @@
  */
 package sleeper.io.parquet.utils;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
 
@@ -31,14 +32,12 @@ public class HadoopConfigurationProvider {
     private HadoopConfigurationProvider() {
     }
 
-    private static final String DEFAULT_CREDENTIALS_PROVIDER = "com.amazonaws.auth.DefaultAWSCredentialsProviderChain";
-
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
+            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         }
         return conf;
     }
@@ -68,14 +67,14 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
+            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         }
         return conf;
     }
 
     public static Configuration getConfigurationForEKS(InstanceProperties instanceProperties) {
         Configuration configuration = getConfigurationForECS(instanceProperties);
-        configuration.set("fs.s3a.aws.credentials.provider", DEFAULT_CREDENTIALS_PROVIDER);
+        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         return configuration;
     }
 
