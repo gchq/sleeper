@@ -18,13 +18,13 @@ package sleeper.statestore;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.statestore.FixedStateStoreProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 
 import java.util.List;
 

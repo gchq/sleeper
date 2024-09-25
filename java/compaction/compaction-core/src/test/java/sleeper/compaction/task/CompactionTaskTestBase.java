@@ -27,7 +27,6 @@ import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -35,6 +34,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 
 import java.time.Duration;

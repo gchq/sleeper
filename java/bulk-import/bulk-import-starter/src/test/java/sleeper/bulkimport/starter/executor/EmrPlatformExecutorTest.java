@@ -38,12 +38,12 @@ import software.amazon.awssdk.services.emr.model.RunJobFlowResponse;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -46,6 +45,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;

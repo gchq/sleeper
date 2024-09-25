@@ -27,7 +27,6 @@ import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CompactionProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -36,6 +35,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 

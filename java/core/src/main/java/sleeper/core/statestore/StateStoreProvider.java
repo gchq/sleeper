@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.statestore;
+package sleeper.core.statestore;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -42,7 +41,7 @@ public class StateStoreProvider {
         this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
-    protected StateStoreProvider(int cacheSize, Factory stateStoreFactory) {
+    public StateStoreProvider(int cacheSize, Factory stateStoreFactory) {
         this.cacheSize = cacheSize;
         this.stateStoreFactory = stateStoreFactory;
     }

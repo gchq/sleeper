@@ -19,7 +19,6 @@ package sleeper.ingest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -30,6 +29,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 
 import java.io.IOException;

@@ -20,12 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.CheckLeafPartitionCount;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.ingest.job.status.IngestJobFailedEvent;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 

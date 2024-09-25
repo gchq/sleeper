@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.statestore;
+package sleeper.core.statestore;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.StateStoreTestHelper;
 
 import java.util.ArrayList;
