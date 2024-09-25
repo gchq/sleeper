@@ -26,6 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -43,7 +44,6 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -94,7 +94,7 @@ public class PartitionsStatusReportIT {
     }
 
     private InstanceProperties createTestInstance() {
-        InstanceProperties properties = createTestInstanceProperties(s3);
+        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3);
         s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
         new TransactionLogStateStoreCreator(properties, dynamoDB).create();

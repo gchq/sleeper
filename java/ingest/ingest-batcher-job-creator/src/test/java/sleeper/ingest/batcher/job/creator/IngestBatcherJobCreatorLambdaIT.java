@@ -31,6 +31,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -50,7 +51,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -145,7 +145,7 @@ public class IngestBatcherJobCreatorLambdaIT {
     }
 
     private InstanceProperties createTestInstance(Consumer<InstanceProperties> config) {
-        InstanceProperties instance = createTestInstanceProperties(s3, config);
+        InstanceProperties instance = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3, config);
         DynamoDBTableIndexCreator.create(dynamoDB, instance);
         return instance;
     }

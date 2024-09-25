@@ -15,8 +15,6 @@
  */
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.s3.AmazonS3;
-
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
 
@@ -25,7 +23,6 @@ import java.io.StringWriter;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
@@ -65,39 +62,6 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_R
 public class InstancePropertiesTestHelper {
 
     private InstancePropertiesTestHelper() {
-    }
-
-    /**
-     * Creates properties for a Sleeper instance and saves them to S3. Generates a random instance ID and pre-populates
-     * various properties set during deployment.
-     *
-     * @param  s3 the S3 client
-     * @return    the instance properties
-     */
-    public static InstanceProperties createTestInstanceProperties(AmazonS3 s3) {
-        return createTestInstanceProperties(s3, properties -> {
-        });
-    }
-
-    /**
-     * Creates properties for a Sleeper instance and saves them to S3. Generates a random instance ID and pre-populates
-     * various properties set during deployment.
-     *
-     * @param  s3              the S3 client
-     * @param  extraProperties extra configuration to apply before saving to S3
-     * @return                 the instance properties
-     */
-    public static InstanceProperties createTestInstanceProperties(
-            AmazonS3 s3, Consumer<InstanceProperties> extraProperties) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        extraProperties.accept(instanceProperties);
-        try {
-            s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-            S3InstanceProperties.saveToS3(s3, instanceProperties);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to save instance properties", e);
-        }
-        return instanceProperties;
     }
 
     /**

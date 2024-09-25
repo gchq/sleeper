@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -113,7 +112,7 @@ class SaveLocalPropertiesS3IT {
     }
 
     private InstanceProperties createTestInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties(s3Client);
+        InstanceProperties instanceProperties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         return instanceProperties;
