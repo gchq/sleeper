@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.core.properties.instance;
 
 import org.junit.jupiter.api.Test;
-
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.List;
 
