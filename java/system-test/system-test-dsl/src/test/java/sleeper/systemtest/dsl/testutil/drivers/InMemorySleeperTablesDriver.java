@@ -36,7 +36,7 @@ import java.util.TreeMap;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
 public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
 

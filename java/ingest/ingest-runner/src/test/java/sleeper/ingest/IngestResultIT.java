@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.statestore.StateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 
 class IngestResultIT extends IngestRecordsTestBase {

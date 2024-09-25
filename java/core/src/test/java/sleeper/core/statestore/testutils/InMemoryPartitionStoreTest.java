@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.statestore.inmemory;
+package sleeper.core.statestore.testutils;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

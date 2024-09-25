@@ -21,7 +21,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.inmemory.StateStoreTestHelper;
+import sleeper.core.statestore.testutils.StateStoreTestHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;

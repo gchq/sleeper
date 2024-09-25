@@ -24,7 +24,7 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 
 import java.util.List;
 
