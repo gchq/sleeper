@@ -17,14 +17,14 @@ package sleeper.configuration.properties.deploy;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.table.TablePropertyGroup;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

@@ -17,6 +17,7 @@
 package sleeper.configuration.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.validation.CompactionECSLaunchType;
 import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;

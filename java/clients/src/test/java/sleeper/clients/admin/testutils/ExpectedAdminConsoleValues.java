@@ -15,9 +15,9 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
-import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.table.TablePropertyGroup;
 
 import java.util.List;
 import java.util.stream.Collectors;

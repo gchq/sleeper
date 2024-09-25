@@ -29,9 +29,9 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.properties.validation.OptionalStack;
 
 import static org.assertj.core.api.Assertions.assertThat;

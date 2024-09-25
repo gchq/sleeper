@@ -19,6 +19,7 @@ import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.instance.InstancePropertyGroup;
 
 import java.io.IOException;
 import java.io.PrintWriter;

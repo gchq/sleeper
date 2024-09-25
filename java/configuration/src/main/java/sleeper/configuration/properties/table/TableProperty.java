@@ -21,6 +21,7 @@ import sleeper.configuration.properties.validation.DefaultAsyncCommitBehaviour;
 import sleeper.configuration.properties.validation.IngestQueue;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.properties.validation.CompressionCodec;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;

@@ -26,6 +26,7 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;

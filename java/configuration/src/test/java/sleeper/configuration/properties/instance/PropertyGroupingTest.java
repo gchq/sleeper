@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.InstancePropertyGroup.BULK_IMPORT;
-import static sleeper.configuration.properties.instance.InstancePropertyGroup.COMMON;
-import static sleeper.configuration.properties.instance.InstancePropertyGroup.INGEST;
+import static sleeper.core.properties.instance.InstancePropertyGroup.BULK_IMPORT;
+import static sleeper.core.properties.instance.InstancePropertyGroup.COMMON;
+import static sleeper.core.properties.instance.InstancePropertyGroup.INGEST;
 
 class PropertyGroupingTest {
     private final List<PropertyGroup> groups = List.of(COMMON, INGEST, BULK_IMPORT);

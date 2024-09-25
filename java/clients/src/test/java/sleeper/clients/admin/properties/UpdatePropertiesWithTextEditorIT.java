@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.table.TablePropertyGroup;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
