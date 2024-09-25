@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.statestore.inmemory;
+package sleeper.core.statestore;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,10 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReferences;
-import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
 import java.util.List;
