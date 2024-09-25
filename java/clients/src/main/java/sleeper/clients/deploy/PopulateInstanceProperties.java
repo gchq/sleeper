@@ -20,7 +20,6 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -83,7 +82,7 @@ public class PopulateInstanceProperties {
 
     public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
         InstanceProperties instanceProperties = populateDefaultsFromInstanceId(new InstanceProperties(), instanceId);
-        instanceProperties.set(CONFIG_BUCKET, S3InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
                 .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));

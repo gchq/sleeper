@@ -63,7 +63,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (clients.getS3().doesBucketExistV2(S3InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (clients.getS3().doesBucketExistV2(InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);

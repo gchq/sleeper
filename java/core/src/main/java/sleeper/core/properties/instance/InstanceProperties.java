@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -151,6 +152,16 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     @Override
     protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
         return createPrettyPrinter(writer);
+    }
+
+    /**
+     * Infers the name of the config bucket for a given Sleeper instance.
+     *
+     * @param  instanceId the Sleeper instance ID
+     * @return            the config bucket name
+     */
+    public static String getConfigBucketFromInstanceId(String instanceId) {
+        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 
     /**

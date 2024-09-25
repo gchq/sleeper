@@ -25,7 +25,6 @@ import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
@@ -109,7 +108,7 @@ public class S3InstanceProperties {
      * @param instanceId the Sleeper instance ID
      */
     public static void reloadGivenInstanceId(AmazonS3 s3Client, InstanceProperties properties, String instanceId) {
-        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId)));
+        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId)));
     }
 
     /**
@@ -133,21 +132,11 @@ public class S3InstanceProperties {
     }
 
     private static Properties loadPropertiesGivenInstanceId(AmazonS3 s3Client, String instanceId) {
-        return loadPropertiesFromBucket(s3Client, getConfigBucketFromInstanceId(instanceId));
+        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
     }
 
     private static Properties loadPropertiesFromBucket(AmazonS3 s3Client, String bucket) {
         return loadProperties(s3Client.getObjectAsString(bucket, S3_INSTANCE_PROPERTIES_FILE));
-    }
-
-    /**
-     * Infers the name of the config bucket for a given Sleeper instance.
-     *
-     * @param  instanceId the Sleeper instance ID
-     * @return            the config bucket name
-     */
-    public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 
 }

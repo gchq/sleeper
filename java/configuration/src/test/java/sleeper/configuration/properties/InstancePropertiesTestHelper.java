@@ -74,7 +74,7 @@ public class InstancePropertiesTestHelper {
         String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
-        instanceProperties.set(CONFIG_BUCKET, S3InstanceProperties.getConfigBucketFromInstanceId(id));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(ACCOUNT, "test-account");
