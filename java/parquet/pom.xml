@@ -59,9 +59,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Hadoop uses AWS SDK v1 -->
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
+            <artifactId>aws-java-sdk-s3</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
