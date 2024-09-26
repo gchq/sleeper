@@ -41,7 +41,7 @@ public class AutoDeleteS3Objects {
     public static void autoDeleteForBucket(Construct scope, BuiltJars jars, InstanceProperties instanceProperties, IBucket bucket) {
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
-        autoDeleteForBucket(scope, jar, instanceProperties, jarsBucket);
+        autoDeleteForBucket(scope, jar, instanceProperties, bucket);
     }
 
     public static void autoDeleteForBucket(Construct scope, LambdaCode customResourcesJar, InstanceProperties instanceProperties, IBucket bucket) {
