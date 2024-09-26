@@ -16,6 +16,7 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -67,6 +68,29 @@ public class AutoDeleteS3ObjectsLambdaIT extends LocalStackTestBase {
 
         // Then
         assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+    }
+
+    @Test
+    void shouldDoNothingOnCreate() {
+        // Given
+        String bucketName = UUID.randomUUID().toString();
+        s3Client.createBucket(bucketName);
+        s3Client.putObject(bucketName, "test.txt", "some content");
+
+        // When
+        lambda().handleEvent(createEventForBucket(bucketName), null);
+
+        // Then
+        assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .containsExactly("test.txt");
+    }
+
+    private CloudFormationCustomResourceEvent createEventForBucket(String bucketName) {
+        return CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(Map.of("bucket", bucketName))
+                .build();
     }
 
     private CloudFormationCustomResourceEvent deleteEventForBucket(String bucketName) {
