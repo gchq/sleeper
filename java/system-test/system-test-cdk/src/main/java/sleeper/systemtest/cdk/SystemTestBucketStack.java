@@ -69,7 +69,6 @@ public class SystemTestBucketStack extends NestedStack {
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
-                .autoDeleteObjects(true)
                 .build();
         AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, bucket);
         return bucket;
