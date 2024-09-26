@@ -191,6 +191,8 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname/>
+        <sleeper.system.test.ecs.security.groups/>
+        <sleeper.system.test.log.retention.days/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
@@ -1301,6 +1303,14 @@
                             <property>
                                 <name>sleeper.system.test.force.statestore.classname</name>
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.ecs.security.groups</name>
+                                <value>${sleeper.system.test.ecs.security.groups}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.log.retention.days</name>
+                                <value>${sleeper.system.test.log.retention.days}</value>
                             </property>
                         </systemProperties>
                     </configuration>

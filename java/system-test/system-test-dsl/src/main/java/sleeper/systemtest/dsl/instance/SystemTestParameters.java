@@ -20,6 +20,7 @@ import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -28,8 +29,18 @@ import java.util.UUID;
 
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestParameters {
 
@@ -45,6 +56,8 @@ public class SystemTestParameters {
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
+    private final String ecsSecurityGroups;
+    private final String logRetentionDays;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
@@ -59,6 +72,8 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
+        ecsSecurityGroups = builder.ecsSecurityGroups;
+        logRetentionDays = builder.logRetentionDays;
     }
 
     public static Builder builder() {
@@ -152,6 +167,12 @@ public class SystemTestParameters {
     public void setRequiredProperties(DeployInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
         properties.set(ECR_REPOSITORY_PREFIX, shortTestId);
+        if (ecsSecurityGroups != null) {
+            properties.set(ECS_SECURITY_GROUPS, ecsSecurityGroups);
+        }
+        if (logRetentionDays != null) {
+            properties.set(LOG_RETENTION_IN_DAYS, logRetentionDays);
+        }
         for (TableProperties tableProperties : deployConfig.getTableProperties()) {
             setRequiredProperties(tableProperties);
         }
@@ -161,6 +182,17 @@ public class SystemTestParameters {
         if (forceStateStoreClassname != null) {
             tableProperties.set(STATESTORE_CLASSNAME, forceStateStoreClassname);
         }
+    }
+
+    public void setRequiredProperties(SystemTestStandaloneProperties properties) {
+        properties.set(SYSTEM_TEST_ID, getSystemTestShortId());
+        properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
+        properties.set(SYSTEM_TEST_REGION, getRegion());
+        properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
+        properties.set(SYSTEM_TEST_JARS_BUCKET, buildJarsBucketName());
+        properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
+        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
+        properties.set(SYSTEM_TEST_LOG_RETENTION_DAYS, logRetentionDays);
     }
 
     private static Path findScriptsDir() {
@@ -205,6 +237,8 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
+        private String ecsSecurityGroups;
+        private String logRetentionDays;
 
         private Builder() {
         }
@@ -269,6 +303,16 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder ecsSecurityGroups(String ecsSecurityGroups) {
+            this.ecsSecurityGroups = ecsSecurityGroups;
+            return this;
+        }
+
+        public Builder logRetentionDays(String logRetentionDays) {
+            this.logRetentionDays = logRetentionDays;
+            return this;
+        }
+
         public Builder loadFromSystemProperties() {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
@@ -280,7 +324,9 @@ public class SystemTestParameters {
                     .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
-                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null));
+                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
+                    .ecsSecurityGroups(getOptionalProperty("sleeper.system.test.ecs.security.groups").orElse(null))
+                    .logRetentionDays(getOptionalProperty("sleeper.system.test.log.retention.days").orElse(null));
         }
 
         public Builder findDirectories() {
