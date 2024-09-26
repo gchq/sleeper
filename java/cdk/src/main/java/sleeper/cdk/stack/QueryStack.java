@@ -52,6 +52,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -98,6 +99,9 @@ public class QueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
+        LambdaCode customResourcesJar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
 
@@ -118,9 +122,8 @@ public class QueryStack extends NestedStack {
 
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
-        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, jarsBucket, queryTrackingTable, errorMetrics);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, customResourcesJar, jarsBucket, queryTrackingTable, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -204,11 +207,12 @@ public class QueryStack extends NestedStack {
      * @return                    the lambda created
      */
     private IFunction setupLeafPartitionQueryQueueAndLambda(
-            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic, LambdaCode queryJar,
+            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
+            LambdaCode queryJar, LambdaCode customResourcesJar,
             IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
-        IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, customResourcesJar);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
         IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
@@ -339,9 +343,10 @@ public class QueryStack extends NestedStack {
      * Creates the bucket used to store results.
      *
      * @param  instanceProperties containing configuration details
+     * @param  customResourcesJar the jar for deploying custom CDK resources
      * @return                    the bucket created
      */
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, LambdaCode customResourcesJar) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
@@ -350,11 +355,15 @@ public class QueryStack extends NestedStack {
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
-                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
+                .removalPolicy(removalPolicy)
                 .lifecycleRules(Collections.singletonList(
                         LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
+
+        if (removalPolicy == RemovalPolicy.DESTROY) {
+            AutoDeleteS3Objects.autoDeleteForBucket(this, customResourcesJar, instanceProperties, resultsBucket);
+        }
 
         return resultsBucket;
     }
