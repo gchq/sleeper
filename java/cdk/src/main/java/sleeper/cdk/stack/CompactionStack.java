@@ -74,10 +74,10 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
@@ -94,9 +94,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;

@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;

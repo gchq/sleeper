@@ -35,9 +35,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 

@@ -18,7 +18,7 @@ package sleeper.cdk;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.cdk.Utils.normaliseSize;
+import static sleeper.cdk.util.Utils.normaliseSize;
 
 class UtilsNormaliseSizeTest {
 

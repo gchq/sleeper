@@ -33,19 +33,19 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_QUEUE_ARN;

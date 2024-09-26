@@ -20,7 +20,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;

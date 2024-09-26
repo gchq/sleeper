@@ -19,6 +19,8 @@ package sleeper.cdk;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.cdk.util.MismatchedVersionException;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 

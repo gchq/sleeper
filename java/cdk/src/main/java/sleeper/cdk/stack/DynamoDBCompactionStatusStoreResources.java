@@ -28,7 +28,7 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public final class DynamoDBCompactionStatusStoreResources implements CompactionStatusStoreResources {

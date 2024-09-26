@@ -32,17 +32,17 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;

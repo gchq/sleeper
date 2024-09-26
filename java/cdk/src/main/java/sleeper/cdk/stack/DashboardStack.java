@@ -31,7 +31,7 @@ import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperty;
 

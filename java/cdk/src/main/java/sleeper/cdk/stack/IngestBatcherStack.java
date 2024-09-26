@@ -36,10 +36,10 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -49,10 +49,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;

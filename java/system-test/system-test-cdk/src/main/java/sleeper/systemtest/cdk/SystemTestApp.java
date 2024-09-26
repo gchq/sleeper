@@ -23,8 +23,8 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.SleeperCdkApp;
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 

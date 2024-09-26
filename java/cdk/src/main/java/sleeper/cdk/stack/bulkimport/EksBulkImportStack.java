@@ -60,11 +60,11 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -76,8 +76,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;

@@ -34,17 +34,17 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;

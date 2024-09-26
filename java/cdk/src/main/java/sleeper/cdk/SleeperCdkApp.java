@@ -67,6 +67,7 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
