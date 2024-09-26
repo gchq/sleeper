@@ -53,7 +53,7 @@ public class AutoDeleteS3Objects {
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.AutoDeleteS3ObjectsLambda::handleEvent")
                 .memorySize(2048)
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(createLambdaLogGroup(scope, id + "LambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));

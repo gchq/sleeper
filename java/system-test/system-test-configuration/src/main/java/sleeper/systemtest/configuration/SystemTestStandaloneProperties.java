@@ -24,6 +24,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 
 import java.io.PrintWriter;
@@ -33,7 +34,14 @@ import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestStandaloneProperties
         extends SleeperProperties<SystemTestProperty>
@@ -95,6 +103,17 @@ public class SystemTestStandaloneProperties
         return SleeperPropertiesPrettyPrinter.builder()
                 .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON))
                 .build();
+    }
+
+    public InstanceProperties toInstancePropertiesForCdkUtils() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(LOG_RETENTION_IN_DAYS, get(SYSTEM_TEST_LOG_RETENTION_DAYS));
+        instanceProperties.set(LOGGING_LEVEL, "DEBUG");
+        instanceProperties.set(ROOT_LOGGING_LEVEL, "INFO");
+        instanceProperties.set(APACHE_LOGGING_LEVEL, "INFO");
+        instanceProperties.set(PARQUET_LOGGING_LEVEL, "WARN");
+        instanceProperties.set(AWS_LOGGING_LEVEL, "INFO");
+        return instanceProperties;
     }
 
     public static String buildSystemTestBucketName(String deploymentId) {
