@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
 

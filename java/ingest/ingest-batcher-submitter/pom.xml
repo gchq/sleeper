@@ -42,6 +42,11 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>ingest-batcher-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

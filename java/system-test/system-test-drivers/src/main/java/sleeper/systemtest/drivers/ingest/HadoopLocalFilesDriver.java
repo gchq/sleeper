@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;

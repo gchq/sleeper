@@ -18,10 +18,10 @@ package sleeper.systemtest.drivers.testutil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class LocalStackSnapshotsDriver implements SnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSnapshotsDriver.class);

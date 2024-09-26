@@ -21,9 +21,9 @@ import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 
 public class CompactionDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;

@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 
 public interface AssumeAdminRoleDriver {

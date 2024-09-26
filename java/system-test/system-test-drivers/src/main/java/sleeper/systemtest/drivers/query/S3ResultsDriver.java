@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class S3ResultsDriver implements ClearQueryResultsDriver {
     private final SystemTestInstanceContext instance;

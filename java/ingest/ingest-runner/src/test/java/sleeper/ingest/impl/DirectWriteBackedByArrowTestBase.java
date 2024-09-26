@@ -19,7 +19,7 @@ package sleeper.ingest.impl;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
+import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 

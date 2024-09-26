@@ -16,9 +16,9 @@
 package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.configuration.TableFilePaths;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
@@ -26,9 +26,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 

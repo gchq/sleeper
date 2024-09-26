@@ -18,7 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.NestedStack;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 public class CompactionStatusStoreStack extends NestedStack {
     private final CompactionStatusStoreResources resources;

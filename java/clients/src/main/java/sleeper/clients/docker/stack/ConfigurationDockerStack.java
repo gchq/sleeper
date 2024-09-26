@@ -18,10 +18,10 @@ package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class ConfigurationDockerStack implements DockerStack {
     private final AmazonS3 s3Client;

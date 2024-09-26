@@ -17,8 +17,8 @@ package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperPropertiesInvalidException;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
@@ -26,15 +26,15 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
-import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EKS;
-import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_EMR;
-import static sleeper.configuration.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.validation.IngestQueue.BULK_IMPORT_EKS;
+import static sleeper.core.properties.validation.IngestQueue.BULK_IMPORT_EMR;
+import static sleeper.core.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
+import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 
 class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 

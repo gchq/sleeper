@@ -17,9 +17,9 @@
 package sleeper.systemtest.drivers.query;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;

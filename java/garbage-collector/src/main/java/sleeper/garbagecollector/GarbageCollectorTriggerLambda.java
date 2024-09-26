@@ -27,19 +27,20 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.invoke.tables.InvokeForTables;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECT_OFFLINE_TABLES;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECT_OFFLINE_TABLES;
 
 /**
  * A lambda to invoke garbage collection with batches of tables. Sends batches to an SQS queue.
@@ -56,7 +57,7 @@ public class GarbageCollectorTriggerLambda implements RequestHandler<ScheduledEv
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }
 
     @Override

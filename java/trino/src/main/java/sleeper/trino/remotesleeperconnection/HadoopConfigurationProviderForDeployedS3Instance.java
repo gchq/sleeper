@@ -18,7 +18,7 @@ package sleeper.trino.remotesleeperconnection;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForECS;
 

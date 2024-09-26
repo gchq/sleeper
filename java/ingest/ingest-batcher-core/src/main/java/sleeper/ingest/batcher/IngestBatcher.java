@@ -19,10 +19,10 @@ package sleeper.ingest.batcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.validation.IngestQueue;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.job.IngestJob;
 
@@ -38,12 +38,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcher {

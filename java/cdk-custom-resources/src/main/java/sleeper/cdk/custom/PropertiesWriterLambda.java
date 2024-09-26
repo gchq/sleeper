@@ -22,13 +22,13 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Lambda Function which writes properties to an S3 Bucket.

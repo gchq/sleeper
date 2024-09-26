@@ -29,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
@@ -51,9 +51,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 /*
@@ -112,7 +112,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         LOGGER.info("Starting to build queries for the tables");
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .streamAllTables()
                 .forEach(tableProperties -> {
                     Schema schema = tableProperties.getSchema();

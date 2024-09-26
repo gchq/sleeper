@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.properties;
 
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.core.properties.PropertyGroup;
 
 public class PropertyGroupWithCategory {
     public static final Category INSTANCE = Category.INSTANCE;

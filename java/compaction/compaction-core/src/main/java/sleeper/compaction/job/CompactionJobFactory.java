@@ -16,8 +16,8 @@
 package sleeper.compaction.job;
 
 import sleeper.configuration.TableFilePaths;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;
@@ -25,9 +25,9 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobFactory {
 

@@ -26,9 +26,10 @@ import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.status.report.filestatus.TableFilesStatus;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
@@ -119,7 +120,7 @@ public class FilesStatusReport {
 
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(tableName));
             new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();

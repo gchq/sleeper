@@ -20,16 +20,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.splitter.status.PartitionsStatusTestHelper.createPartitionsBuilder;
 import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.splitter.status.PartitionsStatusTestHelper.createTableProperties;

@@ -31,12 +31,12 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -191,7 +191,7 @@ public class DeployExistingInstance {
 
         public Builder loadPropertiesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
             properties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
-            tablePropertiesList = S3TableProperties.getStore(properties, s3, dynamoDB)
+            tablePropertiesList = S3TableProperties.createStore(properties, s3, dynamoDB)
                     .streamAllTables().collect(Collectors.toList());
             return this;
         }

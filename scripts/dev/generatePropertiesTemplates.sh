@@ -24,6 +24,6 @@ echo "Compiling..."
 mvn install -Pquick -q -pl configuration -am
 echo "Regenerating templates..."
 mvn exec:java -q -pl configuration \
-  -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
+  -Dexec.mainClass="sleeper.core.properties.deploy.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
 popd

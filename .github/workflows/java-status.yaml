@@ -43,7 +43,7 @@ jobs:
           PROJECT_ROOT=$(cd .. && pwd)
           mvn install -Pquick -q -e -pl configuration -am -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl configuration \
-            -Dexec.mainClass=sleeper.configuration.properties.format.GeneratePropertiesTemplates \
+            -Dexec.mainClass=sleeper.core.properties.deploy.GeneratePropertiesTemplates \
             -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then

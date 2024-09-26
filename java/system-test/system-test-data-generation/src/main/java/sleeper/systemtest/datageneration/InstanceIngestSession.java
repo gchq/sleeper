@@ -30,10 +30,10 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.AssumeSleeperRoleHadoop;
 import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -57,7 +57,7 @@ public class InstanceIngestSession implements AutoCloseable {
         this.s3Async = roleV2.buildClient(S3AsyncClient.builder());
         this.hadoopConfiguration = roleHadoop.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         this.instanceProperties = instanceProperties;
-        this.tableProperties = new TablePropertiesProvider(instanceProperties, s3, dynamo)
+        this.tableProperties = S3TableProperties.createProvider(instanceProperties, s3, dynamo)
                 .getByName(tableName);
     }
 

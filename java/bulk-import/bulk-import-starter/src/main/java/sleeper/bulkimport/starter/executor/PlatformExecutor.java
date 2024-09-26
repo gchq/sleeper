@@ -19,8 +19,8 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {
     String PLATFORM_ENV_VARIABLE = "BULK_IMPORT_PLATFORM";

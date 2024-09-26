@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestStateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStore.class);

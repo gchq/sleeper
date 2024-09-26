@@ -18,9 +18,9 @@ package sleeper.splitter.find;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableStatus;
 
@@ -30,7 +30,7 @@ import java.util.Optional;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class PartitionSplitCheck {
     public static final Logger LOGGER = LoggerFactory.getLogger(PartitionSplitCheck.class);

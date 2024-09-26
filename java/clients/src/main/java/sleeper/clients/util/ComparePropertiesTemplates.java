@@ -17,11 +17,11 @@ package sleeper.clients.util;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.format.GeneratePropertiesTemplates;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.deploy.GeneratePropertiesTemplates;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -34,7 +34,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class ComparePropertiesTemplates {
 

@@ -24,14 +24,14 @@ import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TerminateEMRServerlessApplications {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRServerlessApplications.class);

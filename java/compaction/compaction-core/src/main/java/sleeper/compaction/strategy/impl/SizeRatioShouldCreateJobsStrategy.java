@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.ShouldCreateJobsStrategy;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;

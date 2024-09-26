@@ -29,7 +29,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;

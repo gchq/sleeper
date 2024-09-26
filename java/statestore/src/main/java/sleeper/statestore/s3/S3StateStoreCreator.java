@@ -24,11 +24,11 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 
 /**
  * Creates the DynamoDB tables necessary for an S3 state store. Mainly used for testing purposes as the creation of the

@@ -18,14 +18,14 @@ package sleeper.systemtest.datageneration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.validation.IngestQueue;
+import sleeper.core.properties.validation.IngestQueue;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.util.Collections;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 
 public class IngestRandomDataViaQueue {

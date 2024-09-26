@@ -17,10 +17,10 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.CommandRunner;
-import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +29,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithTextEditorTestHelper {
     private final Path tempDir;

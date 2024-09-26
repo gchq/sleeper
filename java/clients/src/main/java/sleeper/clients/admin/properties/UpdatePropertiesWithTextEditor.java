@@ -17,12 +17,12 @@ package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandRunner;
-import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithTextEditor {
 
@@ -52,25 +52,25 @@ public class UpdatePropertiesWithTextEditor {
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
         InstanceProperties updatedProperties = InstanceProperties.createWithoutValidation(
-                editProperties(properties, SleeperPropertiesPrettyPrinter::forInstanceProperties));
+                editProperties(properties, InstanceProperties::createPrettyPrinter));
         return buildRequest(properties, updatedProperties);
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
         TableProperties updatedProperties = TableProperties.recreateWithoutValidation(properties,
-                editProperties(properties, SleeperPropertiesPrettyPrinter::forTableProperties));
+                editProperties(properties, TableProperties::createPrettyPrinter));
         return buildRequest(properties, updatedProperties);
     }
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(
             InstanceProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> InstanceProperties.createPrettyPrinterWithGroup(writer, propertyGroup));
         return buildRequest(properties, InstanceProperties.createWithoutValidation(after));
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer -> TableProperties.createPrettyPrinterWithGroup(writer, propertyGroup));
         return buildRequest(properties, TableProperties.recreateWithoutValidation(properties, after));
     }
 

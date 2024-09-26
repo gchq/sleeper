@@ -30,11 +30,11 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.model.Query;
@@ -46,8 +46,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
 public class DockerInstanceTestBase {

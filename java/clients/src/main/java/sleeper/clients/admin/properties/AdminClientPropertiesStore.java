@@ -29,15 +29,15 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperPropertyValues;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.S3InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreFactory;
@@ -52,9 +52,9 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
@@ -87,7 +87,7 @@ public class AdminClientPropertiesStore {
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+            return S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                     .loadByNameNoValidation(tableName);
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
@@ -95,7 +95,7 @@ public class AdminClientPropertiesStore {
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).streamAllTables();
+        return S3TableProperties.createStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
@@ -139,10 +139,10 @@ public class AdminClientPropertiesStore {
             return false;
         }
         PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<OptionalStack> stacksBefore = SleeperPropertyValues
+        Set<OptionalStack> stacksBefore = SleeperPropertyValueUtils
                 .streamEnumList(OPTIONAL_STACKS, stackDiff.getOldValue(), OptionalStack.class)
                 .collect(toUnmodifiableSet());
-        Set<OptionalStack> newStacks = SleeperPropertyValues
+        Set<OptionalStack> newStacks = SleeperPropertyValueUtils
                 .streamEnumList(OPTIONAL_STACKS, stackDiff.getNewValue(), OptionalStack.class)
                 .filter(not(stacksBefore::contains))
                 .collect(toUnmodifiableSet());
@@ -164,7 +164,7 @@ public class AdminClientPropertiesStore {
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
-            S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
+            S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
@@ -183,7 +183,7 @@ public class AdminClientPropertiesStore {
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
-        return new TablePropertiesProvider(properties, s3, dynamoDB);
+        return S3TableProperties.createProvider(properties, s3, dynamoDB);
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

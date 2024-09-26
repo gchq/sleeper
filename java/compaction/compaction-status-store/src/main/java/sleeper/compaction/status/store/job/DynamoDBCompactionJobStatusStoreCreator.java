@@ -24,7 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.EXPIRY_DATE;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID;
@@ -32,8 +32,8 @@ import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusSto
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.TABLE_ID;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobLookupTableName;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobUpdatesTableName;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
