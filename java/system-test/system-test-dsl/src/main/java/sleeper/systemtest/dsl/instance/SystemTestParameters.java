@@ -73,7 +73,7 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
-        standalonePropertiesTemplate = builder.standalonePropertiesTemplate;
+        standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
     }
 
     public static Builder builder() {
