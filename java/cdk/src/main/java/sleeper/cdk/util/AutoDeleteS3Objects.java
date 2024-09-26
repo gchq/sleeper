@@ -58,6 +58,7 @@ public class AutoDeleteS3Objects {
                 .logGroup(createLambdaLogGroup(scope, id + "LambdaLogGroup", functionName, instanceProperties))
                 .runtime(Runtime.JAVA_11));
 
+        bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
