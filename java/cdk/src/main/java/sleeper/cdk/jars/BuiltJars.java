@@ -18,10 +18,14 @@ package sleeper.cdk.jars;
 import com.amazonaws.services.s3.AmazonS3;
 import software.amazon.awscdk.services.s3.IBucket;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BuiltJars {
 
     private final AmazonS3 s3;
     private final String bucketName;
+    private final Map<BuiltJar, String> latestVersionIdByJar = new HashMap<>();
 
     public BuiltJars(AmazonS3 s3, String bucketName) {
         this.s3 = s3;
@@ -37,6 +41,7 @@ public class BuiltJars {
     }
 
     public String getLatestVersionId(BuiltJar jar) {
-        return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
+        return latestVersionIdByJar.computeIfAbsent(jar,
+                missingJar -> s3.getObjectMetadata(bucketName, missingJar.getFileName()).getVersionId());
     }
 }
