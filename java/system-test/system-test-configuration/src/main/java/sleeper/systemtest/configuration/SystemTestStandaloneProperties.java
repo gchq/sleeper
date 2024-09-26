@@ -47,6 +47,16 @@ public class SystemTestStandaloneProperties
         super(properties);
     }
 
+    /**
+     * Creates a copy of the given system test properties.
+     *
+     * @param  properties the system test properties
+     * @return            the copy
+     */
+    public static SystemTestStandaloneProperties copyOf(SystemTestStandaloneProperties properties) {
+        return new SystemTestStandaloneProperties(loadProperties(properties.saveAsString()));
+    }
+
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         String propertiesString = s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);

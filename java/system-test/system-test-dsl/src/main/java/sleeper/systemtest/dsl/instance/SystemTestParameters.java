@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +44,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_AR
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
@@ -64,8 +66,7 @@ public class SystemTestParameters {
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
-    private final String ecsSecurityGroups;
-    private final String logRetentionDays;
+    private final SystemTestStandaloneProperties standalonePropertiesTemplate;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
@@ -80,8 +81,7 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
-        ecsSecurityGroups = builder.ecsSecurityGroups;
-        logRetentionDays = builder.logRetentionDays;
+        standalonePropertiesTemplate = builder.standalonePropertiesTemplate;
     }
 
     public static Builder builder() {
@@ -175,11 +175,11 @@ public class SystemTestParameters {
     public void setRequiredProperties(DeployInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
         properties.set(ECR_REPOSITORY_PREFIX, shortTestId);
-        if (ecsSecurityGroups != null) {
-            properties.set(ECS_SECURITY_GROUPS, ecsSecurityGroups);
+        if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_ECS_SECURITY_GROUPS)) {
+            properties.set(ECS_SECURITY_GROUPS, standalonePropertiesTemplate.get(SYSTEM_TEST_ECS_SECURITY_GROUPS));
         }
-        if (logRetentionDays != null) {
-            properties.set(LOG_RETENTION_IN_DAYS, logRetentionDays);
+        if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_LOG_RETENTION_DAYS)) {
+            properties.set(LOG_RETENTION_IN_DAYS, standalonePropertiesTemplate.get(SYSTEM_TEST_LOG_RETENTION_DAYS));
         }
         for (TableProperties tableProperties : deployConfig.getTableProperties()) {
             setRequiredProperties(tableProperties);
@@ -193,7 +193,7 @@ public class SystemTestParameters {
     }
 
     public SystemTestStandaloneProperties buildSystemTestStandaloneProperties() {
-        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        SystemTestStandaloneProperties properties = SystemTestStandaloneProperties.copyOf(standalonePropertiesTemplate);
         properties.set(SYSTEM_TEST_ID, getSystemTestShortId());
         properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
         properties.set(SYSTEM_TEST_REGION, getRegion());
@@ -201,7 +201,11 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_JARS_BUCKET, buildJarsBucketName());
         properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
-        properties.set(SYSTEM_TEST_LOG_RETENTION_DAYS, logRetentionDays);
+        return properties;
+    }
+
+    public static SystemTestStandaloneProperties buildSystemTestStandalonePropertiesDefaultTemplate() {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.set(MIN_RANDOM_INT, "0");
         properties.set(MAX_RANDOM_INT, "100000000");
         properties.set(MIN_RANDOM_LONG, "0");
@@ -255,8 +259,7 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
-        private String ecsSecurityGroups;
-        private String logRetentionDays;
+        private SystemTestStandaloneProperties standalonePropertiesTemplate;
 
         private Builder() {
         }
@@ -321,13 +324,8 @@ public class SystemTestParameters {
             return this;
         }
 
-        public Builder ecsSecurityGroups(String ecsSecurityGroups) {
-            this.ecsSecurityGroups = ecsSecurityGroups;
-            return this;
-        }
-
-        public Builder logRetentionDays(String logRetentionDays) {
-            this.logRetentionDays = logRetentionDays;
+        public Builder systemTestStandalonePropertiesTemplate(SystemTestStandaloneProperties standalonePropertiesTemplate) {
+            this.standalonePropertiesTemplate = standalonePropertiesTemplate;
             return this;
         }
 
@@ -343,8 +341,10 @@ public class SystemTestParameters {
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
                     .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
-                    .ecsSecurityGroups(getOptionalProperty("sleeper.system.test.ecs.security.groups").orElse(null))
-                    .logRetentionDays(getOptionalProperty("sleeper.system.test.log.retention.days").orElse(null));
+                    .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
+                            .map(Paths::get)
+                            .map(SystemTestStandaloneProperties::fromFile)
+                            .orElseGet(SystemTestParameters::buildSystemTestStandalonePropertiesDefaultTemplate));
         }
 
         public Builder findDirectories() {
