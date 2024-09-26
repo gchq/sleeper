@@ -34,14 +34,6 @@ import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUP
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
@@ -204,19 +196,6 @@ public class SystemTestParameters {
         return properties;
     }
 
-    public static SystemTestStandaloneProperties buildSystemTestStandalonePropertiesDefaultTemplate() {
-        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.set(MIN_RANDOM_INT, "0");
-        properties.set(MAX_RANDOM_INT, "100000000");
-        properties.set(MIN_RANDOM_LONG, "0");
-        properties.set(MAX_RANDOM_LONG, "10000000000");
-        properties.set(RANDOM_STRING_LENGTH, "10");
-        properties.set(RANDOM_BYTE_ARRAY_LENGTH, "10");
-        properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
-        properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
-        return properties;
-    }
-
     private static Path findScriptsDir() {
         return getParentOrFail(findJavaDir()).resolve("scripts");
     }
@@ -344,7 +323,7 @@ public class SystemTestParameters {
                     .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
                             .map(Paths::get)
                             .map(SystemTestStandaloneProperties::fromFile)
-                            .orElseGet(SystemTestParameters::buildSystemTestStandalonePropertiesDefaultTemplate));
+                            .orElseThrow(() -> new IllegalArgumentException("Standalone properties template not specified")));
         }
 
         public Builder findDirectories() {
