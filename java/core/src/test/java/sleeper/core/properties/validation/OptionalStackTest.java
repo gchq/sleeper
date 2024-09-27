@@ -17,9 +17,12 @@ package sleeper.core.properties.validation;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,5 +93,23 @@ public class OptionalStackTest {
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
                 .hasMessageContaining("sleeper.optional.stacks")
                 .hasMessageContaining("CompacctionStack");
+    }
+
+    @Test
+    void shouldReadNoOptionalStacksAfterPrintingAndLoading() {
+        // Given
+        InstanceProperties properties = InstanceProperties.createWithoutValidation(
+                PropertiesUtils.loadProperties("sleeper.optional.stacks="));
+
+        // When
+        StringWriter writer = new StringWriter();
+        InstanceProperties.createPrettyPrinter(new PrintWriter(writer))
+                .print(properties);
+        String written = writer.toString();
+
+        // Then
+        InstanceProperties found = InstanceProperties.createWithoutValidation(
+                PropertiesUtils.loadProperties(written));
+        assertThat(found.getEnumList(OPTIONAL_STACKS, OptionalStack.class)).isEmpty();
     }
 }

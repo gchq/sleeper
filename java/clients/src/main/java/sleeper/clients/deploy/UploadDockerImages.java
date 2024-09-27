@@ -57,6 +57,7 @@ public class UploadDockerImages {
     }
 
     public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages) throws IOException, InterruptedException {
+        LOGGER.info("Optional stacks enabled: {}", data.getStacks());
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
         List<StackDockerImage> stacksToUpload = dockerImageConfig.getStacksToDeploy(data.getStacks(), extraDockerImages);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()

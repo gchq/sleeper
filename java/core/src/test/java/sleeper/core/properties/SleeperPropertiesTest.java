@@ -228,6 +228,7 @@ class SleeperPropertiesTest {
             // Then
             assertThat(testSleeperProperties.get(OPTIONAL_STACKS)).isEmpty();
             assertThat(testSleeperProperties.getList(OPTIONAL_STACKS)).isEmpty();
+            assertThat(testSleeperProperties.isSet(OPTIONAL_STACKS)).isTrue();
         }
 
         @Test
