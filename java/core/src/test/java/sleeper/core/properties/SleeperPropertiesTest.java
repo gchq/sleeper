@@ -46,132 +46,166 @@ import static sleeper.core.properties.validation.IngestQueue.BULK_IMPORT_PERSIST
 
 class SleeperPropertiesTest {
 
-    @Test
-    void shouldGetNumericValueAsString() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+    @Nested
+    @DisplayName("Handle values")
+    class HandleValues {
 
-        // When
-        testSleeperProperties.set(PAGE_SIZE, "5");
+        @Test
+        void shouldFindUnsetValueIsUnset() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // Then
-        assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("5");
+            // When / Then
+            assertThat(testSleeperProperties.isSet(PAGE_SIZE)).isFalse();
+        }
+
+        @Test
+        void shouldFindSetValueIsSet() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // When / Then
+            assertThat(testSleeperProperties.isSet(PAGE_SIZE)).isTrue();
+        }
+
+        @Test
+        void shouldDoNothingWhenSettingNullString() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // When
+            testSleeperProperties.set(PAGE_SIZE, null);
+
+            // Then
+            assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
+        }
     }
 
-    @Test
-    void shouldReturnNullIntegerObjectWhenValueSetToNull() {
+    @Nested
+    @DisplayName("Handle numeric types")
+    class HandleNumbers {
 
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+        @Test
+        void shouldGetNumericValueAsString() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
-        // When // Then
-        assertThat(testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
+            // When
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // Then
+            assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("5");
+        }
+
+        @Test
+        void shouldReturnNullIntegerObjectWhenValueSetToNull() {
+
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When // Then
+            assertThat(testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
+        }
+
+        @Test
+        void shouldFailToReadWhenPropertySetToValueThatIsNotAnInt() {
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "Forty Two");
+
+            // Then
+            assertThatThrownBy(() -> testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
+                    .isInstanceOf(NumberFormatException.class)
+                    .hasMessageContaining("Forty Two");
+        }
+
+        @Test
+        void shouldSetNumericValueAsNumber() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.setNumber(PAGE_SIZE, 2.504);
+
+            // Then
+            assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("2.504");
+        }
+
+        @Test
+        void shouldBeAbleToRetrieveNumericalNumberAsALong() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // Then
+            assertThat(testSleeperProperties.getLong(PAGE_SIZE)).isEqualTo(Long.valueOf(5L));
+        }
+
+        @Test
+        void shouldBeAbleToRetrieveNumericalNumberAsAnInteger() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+
+            // When
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // Then
+            assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
+        }
+
+        @Test
+        void shouldDoNothingWhenSettingNullNumber() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(PAGE_SIZE, "5");
+
+            // When
+            testSleeperProperties.setNumber(PAGE_SIZE, null);
+
+            // Then
+            assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
+        }
     }
 
-    @Test
-    void shouldReturnNullWhenPropertySetToValueThatIsNotAnInt() {
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+    @Nested
+    @DisplayName("Check equality")
+    class CheckEquality {
 
-        // When
-        testSleeperProperties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "Forty Two");
+        @Test
+        void shouldReturnTrueForEqualityWhenPropertiesAreEqual() {
+            // Given
+            Properties properties = new Properties();
+            properties.setProperty("a", "b");
 
-        // Then
-        assertThatThrownBy(() -> testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
-                .isInstanceOf(NumberFormatException.class)
-                .hasMessageContaining("Forty Two");
-    }
+            // When
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties(properties);
+            TestSleeperProperties duplicate = new TestSleeperProperties(properties);
 
-    @Test
-    void shouldSetNumericValueAsNumber() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // Then
+            assertThat(duplicate).isEqualTo(testSleeperProperties);
+        }
 
-        // When
-        testSleeperProperties.setNumber(PAGE_SIZE, 2.504);
+        @Test
+        void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
+            // Given
+            Properties properties = new Properties();
+            properties.setProperty("a", "b");
 
-        // Then
-        assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("2.504");
-    }
+            Properties differentProperties = new Properties();
+            properties.setProperty("a", "c");
 
-    @Test
-    void shouldBeAbleToRetrieveNumericalNumberAsALong() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            // When
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties(properties);
+            TestSleeperProperties duplicate = new TestSleeperProperties(differentProperties);
 
-        // When
-        testSleeperProperties.set(PAGE_SIZE, "5");
-
-        // Then
-        assertThat(testSleeperProperties.getLong(PAGE_SIZE)).isEqualTo(Long.valueOf(5L));
-    }
-
-    @Test
-    void shouldBeAbleToRetrieveNumericalNumberAsAnInteger() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-
-        // When
-        testSleeperProperties.set(PAGE_SIZE, "5");
-
-        // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
-    }
-
-    @Test
-    void shouldDoNothingWhenSettingNullNumber() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.set(PAGE_SIZE, "5");
-
-        // When
-        testSleeperProperties.setNumber(PAGE_SIZE, null);
-
-        // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
-    }
-
-    @Test
-    void shouldDoNothingWhenSettingNullString() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.set(PAGE_SIZE, "5");
-
-        // When
-        testSleeperProperties.set(PAGE_SIZE, null);
-
-        // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
-    }
-
-    @Test
-    void shouldReturnTrueForEqualityWhenPropertiesAreEqual() {
-        // Given
-        Properties properties = new Properties();
-        properties.setProperty("a", "b");
-
-        // When
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties(properties);
-        TestSleeperProperties duplicate = new TestSleeperProperties(properties);
-
-        // Then
-        assertThat(duplicate).isEqualTo(testSleeperProperties);
-    }
-
-    @Test
-    void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
-        // Given
-        Properties properties = new Properties();
-        properties.setProperty("a", "b");
-
-        Properties differentProperties = new Properties();
-        properties.setProperty("a", "c");
-
-        // When
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties(properties);
-        TestSleeperProperties duplicate = new TestSleeperProperties(differentProperties);
-
-        // Then
-        assertThat(duplicate).isNotEqualTo(testSleeperProperties);
+            // Then
+            assertThat(duplicate).isNotEqualTo(testSleeperProperties);
+        }
     }
 
     @Nested

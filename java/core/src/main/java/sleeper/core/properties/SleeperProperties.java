@@ -245,7 +245,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      */
     public boolean isSet(T property) {
         if (!properties.containsKey(property.getPropertyName())) {
-            return true;
+            return false;
         }
         String rawValue = properties.getProperty(property.getPropertyName());
         if (property.isIgnoreEmptyValue() && rawValue.equals("")) {
