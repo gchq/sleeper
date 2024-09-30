@@ -16,7 +16,6 @@
 package sleeper.task.common;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
@@ -26,11 +25,14 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
 
@@ -50,8 +52,9 @@ public class EC2InstanceDetailsIT {
 
     @Test
     void shouldDescribeNoInstances() {
-        stubFor(listInstancesWillReturn(aResponse().withStatus(200)
-                .withBody("{\"containerInstanceArns\": []}")));
+        stubFor(listActiveInstancesForCluster("test-cluster")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"containerInstanceArns\": []}")));
 
         assertThat(EC2InstanceDetails.fetchInstanceDetails("test-cluster", ecsClient))
                 .isEmpty();
@@ -59,18 +62,20 @@ public class EC2InstanceDetailsIT {
 
     @Test
     void shouldDescribeOneInstance() {
-        stubFor(listInstancesWillReturn(aResponse().withStatus(200)
-                .withBody("{\"containerInstanceArns\": [\"test-instance-arn\"]}")));
-        stubFor(describeInstancesWillReturn(aResponse().withStatus(200)
-                .withBody("{\"containerInstances\": [{" +
-                        "\"containerInstanceArn\": \"test-instance-arn\"," +
-                        "\"ec2InstanceId\": \"test-instance-id\"," +
-                        "\"registeredAt\": 1727697362," +
-                        "\"remainingResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":2},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":256}]," +
-                        "\"registeredResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":4},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":512}]," +
-                        "\"runningTasksCount\": 1," +
-                        "\"pendingTasksCount\": 1" +
-                        "}], \"failures\": []}")));
+        stubFor(listActiveInstancesForCluster("test-cluster")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"containerInstanceArns\": [\"test-instance-arn\"]}")));
+        stubFor(describeClusterInstances("test-cluster", "test-instance-arn")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"containerInstances\": [{" +
+                                "\"containerInstanceArn\": \"test-instance-arn\"," +
+                                "\"ec2InstanceId\": \"test-instance-id\"," +
+                                "\"registeredAt\": 1727697362," +
+                                "\"remainingResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":2},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":256}]," +
+                                "\"registeredResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":4},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":512}]," +
+                                "\"runningTasksCount\": 1," +
+                                "\"pendingTasksCount\": 1" +
+                                "}], \"failures\": []}")));
 
         assertThat(EC2InstanceDetails.fetchInstanceDetails("test-cluster", ecsClient))
                 .isEqualTo(Map.of("test-instance-id",
@@ -78,16 +83,52 @@ public class EC2InstanceDetailsIT {
                                 Instant.parse("2024-09-30T11:56:02Z"), 2, 256, 4, 512, 1, 1)));
     }
 
-    private static MappingBuilder listInstancesWillReturn(ResponseDefinitionBuilder response) {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_INSTANCES_OPERATION)
-                .willReturn(response);
+    @Test
+    void shouldDescribeTwoInstances() {
+        stubFor(listActiveInstancesForCluster("some-cluster")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"containerInstanceArns\": [\"instance-arn-1\",\"instance-arn-2\"]}")));
+        stubFor(describeClusterInstances("some-cluster", "instance-arn-1", "instance-arn-2")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"containerInstances\": [{" +
+                                "\"containerInstanceArn\": \"instance-arn-1\"," +
+                                "\"ec2InstanceId\": \"instance-id-1\"," +
+                                "\"registeredAt\": 1727697362," +
+                                "\"remainingResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":2},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":256}]," +
+                                "\"registeredResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":4},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":512}]," +
+                                "\"runningTasksCount\": 1," +
+                                "\"pendingTasksCount\": 1" +
+                                "},{" +
+                                "\"containerInstanceArn\": \"instance-arn-2\"," +
+                                "\"ec2InstanceId\": \"instance-id-2\"," +
+                                "\"registeredAt\": 1727698272," +
+                                "\"remainingResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":4},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":512}]," +
+                                "\"registeredResources\": [{\"name\":\"CPU\",\"type\":\"INTEGER\",\"integerValue\":8},{\"name\":\"MEMORY\",\"type\":\"INTEGER\",\"integerValue\":1024}]," +
+                                "\"runningTasksCount\": 2," +
+                                "\"pendingTasksCount\": 2" +
+                                "}], \"failures\": []}")));
+
+        assertThat(EC2InstanceDetails.fetchInstanceDetails("some-cluster", ecsClient))
+                .isEqualTo(Map.of(
+                        "instance-id-1",
+                        new EC2InstanceDetails("instance-id-1", "instance-arn-1",
+                                Instant.parse("2024-09-30T11:56:02Z"), 2, 256, 4, 512, 1, 1),
+                        "instance-id-2",
+                        new EC2InstanceDetails("instance-id-2", "instance-arn-2",
+                                Instant.parse("2024-09-30T12:11:12Z"), 4, 512, 8, 1024, 2, 2)));
     }
 
-    private static MappingBuilder describeInstancesWillReturn(ResponseDefinitionBuilder response) {
+    private static MappingBuilder listActiveInstancesForCluster(String clusterName) {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_INSTANCES_OPERATION)
+                .withRequestBody(equalToJson("{\"cluster\": \"" + clusterName + "\", \"maxResults\": 75, \"status\": \"ACTIVE\"}"));
+    }
+
+    private static MappingBuilder describeClusterInstances(String clusterName, String... instanceArns) {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_DESCRIBE_INSTANCES_OPERATION)
-                .willReturn(response);
+                .withRequestBody(equalToJson("{\"cluster\": \"" + clusterName + "\", " +
+                        "\"containerInstances\": [\"" + Stream.of(instanceArns).collect(joining("\",\"")) + "\"]}"));
     }
 
 }
