@@ -23,7 +23,6 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.task.CompactionTask.MessageHandle;
 import sleeper.compaction.task.CompactionTask.MessageReceiver;
-import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper;
@@ -126,7 +125,7 @@ public class CompactionTaskTestBase {
         runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
-    protected void runTaskCheckingFiles(WaitForFileAssignment fileAssignmentCheck, CompactionRunner compactor) throws Exception {
+    protected void runTaskCheckingFiles(StateStoreWaitForFiles fileAssignmentCheck, CompactionRunner compactor) throws Exception {
         runTask(pollQueue(), fileAssignmentCheck, compactor, timePassesAMinuteAtATime(), DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
@@ -139,7 +138,7 @@ public class CompactionTaskTestBase {
 
     private void runTask(
             MessageReceiver messageReceiver,
-            WaitForFileAssignment fileAssignmentCheck,
+            StateStoreWaitForFiles fileAssignmentCheck,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
@@ -153,7 +152,7 @@ public class CompactionTaskTestBase {
                 .run();
     }
 
-    private WaitForFileAssignment waitForFileAssignment() {
+    private StateStoreWaitForFiles waitForFileAssignment() {
         return waitForFileAssignmentWithAttempts(1);
     }
 

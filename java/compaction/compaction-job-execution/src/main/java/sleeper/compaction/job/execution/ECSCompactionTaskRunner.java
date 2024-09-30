@@ -34,7 +34,6 @@ import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda.Commit
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
@@ -103,7 +102,7 @@ public class ECSCompactionTaskRunner {
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
+            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
