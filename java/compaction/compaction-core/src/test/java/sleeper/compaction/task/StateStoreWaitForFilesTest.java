@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.WaitAction;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -32,7 +33,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
 import java.time.Duration;
@@ -44,9 +44,9 @@ import java.util.function.DoubleSupplier;
 import static java.util.stream.Collectors.reducing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES;
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
-import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
+import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttemptsAndThrottlingRetries;
+import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.withActionAfterWait;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -204,28 +204,13 @@ public class StateStoreWaitForFilesTest {
     }
 
     private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter) {
-        return new StateStoreWaitForFiles(attempts,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
-                JOB_ASSIGNMENT_THROTTLING_RETRIES.toBuilder()
-                        .sleepInInterval(millis -> foundWaits.add(Duration.ofMillis(millis)))
-                        .build(),
+        return waitForFileAssignmentWithAttemptsAndThrottlingRetries(
+                attempts, jitter, waiter,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore));
     }
 
     protected void actionAfterWait(WaitAction action) throws Exception {
-        Waiter wrapWaiter = waiter;
-        waiter = millis -> {
-            try {
-                action.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            wrapWaiter.waitForMillis(millis);
-        };
-    }
-
-    protected interface WaitAction {
-        void run() throws Exception;
+        waiter = withActionAfterWait(waiter, action);
     }
 }

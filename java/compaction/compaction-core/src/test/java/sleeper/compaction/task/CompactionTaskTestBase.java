@@ -26,16 +26,20 @@ import sleeper.compaction.task.CompactionTask.MessageReceiver;
 import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
+import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper;
+import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.WaitAction;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -52,8 +56,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES;
-import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
@@ -64,6 +66,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -85,6 +88,8 @@ public class CompactionTaskTestBase {
     protected final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
+    private Waiter waiterForFileAssignment = recordWaits(foundWaitsForFileAssignment);
 
     @BeforeEach
     void setUpBase() {
@@ -149,9 +154,20 @@ public class CompactionTaskTestBase {
     }
 
     private WaitForFileAssignment waitForFileAssignment() {
-        return new StateStoreWaitForFiles(1,
-                new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE), JOB_ASSIGNMENT_THROTTLING_RETRIES,
-                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId));
+        return waitForFileAssignmentWithAttempts(1);
+    }
+
+    protected StateStoreWaitForFiles waitForFileAssignmentWithAttempts(int attempts) {
+        return StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts(
+                attempts, waiterForFileAssignment, tablePropertiesProvider(), stateStoreProvider());
+    }
+
+    protected TablePropertiesProvider tablePropertiesProvider() {
+        return new FixedTablePropertiesProvider(tables);
+    }
+
+    protected StateStoreProvider stateStoreProvider() {
+        return FixedStateStoreProvider.byTableId(stateStoreByTableId);
     }
 
     private Supplier<String> jobRunIdsInSequence() {
@@ -173,8 +189,16 @@ public class CompactionTaskTestBase {
         return createJob(jobId, tableProperties, stateStore);
     }
 
+    protected CompactionJob createJobOnQueueNotAssignedToFiles(String jobId) throws Exception {
+        CompactionJob job = createJobNotInStateStore(jobId, tableProperties);
+        addInputFiles(job, stateStore);
+        jobsOnQueue.add(job);
+        return job;
+    }
+
     protected CompactionJob createJob(String jobId, TableProperties tableProperties, StateStore stateStore) throws Exception {
         CompactionJob job = createJobNotInStateStore(jobId, tableProperties);
+        addInputFiles(job, stateStore);
         assignFilesToJob(job, stateStore);
         return job;
     }
@@ -194,15 +218,22 @@ public class CompactionTaskTestBase {
         return job;
     }
 
-    protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
+    private void addInputFiles(CompactionJob job, StateStore stateStore) throws Exception {
         for (String inputFile : job.getInputFiles()) {
             stateStore.addFile(factory.rootFile(inputFile, 123L));
         }
+    }
+
+    protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
         stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
     }
 
     protected void send(CompactionJob job) {
         jobsOnQueue.add(job);
+    }
+
+    protected void actionAfterWaitForFileAssignment(WaitAction action) throws Exception {
+        waiterForFileAssignment = StateStoreWaitForFilesTestHelper.withActionAfterWait(waiterForFileAssignment, action);
     }
 
     private MessageReceiver pollQueue() {
