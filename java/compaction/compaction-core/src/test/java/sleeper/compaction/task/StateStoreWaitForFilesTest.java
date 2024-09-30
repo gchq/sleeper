@@ -204,10 +204,6 @@ public class StateStoreWaitForFilesTest {
     }
 
     private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter) {
-        return waiterWithAttempts(attempts, jitter, stateStore);
-    }
-
-    private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter, StateStore stateStore) {
         return new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
                 JOB_ASSIGNMENT_THROTTLING_RETRIES.toBuilder()
