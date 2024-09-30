@@ -18,6 +18,7 @@ package sleeper.task.common;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.ContainerInstance;
 import software.amazon.awssdk.services.ecs.model.ContainerInstanceStatus;
+import software.amazon.awssdk.services.ecs.model.ListContainerInstancesResponse;
 import software.amazon.awssdk.services.ecs.model.Resource;
 
 import java.time.Instant;
@@ -108,6 +109,8 @@ public class EC2InstanceDetails {
                 .maxResults(INSTANCE_PAGE_SIZE)
                 .status(ContainerInstanceStatus.ACTIVE))
                 .stream()
+                .filter(ListContainerInstancesResponse::hasContainerInstanceArns)
+                .filter(response -> !response.containerInstanceArns().isEmpty())
                 .flatMap(response -> ecsClient.describeContainerInstances(describe -> describe
                         .cluster(ecsClusterName)
                         .containerInstances(response.containerInstanceArns()))
