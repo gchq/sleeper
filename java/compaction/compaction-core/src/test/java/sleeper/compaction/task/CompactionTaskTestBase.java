@@ -143,11 +143,11 @@ public class CompactionTaskTestBase {
             Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
-                new FixedTablePropertiesProvider(tables), FixedStateStoreProvider.byTableId(stateStoreByTableId),
+                tablePropertiesProvider(), stateStoreProvider(),
                 jobStore, commitRequestsOnQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
-        new CompactionTask(instanceProperties, new FixedTablePropertiesProvider(tables), PropertiesReloader.neverReload(),
-                FixedStateStoreProvider.byTableId(stateStoreByTableId), messageReceiver, fileAssignmentCheck,
+        new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
+                stateStoreProvider(), messageReceiver, fileAssignmentCheck,
                 committer, jobStore, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
@@ -161,11 +161,11 @@ public class CompactionTaskTestBase {
                 attempts, waiterForFileAssignment, tablePropertiesProvider(), stateStoreProvider());
     }
 
-    protected TablePropertiesProvider tablePropertiesProvider() {
+    private TablePropertiesProvider tablePropertiesProvider() {
         return new FixedTablePropertiesProvider(tables);
     }
 
-    protected StateStoreProvider stateStoreProvider() {
+    private StateStoreProvider stateStoreProvider() {
         return FixedStateStoreProvider.byTableId(stateStoreByTableId);
     }
 
