@@ -33,7 +33,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 
 import java.util.List;
 
-import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public final class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {

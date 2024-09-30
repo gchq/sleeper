@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -29,10 +29,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
-import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
-import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
-import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
+import static sleeper.cdk.util.UtilsTestHelper.cdkContextWithPropertiesFile;
+import static sleeper.cdk.util.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
+import static sleeper.cdk.util.UtilsTestHelper.createInstancePropertiesWithVersion;
+import static sleeper.cdk.util.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.core.SleeperVersion.getVersion;
 
 class UtilsVersionIT {

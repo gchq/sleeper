@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -47,7 +47,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
+import static sleeper.cdk.util.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 

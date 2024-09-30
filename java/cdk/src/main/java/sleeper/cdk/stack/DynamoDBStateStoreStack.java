@@ -28,7 +28,7 @@ import software.constructs.Construct;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;

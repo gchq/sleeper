@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.cdk.Utils.normaliseSize;
+import static sleeper.cdk.util.Utils.normaliseSize;
 
 class UtilsNormaliseSizeTest {
 

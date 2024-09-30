@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -43,12 +43,10 @@ import software.constructs.Construct;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -91,24 +89,26 @@ public class Utils {
     }
 
     public static Map<String, String> createDefaultEnvironment(InstanceProperties instanceProperties) {
-        Map<String, String> environmentVariables = new HashMap<>();
+        Map<String, String> environmentVariables = createDefaultEnvironmentNoConfigBucket(instanceProperties);
         environmentVariables.put(CONFIG_BUCKET.toEnvironmentVariable(),
                 instanceProperties.get(CONFIG_BUCKET));
-
-        environmentVariables.put("JAVA_TOOL_OPTIONS", createToolOptions(instanceProperties,
-                LOGGING_LEVEL,
-                ROOT_LOGGING_LEVEL,
-                APACHE_LOGGING_LEVEL,
-                PARQUET_LOGGING_LEVEL,
-                AWS_LOGGING_LEVEL));
-
         return environmentVariables;
     }
 
-    private static String createToolOptions(InstanceProperties instanceProperties, InstanceProperty... propertyNames) {
+    public static Map<String, String> createDefaultEnvironmentNoConfigBucket(InstanceProperties instanceProperties) {
+        Map<String, String> environmentVariables = new HashMap<>();
+        environmentVariables.put("JAVA_TOOL_OPTIONS", createToolOptions(instanceProperties));
+        return environmentVariables;
+    }
+
+    private static String createToolOptions(InstanceProperties instanceProperties) {
         StringBuilder sb = new StringBuilder();
-        Arrays.stream(propertyNames)
-                .filter(s -> instanceProperties.get(s) != null)
+        Stream.of(LOGGING_LEVEL,
+                ROOT_LOGGING_LEVEL,
+                APACHE_LOGGING_LEVEL,
+                PARQUET_LOGGING_LEVEL,
+                AWS_LOGGING_LEVEL)
+                .filter(instanceProperties::isSet)
                 .forEach(s -> sb.append("-D").append(s.getPropertyName())
                         .append("=").append(instanceProperties.get(s)).append(" "));
 

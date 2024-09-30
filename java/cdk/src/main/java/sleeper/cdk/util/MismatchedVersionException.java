@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 public class MismatchedVersionException extends RuntimeException {
     public MismatchedVersionException(String message) {

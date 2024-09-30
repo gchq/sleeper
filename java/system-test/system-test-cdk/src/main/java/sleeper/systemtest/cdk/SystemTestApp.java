@@ -23,8 +23,8 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.SleeperCdkApp;
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
@@ -39,15 +39,17 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
+    private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
         super(app, id, props, sleeperProperties, jars);
+        this.jars = jars;
     }
 
     @Override
     public void create() {
         SystemTestProperties properties = getInstanceProperties();
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars);
         super.create();
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {

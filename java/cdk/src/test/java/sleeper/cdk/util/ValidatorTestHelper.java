@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk;
+package sleeper.cdk.util;
 
 import org.apache.commons.io.FileUtils;
 

@@ -24,7 +24,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
