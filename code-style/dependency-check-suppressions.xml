@@ -55,6 +55,14 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/hadoop-common@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-23454</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
         fixed version.
         ]]></notes>
