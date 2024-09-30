@@ -23,22 +23,8 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class DeployedSystemTestResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSystemTestResources.class);
@@ -88,7 +74,7 @@ public class DeployedSystemTestResources {
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
-        boolean newDeployment = driver.deployIfNotPresent(generateProperties());
+        boolean newDeployment = driver.deployIfNotPresent(parameters.buildSystemTestStandaloneProperties());
         properties = driver.loadProperties();
         if (!newDeployment && isRedeployNeeded()) {
             driver.redeploy(properties);
@@ -108,26 +94,6 @@ public class DeployedSystemTestResources {
             redeployNeeded = true;
         }
         return redeployNeeded;
-    }
-
-    private SystemTestStandaloneProperties generateProperties() {
-        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestShortId());
-        properties.set(SYSTEM_TEST_ACCOUNT, parameters.getAccount());
-        properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
-        properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
-        properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
-        properties.set(SYSTEM_TEST_REPO, parameters.buildSystemTestECRRepoName());
-        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(parameters.isSystemTestClusterEnabled()));
-        properties.set(MIN_RANDOM_INT, "0");
-        properties.set(MAX_RANDOM_INT, "100000000");
-        properties.set(MIN_RANDOM_LONG, "0");
-        properties.set(MAX_RANDOM_LONG, "10000000000");
-        properties.set(RANDOM_STRING_LENGTH, "10");
-        properties.set(RANDOM_BYTE_ARRAY_LENGTH, "10");
-        properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
-        properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
-        return properties;
     }
 
     public String getSystemTestBucketName() {

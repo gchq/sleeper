@@ -41,6 +41,7 @@ mvn verify -PsystemTest -DskipRust=true \
   -Dsleeper.system.test.short.id="$SHORT_ID" \
   -Dsleeper.system.test.vpc.id="$VPC" \
   -Dsleeper.system.test.subnet.ids="$SUBNETS" \
+  -Dsleeper.system.test.standalone.properties.template="$THIS_DIR/system-test-standalone.properties" \
   "$@"
 
 popd
