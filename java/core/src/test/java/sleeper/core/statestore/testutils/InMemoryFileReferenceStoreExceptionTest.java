@@ -33,7 +33,7 @@ public class InMemoryFileReferenceStoreExceptionTest {
     void shouldFailQueryWithExpectedRuntimeException() {
         // Given
         RuntimeException e = new RuntimeException("Test failure");
-        fileStore.setExpectedQueryFailures(List.of(Optional.of(e)));
+        fileStore.setFailuresForExpectedQueries(List.of(Optional.of(e)));
 
         // When / Then
         assertThatThrownBy(fileStore::getFileReferences)
@@ -44,7 +44,7 @@ public class InMemoryFileReferenceStoreExceptionTest {
     void shouldFailQueryWithExpectedStateStoreException() {
         // Given
         StateStoreException e = new StateStoreException("Test failure");
-        fileStore.setExpectedQueryFailures(List.of(Optional.of(e)));
+        fileStore.setFailuresForExpectedQueries(List.of(Optional.of(e)));
 
         // When / Then
         assertThatThrownBy(fileStore::getFileReferences)
@@ -55,7 +55,7 @@ public class InMemoryFileReferenceStoreExceptionTest {
     void shouldFailQueryWithUnexpectedExceptionType() {
         // Given
         Exception e = new Exception("Test failure");
-        fileStore.setExpectedQueryFailures(List.of(Optional.of(e)));
+        fileStore.setFailuresForExpectedQueries(List.of(Optional.of(e)));
 
         // When / Then
         assertThatThrownBy(fileStore::getFileReferences)
@@ -66,7 +66,7 @@ public class InMemoryFileReferenceStoreExceptionTest {
     void shouldFailReadyForGCQueryWithExpectedException() {
         // Given
         RuntimeException e = new RuntimeException("Test failure");
-        fileStore.setExpectedQueryFailures(List.of(Optional.of(e)));
+        fileStore.setFailuresForExpectedQueries(List.of(Optional.of(e)));
 
         // When / Then
         assertThatThrownBy(() -> fileStore.getReadyForGCFilenamesBefore(Instant.now()))

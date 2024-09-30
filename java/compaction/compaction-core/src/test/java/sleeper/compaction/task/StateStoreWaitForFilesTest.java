@@ -172,7 +172,7 @@ public class StateStoreWaitForFilesTest {
         AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
         throttlingException.setErrorCode("ThrottlingException");
         StateStoreException exception = new StateStoreException("Throttled", throttlingException);
-        fileStore.setExpectedQueryFailures(List.of(
+        fileStore.setFailuresForExpectedQueries(List.of(
                 Optional.of(exception),
                 Optional.of(exception),
                 Optional.empty()));

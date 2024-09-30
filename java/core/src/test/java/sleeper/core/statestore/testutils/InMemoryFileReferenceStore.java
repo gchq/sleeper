@@ -296,7 +296,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
      *
      * @param failures the failures for each expected query
      */
-    public void setExpectedQueryFailures(List<Optional<Exception>> failures) {
+    public void setFailuresForExpectedQueries(List<Optional<Exception>> failures) {
         queryFailureChecker = failures.iterator()::next;
     }
 
