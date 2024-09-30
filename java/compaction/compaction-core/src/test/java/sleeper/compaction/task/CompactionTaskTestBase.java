@@ -315,13 +315,7 @@ public class CompactionTaskTestBase {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return (job, table, partition) -> {
             if (getAction.hasNext()) {
-                ProcessJob action = getAction.next();
-                if (action.failure != null) {
-                    throw action.failure;
-                } else {
-                    successfulJobs.add(job);
-                    return action.recordsProcessed;
-                }
+                return getAction.next().run(job);
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -343,6 +337,8 @@ public class CompactionTaskTestBase {
     protected class ProcessJob {
         private final RuntimeException failure;
         private final RecordsProcessed recordsProcessed;
+        private ProcessJobAction action = () -> {
+        };
 
         ProcessJob(RuntimeException failure) {
             this.failure = failure;
@@ -357,6 +353,29 @@ public class CompactionTaskTestBase {
             this.failure = null;
             this.recordsProcessed = summary;
         }
+
+        public ProcessJob withAction(ProcessJobAction action) {
+            this.action = action;
+            return this;
+        }
+
+        private RecordsProcessed run(CompactionJob job) {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (failure != null) {
+                throw failure;
+            } else {
+                successfulJobs.add(job);
+                return recordsProcessed;
+            }
+        }
+    }
+
+    public interface ProcessJobAction {
+        void run() throws Exception;
     }
 
     protected class FakeMessageHandle implements MessageHandle {
