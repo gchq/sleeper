@@ -647,6 +647,45 @@ public class DynamoDBFileReferenceStoreIT extends DynamoDBStateStoreOneTableTest
             assertThat(store.isPartitionFilesAssignedToJob("L", List.of("file1", "file2"), "test-job"))
                     .isTrue();
         }
+
+        @Test
+        void shouldFailIfFileDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailIfFileDoesNotExistOnPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            store.addFile(factory.partitionFile("L", "file", 100L));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("R", List.of("file"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailIfFileAssignedToOtherJob() throws Exception {
+            // Given
+            store.addFile(factory.rootFile("file", 100L));
+            store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "B"))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+        }
+
+        @Test
+        void shouldFailIfOneFileDoesNotExist() throws Exception {
+            // Given
+            store.addFile(factory.rootFile("file1", 100L));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
     }
 
     @Nested
