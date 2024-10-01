@@ -35,6 +35,10 @@ import java.util.List;
  * memory to 16 GiB, and the executor memory overhead to the remainder of that amount, which is 18,090 MiB - 16 GiB =
  * 1,706 MiB, or 1.666 GiB. This is just above the default Spark memory overhead factor of 0.1, i.e. 16 GiB x 0.1 =
  * 1.6 GiB.
+ * <p>
+ * Also see EMR best practices:
+ * <p>
+ * https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources
  */
 public interface EMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")
