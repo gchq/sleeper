@@ -46,6 +46,7 @@ import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
@@ -146,7 +147,7 @@ public class ConfigurationUtils {
             InstanceProperties instanceProperties, EmrInstanceArchitecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
         // spark.driver properties
-        sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
+        sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES));
         sparkConf.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY));
 
         // spark.executor properties
