@@ -19,8 +19,8 @@ package sleeper.systemtest.dsl.partitioning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
@@ -35,7 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class WaitForPartitionSplitting {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);

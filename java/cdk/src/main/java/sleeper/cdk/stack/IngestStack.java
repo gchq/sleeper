@@ -45,40 +45,40 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
-import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CPU;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {

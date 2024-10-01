@@ -31,11 +31,14 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -49,8 +52,8 @@ import sleeper.statestore.StateStoreFactory;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 
 /**
  * Runs an ingest task in ECS. Delegates the running of ingest jobs to {@link IngestJobRunner},
@@ -76,8 +79,7 @@ public class ECSIngestTaskRunner {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, s3Bucket);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
             String localDir = "/mnt/scratch";
@@ -105,11 +107,11 @@ public class ECSIngestTaskRunner {
             ObjectFactory objectFactory, InstanceProperties instanceProperties, String localDir, String taskId,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, AmazonCloudWatch cloudWatchClient,
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
         IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(
+        PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(objectFactory, instanceProperties, tablePropertiesProvider,
                 propertiesReloader, stateStoreProvider, jobStore, taskId, localDir,

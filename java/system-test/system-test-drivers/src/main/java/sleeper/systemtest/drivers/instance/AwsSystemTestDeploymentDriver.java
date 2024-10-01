@@ -16,12 +16,12 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJar;
@@ -55,7 +55,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
     private final S3Client s3v2;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {

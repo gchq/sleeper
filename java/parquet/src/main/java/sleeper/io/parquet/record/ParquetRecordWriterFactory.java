@@ -24,8 +24,8 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
@@ -33,15 +33,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class ParquetRecordWriterFactory {
 

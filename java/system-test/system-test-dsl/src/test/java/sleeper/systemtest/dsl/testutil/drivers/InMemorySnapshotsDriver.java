@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 public class InMemorySnapshotsDriver implements SnapshotsDriver {

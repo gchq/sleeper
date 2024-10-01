@@ -21,7 +21,7 @@ import sleeper.clients.status.report.FilesStatusReport;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;

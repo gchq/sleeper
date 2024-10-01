@@ -31,9 +31,9 @@ import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,10 +44,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 public class DashboardStack extends NestedStack {
     private final String instanceId;

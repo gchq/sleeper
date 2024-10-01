@@ -20,7 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -28,7 +28,7 @@ import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
 

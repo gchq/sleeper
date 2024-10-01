@@ -17,8 +17,8 @@ package sleeper.statestore.transactionlog;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
@@ -29,7 +29,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 
 public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestBase {
 

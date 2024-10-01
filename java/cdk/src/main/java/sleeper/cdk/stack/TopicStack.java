@@ -20,10 +20,10 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
+import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
 
 /**
  * Creates an SNS topic for alerts. This will email alerts if messages arrive on a dead-letter queue.

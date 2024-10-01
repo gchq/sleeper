@@ -29,8 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
@@ -50,9 +51,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 /*
@@ -65,7 +66,7 @@ import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WarmQueryExecutorLambda.class);
 
-    private InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
@@ -80,7 +81,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 
@@ -111,16 +112,16 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
     @Override
     public Void handleRequest(ScheduledEvent event, Context context) {
         LOGGER.info("Starting to build queries for the tables");
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .streamAllTables()
-                .forEach(tableProperty -> {
-                    Schema schema = tableProperty.getSchema();
+                .forEach(tableProperties -> {
+                    Schema schema = tableProperties.getSchema();
                     Region region = getRegion(schema);
                     QuerySerDe querySerDe = new QuerySerDe(schema);
 
                     Query query = Query.builder()
                             .queryId(UUID.randomUUID().toString())
-                            .tableName(tableProperty.get(TABLE_NAME))
+                            .tableName(tableProperties.get(TABLE_NAME))
                             .regions(List.of(region))
                             .processingConfig(QueryProcessingConfig.builder()
                                     .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
@@ -134,11 +135,5 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                     sqsClient.sendMessage(message);
                 });
         return null;
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3(s3Client, configBucket);
-        return properties;
     }
 }

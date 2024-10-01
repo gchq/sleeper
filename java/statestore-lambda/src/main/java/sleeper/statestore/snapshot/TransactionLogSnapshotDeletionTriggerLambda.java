@@ -27,10 +27,11 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -40,9 +41,9 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * A lambda that periodically creates batches of tables and sends them to a queue to delete old transaction log
@@ -51,7 +52,7 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationTriggerLambda.class);
 
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
     private final AmazonSQS sqsClient;
@@ -61,7 +62,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
         this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
     private Stream<TableStatus> streamOnlineTransactionLogTables() {
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
-                S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient), Instant::now);
+                S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient), Instant::now);
         return tableIndex.streamOnlineTables()
                 .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
                         .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));

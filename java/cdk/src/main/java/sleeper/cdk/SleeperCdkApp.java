@@ -67,19 +67,20 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
@@ -125,7 +126,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
@@ -136,7 +137,7 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, policiesStack).getResources();
         CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
                 instanceProperties, policiesStack).getResources();
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
@@ -161,7 +162,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -344,7 +345,7 @@ public class SleeperCdkApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
+        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, app);
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()

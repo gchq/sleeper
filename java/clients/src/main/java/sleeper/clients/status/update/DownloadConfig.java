@@ -22,7 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -45,7 +45,7 @@ public class DownloadConfig {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             LOGGER.info("Downloading configuration from S3");
-            SaveLocalProperties.saveFromS3(s3Client, dynamoDBClient, instanceId, basePath);
+            S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoDBClient, instanceId, basePath);
             LOGGER.info("Download complete");
         } catch (IOException e) {
             LOGGER.error("Download failed: {}", e.getMessage());

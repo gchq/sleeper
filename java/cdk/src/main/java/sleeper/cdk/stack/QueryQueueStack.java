@@ -26,15 +26,15 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
 /**
  * Deploys an SQS queue for queries to be sent to. These will be processed by lambdas defined in the {@link QueryStack}.

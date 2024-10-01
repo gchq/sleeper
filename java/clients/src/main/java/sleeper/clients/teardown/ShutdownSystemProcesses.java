@@ -15,50 +15,50 @@
  */
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
 import sleeper.clients.util.EmrUtils;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownSystemProcesses.class);
 
-    private final AmazonCloudWatchEvents cloudWatch;
+    private final CloudWatchEventsClient cloudWatch;
     private final AmazonECS ecs;
-    private final AmazonElasticMapReduce emrClient;
+    private final EmrClient emrClient;
     private final EmrServerlessClient emrServerlessClient;
-    private final StaticRateLimit<ListClustersResult> listActiveClustersLimit;
+    private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
 
     public ShutdownSystemProcesses(TearDownClients clients) {
         this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
     }
 
     public ShutdownSystemProcesses(
-            AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
-            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient,
-            StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+            CloudWatchEventsClient cloudWatch, AmazonECS ecs,
+            EmrClient emrClient, EmrServerlessClient emrServerlessClient,
+            StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;

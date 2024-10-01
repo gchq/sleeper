@@ -43,8 +43,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);

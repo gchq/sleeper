@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.configuration.TableUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.TableFilePaths;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;
@@ -25,14 +25,14 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobFactory {
 
     private final String tableId;
-    private final String outputFilePrefix;
+    private final TableFilePaths outputFilePaths;
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final Supplier<String> jobIdSupplier;
@@ -43,14 +43,14 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties, Supplier<String> jobIdSupplier) {
         tableId = tableProperties.get(TABLE_ID);
-        outputFilePrefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        outputFilePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         this.jobIdSupplier = jobIdSupplier;
     }
 
     public String getOutputFilePrefix() {
-        return outputFilePrefix;
+        return outputFilePaths.getFilePathPrefix();
     }
 
     public CompactionJob createCompactionJob(
@@ -73,7 +73,7 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJobWithFilenames(
             String jobId, List<String> filenames, String partitionId) {
-        String outputFile = TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
+        String outputFile = outputFilePaths.constructPartitionParquetFilePath(partitionId, jobId);
         return CompactionJob.builder()
                 .tableId(tableId)
                 .jobId(jobId)

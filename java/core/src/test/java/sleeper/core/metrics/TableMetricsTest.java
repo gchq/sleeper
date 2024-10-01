@@ -26,7 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 
@@ -34,8 +34,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class TableMetricsTest {
     private final Schema schema = schemaWithKey("key", new LongType());

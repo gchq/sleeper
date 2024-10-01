@@ -27,9 +27,9 @@ import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TearDownDockerInstance {
@@ -58,8 +58,7 @@ public class TearDownDockerInstance {
     }
 
     public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).tearDown();

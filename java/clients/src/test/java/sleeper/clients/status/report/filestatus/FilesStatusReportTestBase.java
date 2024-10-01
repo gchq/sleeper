@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.function.Function;
 
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class FilesStatusReportTestBase {
     protected final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();

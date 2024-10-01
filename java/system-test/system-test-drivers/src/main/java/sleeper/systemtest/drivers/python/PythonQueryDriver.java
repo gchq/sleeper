@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class PythonQueryDriver implements PythonQueryTypesDriver {
     private static final Gson GSON = new GsonBuilder().create();

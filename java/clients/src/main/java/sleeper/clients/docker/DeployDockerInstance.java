@@ -31,9 +31,11 @@ import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.clients.status.update.AddTable;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -43,19 +45,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployDockerInstance {
@@ -113,7 +115,7 @@ public class DeployDockerInstance {
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
 
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         for (TableProperties tableProperties : tables) {
             try {
@@ -129,7 +131,7 @@ public class DeployDockerInstance {
 
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");
@@ -138,6 +140,7 @@ public class DeployDockerInstance {
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
+        instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {

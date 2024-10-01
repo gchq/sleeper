@@ -33,15 +33,17 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.table.TableStatus;
@@ -61,10 +63,10 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
@@ -175,32 +177,31 @@ public class BulkImportJobDriver {
         String jobRunId = args[3];
         String bulkImportMode = args[4];
 
-        InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        Configuration configuration;
-        if (bulkImportMode.equals("EKS")) {
-            configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
-        } else if (bulkImportMode.equals("EMR")) {
-            configuration = HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties);
-        } else {
-            throw new IllegalArgumentException("Unknown bulk import mode: " + bulkImportMode);
-        }
-
         try {
+            InstanceProperties instanceProperties;
             try {
-                instanceProperties.loadFromS3(s3Client, configBucket);
+                instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
             } catch (Exception e) {
                 // This is a good indicator if something is wrong with the permissions
                 LOGGER.error("Failed to load instance properties", e);
                 logPermissions();
                 throw e;
             }
+            Configuration configuration;
+            if (bulkImportMode.equals("EKS")) {
+                configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
+            } else if (bulkImportMode.equals("EMR")) {
+                configuration = HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties);
+            } else {
+                throw new IllegalArgumentException("Unknown bulk import mode: " + bulkImportMode);
+            }
 
             BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
 
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration);
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
             AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);

@@ -18,16 +18,8 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -40,7 +32,11 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
@@ -52,8 +48,8 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.clients.util.AssumeSleeperRoleHadoop;
 import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
@@ -74,13 +70,13 @@ public class SystemTestClients {
     private final LambdaClient lambda;
     private final CloudFormationClient cloudFormation;
     private final EmrServerlessClient emrServerless;
-    private final AmazonElasticMapReduce emr;
-    private final AmazonECS ecs;
+    private final EmrClient emr;
+    private final EcsClient ecs;
     private final AmazonAutoScaling autoScaling;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
-    private final AmazonCloudWatchEvents cloudWatchEvents;
+    private final CloudWatchEventsClient cloudWatchEvents;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
     private final boolean skipAssumeRole;
@@ -126,13 +122,13 @@ public class SystemTestClients {
                 .lambda(systemTestLambdaClientBuilder().build())
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
-                .emr(AmazonElasticMapReduceClientBuilder.defaultClient())
-                .ecs(AmazonECSClientBuilder.defaultClient())
+                .emr(EmrClient.create())
+                .ecs(EcsClient.create())
                 .autoScaling(AmazonAutoScalingClientBuilder.defaultClient())
-                .ecr(AmazonECRClientBuilder.defaultClient())
+                .ecr(EcrClient.create())
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
-                .cloudWatchEvents(AmazonCloudWatchEventsClientBuilder.defaultClient())
+                .cloudWatchEvents(CloudWatchEventsClient.create())
                 .build();
     }
 
@@ -155,13 +151,13 @@ public class SystemTestClients {
                 .lambda(v2.buildClient(systemTestLambdaClientBuilder()))
                 .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
                 .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
-                .emr(v1.buildClient(AmazonElasticMapReduceClientBuilder.standard()))
-                .ecs(v1.buildClient(AmazonECSClientBuilder.standard()))
+                .emr(v2.buildClient(EmrClient.builder()))
+                .ecs(v2.buildClient(EcsClient.builder()))
                 .autoScaling(v1.buildClient(AmazonAutoScalingClientBuilder.standard()))
-                .ecr(v1.buildClient(AmazonECRClientBuilder.standard()))
+                .ecr(v2.buildClient(EcrClient.builder()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
-                .cloudWatchEvents(v1.buildClient(AmazonCloudWatchEventsClientBuilder.standard()))
+                .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
                 .getAuthEnvVars(v1::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
@@ -207,11 +203,11 @@ public class SystemTestClients {
         return emrServerless;
     }
 
-    public AmazonElasticMapReduce getEmr() {
+    public EmrClient getEmr() {
         return emr;
     }
 
-    public AmazonECS getEcs() {
+    public EcsClient getEcs() {
         return ecs;
     }
 
@@ -219,7 +215,7 @@ public class SystemTestClients {
         return autoScaling;
     }
 
-    public AmazonECR getEcr() {
+    public EcrClient getEcr() {
         return ecr;
     }
 
@@ -231,7 +227,7 @@ public class SystemTestClients {
         return cloudWatchLogs;
     }
 
-    public AmazonCloudWatchEvents getCloudWatchEvents() {
+    public CloudWatchEventsClient getCloudWatchEvents() {
         return cloudWatchEvents;
     }
 
@@ -268,13 +264,13 @@ public class SystemTestClients {
         private LambdaClient lambda;
         private CloudFormationClient cloudFormation;
         private EmrServerlessClient emrServerless;
-        private AmazonElasticMapReduce emr;
-        private AmazonECS ecs;
+        private EmrClient emr;
+        private EcsClient ecs;
         private AmazonAutoScaling autoScaling;
-        private AmazonECR ecr;
+        private EcrClient ecr;
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
-        private AmazonCloudWatchEvents cloudWatchEvents;
+        private CloudWatchEventsClient cloudWatchEvents;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
         private boolean skipAssumeRole = false;
@@ -337,12 +333,12 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder emr(AmazonElasticMapReduce emr) {
+        public Builder emr(EmrClient emr) {
             this.emr = emr;
             return this;
         }
 
-        public Builder ecs(AmazonECS ecs) {
+        public Builder ecs(EcsClient ecs) {
             this.ecs = ecs;
             return this;
         }
@@ -352,7 +348,7 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder ecr(AmazonECR ecr) {
+        public Builder ecr(EcrClient ecr) {
             this.ecr = ecr;
             return this;
         }
@@ -367,7 +363,7 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder cloudWatchEvents(AmazonCloudWatchEvents cloudWatchEvents) {
+        public Builder cloudWatchEvents(CloudWatchEventsClient cloudWatchEvents) {
             this.cloudWatchEvents = cloudWatchEvents;
             return this;
         }

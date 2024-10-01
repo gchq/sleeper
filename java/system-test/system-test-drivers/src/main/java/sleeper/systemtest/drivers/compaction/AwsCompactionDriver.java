@@ -18,10 +18,10 @@ package sleeper.systemtest.drivers.compaction;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
@@ -36,8 +36,8 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -47,8 +47,8 @@ import sleeper.task.common.RunCompactionTasks;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
@@ -57,7 +57,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final AmazonAutoScaling asClient;
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

@@ -29,7 +29,7 @@ import sleeper.compaction.gpu.ProtoCompaction.OptBytes;
 import sleeper.compaction.gpu.ProtoCompaction.ReturnCode;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -50,14 +50,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class GPUCompaction implements CompactionRunner {
 

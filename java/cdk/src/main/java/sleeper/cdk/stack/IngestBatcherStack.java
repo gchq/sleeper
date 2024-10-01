@@ -36,12 +36,12 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
@@ -49,24 +49,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class IngestBatcherStack extends NestedStack {
 

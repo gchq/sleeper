@@ -22,8 +22,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.local.LoadLocalProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,9 +35,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
@@ -104,7 +106,7 @@ public class TearDownInstance {
 
     public void cleanupAfterStackDeleted() throws InterruptedException {
         LOGGER.info("Removing the jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3v2(), instanceProperties.get(ID));
+        RemoveJarsBucket.remove(clients.getS3v2(), instanceProperties.get(JARS_BUCKET));
         RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
     }
 
@@ -133,9 +135,7 @@ public class TearDownInstance {
     public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId) {
         LOGGER.info("Loading configuration for instance {}", instanceId);
         try {
-            InstanceProperties properties = new InstanceProperties();
-            properties.loadFromS3GivenInstanceId(s3, instanceId);
-            return properties;
+            return S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
             return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);

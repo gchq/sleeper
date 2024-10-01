@@ -54,17 +54,16 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -75,7 +74,9 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -101,26 +102,26 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static sleeper.compaction.job.execution.StateStoreWaitForFilesTestHelper.waitWithRetries;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -136,8 +137,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final InstanceProperties instanceProperties = createInstance();
     private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, configuration);
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
-    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
@@ -375,7 +376,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.saveToS3(s3);
+        S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
@@ -462,7 +463,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 instanceProperties, sqs);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitWithRetries(1, stateStoreProvider, tablePropertiesProvider),
+                waitForFileAssignmentWithAttempts(1, stateStoreProvider, tablePropertiesProvider),
                 committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });

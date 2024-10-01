@@ -20,12 +20,12 @@ import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.Iterator;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
  * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.record.Record} belonging to a
@@ -47,7 +47,7 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
 
     @Override
     public Iterator<Row> call(Iterator<Row> rowIter) {
-        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(instancePropertiesStr));
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
         return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value());

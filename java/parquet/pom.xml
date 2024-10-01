@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.25.0-SNAPSHOT</version>
+        <version>0.26.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -59,15 +59,22 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Hadoop uses AWS SDK v1 -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>${aws-java-sdk.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

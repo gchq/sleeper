@@ -16,20 +16,20 @@
 
 package sleeper.clients.deploy;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class StacksForDockerUpload {
     private final String ecrPrefix;

@@ -17,8 +17,6 @@ package sleeper.compaction.job.execution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -27,6 +25,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
@@ -35,15 +34,17 @@ import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda.Commit
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.job.common.EC2ContainerMetadata;
@@ -53,9 +54,10 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.compaction.job.execution.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 
 /**
  * Runs a compaction task in ECS. Delegates the running of compaction jobs to {@link DefaultCompactionRunnerFactory},
@@ -78,17 +80,15 @@ public class ECSCompactionTaskRunner {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonECS ecsClient = buildAwsV1Client(AmazonECSClientBuilder.standard());
 
-        try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3(s3Client, s3Bucket);
+        try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder())) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             // Log some basic data if running on EC2 inside ECS
             logEC2Metadata(instanceProperties, ecsClient);
 
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-            PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+            PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
@@ -102,7 +102,7 @@ public class ECSCompactionTaskRunner {
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
-            WaitForFileAssignment waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
+            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
@@ -117,13 +117,11 @@ public class ECSCompactionTaskRunner {
             LOGGER.info("Shut down dynamoDBClient");
             s3Client.shutdown();
             LOGGER.info("Shut down s3Client");
-            ecsClient.shutdown();
-            LOGGER.info("Shut down ecsClient");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
     }
 
-    public static void logEC2Metadata(InstanceProperties instanceProperties, AmazonECS ecsClient) {
+    public static void logEC2Metadata(InstanceProperties instanceProperties, EcsClient ecsClient) {
         // Log some basic data if running on EC2 inside ECS
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {

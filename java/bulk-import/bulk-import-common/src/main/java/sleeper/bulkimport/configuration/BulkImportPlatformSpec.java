@@ -16,13 +16,12 @@
 package sleeper.bulkimport.configuration;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Map;
-
-import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 
 public class BulkImportPlatformSpec {
 
@@ -50,7 +49,7 @@ public class BulkImportPlatformSpec {
     }
 
     public List<String> getList(TableProperty property) {
-        return readList(get(property));
+        return SleeperPropertyValueUtils.readList(get(property));
     }
 
     public String getOrDefault(TableProperty property, String defaultValue) {

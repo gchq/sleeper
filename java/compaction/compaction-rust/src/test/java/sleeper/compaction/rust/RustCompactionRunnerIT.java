@@ -28,10 +28,10 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.configuration.TableUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.TableFilePaths;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
@@ -56,13 +56,13 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class RustCompactionRunnerIT {
 
@@ -276,8 +276,8 @@ public class RustCompactionRunnerIT {
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
-        String prefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
-        return TableUtils.constructPartitionParquetFilePath(prefix, partitionId, filename);
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, filename);
     }
 
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {

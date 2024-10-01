@@ -27,15 +27,15 @@ import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.CompactionProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.CompactionProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 
@@ -52,11 +52,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 

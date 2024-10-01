@@ -15,19 +15,17 @@
  */
 package sleeper.io.parquet.utils;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
-import static sleeper.configuration.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
-import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD_RANGE;
+import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
+import static sleeper.core.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
+import static sleeper.core.properties.table.TableProperty.S3A_READAHEAD_RANGE;
 
 public class HadoopConfigurationProvider {
 
@@ -105,17 +103,8 @@ public class HadoopConfigurationProvider {
     private static void setLocalStackConfiguration(Configuration conf) {
         conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
         conf.set("fs.s3a.path.style.access", "true");
-        conf.set("fs.s3a.aws.credentials.provider", LocalStackCredentialsProvider.class.getName());
-    }
-
-    public static class LocalStackCredentialsProvider implements AWSCredentialsProvider {
-        @Override
-        public AWSCredentials getCredentials() {
-            return new BasicAWSCredentials("test-access-key", "test-secret-key");
-        }
-
-        @Override
-        public void refresh() {
-        }
+        conf.set("fs.s3a.aws.credentials.provider", SimpleAWSCredentialsProvider.class.getName());
+        conf.set("fs.s3a.access.key", "test-access-key");
+        conf.set("fs.s3a.secret.key", "test-secret-key");
     }
 }

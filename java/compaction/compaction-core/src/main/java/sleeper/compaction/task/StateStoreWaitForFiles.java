@@ -19,13 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
@@ -37,7 +36,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class StateStoreWaitForFiles implements WaitForFileAssignment {
+public class StateStoreWaitForFiles {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
 
@@ -67,7 +66,6 @@ public class StateStoreWaitForFiles implements WaitForFileAssignment {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    @Override
     public void wait(CompactionJob job) throws InterruptedException {
         Instant startTime = Instant.now();
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());

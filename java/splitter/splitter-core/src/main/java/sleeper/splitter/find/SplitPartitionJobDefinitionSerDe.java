@@ -26,9 +26,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -18,8 +18,8 @@ package sleeper.splitter.split;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
@@ -32,8 +32,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Splits a partition. Identifies the median value of the first dimension. If that leads to a valid split (i.e. one

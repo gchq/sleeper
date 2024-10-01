@@ -15,9 +15,9 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -26,10 +26,10 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
-import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public class LocalStackTestInstance {

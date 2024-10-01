@@ -18,27 +18,29 @@ package sleeper.clients.status.report.partitions;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.testutils.StateStoreTestBuilder;
+import sleeper.splitter.status.PartitionsStatus;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithNoChildren;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.splitter.status.PartitionsStatusTestHelper.createTablePropertiesWithSplitThreshold;
 
 class PartitionsStatusReportTest {
     @Test
@@ -175,5 +177,51 @@ class PartitionsStatusReportTest {
         // When
         assertThat(getStandardReport(properties, store)).isEqualTo(
                 example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
+    }
+
+    @Test
+    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(100);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "abc")
+                .splitToNewChildren("R", "RL", "RR", "def"))
+                .partitionFileWithRecords("root", "root.parquet", 100L)
+                .partitionFileWithRecords("R", "R.parquet", 100L)
+                .partitionFileWithRecords("RL", "RL.parquet", 24L)
+                .partitionFileWithRecords("RR", "RR.parquet", 26L)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/combinedPartitionRecordCountExceedsThreshold.txt"));
+    }
+
+    @Test
+    void shouldReportSomeFilesAssignedToAJob() throws Exception {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .build();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema).singlePartition("root"))
+                .partitionFileWithRecords("root", "1.parquet", 100L)
+                .partitionFileWithRecords("root", "2.parquet", 100L)
+                .partitionFileWithRecords("root", "3.parquet", 100L)
+                .assignJobOnPartitionToFiles("test-job", "root", List.of("1.parquet", "2.parquet"))
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(properties, store)).isEqualTo(
+                example("reports/partitions/rootWithSomeFilesOnJob.txt"));
+    }
+
+    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
+        PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
+        reporter.report(PartitionsStatus.from(tableProperties, stateStore));
+        return output.toString();
     }
 }

@@ -40,9 +40,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -67,9 +67,9 @@ import java.util.stream.Collectors;
 
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * Retrieves data using Parquet's predicate pushdown, applying compaction time iterators. Searches within a single

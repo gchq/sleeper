@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitRequest;
@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryStateStoreCommitter {
 

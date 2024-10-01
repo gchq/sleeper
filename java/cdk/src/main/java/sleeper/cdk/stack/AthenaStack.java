@@ -34,23 +34,24 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
-import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
-import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
+import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
+import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
@@ -60,6 +61,7 @@ public class AthenaStack extends NestedStack {
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
+        LambdaCode customResourcesJar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "spill-bucket");
@@ -67,13 +69,14 @@ public class AthenaStack extends NestedStack {
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
-                .autoDeleteObjects(true)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .lifecycleRules(Lists.newArrayList(LifecycleRule.builder()
                         .expiration(Duration.days(instanceProperties.getInt(SPILL_BUCKET_AGE_OFF_IN_DAYS)))
                         .build()))
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
+
+        AutoDeleteS3Objects.autoDeleteForBucket(this, customResourcesJar, instanceProperties, spillBucket);
 
         Key spillMasterKey = Key.Builder.create(this, "SpillMasterKey")
                 .description("Master key used by Sleeper to generate data keys. The data keys created are used to " +

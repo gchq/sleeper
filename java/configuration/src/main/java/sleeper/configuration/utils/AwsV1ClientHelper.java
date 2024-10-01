@@ -21,12 +21,23 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
+/**
+ * Applies default configuration to AWS SDK v1 clients.
+ */
 public class AwsV1ClientHelper {
     private static final String AWS_ENDPOINT_ENV_VAR = "AWS_ENDPOINT_URL";
 
     private AwsV1ClientHelper() {
     }
 
+    /**
+     * Builds an AWS SDK v1 client with default configuration.
+     *
+     * @param  <B>     the builder type
+     * @param  <T>     the client type
+     * @param  builder the builder
+     * @return         the client
+     */
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV1Client(B builder) {
         String endpoint = System.getenv(AWS_ENDPOINT_ENV_VAR);
         if (endpoint != null) {

@@ -60,13 +60,13 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -76,17 +76,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
  * Deploys an EKS cluster and associated Kubernetes resources needed to run Spark on Kubernetes. In addition to this,

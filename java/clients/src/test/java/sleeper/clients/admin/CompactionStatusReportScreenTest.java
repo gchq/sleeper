@@ -28,8 +28,8 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,7 +52,7 @@ import static sleeper.clients.status.report.compaction.task.CompactionTaskStatus
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested

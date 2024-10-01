@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
-import sleeper.configuration.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -35,9 +35,9 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;

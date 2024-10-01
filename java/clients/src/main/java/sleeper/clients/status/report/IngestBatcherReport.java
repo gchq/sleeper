@@ -25,11 +25,11 @@ import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.status.report.ingest.batcher.IngestBatcherReporter;
 import sleeper.clients.status.report.ingest.batcher.JsonIngestBatcherReporter;
 import sleeper.clients.status.report.ingest.batcher.StandardIngestBatcherReporter;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -103,9 +103,9 @@ public class IngestBatcherReport {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
-                    new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient));
             IngestBatcherReporter reporter;
             switch (reporterType) {
                 case JSON:

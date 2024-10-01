@@ -22,16 +22,16 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 
 public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioLeafStrategy.class);

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>ingest</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.25.0-SNAPSHOT</version>
+        <version>0.26.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,22 +33,10 @@
             <artifactId>ingest-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

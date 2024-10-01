@@ -21,15 +21,15 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FILENAME;

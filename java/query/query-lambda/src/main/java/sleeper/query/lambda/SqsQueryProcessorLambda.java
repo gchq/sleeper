@@ -28,17 +28,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
@@ -102,19 +104,13 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             LOGGER.error("Config Bucket was null. Was an environment variable missing?");
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
-        instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = Instant.now();
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3(s3Client, configBucket);
-        return properties;
     }
 }

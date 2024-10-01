@@ -29,5 +29,5 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 mkdir -p "$OUTPUT_DIR"
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
+java -cp "${SCRIPTS_DIR}/jars/system-test-data-generation-${VERSION}.jar" \
   sleeper.systemtest.datageneration.GenerateRandomDataFiles "$INSTANCE_ID" "$OUTPUT_DIR" "$NUM_OF_RECORDS"

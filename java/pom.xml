@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.25.0-SNAPSHOT</version>
+    <version>0.26.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -86,7 +86,7 @@
         <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
         <aircompressor.version>0.27</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>4.28.1</protobuf.version>
+        <protobuf.version>4.28.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.41.1</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
@@ -98,7 +98,7 @@
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
-        <dnsjava.version>3.6.1</dnsjava.version>
+        <dnsjava.version>3.6.2</dnsjava.version>
         <!-- Spark declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
         <xz.version>1.10</xz.version>
         <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
@@ -117,28 +117,28 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.8</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.28.3</aws-java-sdk-v2.version>
-        <aws-crt.version>0.31.1</aws-crt.version>
+        <aws-java-sdk-v2.version>2.28.12</aws-java-sdk-v2.version>
+        <aws-crt.version>0.31.3</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.17.1</commons-codec.version>
-        <commons-io.version>2.16.1</commons-io.version>
+        <commons-io.version>2.17.0</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-text.version>1.12.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.0</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.3.0-jre</guava.version>
-        <cdk.version>2.158.0</cdk.version>
+        <guava.version>33.3.1-jre</guava.version>
+        <cdk.version>2.160.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.11.0</gson.version>
@@ -174,15 +174,15 @@
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.11.0</junit.version>
-        <junit.platform.version>1.11.0</junit.platform.version>
-        <mockito.version>5.13.0</mockito.version>
-        <testcontainers.version>1.20.1</testcontainers.version>
+        <junit.version>5.11.1</junit.version>
+        <junit.platform.version>1.11.1</junit.platform.version>
+        <mockito.version>5.14.1</mockito.version>
+        <testcontainers.version>1.20.2</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.5.0</approvaltests.version>
+        <approvaltests.version>24.7.0</approvaltests.version>
         <jsonunit.version>3.4.1</jsonunit.version>
-        <checkstyle.version>10.18.1</checkstyle.version>
+        <checkstyle.version>10.18.2</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -191,6 +191,7 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname/>
+        <sleeper.system.test.standalone.properties.template/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
@@ -453,11 +454,6 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-openjdk8-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlets</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -1091,6 +1087,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <parallel>classesAndMethods</parallel>
+                    <threadCount>10</threadCount>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1303,6 +1303,10 @@
                                 <name>sleeper.system.test.force.statestore.classname</name>
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
+                            <property>
+                                <name>sleeper.system.test.standalone.properties.template</name>
+                                <value>${sleeper.system.test.standalone.properties.template}</value>
+                            </property>
                         </systemProperties>
                     </configuration>
                     <executions>
@@ -1369,7 +1373,6 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
-                        <version>${spotbugs.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>validate</id>
@@ -1437,6 +1440,7 @@
                             <includes>
                                 <include>QuickSystemTestSuite</include>
                             </includes>
+                            <parallel>none</parallel>
                             <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>

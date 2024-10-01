@@ -17,25 +17,24 @@ package sleeper.compaction.task.creation;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.QueueMessageCount;
 import sleeper.task.common.RunCompactionTasks;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function to start compaction tasks based on the number of queued compaction jobs.
  */
-@SuppressWarnings("unused")
 public class RunCompactionTasksLambda {
     private final RunCompactionTasks runTasks;
     private final QueueMessageCount.Client queueMessageCount;
@@ -43,11 +42,10 @@ public class RunCompactionTasksLambda {
     public RunCompactionTasksLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        EcsClient ecsClient = EcsClient.create();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }

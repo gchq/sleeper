@@ -41,7 +41,7 @@ public class SystemTestStandaloneApp extends Stack {
             App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
         }

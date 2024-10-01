@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;

@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -30,7 +30,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 

@@ -16,12 +16,20 @@
 package sleeper.cdk.jars;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BuiltJars {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(BuiltJars.class);
+
     private final AmazonS3 s3;
     private final String bucketName;
+    private final Map<BuiltJar, String> latestVersionIdByJar = new HashMap<>();
 
     public BuiltJars(AmazonS3 s3, String bucketName) {
         this.s3 = s3;
@@ -37,6 +45,11 @@ public class BuiltJars {
     }
 
     public String getLatestVersionId(BuiltJar jar) {
-        return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
+        return latestVersionIdByJar.computeIfAbsent(jar,
+                missingJar -> {
+                    String versionId = s3.getObjectMetadata(bucketName, missingJar.getFileName()).getVersionId();
+                    LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFileName(), versionId);
+                    return versionId;
+                });
     }
 }

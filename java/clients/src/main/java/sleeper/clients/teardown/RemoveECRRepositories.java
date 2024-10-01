@@ -16,22 +16,21 @@
 
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
-import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
+import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);
@@ -39,7 +38,7 @@ public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
-    public static void remove(AmazonECR ecr, InstanceProperties properties, List<String> extraRepositories) {
+    public static void remove(EcrClient ecr, InstanceProperties properties, List<String> extraRepositories) {
         Stream.concat(Stream.of(ECR_COMPACTION_GPU_REPO, ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
                 .filter(properties::isSet)
                 .map(properties::get),
@@ -47,12 +46,12 @@ public class RemoveECRRepositories {
                 .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 
-    private static void deleteRepository(AmazonECR ecr, String repositoryName) {
+    private static void deleteRepository(EcrClient ecr, String repositoryName) {
         LOGGER.info("Deleting repository {}", repositoryName);
         try {
-            ecr.deleteRepository(new DeleteRepositoryRequest()
-                    .withRepositoryName(repositoryName)
-                    .withForce(true));
+            ecr.deleteRepository(request -> request
+                    .repositoryName(repositoryName)
+                    .force(true));
         } catch (RepositoryNotFoundException e) {
             LOGGER.info("Repository not found: {}", repositoryName);
         }

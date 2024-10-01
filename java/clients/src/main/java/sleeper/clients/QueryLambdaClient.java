@@ -22,10 +22,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -41,9 +41,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * Runs queries by sending them to an SQS queue which will trigger a lambda to
@@ -61,7 +61,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         this.sqsClient = sqsClient;
         this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
         this.queryQueueUrl = instanceProperties.get(QUERY_QUEUE_URL);
-        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
+        this.querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient));
     }
 
     @Override
@@ -143,7 +143,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoDBClient, sqsClient, instanceProperties);
             queryLambdaClient.run();
         } finally {

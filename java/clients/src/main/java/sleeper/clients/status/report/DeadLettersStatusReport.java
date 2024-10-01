@@ -25,10 +25,11 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
@@ -36,11 +37,11 @@ import sleeper.task.common.QueueMessageCount;
 import java.io.IOException;
 import java.util.function.Function;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 
 /**
  * A utility class to report information about messages on the various dead-letter
@@ -103,8 +104,8 @@ public class DeadLettersStatusReport {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
             statusReport.run();
         } finally {

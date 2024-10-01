@@ -23,16 +23,16 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
@@ -47,10 +47,10 @@ import java.util.function.Supplier;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 
 /**
  * Runs a compaction task. Executes jobs from a queue, updating the status stores with progress of the task.
@@ -71,11 +71,11 @@ public class CompactionTask {
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
-    private final WaitForFileAssignment waitForFiles;
+    private final StateStoreWaitForFiles waitForFiles;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
@@ -90,7 +90,7 @@ public class CompactionTask {
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
@@ -213,11 +213,6 @@ public class CompactionTask {
     @FunctionalInterface
     public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws IOException;
-    }
-
-    @FunctionalInterface
-    public interface WaitForFileAssignment {
-        void wait(CompactionJob job) throws InterruptedException;
     }
 
     public interface MessageHandle extends AutoCloseable {

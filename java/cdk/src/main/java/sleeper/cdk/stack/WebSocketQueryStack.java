@@ -38,17 +38,17 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 
 public final class WebSocketQueryStack extends NestedStack {
 

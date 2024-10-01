@@ -17,40 +17,40 @@ package sleeper.task.common;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
-import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
-import com.amazonaws.services.ecs.model.ContainerOverride;
-import com.amazonaws.services.ecs.model.LaunchType;
-import com.amazonaws.services.ecs.model.NetworkConfiguration;
-import com.amazonaws.services.ecs.model.PropagateTags;
-import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
+import software.amazon.awssdk.services.ecs.model.ContainerOverride;
+import software.amazon.awssdk.services.ecs.model.LaunchType;
+import software.amazon.awssdk.services.ecs.model.NetworkConfiguration;
+import software.amazon.awssdk.services.ecs.model.PropagateTags;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
+import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.CompactionECSLaunchType;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.CompactionECSLaunchType;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
-import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 
 /**
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
@@ -65,7 +65,7 @@ public class RunCompactionTasks {
     private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, AmazonECS ecsClient, AmazonAutoScaling asClient) {
+            InstanceProperties instanceProperties, EcsClient ecsClient, AmazonAutoScaling asClient) {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
                 createEC2Scaler(instanceProperties, asClient, ecsClient),
@@ -155,7 +155,7 @@ public class RunCompactionTasks {
         taskLauncher.launchTasks(createTasks, checkAbort);
     }
 
-    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonECS ecsClient) {
+    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         // Only need scaler for EC2
         if (!launchType.equalsIgnoreCase("EC2")) {
@@ -174,7 +174,7 @@ public class RunCompactionTasks {
      * @param checkAbort            a condition under which launching will be aborted
      */
     private static void launchTasks(
-            AmazonECS ecsClient, InstanceProperties instanceProperties,
+            EcsClient ecsClient, InstanceProperties instanceProperties,
             int numberOfTasksToCreate, BooleanSupplier checkAbort) {
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
@@ -192,27 +192,28 @@ public class RunCompactionTasks {
      */
     private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
         TaskOverride override = createOverride(instanceProperties);
-        RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(instanceProperties.get(COMPACTION_CLUSTER))
-                .withOverrides(override)
-                .withPropagateTags(PropagateTags.TASK_DEFINITION);
+        RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
+                .cluster(instanceProperties.get(COMPACTION_CLUSTER))
+                .overrides(override)
+                .propagateTags(PropagateTags.TASK_DEFINITION);
 
         CompactionECSLaunchType launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
         if (launchType == CompactionECSLaunchType.FARGATE) {
             String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null");
             NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
-            return runTaskRequest
-                    .withLaunchType(LaunchType.FARGATE)
-                    .withPlatformVersion(fargateVersion)
-                    .withNetworkConfiguration(networkConfiguration)
-                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
+            runTaskRequest
+                    .launchType(LaunchType.FARGATE)
+                    .platformVersion(fargateVersion)
+                    .networkConfiguration(networkConfiguration)
+                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
         } else if (launchType == CompactionECSLaunchType.EC2) {
-            return runTaskRequest
-                    .withLaunchType(LaunchType.EC2)
-                    .withTaskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
+            runTaskRequest
+                    .launchType(LaunchType.EC2)
+                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
         } else {
             throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
         }
+        return runTaskRequest.build();
     }
 
     /**
@@ -222,12 +223,13 @@ public class RunCompactionTasks {
      * @return                    the container definition overrides
      */
     private static TaskOverride createOverride(InstanceProperties instanceProperties) {
-        ContainerOverride containerOverride = new ContainerOverride()
-                .withName(COMPACTION_CONTAINER_NAME)
-                .withCommand(List.of(instanceProperties.get(CONFIG_BUCKET)));
-
-        return new TaskOverride()
-                .withContainerOverrides(containerOverride);
+        ContainerOverride containerOverride = ContainerOverride.builder()
+                .name(COMPACTION_CONTAINER_NAME)
+                .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
+                .build();
+        return TaskOverride.builder()
+                .containerOverrides(containerOverride)
+                .build();
     }
 
     /**
@@ -237,12 +239,13 @@ public class RunCompactionTasks {
      * @return                    task network configuration
      */
     private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
-        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(instanceProperties.getList(SUBNETS))
-                .withSecurityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS));
-
-        return new NetworkConfiguration()
-                .withAwsvpcConfiguration(vpcConfiguration);
+        AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
+                .subnets(instanceProperties.getList(SUBNETS))
+                .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
+                .build();
+        return NetworkConfiguration.builder()
+                .awsvpcConfiguration(vpcConfiguration)
+                .build();
     }
 
     public static void main(String[] args) {
@@ -253,17 +256,14 @@ public class RunCompactionTasks {
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        try (EcsClient ecsClient = EcsClient.create()) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
-            ecsClient.shutdown();
             s3Client.shutdown();
             asClient.shutdown();
         }

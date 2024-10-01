@@ -25,18 +25,20 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class TableDataStack extends NestedStack {
 
     private final IBucket dataBucket;
 
     public TableDataStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack, BuiltJars jars) {
         super(scope, id);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -48,8 +50,12 @@ public class TableDataStack extends NestedStack {
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
-                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
+                .removalPolicy(removalPolicy)
                 .build();
+
+        if (removalPolicy == RemovalPolicy.DESTROY) {
+            AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, dataBucket);
+        }
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());
 

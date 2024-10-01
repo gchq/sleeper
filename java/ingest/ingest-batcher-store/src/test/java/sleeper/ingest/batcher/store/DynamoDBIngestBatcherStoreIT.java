@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;

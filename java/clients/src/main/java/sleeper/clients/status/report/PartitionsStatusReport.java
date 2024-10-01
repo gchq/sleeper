@@ -20,12 +20,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.splitter.status.PartitionsStatus;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 

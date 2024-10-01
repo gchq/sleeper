@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class WaitForCompactionJobCreation {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobCreation.class);

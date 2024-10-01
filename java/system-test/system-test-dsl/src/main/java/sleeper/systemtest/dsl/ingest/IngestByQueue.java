@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;

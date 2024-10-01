@@ -19,9 +19,9 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
 public interface IngestStatusStoreResources {
 

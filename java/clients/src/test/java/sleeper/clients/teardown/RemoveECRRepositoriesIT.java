@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
@@ -38,11 +38,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
 class RemoveECRRepositoriesIT {

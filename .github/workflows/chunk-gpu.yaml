@@ -1,0 +1,32 @@
+name: Build Rust Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-rust.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'rust/**'
+      - 'java/pom.xml'
+      - 'java/compaction/pom.xml'
+      - 'java/compaction/compaction-core/**'
+      - 'java/compaction/compaction-gpu/**
+      - 'java/ingest/ingest-runner/**'
+      - 'java/common/common-job/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/sketches/**'
+      - 'java/statestore/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: rust
+      skipRust: false

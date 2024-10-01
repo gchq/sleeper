@@ -28,10 +28,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.io.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter;
@@ -43,7 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda that receives batches of tables from an SQS queue and deletes old transaction log snapshots for them.
@@ -53,7 +56,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
 
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
 
@@ -61,9 +64,9 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         s3Client = AmazonS3ClientBuilder.defaultClient();
         dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override

@@ -23,28 +23,30 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 public class BulkImportBucketStack extends NestedStack {
     private final IBucket importBucket;
 
-    public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks) {
+    public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks, BuiltJars jars) {
         super(scope, id);
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                 .bucketName(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "bulk-import"))
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .versioned(false)
-                .autoDeleteObjects(true)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
+        AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, importBucket);
     }
 
     public IBucket getImportBucket() {

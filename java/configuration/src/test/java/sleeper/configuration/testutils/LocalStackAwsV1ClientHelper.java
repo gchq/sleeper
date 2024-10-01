@@ -21,11 +21,24 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
+/**
+ * Applies configuration for AWS SDK v1 clients to communicate with LocalStack.
+ */
 public class LocalStackAwsV1ClientHelper {
 
     private LocalStackAwsV1ClientHelper() {
     }
 
+    /**
+     * Builds an AWS SDK v1 client to interact with LocalStack.
+     *
+     * @param  <B>                 the builder type
+     * @param  <T>                 the client type
+     * @param  localStackContainer the LocalStack test container
+     * @param  service             the LocalStack service the client is for
+     * @param  builder             the builder
+     * @return                     the client
+     */
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV1Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
         return builder
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(

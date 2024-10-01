@@ -16,7 +16,6 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -76,14 +75,14 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.Requirements;
-import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
+import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,55 +95,55 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
-import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
+import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 /**
@@ -545,12 +544,12 @@ public class CompactionStack extends NestedStack {
 
     private FargateTaskDefinition compactionFargateTaskDefinition() {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, "CompactionFargateTaskDefinition")
                 .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
+                .cpu(requirements.getCpu())
+                .memoryLimitMiB(requirements.getMemoryLimitMiB())
                 .runtimePlatform(RuntimePlatform.builder()
                         .cpuArchitecture(CpuArchitecture.of(architecture))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
@@ -569,48 +568,51 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createFargateContainerDefinition(
             ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
-                .logging(logDriver)
+                .cpu(requirements.getCpu())
+                .memoryLimitMiB(requirements.getMemoryLimitMiB())
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
+                .build();
+    }
+
+    private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getCpu())
+                // bit hacky: Reduce memory requirement for EC2 to prevent
+                // container allocation failing when we need almost entire resources
+                // of machine
+                .memoryLimitMiB((int) (requirements.getMemoryLimitMiB() * 0.95))
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
                 .build();
     }
 
     private ContainerDefinitionOptions createEC2GPUContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, instanceProperties);
-        return ContainerDefinitionOptions.builder()
-                .image(image)
-                .environment(environment)
-                .cpu(requirements.getLeft())
-                // bit hacky: Reduce memory requirement for EC2 to prevent
-                // container allocation failing when we need almost entire resources
-                // of machine
-                .memoryLimitMiB((int) (requirements.getRight() * 0.95))
-                .gpuCount(1)
-                .logging(logDriver)
-                .build();
-    }
-
-    private ContainerDefinitionOptions createEC2ContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         int cpu = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_CPU);
-        int memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_MEMORY);
+        int memoryLimitMiB  = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_MEMORY);
         return ContainerDefinitionOptions.builder()
                 .image(image)
+                .gpuCount(1)
                 .environment(environment)
                 .cpu(cpu)
                 // bit hacky: Reduce memory requirement for EC2 to prevent
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (memoryLimitMiB * 0.95))
-                .logging(logDriver)
+                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
                 .build();
     }
 
+
+ 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode taskCreatorJar) {
 

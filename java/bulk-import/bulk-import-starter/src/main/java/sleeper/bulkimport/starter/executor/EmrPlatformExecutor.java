@@ -15,59 +15,56 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.Application;
-import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
-import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
-import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
-import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
-import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
-import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
-import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
-import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
-import com.amazonaws.services.elasticmapreduce.model.StepConfig;
-import com.amazonaws.services.elasticmapreduce.model.Tag;
-import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.Application;
+import software.amazon.awssdk.services.emr.model.EbsBlockDeviceConfig;
+import software.amazon.awssdk.services.emr.model.EbsConfiguration;
+import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
+import software.amazon.awssdk.services.emr.model.RunJobFlowRequest;
+import software.amazon.awssdk.services.emr.model.RunJobFlowResponse;
+import software.amazon.awssdk.services.emr.model.ScaleDownBehavior;
+import software.amazon.awssdk.services.emr.model.StepConfig;
+import software.amazon.awssdk.services.emr.model.Tag;
+import software.amazon.awssdk.services.emr.model.VolumeSpecification;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
-import java.util.Collections;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
  * Starts an EMR cluster to run a single bulk import job and then terminate.
  */
 public class EmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrPlatformExecutor.class);
-    private final AmazonElasticMapReduce emrClient;
+    private final EmrClient emrClient;
     private final EmrInstanceConfiguration instanceConfiguration;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
+    public EmrPlatformExecutor(EmrClient emrClient,
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this(emrClient, instanceProperties, tablePropertiesProvider, new EmrInstanceFleets(instanceProperties));
     }
 
-    public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
+    public EmrPlatformExecutor(EmrClient emrClient,
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             EmrInstanceConfiguration instanceConfiguration) {
         this.instanceProperties = instanceProperties;
@@ -86,60 +83,63 @@ public class EmrPlatformExecutor implements PlatformExecutor {
 
         String clusterName = String.join("-", "sleeper",
                 instanceProperties.get(ID),
-                bulkImportJob.getTableName(),
+                bulkImportJob.getTableId(),
                 bulkImportJob.getId());
-        if (clusterName.length() > 64) {
-            clusterName = clusterName.substring(0, 64);
-        }
 
-        RunJobFlowResult response = emrClient.runJobFlow(new RunJobFlowRequest()
-                .withName(clusterName)
-                .withInstances(createJobFlowInstancesConfig(platformSpec))
-                .withVisibleToAllUsers(true)
-                .withSecurityConfiguration(instanceProperties.get(BULK_IMPORT_EMR_SECURITY_CONF_NAME))
-                .withManagedScalingPolicy(new ManagedScalingPolicy()
-                        .withComputeLimits(instanceConfiguration.createComputeLimits(platformSpec)))
-                .withScaleDownBehavior(ScaleDownBehavior.TERMINATE_AT_TASK_COMPLETION)
-                .withReleaseLabel(platformSpec.get(BULK_IMPORT_EMR_RELEASE_LABEL))
-                .withApplications(new Application().withName("Spark"))
-                .withLogUri(logUri)
-                .withServiceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
-                .withJobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
-                .withSteps(new StepConfig()
-                        .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
-                        .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(arguments.sparkSubmitCommandForEMRCluster(
+        RunJobFlowResponse response = emrClient.runJobFlow(RunJobFlowRequest.builder()
+                .name(clusterName)
+                .instances(createJobFlowInstancesConfig(platformSpec))
+                .visibleToAllUsers(true)
+                .securityConfiguration(instanceProperties.get(BULK_IMPORT_EMR_SECURITY_CONF_NAME))
+                .managedScalingPolicy(policy -> policy
+                        .computeLimits(instanceConfiguration.createComputeLimits(platformSpec)))
+                .scaleDownBehavior(ScaleDownBehavior.TERMINATE_AT_TASK_COMPLETION)
+                .releaseLabel(platformSpec.get(BULK_IMPORT_EMR_RELEASE_LABEL))
+                .applications(Application.builder().name("Spark").build())
+                .logUri(logUri)
+                .serviceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
+                .jobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
+                .steps(StepConfig.builder()
+                        .name("Bulk Load (job id " + bulkImportJob.getId() + ")")
+                        .hadoopJarStep(jarStep -> jarStep
+                                .jar("command-runner.jar")
+                                .args(arguments.sparkSubmitCommandForEMRCluster(
                                         clusterName + "-EMR",
-                                        EmrJarLocation.getJarLocation(instanceProperties)))))
-                .withTags(instanceProperties.getTags().entrySet().stream()
-                        .map(entry -> new Tag(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList())));
+                                        EmrJarLocation.getJarLocation(instanceProperties))))
+                        .build())
+                .tags(instanceProperties.getTags().entrySet().stream()
+                        .map(entry -> Tag.builder().key(entry.getKey()).value(entry.getValue()).build())
+                        .collect(Collectors.toList()))
+                .build());
 
-        LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
+        LOGGER.info("Cluster created with ARN {}", response.clusterArn());
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec) {
 
-        VolumeSpecification volumeSpecification = new VolumeSpecification()
+        VolumeSpecification volumeSpecification = VolumeSpecification.builder()
                 // We could add a property to control the Iops setting here
-                .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
-                .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
-        EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()
-                .withVolumeSpecification(volumeSpecification)
-                .withVolumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE));
-        EbsConfiguration ebsConfiguration = new EbsConfiguration()
-                .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
-                .withEbsOptimized(true);
+                .sizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
+                .volumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE))
+                .build();
+        EbsBlockDeviceConfig ebsBlockDeviceConfig = EbsBlockDeviceConfig.builder()
+                .volumeSpecification(volumeSpecification)
+                .volumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE))
+                .build();
+        EbsConfiguration ebsConfiguration = EbsConfiguration.builder()
+                .ebsBlockDeviceConfigs(ebsBlockDeviceConfig)
+                .ebsOptimized(true)
+                .build();
 
         JobFlowInstancesConfig config = instanceConfiguration.createJobFlowInstancesConfig(ebsConfiguration, platformSpec);
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
-            config.setEc2KeyName(ec2KeyName);
+            config = config.toBuilder().ec2KeyName(ec2KeyName).build();
         }
         String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
         if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
-            config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
+            config = config.toBuilder().additionalMasterSecurityGroups(additionalSecurityGroup).build();
         }
         return config;
     }

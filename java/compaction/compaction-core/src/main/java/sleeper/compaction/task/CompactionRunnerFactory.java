@@ -17,7 +17,7 @@ package sleeper.compaction.task;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 
 /**
  * Interface for classes that implement logic for choosing which compaction method should be chosen.

@@ -24,17 +24,17 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 
-import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.cdk.util.Utils.createCustomResourceProviderLogGroup;
+import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.

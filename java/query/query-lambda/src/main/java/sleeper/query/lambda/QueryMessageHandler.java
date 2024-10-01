@@ -19,7 +19,7 @@ package sleeper.query.lambda;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.model.QueryOrLeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;

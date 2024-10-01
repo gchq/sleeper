@@ -21,8 +21,8 @@ import sleeper.compaction.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class StateStoreCommitMessageFactory {
 

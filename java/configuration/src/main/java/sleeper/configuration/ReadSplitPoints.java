@@ -20,8 +20,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Reads a file storing split points to initialise a Sleeper table partition tree.
+ */
 public class ReadSplitPoints {
 
     private ReadSplitPoints() {
@@ -44,6 +47,13 @@ public class ReadSplitPoints {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadSplitPoints.class);
 
+    /**
+     * Reads the local split points file if set in the table property.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the split points, or an empty list if not set
+     * @throws IOException     if the file could not be read
+     */
     public static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
         if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
             return readSplitPoints(tableProperties,
@@ -54,12 +64,29 @@ public class ReadSplitPoints {
         }
     }
 
+    /**
+     * Reads a local split points file.
+     *
+     * @param  tableProperties      the table properties
+     * @param  splitPointsFile      the path to the file
+     * @param  stringsBase64Encoded true if string values are Base64 encoded in the file
+     * @return                      the split points
+     * @throws IOException          if the file could not be read
+     */
     public static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
         List<Object> splitPoints = fromLines(Files.lines(Paths.get(splitPointsFile)), tableProperties.getSchema(), stringsBase64Encoded);
         LOGGER.info("Read {} split points from file: {}", splitPoints.size(), splitPointsFile);
         return splitPoints;
     }
 
+    /**
+     * Reads a split points file held in a string.
+     *
+     * @param  splitPoints          the split points file contents
+     * @param  schema               the Sleeper table schema
+     * @param  stringsBase64Encoded true if string values are Base64 encoded in the file
+     * @return                      the split points
+     */
     public static List<Object> fromString(String splitPoints, Schema schema, boolean stringsBase64Encoded) {
         return fromLines(splitPoints.lines(), schema, stringsBase64Encoded);
     }
