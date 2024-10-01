@@ -71,11 +71,11 @@ public class CompactionTask {
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
-    private final WaitForFileAssignment waitForFiles;
+    private final StateStoreWaitForFiles waitForFiles;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
             CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
@@ -90,7 +90,7 @@ public class CompactionTask {
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
-            MessageReceiver messageReceiver, WaitForFileAssignment waitForFiles,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
@@ -213,11 +213,6 @@ public class CompactionTask {
     @FunctionalInterface
     public interface MessageReceiver {
         Optional<MessageHandle> receiveMessage() throws IOException;
-    }
-
-    @FunctionalInterface
-    public interface WaitForFileAssignment {
-        void wait(CompactionJob job) throws InterruptedException;
     }
 
     public interface MessageHandle extends AutoCloseable {

@@ -18,82 +18,61 @@ package sleeper.compaction.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.task.CompactionTask.WaitForFileAssignment;
-import sleeper.core.util.PollWithRetries;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
-    private final List<CompactionJob> assignmentCheckRetries = new ArrayList<>();
 
     @Test
     void shouldRetryOnceWaitingForFilesToBeAssignedToJob() throws Exception {
         // Given
-        CompactionJob job = createJobOnQueue("job1");
+        CompactionJob job = createJobOnQueueNotAssignedToFiles("job1");
+        actionAfterWaitForFileAssignment(() -> {
+            assignFilesToJob(job, stateStore);
+        });
 
         // When
         runTaskCheckingFiles(
-                waitForFilesAssignment(false, true),
+                waitForFileAssignmentWithAttempts(2),
                 jobsSucceed(1));
 
         // Then
         assertThat(successfulJobs).containsExactly(job);
         assertThat(failedJobs).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
-        assertThat(assignmentCheckRetries).containsExactly(job);
+        assertThat(foundWaitsForFileAssignment).hasSize(1);
     }
 
     @Test
     void shouldFailJobWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
         // Given
-        CompactionJob job = createJobOnQueue("job1");
+        CompactionJob job = createJobOnQueueNotAssignedToFiles("job1");
 
         // When
         runTaskCheckingFiles(
-                waitForFilesAssignment(false),
+                waitForFileAssignmentWithAttempts(1),
                 jobsSucceed(1));
 
         // Then
         assertThat(successfulJobs).isEmpty();
         assertThat(failedJobs).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
-        assertThat(assignmentCheckRetries).containsExactly(job);
+        assertThat(foundWaitsForFileAssignment).isEmpty();
     }
 
     @Test
     void shouldNotUpdateStatusStoreWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
         // Given
-        CompactionJob job = createJobOnQueue("job1");
+        CompactionJob job = createJobOnQueueNotAssignedToFiles("job1");
 
         // When
         runTaskCheckingFiles(
-                waitForFilesAssignment(false),
+                waitForFileAssignmentWithAttempts(1),
                 jobsSucceed(1));
 
         // Then
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 jobCreated(job, DEFAULT_CREATED_TIME));
-    }
-
-    private WaitForFileAssignment waitForFilesAssignment(Boolean... checkResults) {
-        Iterator<Boolean> checks = List.of(checkResults).iterator();
-        return job -> {
-            PollWithRetries.immediateRetries(10).pollUntil("files assigned to job", () -> {
-                if (checks.hasNext()) {
-                    boolean check = checks.next();
-                    if (!check) {
-                        assignmentCheckRetries.add(job);
-                    }
-                    return check;
-                } else {
-                    return false;
-                }
-            });
-        };
     }
 }

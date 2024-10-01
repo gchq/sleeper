@@ -47,9 +47,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
@@ -60,6 +57,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryFileReferenceStore.class);
 
     private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
+    private QueryFailureChecker queryFailureChecker = () -> Optional.empty();
     private Clock clock = Clock.systemUTC();
 
     @Override
@@ -74,12 +72,13 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getFileReferences() {
+    public List<FileReference> getFileReferences() throws StateStoreException {
         return streamFileReferences().collect(toUnmodifiableList());
     }
 
     @Override
-    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) {
+    public Stream<String> getReadyForGCFilenamesBefore(Instant maxUpdateTime) throws StateStoreException {
+        checkQueryFailure();
         List<String> filenames = filesByFilename.values().stream()
                 .filter(file -> file.getReferenceCount() < 1)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
@@ -89,17 +88,10 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public List<FileReference> getFileReferencesWithNoJobId() {
+    public List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException {
         return streamFileReferences()
                 .filter(file -> file.getJobId() == null)
                 .collect(toUnmodifiableList());
-    }
-
-    @Override
-    public Map<String, List<String>> getPartitionToReferencedFilesMap() {
-        return streamFileReferences().collect(
-                groupingBy(FileReference::getPartitionId,
-                        mapping(FileReference::getFilename, toList())));
     }
 
     @Override
@@ -202,9 +194,25 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
                 fileWithOneReference(request.getNewReference(), updateTime));
     }
 
-    private Stream<FileReference> streamFileReferences() {
+    private Stream<FileReference> streamFileReferences() throws StateStoreException {
+        checkQueryFailure();
         return filesByFilename.values().stream()
                 .flatMap(file -> file.getReferences().stream());
+    }
+
+    private void checkQueryFailure() throws StateStoreException {
+        Optional<Exception> failureOpt = queryFailureChecker.getNextQueryFailure();
+        if (!failureOpt.isPresent()) {
+            return;
+        }
+        Exception failure = failureOpt.get();
+        if (failure instanceof StateStoreException) {
+            throw (StateStoreException) failure;
+        } else if (failure instanceof RuntimeException) {
+            throw (RuntimeException) failure;
+        } else {
+            throw new IllegalStateException("Unexpected exception type: " + failure.getClass());
+        }
     }
 
     @Override
@@ -279,5 +287,24 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     @Override
     public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    /**
+     * Sets whether the expected queries will fail, which which exceptions. Any time files are queried against this
+     * class, the next element in this list will be checked and the exception thrown if any. If more queries are made
+     * those will fail with a NoSuchElementException.
+     *
+     * @param failures the failures for each expected query
+     */
+    public void setFailuresForExpectedQueries(List<Optional<Exception>> failures) {
+        queryFailureChecker = failures.iterator()::next;
+    }
+
+    /**
+     * Helper to check whether the next query to the file reference store should fail.
+     */
+    private interface QueryFailureChecker {
+
+        Optional<Exception> getNextQueryFailure();
     }
 }
