@@ -57,17 +57,6 @@ public class StateStoreWaitForFilesTestHelper {
         return waitWithAttempts(attempts, jitter, StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES);
     }
 
-    public static Waiter withActionAfterWait(Waiter waiter, WaitAction action) throws Exception {
-        return millis -> {
-            try {
-                action.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            waiter.waitForMillis(millis);
-        };
-    }
-
     private StateStoreWaitForFiles waitWithAttempts(
             int attempts, DoubleSupplier jitter, PollWithRetries throttlingRetries) {
         return new StateStoreWaitForFiles(attempts,
@@ -76,9 +65,5 @@ public class StateStoreWaitForFilesTestHelper {
                         .sleepInInterval(waiter::waitForMillis)
                         .build(),
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore, timeSupplier);
-    }
-
-    public interface WaitAction {
-        void run() throws Exception;
     }
 }

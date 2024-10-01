@@ -26,7 +26,6 @@ import sleeper.compaction.task.CompactionTask.MessageReceiver;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper;
-import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.WaitAction;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -39,6 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
+import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -66,6 +66,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.withActionAfterWait;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -231,7 +232,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void actionAfterWaitForFileAssignment(WaitAction action) throws Exception {
-        waiterForFileAssignment = StateStoreWaitForFilesTestHelper.withActionAfterWait(waiterForFileAssignment, action);
+        waiterForFileAssignment = withActionAfterWait(waiterForFileAssignment, action);
     }
 
     private MessageReceiver pollQueue() {
