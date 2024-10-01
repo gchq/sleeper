@@ -123,7 +123,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -275,7 +274,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -299,7 +299,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
