@@ -28,10 +28,12 @@ import java.util.function.Consumer;
 public class PropertyGroup {
     private final String name;
     private final String description;
+    private final String details;
 
     private PropertyGroup(Builder builder) {
         name = Objects.requireNonNull(builder.name, "name must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        details = builder.details;
     }
 
     /**
@@ -50,6 +52,10 @@ public class PropertyGroup {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getDetails() {
+        return details;
     }
 
     @Override
@@ -80,6 +86,7 @@ public class PropertyGroup {
     public static final class Builder {
         private String name;
         private String description;
+        private String details;
         private Consumer<PropertyGroup> afterBuild = group -> {
         };
 
@@ -105,6 +112,17 @@ public class PropertyGroup {
          */
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        /**
+         * Sets the group details.
+         *
+         * @param  details the details
+         * @return         this builder
+         */
+        public Builder details(String details) {
+            this.details = details;
             return this;
         }
 

@@ -227,9 +227,10 @@ public class GeneratePropertiesTemplates {
         writer.println("###################");
         writer.println("# Template Values #");
         writer.println("###################");
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
                 templateProperties, InstancePropertyGroup.getAll(), writer)
-                .print(properties);
+                .printGroupDetails(false)
+                .build().print(properties);
         writer.println();
         writer.println();
         writer.println("##################");

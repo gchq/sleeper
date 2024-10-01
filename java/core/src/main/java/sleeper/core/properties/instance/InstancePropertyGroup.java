@@ -40,9 +40,8 @@ public class InstancePropertyGroup {
             .build();
     public static final PropertyGroup BULK_IMPORT = instanceGroup("Bulk Import")
             .description("The following properties relate to bulk import, " +
-                    "i.e. ingesting data using Spark jobs running on EMR or EKS.\n" +
-                    "\n" +
-                    "Note that on EMR, the total resource allocation must align with the instance types used for the " +
+                    "i.e. ingesting data using Spark jobs running on EMR or EKS.")
+            .details("Note that on EMR, the total resource allocation must align with the instance types used for the " +
                     "cluster. For the maximum memory usage, combine the memory and memory overhead properties, and " +
                     "compare against the maximum memory allocation for YARN in the Hadoop task configuration:\n" +
                     "\n" +
