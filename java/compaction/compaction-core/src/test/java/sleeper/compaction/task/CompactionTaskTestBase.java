@@ -114,15 +114,15 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
     protected void runTaskCheckingFiles(StateStoreWaitForFiles fileAssignmentCheck, CompactionRunner compactor) throws Exception {
@@ -133,7 +133,7 @@ public class CompactionTaskTestBase {
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(messageReceiver, noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
@@ -152,13 +152,16 @@ public class CompactionTaskTestBase {
                 .run();
     }
 
-    private StateStoreWaitForFiles waitForFileAssignment() {
-        return waitForFileAssignmentWithAttempts(1);
+    private StateStoreWaitForFiles noWaitForFileAssignment() {
+        return waitForFileAssignment().withAttempts(1);
     }
 
-    protected StateStoreWaitForFiles waitForFileAssignmentWithAttempts(int attempts) {
-        return StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts(
-                attempts, waiterForFileAssignment, tablePropertiesProvider(), stateStoreProvider());
+    protected StateStoreWaitForFilesTestHelper waitForFileAssignment() {
+        return waitForFileAssignment(timePassesAMinuteAtATime());
+    }
+
+    protected StateStoreWaitForFilesTestHelper waitForFileAssignment(Supplier<Instant> timeSupplier) {
+        return new StateStoreWaitForFilesTestHelper(tablePropertiesProvider(), stateStoreProvider(), jobStore, waiterForFileAssignment, timeSupplier);
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {

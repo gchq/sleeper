@@ -313,7 +313,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         }
 
         @Test
-        void shouldFailWhenFileDoesNotExistInStateStore() throws Exception {
+        void shouldFailWhenFileDeletedDuringJob() throws Exception {
             // Given
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
