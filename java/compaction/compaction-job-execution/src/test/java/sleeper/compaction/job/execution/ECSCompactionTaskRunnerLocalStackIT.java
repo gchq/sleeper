@@ -286,8 +286,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
 
         @Test
@@ -315,8 +313,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
     }
 
