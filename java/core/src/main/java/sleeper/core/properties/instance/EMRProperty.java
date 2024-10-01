@@ -23,22 +23,6 @@ import java.util.List;
 
 /**
  * Definitions of instance properties relating to bulk import on AWS EMR.
- * <p>
- * Note that the total resource allocation must align with the instance types used for the EMR cluster. For the maximum
- * memory usage, combine the memory and memory overhead properties, and compare against the maximum memory allocation
- * for YARN in the Hadoop task configuration:
- * <p>
- * https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.html
- * <p>
- * As an example, if we use m7i.xlarge for executor instances, that has a maximum allocation of 54272 MiB, or 53 GiB. If
- * we want 3 executors per instance, we can have 53 GiB / 3 = 18,090.666 MiB per executor. We can set the executor
- * memory to 16 GiB, and the executor memory overhead to the remainder of that amount, which is 18,090 MiB - 16 GiB =
- * 1,706 MiB, or 1.666 GiB. This is just above the default Spark memory overhead factor of 0.1, i.e. 16 GiB x 0.1 =
- * 1.6 GiB.
- * <p>
- * Also see EMR best practices:
- * <p>
- * https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources
  */
 public interface EMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")

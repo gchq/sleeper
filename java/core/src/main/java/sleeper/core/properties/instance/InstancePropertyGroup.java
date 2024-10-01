@@ -40,7 +40,23 @@ public class InstancePropertyGroup {
             .build();
     public static final PropertyGroup BULK_IMPORT = instanceGroup("Bulk Import")
             .description("The following properties relate to bulk import, " +
-                    "i.e. ingesting data using Spark jobs running on EMR or EKS.")
+                    "i.e. ingesting data using Spark jobs running on EMR or EKS.\n" +
+                    "\n" +
+                    "Note that on EMR, the total resource allocation must align with the instance types used for the " +
+                    "cluster. For the maximum memory usage, combine the memory and memory overhead properties, and " +
+                    "compare against the maximum memory allocation for YARN in the Hadoop task configuration:\n" +
+                    "\n" +
+                    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-hadoop-task-config.html\n" +
+                    "\n" +
+                    "As an example, if we use m7i.xlarge for executor instances, that has a maximum allocation of " +
+                    "54272 MiB, or 53 GiB. If we want 3 executors per instance, we can have 53 GiB / 3 = 18,090.666 " +
+                    "MiB per executor. We can set the executor memory to 16 GiB, and the executor memory overhead to " +
+                    "the remainder of that amount, which is 18,090 MiB - 16 GiB = 1,706 MiB, or 1.666 GiB. This is " +
+                    "just above the default Spark memory overhead factor of 0.1, i.e. 16 GiB x 0.1 = 1.6 GiB.\n" +
+                    "\n" +
+                    "Also see EMR best practices:\n" +
+                    "\n" +
+                    "https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources")
             .build();
     public static final PropertyGroup PARTITION_SPLITTING = instanceGroup("Partition Splitting")
             .description("The following properties relate to the splitting of partitions.")
