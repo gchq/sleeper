@@ -202,10 +202,6 @@ public class CompactionTaskTestBase {
         return job;
     }
 
-    protected CompactionJob createJobNotInStateStore(String jobId) throws Exception {
-        return createJobNotInStateStore(jobId, tableProperties);
-    }
-
     protected CompactionJob createJobNotInStateStore(String jobId, TableProperties tableProperties) throws Exception {
         CompactionJob job = CompactionJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
