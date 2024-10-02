@@ -32,4 +32,7 @@ public class AppParameters {
     public static final StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
     public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
     public static final IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
+
+    public static final OptionalStringParameter BUILD_UPTIME_LAMBDA_JAR = OptionalStringParameter.key("buildUptimeLambdaJar");
+    public static final StringListParameter BUILD_UPTIME_EXISTING_EC2_IDS = StringListParameter.key("buildUptimeExistingEc2Ids");
 }

@@ -19,6 +19,7 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
 import software.constructs.Node;
 
+import java.util.List;
 import java.util.Optional;
 
 @FunctionalInterface
@@ -36,6 +37,10 @@ public interface AppContext {
 
     default Optional<String> get(OptionalStringParameter string) {
         return string.get(this);
+    }
+
+    default List<String> get(StringListParameter list) {
+        return list.get(this);
     }
 
     default int get(IntParameter integer) {

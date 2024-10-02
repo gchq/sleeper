@@ -18,6 +18,7 @@ package sleeper.environment.cdk.buildec2;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Instance;
 import software.amazon.awscdk.services.ec2.InstanceClass;
@@ -46,6 +47,7 @@ import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 public class BuildEC2Stack extends Stack {
 
     private final IVpc vpc;
+    private final Instance instance;
 
     public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc) {
         super(scope, props.getStackName(), props);
@@ -56,7 +58,7 @@ public class BuildEC2Stack extends Stack {
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
-        Instance instance = Instance.Builder.create(this, "EC2")
+        instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup())
                 .machineImage(image.machineImage())
@@ -130,6 +132,10 @@ public class BuildEC2Stack extends Stack {
                 .description("Allow outbound traffic")
                 .allowAllOutbound(true)
                 .build();
+    }
+
+    public IInstance getInstance() {
+        return instance;
     }
 
 }
