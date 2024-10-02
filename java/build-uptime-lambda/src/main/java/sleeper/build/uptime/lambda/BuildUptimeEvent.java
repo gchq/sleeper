@@ -20,13 +20,15 @@ import java.util.List;
 public class BuildUptimeEvent {
 
     private final String operation;
+    private final String condition;
     private final List<String> ec2Ids;
     private final List<String> rules;
 
-    private BuildUptimeEvent(String operation, List<String> ec2Ids, List<String> rules) {
-        this.operation = operation;
-        this.ec2Ids = ec2Ids;
-        this.rules = rules;
+    private BuildUptimeEvent(Builder builder) {
+        operation = builder.operation;
+        condition = builder.condition;
+        ec2Ids = builder.ec2Ids;
+        rules = builder.rules;
     }
 
     public String getOperation() {
@@ -46,19 +48,66 @@ public class BuildUptimeEvent {
         return "BuildUptimeEvent{operation=" + operation + ", ec2Ids=" + ec2Ids + ", rules=" + rules + "}";
     }
 
-    public static BuildUptimeEvent startEc2sById(String... ec2Ids) {
-        return new BuildUptimeEvent("start", List.of(ec2Ids), null);
+    public static Builder start() {
+        return operation("start");
     }
 
-    public static BuildUptimeEvent stopEc2sById(String... ec2Ids) {
-        return new BuildUptimeEvent("stop", List.of(ec2Ids), null);
+    public static Builder stop() {
+        return operation("stop");
     }
 
-    public static BuildUptimeEvent startRulesByName(String... rules) {
-        return new BuildUptimeEvent("start", null, List.of(rules));
+    public static Builder operation(String operation) {
+        return new Builder().operation(operation);
     }
 
-    public static BuildUptimeEvent operation(String operation) {
-        return new BuildUptimeEvent(operation, null, null);
+    public static class Builder {
+
+        private String operation;
+        private String condition;
+        private List<String> ec2Ids;
+        private List<String> rules;
+
+        private Builder() {
+        }
+
+        public Builder operation(String operation) {
+            this.operation = operation;
+            return this;
+        }
+
+        public Builder condition(String condition) {
+            this.condition = condition;
+            return this;
+        }
+
+        public Builder ec2Ids(List<String> ec2Ids) {
+            this.ec2Ids = ec2Ids;
+            return this;
+        }
+
+        public Builder rules(List<String> rules) {
+            this.rules = rules;
+            return this;
+        }
+
+        public Builder ec2Ids(String... ec2Ids) {
+            return ec2Ids(List.of(ec2Ids));
+        }
+
+        public Builder rules(String... rules) {
+            return rules(List.of(rules));
+        }
+
+        public Builder start() {
+            return operation("start");
+        }
+
+        public Builder stop() {
+            return operation("stop");
+        }
+
+        public BuildUptimeEvent build() {
+            return new BuildUptimeEvent(this);
+        }
     }
 }

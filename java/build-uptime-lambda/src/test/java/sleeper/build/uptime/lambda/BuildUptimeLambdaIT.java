@@ -56,7 +56,7 @@ public class BuildUptimeLambdaIT {
     @Test
     void shouldStartEc2s() {
         // When
-        handle(BuildUptimeEvent.startEc2sById("A", "B"));
+        handle(BuildUptimeEvent.start().ec2Ids("A", "B").build());
 
         // Then
         verify(1, startRequestedForEc2Ids("A", "B"));
@@ -66,7 +66,7 @@ public class BuildUptimeLambdaIT {
     @Test
     void shouldStopEc2s() {
         // When
-        handle(BuildUptimeEvent.stopEc2sById("A", "B"));
+        handle(BuildUptimeEvent.stop().ec2Ids("A", "B").build());
 
         // Then
         verify(1, stopRequestedForEc2Ids("A", "B"));
@@ -76,7 +76,7 @@ public class BuildUptimeLambdaIT {
     @Test
     void shouldEnableCloudWatchRules() {
         // When
-        handle(BuildUptimeEvent.startRulesByName("A", "B"));
+        handle(BuildUptimeEvent.start().rules("A", "B").build());
 
         // Then
         verify(1, enableRequestedForRuleName("A"));
@@ -85,9 +85,20 @@ public class BuildUptimeLambdaIT {
     }
 
     @Test
+    void shouldDisableCloudWatchRules() {
+        // When
+        handle(BuildUptimeEvent.stop().rules("A", "B").build());
+
+        // Then
+        verify(1, disableRequestedForRuleName("A"));
+        verify(1, disableRequestedForRuleName("B"));
+        verify(2, postRequestedFor(urlEqualTo("/")));
+    }
+
+    @Test
     void shouldFailWithUnrecognisedOperation() {
         // When / Then
-        assertThatThrownBy(() -> handle(BuildUptimeEvent.operation("test")))
+        assertThatThrownBy(() -> handle(BuildUptimeEvent.operation("test").build()))
                 .isInstanceOf(IllegalArgumentException.class);
         verify(0, postRequestedFor(urlEqualTo("/")));
     }
@@ -109,6 +120,13 @@ public class BuildUptimeLambdaIT {
 
     private RequestPatternBuilder enableRequestedForRuleName(String ruleName) {
         return postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("AWSEvents.EnableRule"))
+                .withRequestBody(equalTo("{\"Name\":\"" + ruleName + "\"}"));
+    }
+
+    private RequestPatternBuilder disableRequestedForRuleName(String ruleName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("AWSEvents.DisableRule"))
                 .withRequestBody(equalTo("{\"Name\":\"" + ruleName + "\"}"));
     }
 
