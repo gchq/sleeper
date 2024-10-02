@@ -53,7 +53,7 @@ public class BuildUptimeStack extends Stack {
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));
 
-        IFunction function = Function.Builder.create(scope, "Lambda")
+        IFunction function = Function.Builder.create(this, "Lambda")
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
                 .description("Create batches of tables and send requests to create compaction jobs for those batches")
