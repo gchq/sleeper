@@ -20,7 +20,7 @@ public class AppParameters {
     private AppParameters() {
     }
 
-    public static final StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
+    public static final RequiredStringParameter INSTANCE_ID = RequiredStringParameter.key("instanceId");
     public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");

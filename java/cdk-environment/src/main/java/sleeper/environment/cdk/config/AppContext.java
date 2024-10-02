@@ -30,6 +30,10 @@ public interface AppContext {
         return string.get(this);
     }
 
+    default String get(RequiredStringParameter string) {
+        return string.get(this);
+    }
+
     default Optional<String> get(OptionalStringParameter string) {
         return string.get(this);
     }
