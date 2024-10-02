@@ -42,11 +42,6 @@
             <artifactId>aws-lambda-java-core</artifactId>
             <version>${aws-lambda-java-core.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-events</artifactId>
-            <version>${aws-lambda-java-events.version}</version>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
