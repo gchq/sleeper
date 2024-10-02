@@ -256,7 +256,10 @@ class SleeperPropertiesPrettyPrinterTest {
                     .contains("## The following properties are commonly used throughout Sleeper.\n\n")
                     .contains("## The following properties relate to standard ingest.\n\n")
                     .contains("## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
-                            "## or EKS.\n\n")
+                            "## or EKS.\n" +
+                            "## \n" +
+                            "## Note that on EMR, the total resource allocation must align with the instance types used for the\n" +
+                            "## cluster.")
                     .contains("## The following properties relate to the splitting of partitions.\n\n")
                     .contains("## The following properties relate to compactions.\n\n")
                     .contains("## The following properties relate to queries.\n\n");
