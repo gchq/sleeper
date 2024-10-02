@@ -19,11 +19,7 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
-import software.amazon.awscdk.services.events.CronOptions;
-import software.amazon.awscdk.services.events.Rule;
-import software.amazon.awscdk.services.events.RuleTargetInput;
-import software.amazon.awscdk.services.events.Schedule;
-import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
@@ -31,12 +27,8 @@ import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
-import sleeper.environment.cdk.config.BooleanParameter;
-import sleeper.environment.cdk.config.IntParameter;
 import sleeper.environment.cdk.config.OptionalStringParameter;
-import sleeper.environment.cdk.config.StringListParameter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -45,10 +37,8 @@ import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class BuildUptimeStack extends Stack {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
-    public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = AppParameters.AUTO_SHUTDOWN_EXISTING_EC2_IDS;
-    public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = AppParameters.AUTO_SHUTDOWN_HOUR_UTC;
-    public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = AppParameters.NIGHTLY_TEST_RUN_ENABLED;
-    public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
+
+    private final IFunction function;
 
     public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
         super(scope, props.getStackName(), props);
@@ -56,7 +46,7 @@ public class BuildUptimeStack extends Stack {
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));
 
-        IFunction function = Function.Builder.create(this, "BuildUptimeLambda")
+        function = Function.Builder.create(this, "BuildUptimeLambda")
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
                 .description("Create batches of tables and send requests to create compaction jobs for those batches")
@@ -68,60 +58,15 @@ public class BuildUptimeStack extends Stack {
                 .reservedConcurrentExecutions(1)
                 .build().getCurrentVersion();
 
-        scheduleAutoShutdown(context, function, buildEc2);
-        if (context.get(NIGHTLY_TEST_RUN_ENABLED)) {
-            scheduleNightlyTests(context, function, buildEc2);
-        }
+        function.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+                .resources(List.of("*"))
+                .actions(List.of(
+                        "ec2:StartInstances", "ec2:StopInstances",
+                        "events:EnableRule", "events:DisableRule"))
+                .build());
     }
 
-    private void scheduleNightlyTests(AppContext context, IFunction function, IInstance buildEc2) {
-
-        String takeDownRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-stop-nightly-tests";
-        Rule.Builder.create(this, "StopAfterNightlyTests")
-                .ruleName(takeDownRuleName)
-                .description("Periodic trigger to take the build EC2 down when nightly tests finish")
-                .schedule(Schedule.rate(Duration.minutes(10)))
-                .targets(List.of(LambdaFunction.Builder.create(function)
-                        .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "stop",
-                                "condition", "testFinishedFromToday",
-                                "ec2Ids", List.of(buildEc2.getInstanceId()),
-                                "rules", List.of(takeDownRuleName))))
-                        .build()))
-                .enabled(false)
-                .build();
-        Rule.Builder.create(this, "StartForNightlyTests")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-start-for-nightly-tests")
-                .description("Nightly invocation to start the build EC2 for nightly tests")
-                .schedule(Schedule.cron(CronOptions.builder()
-                        .hour("" + (context.get(NIGHTLY_TEST_RUN_HOUR_UTC) - 1))
-                        .minute("50")
-                        .build()))
-                .targets(List.of(LambdaFunction.Builder.create(function)
-                        .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "start",
-                                "ec2Ids", List.of(buildEc2.getInstanceId()),
-                                "rules", List.of(takeDownRuleName))))
-                        .build()))
-                .build();
-    }
-
-    private void scheduleAutoShutdown(AppContext context, IFunction function, IInstance buildEc2) {
-        List<String> ec2Ids = new ArrayList<>();
-        ec2Ids.addAll(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS));
-        ec2Ids.add(buildEc2.getInstanceId());
-        Rule.Builder.create(this, "AutoShutdown")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-auto-shutdown")
-                .description("Daily invocation to shut down EC2s for the night")
-                .schedule(Schedule.cron(CronOptions.builder()
-                        .hour("" + context.get(AUTO_SHUTDOWN_HOUR_UTC))
-                        .minute("00")
-                        .build()))
-                .targets(List.of(LambdaFunction.Builder.create(function)
-                        .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "stop",
-                                "ec2Ids", ec2Ids)))
-                        .build()))
-                .build();
+    public IFunction getFunction() {
+        return function;
     }
 }
