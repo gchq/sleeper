@@ -19,6 +19,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
 import java.io.InputStream;
@@ -29,14 +30,16 @@ public class BuildUptimeLambda implements RequestStreamHandler {
     public static final Logger LOGGER = LoggerFactory.getLogger(BuildUptimeLambda.class);
 
     private final Ec2Client ec2;
+    private final CloudWatchEventsClient cloudWatch;
     private final BuildUptimeEventSerDe serDe = new BuildUptimeEventSerDe();
 
     public BuildUptimeLambda() {
-        this(Ec2Client.create());
+        this(Ec2Client.create(), CloudWatchEventsClient.create());
     }
 
-    public BuildUptimeLambda(Ec2Client ec2) {
+    public BuildUptimeLambda(Ec2Client ec2, CloudWatchEventsClient cloudWatch) {
         this.ec2 = ec2;
+        this.cloudWatch = cloudWatch;
     }
 
     @Override
@@ -46,7 +49,12 @@ public class BuildUptimeLambda implements RequestStreamHandler {
 
         switch (event.getOperation()) {
             case "start":
-                ec2.startInstances(builder -> builder.instanceIds(event.getEc2Ids()));
+                if (event.getEc2Ids() != null && !event.getEc2Ids().isEmpty()) {
+                    ec2.startInstances(builder -> builder.instanceIds(event.getEc2Ids()));
+                }
+                if (event.getRules() != null) {
+                    event.getRules().forEach(rule -> cloudWatch.enableRule(builder -> builder.name(rule)));
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognised operation: " + event.getOperation());

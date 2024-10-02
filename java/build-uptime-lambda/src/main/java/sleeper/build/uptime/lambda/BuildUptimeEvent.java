@@ -47,7 +47,11 @@ public class BuildUptimeEvent {
     }
 
     public static BuildUptimeEvent startEc2sById(String... ec2Ids) {
-        return new BuildUptimeEvent("start", List.of(ec2Ids), List.of());
+        return new BuildUptimeEvent("start", List.of(ec2Ids), null);
+    }
+
+    public static BuildUptimeEvent startRulesByName(String... rules) {
+        return new BuildUptimeEvent("start", null, List.of(rules));
     }
 
     public static BuildUptimeEvent operation(String operation) {

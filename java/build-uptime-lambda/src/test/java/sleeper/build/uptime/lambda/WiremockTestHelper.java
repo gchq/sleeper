@@ -18,8 +18,8 @@ package sleeper.build.uptime.lambda;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.ec2.Ec2Client;
 
 import java.net.URI;
 
@@ -31,8 +31,8 @@ public class WiremockTestHelper {
     private WiremockTestHelper() {
     }
 
-    public static Ec2Client wiremockEc2Client(WireMockRuntimeInfo runtimeInfo) {
-        return Ec2Client.builder()
+    public static <B extends AwsClientBuilder<B, T>, T> T wiremockClient(WireMockRuntimeInfo runtimeInfo, B builder) {
+        return builder
                 .endpointOverride(URI.create(runtimeInfo.getHttpBaseUrl()))
                 .region(Region.US_EAST_1)
                 .credentialsProvider(StaticCredentialsProvider.create(

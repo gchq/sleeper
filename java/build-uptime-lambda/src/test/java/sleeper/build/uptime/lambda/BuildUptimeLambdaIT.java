@@ -20,12 +20,15 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.stream.IntStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -34,7 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockEc2Client;
+import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockClient;
 
 @WireMockTest
 public class BuildUptimeLambdaIT {
@@ -44,18 +47,31 @@ public class BuildUptimeLambdaIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        lambda = new BuildUptimeLambda(wiremockEc2Client(runtimeInfo));
+        lambda = new BuildUptimeLambda(
+                wiremockClient(runtimeInfo, Ec2Client.builder()),
+                wiremockClient(runtimeInfo, CloudWatchEventsClient.builder()));
         stubFor(post("/").willReturn(aResponse().withStatus(200)));
     }
 
     @Test
-    void shouldStartEc2() {
+    void shouldStartEc2s() {
         // When
         handle(BuildUptimeEvent.startEc2sById("A", "B"));
 
         // Then
         verify(1, startRequestedForEc2Ids("A", "B"));
         verify(1, postRequestedFor(urlEqualTo("/")));
+    }
+
+    @Test
+    void shouldEnableCloudWatchRules() {
+        // When
+        handle(BuildUptimeEvent.startRulesByName("A", "B"));
+
+        // Then
+        verify(1, enableRequestedForRuleName("A"));
+        verify(1, enableRequestedForRuleName("B"));
+        verify(2, postRequestedFor(urlEqualTo("/")));
     }
 
     @Test
@@ -77,5 +93,10 @@ public class BuildUptimeLambdaIT {
                 .collect(joining());
         return postRequestedFor(urlEqualTo("/"))
                 .withRequestBody(matching("^Action=StartInstances&Version=[0-9\\-]+" + instanceIds + "$"));
+    }
+
+    private RequestPatternBuilder enableRequestedForRuleName(String ruleName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withRequestBody(equalTo("{\"Name\":\"" + ruleName + "\"}"));
     }
 }
