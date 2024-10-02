@@ -53,7 +53,7 @@ public class BuildUptimeStack extends Stack {
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));
 
-        IFunction function = Function.Builder.create(this, "Lambda")
+        IFunction function = Function.Builder.create(this, "BuildUptimeLambda")
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
                 .description("Create batches of tables and send requests to create compaction jobs for those batches")
@@ -75,7 +75,7 @@ public class BuildUptimeStack extends Stack {
 
     private void scheduleNightlyTests(AppContext context, IFunction function, IInstance buildEc2) {
 
-        String takeDownRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-nightly-stop";
+        String takeDownRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-stop-nightly-tests";
         Rule.Builder.create(this, "StopAfterNightlyTests")
                 .ruleName(takeDownRuleName)
                 .description("Periodic trigger to take the build EC2 down when nightly tests finish")
@@ -83,19 +83,19 @@ public class BuildUptimeStack extends Stack {
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stopIfNightlyTestsFinished",
-                                "ec2s", List.of(buildEc2.getInstanceId()),
+                                "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(takeDownRuleName))))
                         .build()))
                 .enabled(false)
                 .build();
         Rule.Builder.create(this, "StartForNightlyTests")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
+                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-start-for-nightly-tests")
                 .description("Nightly invocation to start the build EC2 for nightly tests")
                 .schedule(Schedule.cron(CronOptions.builder().hour("2").minute("50").build()))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "start",
-                                "ec2s", List.of(buildEc2.getInstanceId()),
+                                "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(takeDownRuleName))))
                         .build()))
                 .build();
@@ -106,25 +106,26 @@ public class BuildUptimeStack extends Stack {
         ec2Ids.addAll(context.get(EXISTING_EC2_IDS));
         ec2Ids.add(buildEc2.getInstanceId());
         Rule.Builder.create(this, "AutoShutdown")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
+                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-auto-shutdown")
                 .description("Daily invocation to shut down EC2s for the night")
                 .schedule(Schedule.cron(CronOptions.builder().hour("19").minute("00").build()))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
-                                "ec2s", ec2Ids)))
+                                "ec2Ids", ec2Ids)))
                         .build()))
                 .build();
     }
 
     private void scheduleTesting(AppContext context, IFunction function) {
-        Rule.Builder.create(this, "Test")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
+        Rule.Builder.create(this, "BuildUptimeTest")
+                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-test-build-uptime")
                 .description("Test lambda invocation")
                 .schedule(Schedule.rate(Duration.minutes(1)))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "test")))
+                                "operation", "test",
+                                "ec2Ids", context.get(EXISTING_EC2_IDS))))
                         .build()))
                 .build();
     }
