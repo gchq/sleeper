@@ -15,16 +15,20 @@
  */
 package sleeper.build.uptime.lambda;
 
+import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockEc2Client;
 
+@WireMockTest
 public class BuildUptimeLambdaIT {
 
     @Test
-    void shouldBeUnimplemented() {
-        assertThatThrownBy(() -> new BuildUptimeLambda().handleRequest(null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
+    void shouldStartEc2(WireMockRuntimeInfo runtimeInfo) {
+        BuildUptimeLambda lambda = new BuildUptimeLambda(wiremockEc2Client(runtimeInfo));
+        lambda.handleRequest(new ScheduledEvent(), null);
     }
 
 }
