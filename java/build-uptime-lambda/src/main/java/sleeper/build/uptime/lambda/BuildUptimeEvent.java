@@ -21,18 +21,28 @@ public class BuildUptimeEvent {
 
     private final String operation;
     private final String condition;
+    private final String testBucket;
     private final List<String> ec2Ids;
     private final List<String> rules;
 
     private BuildUptimeEvent(Builder builder) {
         operation = builder.operation;
         condition = builder.condition;
+        testBucket = builder.testBucket;
         ec2Ids = builder.ec2Ids;
         rules = builder.rules;
     }
 
     public String getOperation() {
         return operation;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public String getTestBucket() {
+        return testBucket;
     }
 
     public List<String> getEc2Ids() {
@@ -64,6 +74,7 @@ public class BuildUptimeEvent {
 
         private String operation;
         private String condition;
+        private String testBucket;
         private List<String> ec2Ids;
         private List<String> rules;
 
@@ -77,6 +88,11 @@ public class BuildUptimeEvent {
 
         public Builder condition(String condition) {
             this.condition = condition;
+            return this;
+        }
+
+        public Builder testBucket(String testBucket) {
+            this.testBucket = testBucket;
             return this;
         }
 
@@ -98,12 +114,8 @@ public class BuildUptimeEvent {
             return rules(List.of(rules));
         }
 
-        public Builder start() {
-            return operation("start");
-        }
-
-        public Builder stop() {
-            return operation("stop");
+        public Builder ifTestFinishedFromToday() {
+            return condition(BuildUptimeCondition.TEST_FINISHED_FROM_TODAY);
         }
 
         public BuildUptimeEvent build() {
