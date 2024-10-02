@@ -1,5 +1,6 @@
 {
   "app": "java -cp jars/cdk-environment.jar sleeper.environment.cdk.SleeperEnvironmentCdkApp",
   "context": {
+    "buildUptimeLambdaJar": "jars/build-uptime-lambda.jar"
   }
 }
