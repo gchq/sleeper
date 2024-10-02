@@ -43,6 +43,10 @@ public interface AppContext {
         return list.get(this);
     }
 
+    default boolean get(BooleanParameter bool) {
+        return bool.get(this);
+    }
+
     default int get(IntParameter integer) {
         return integer.get(this);
     }

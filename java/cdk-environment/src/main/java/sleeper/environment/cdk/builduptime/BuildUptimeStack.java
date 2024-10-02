@@ -31,6 +31,8 @@ import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
+import sleeper.environment.cdk.config.BooleanParameter;
+import sleeper.environment.cdk.config.IntParameter;
 import sleeper.environment.cdk.config.OptionalStringParameter;
 import sleeper.environment.cdk.config.StringListParameter;
 
@@ -43,7 +45,10 @@ import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class BuildUptimeStack extends Stack {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
-    public static final StringListParameter EXISTING_EC2_IDS = AppParameters.BUILD_UPTIME_EXISTING_EC2_IDS;
+    public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = AppParameters.AUTO_SHUTDOWN_EXISTING_EC2_IDS;
+    public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = AppParameters.AUTO_SHUTDOWN_HOUR_UTC;
+    public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = AppParameters.NIGHTLY_TEST_RUN_ENABLED;
+    public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
 
     public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
         super(scope, props.getStackName(), props);
@@ -63,8 +68,10 @@ public class BuildUptimeStack extends Stack {
                 .reservedConcurrentExecutions(1)
                 .build().getCurrentVersion();
 
-        scheduleNightlyTests(context, function, buildEc2);
         scheduleAutoShutdown(context, function, buildEc2);
+        if (context.get(NIGHTLY_TEST_RUN_ENABLED)) {
+            scheduleNightlyTests(context, function, buildEc2);
+        }
     }
 
     private void scheduleNightlyTests(AppContext context, IFunction function, IInstance buildEc2) {
@@ -77,7 +84,7 @@ public class BuildUptimeStack extends Stack {
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
-                                "condition", "nightlyTestsFinished",
+                                "condition", "testFinishedFromToday",
                                 "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(takeDownRuleName))))
                         .build()))
@@ -86,7 +93,10 @@ public class BuildUptimeStack extends Stack {
         Rule.Builder.create(this, "StartForNightlyTests")
                 .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-start-for-nightly-tests")
                 .description("Nightly invocation to start the build EC2 for nightly tests")
-                .schedule(Schedule.cron(CronOptions.builder().hour("2").minute("50").build()))
+                .schedule(Schedule.cron(CronOptions.builder()
+                        .hour("" + (context.get(NIGHTLY_TEST_RUN_HOUR_UTC) - 1))
+                        .minute("50")
+                        .build()))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "start",
@@ -98,12 +108,15 @@ public class BuildUptimeStack extends Stack {
 
     private void scheduleAutoShutdown(AppContext context, IFunction function, IInstance buildEc2) {
         List<String> ec2Ids = new ArrayList<>();
-        ec2Ids.addAll(context.get(EXISTING_EC2_IDS));
+        ec2Ids.addAll(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS));
         ec2Ids.add(buildEc2.getInstanceId());
         Rule.Builder.create(this, "AutoShutdown")
                 .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-auto-shutdown")
                 .description("Daily invocation to shut down EC2s for the night")
-                .schedule(Schedule.cron(CronOptions.builder().hour("19").minute("00").build()))
+                .schedule(Schedule.cron(CronOptions.builder()
+                        .hour("" + context.get(AUTO_SHUTDOWN_HOUR_UTC))
+                        .minute("00")
+                        .build()))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",

@@ -18,33 +18,33 @@ package sleeper.environment.cdk.config;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.environment.cdk.config.AppParameters.BUILD_UPTIME_EXISTING_EC2_IDS;
+import static sleeper.environment.cdk.config.AppParameters.AUTO_SHUTDOWN_EXISTING_EC2_IDS;
 
 public class StringListParameterTest {
 
     @Test
     public void allowEmptyString() {
-        AppContext context = AppContext.of(BUILD_UPTIME_EXISTING_EC2_IDS.value(""));
-        assertThat(context.get(BUILD_UPTIME_EXISTING_EC2_IDS)).isEmpty();
+        AppContext context = AppContext.of(AUTO_SHUTDOWN_EXISTING_EC2_IDS.value(""));
+        assertThat(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS)).isEmpty();
     }
 
     @Test
     public void allowUnset() {
         AppContext context = AppContext.empty();
-        assertThat(context.get(BUILD_UPTIME_EXISTING_EC2_IDS)).isEmpty();
+        assertThat(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS)).isEmpty();
     }
 
     @Test
     public void canSetOneValue() {
-        AppContext context = AppContext.of(BUILD_UPTIME_EXISTING_EC2_IDS.value("a-value"));
-        assertThat(context.get(BUILD_UPTIME_EXISTING_EC2_IDS))
+        AppContext context = AppContext.of(AUTO_SHUTDOWN_EXISTING_EC2_IDS.value("a-value"));
+        assertThat(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS))
                 .containsExactly("a-value");
     }
 
     @Test
     public void canSetMultipleValues() {
-        AppContext context = AppContext.of(BUILD_UPTIME_EXISTING_EC2_IDS.value("value-1", "value-2"));
-        assertThat(context.get(BUILD_UPTIME_EXISTING_EC2_IDS))
+        AppContext context = AppContext.of(AUTO_SHUTDOWN_EXISTING_EC2_IDS.value("value-1", "value-2"));
+        assertThat(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS))
                 .containsExactly("value-1", "value-2");
     }
 
