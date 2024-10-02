@@ -50,6 +50,10 @@ public class BuildUptimeEvent {
         return new BuildUptimeEvent("start", List.of(ec2Ids), null);
     }
 
+    public static BuildUptimeEvent stopEc2sById(String... ec2Ids) {
+        return new BuildUptimeEvent("stop", List.of(ec2Ids), null);
+    }
+
     public static BuildUptimeEvent startRulesByName(String... rules) {
         return new BuildUptimeEvent("start", null, List.of(rules));
     }

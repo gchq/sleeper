@@ -64,6 +64,16 @@ public class BuildUptimeLambdaIT {
     }
 
     @Test
+    void shouldStopEc2s() {
+        // When
+        handle(BuildUptimeEvent.stopEc2sById("A", "B"));
+
+        // Then
+        verify(1, stopRequestedForEc2Ids("A", "B"));
+        verify(1, postRequestedFor(urlEqualTo("/")));
+    }
+
+    @Test
     void shouldEnableCloudWatchRules() {
         // When
         handle(BuildUptimeEvent.startRulesByName("A", "B"));
@@ -88,15 +98,23 @@ public class BuildUptimeLambdaIT {
     }
 
     private RequestPatternBuilder startRequestedForEc2Ids(String... ec2Ids) {
-        String instanceIds = IntStream.range(0, ec2Ids.length)
-                .mapToObj(i -> "&InstanceId." + (i + 1) + "=" + ec2Ids[i])
-                .collect(joining());
         return postRequestedFor(urlEqualTo("/"))
-                .withRequestBody(matching("^Action=StartInstances&Version=[0-9\\-]+" + instanceIds + "$"));
+                .withRequestBody(matching("^Action=StartInstances&Version=[0-9\\-]+" + buildInstanceIdParams(ec2Ids) + "$"));
+    }
+
+    private RequestPatternBuilder stopRequestedForEc2Ids(String... ec2Ids) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withRequestBody(matching("^Action=StopInstances&Version=[0-9\\-]+" + buildInstanceIdParams(ec2Ids) + "$"));
     }
 
     private RequestPatternBuilder enableRequestedForRuleName(String ruleName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withRequestBody(equalTo("{\"Name\":\"" + ruleName + "\"}"));
+    }
+
+    private String buildInstanceIdParams(String... instanceIds) {
+        return IntStream.range(0, instanceIds.length)
+                .mapToObj(i -> "&InstanceId." + (i + 1) + "=" + instanceIds[i])
+                .collect(joining());
     }
 }

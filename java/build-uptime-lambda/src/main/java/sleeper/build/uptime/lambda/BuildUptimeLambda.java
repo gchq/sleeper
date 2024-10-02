@@ -56,6 +56,11 @@ public class BuildUptimeLambda implements RequestStreamHandler {
                     event.getRules().forEach(rule -> cloudWatch.enableRule(builder -> builder.name(rule)));
                 }
                 break;
+            case "stop":
+                if (event.getEc2Ids() != null && !event.getEc2Ids().isEmpty()) {
+                    ec2.stopInstances(builder -> builder.instanceIds(event.getEc2Ids()));
+                }
+                break;
             default:
                 throw new IllegalArgumentException("Unrecognised operation: " + event.getOperation());
         }
