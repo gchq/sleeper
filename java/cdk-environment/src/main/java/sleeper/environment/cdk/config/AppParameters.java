@@ -35,5 +35,4 @@ public class AppParameters {
 
     public static final OptionalStringParameter BUILD_UPTIME_LAMBDA_JAR = OptionalStringParameter.key("buildUptimeLambdaJar");
     public static final StringListParameter BUILD_UPTIME_EXISTING_EC2_IDS = StringListParameter.key("buildUptimeExistingEc2Ids");
-    public static final StringParameter BUILD_UPTIME_TEST = StringParameter.keyAndDefault("buildUptimeTest", "true");
 }

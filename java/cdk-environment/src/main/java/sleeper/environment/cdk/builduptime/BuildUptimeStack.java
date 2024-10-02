@@ -33,7 +33,6 @@ import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.OptionalStringParameter;
 import sleeper.environment.cdk.config.StringListParameter;
-import sleeper.environment.cdk.config.StringParameter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +44,6 @@ import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 public class BuildUptimeStack extends Stack {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
     public static final StringListParameter EXISTING_EC2_IDS = AppParameters.BUILD_UPTIME_EXISTING_EC2_IDS;
-    public static final StringParameter BUILD_UPTIME_TEST = AppParameters.BUILD_UPTIME_TEST;
 
     public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
         super(scope, props.getStackName(), props);
@@ -65,12 +63,8 @@ public class BuildUptimeStack extends Stack {
                 .reservedConcurrentExecutions(1)
                 .build().getCurrentVersion();
 
-        if (Boolean.parseBoolean(context.get(BUILD_UPTIME_TEST))) {
-            scheduleTesting(context, function);
-        } else {
-            scheduleNightlyTests(context, function, buildEc2);
-            scheduleAutoShutdown(context, function, buildEc2);
-        }
+        scheduleNightlyTests(context, function, buildEc2);
+        scheduleAutoShutdown(context, function, buildEc2);
     }
 
     private void scheduleNightlyTests(AppContext context, IFunction function, IInstance buildEc2) {
@@ -114,19 +108,6 @@ public class BuildUptimeStack extends Stack {
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
                                 "ec2Ids", ec2Ids)))
-                        .build()))
-                .build();
-    }
-
-    private void scheduleTesting(AppContext context, IFunction function) {
-        Rule.Builder.create(this, "BuildUptimeTest")
-                .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-test-build-uptime")
-                .description("Test lambda invocation")
-                .schedule(Schedule.rate(Duration.minutes(1)))
-                .targets(List.of(LambdaFunction.Builder.create(function)
-                        .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "test",
-                                "ec2Ids", context.get(EXISTING_EC2_IDS))))
                         .build()))
                 .build();
     }
