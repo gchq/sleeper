@@ -36,13 +36,13 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Building cdk-environment module"
+echo "Building Java code"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 
-pushd "$ENVIRONMENT_MAVEN_DIR"
+pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn "${MAVEN_PARAMS[@]}"
+mvn -pl core,build-uptime-lambda,cdk-environment "${MAVEN_PARAMS[@]}"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"
