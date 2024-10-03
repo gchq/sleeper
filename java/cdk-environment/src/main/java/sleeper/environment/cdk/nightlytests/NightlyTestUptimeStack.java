@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -47,7 +46,7 @@ public class NightlyTestUptimeStack extends Stack {
 
     public NightlyTestUptimeStack(
             Construct scope, StackProps props,
-            IFunction buildUptimeFn, IInstance buildEc2, IBucket testBucket) {
+            IFunction buildUptimeFn, IInstance buildEc2, String testBucketName) {
         super(scope, "NightlyTestUptime", props);
         AppContext context = AppContext.of(this);
 
@@ -60,7 +59,7 @@ public class NightlyTestUptimeStack extends Stack {
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
                                 "condition", "testFinishedFromToday",
-                                "testBucket", testBucket.getBucketName(),
+                                "testBucket", testBucketName,
                                 "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(stopAfterTestsRuleName))))
                         .build()))

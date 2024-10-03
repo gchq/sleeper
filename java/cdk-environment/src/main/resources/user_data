@@ -10,6 +10,7 @@ Content-Disposition: attachment; filename="cloud-config.txt"
 #cloud-config
 cloud_final_modules:
 - [scripts-user, always]
+%write-files-yaml%
 
 --//
 Content-Type: text/x-shellscript; charset="us-ascii"

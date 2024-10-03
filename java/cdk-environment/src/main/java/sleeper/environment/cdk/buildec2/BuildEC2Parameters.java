@@ -17,17 +17,16 @@ package sleeper.environment.cdk.buildec2;
 
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.s3.IBucket;
 
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.StringParameter;
-import sleeper.environment.cdk.nightlytests.NightlyTests;
 
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_SUBNETS;
@@ -58,7 +57,8 @@ public class BuildEC2Parameters {
         nightlyTestEnabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
         if (nightlyTestEnabled) {
             testHour = "" + context.get(NIGHTLY_TEST_RUN_HOUR_UTC);
-            testBucket = Objects.requireNonNull(builder.testBucket, "testBucket is required with nightly tests enabled");
+            testBucket = context.get(NIGHTLY_TEST_BUCKET)
+                    .orElseGet(() -> Objects.requireNonNull(builder.testBucket, "testBucket must not be null"));
             vpc = context.get(VPC_ID).orElseGet(() -> Objects.requireNonNull(builder.inheritVpc, "inheritVpc must not be null"));
             List<String> subnetsList = context.get(NIGHTLY_TEST_SUBNETS);
             if (subnetsList.isEmpty()) {
@@ -79,6 +79,10 @@ public class BuildEC2Parameters {
 
     static Builder builder() {
         return new Builder();
+    }
+
+    boolean isNightlyTestEnabled() {
+        return nightlyTestEnabled;
     }
 
     String fillUserDataTemplate(String template) {
@@ -115,17 +119,6 @@ public class BuildEC2Parameters {
             return this;
         }
 
-        public Builder nightlyTests(NightlyTests nightlyTests) {
-            return testBucket(nightlyTests.getTestBucketIfEnabled().map(IBucket::getBucketName).orElse(null));
-        }
-
-        public Builder inheritVpc(IVpc inheritVpc) {
-            return inheritVpc(inheritVpc.getVpcId(),
-                    inheritVpc.getPrivateSubnets().stream()
-                            .map(ISubnet::getSubnetId)
-                            .collect(toUnmodifiableList()));
-        }
-
         public Builder testBucket(String testBucket) {
             this.testBucket = testBucket;
             return this;
@@ -135,6 +128,13 @@ public class BuildEC2Parameters {
             inheritVpc = vpc;
             inheritSubnets = subnetIds;
             return this;
+        }
+
+        public Builder inheritVpc(IVpc inheritVpc) {
+            return inheritVpc(inheritVpc.getVpcId(),
+                    inheritVpc.getPrivateSubnets().stream()
+                            .map(ISubnet::getSubnetId)
+                            .collect(toUnmodifiableList()));
         }
 
         public BuildEC2Parameters build() {

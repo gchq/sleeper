@@ -26,9 +26,9 @@ import sleeper.environment.cdk.builduptime.BuildUptimeStack;
 import sleeper.environment.cdk.config.AppContext;
 
 import java.util.List;
-import java.util.Optional;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 
 public class NightlyTests {
@@ -37,6 +37,7 @@ public class NightlyTests {
     private final Environment environment;
     private final boolean enabled;
     private final String instanceId;
+    private final String contextBucketName;
     private final IBucket testBucket;
 
     public NightlyTests(App app, Environment environment) {
@@ -45,7 +46,8 @@ public class NightlyTests {
         AppContext context = AppContext.of(app);
         enabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
         instanceId = context.get(INSTANCE_ID);
-        if (enabled) {
+        contextBucketName = context.get(NIGHTLY_TEST_BUCKET).orElse(null);
+        if (enabled && contextBucketName == null) {
             testBucket = new NightlyTestBucketStack(app,
                     StackProps.builder().stackName(instanceId + "-NightlyTestBucket").env(environment).build())
                     .getBucket();
@@ -54,15 +56,19 @@ public class NightlyTests {
         }
     }
 
-    public Optional<IBucket> getTestBucketIfEnabled() {
-        return Optional.ofNullable(testBucket);
+    public String getTestBucketName() {
+        if (testBucket != null) {
+            return testBucket.getBucketName();
+        } else {
+            return contextBucketName;
+        }
     }
 
     public List<IRule> automateUptimeGetAutoStopRules(BuildEC2Stack buildEc2, BuildUptimeStack buildUptime) {
         if (enabled) {
             NightlyTestUptimeStack uptimeStack = new NightlyTestUptimeStack(app,
                     StackProps.builder().stackName(instanceId + "-NightlyTests").env(environment).build(),
-                    buildUptime.getFunction(), buildEc2.getInstance(), testBucket);
+                    buildUptime.getFunction(), buildEc2.getInstance(), getTestBucketName());
             return List.of(uptimeStack.getStopAfterTestsRule());
         } else {
             return List.of();

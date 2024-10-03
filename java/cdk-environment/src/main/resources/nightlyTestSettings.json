@@ -2,7 +2,7 @@
   "vpc": "${vpc}",
   "subnets": "${subnets}",
   "resultsBucket": "${testBucket}",
-  "repoPath": "${repository}",
+  "repoPath": "${fork}/${repository}",
   "mergeToMainOnTestType": {
     "performance": false,
     "functional": false

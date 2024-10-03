@@ -55,7 +55,7 @@ public class BuildEC2Stack extends Stack {
         AppContext context = AppContext.of(this);
         BuildEC2Parameters params = BuildEC2Parameters.builder()
                 .context(context)
-                .nightlyTests(nightlyTests)
+                .testBucket(nightlyTests.getTestBucketName())
                 .inheritVpc(inheritVpc)
                 .build();
         vpc = context.get(VPC_ID)

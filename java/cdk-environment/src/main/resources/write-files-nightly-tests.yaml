@@ -1,0 +1,9 @@
+write_files:
+- encoding: b64
+  content: ${nightlyTestSettingsBase64}
+  path: /home/${loginUser}/.sleeper/builder/nightlyTestSettings.json
+  owner: ${loginUser}:${loginUser}
+- encoding: b64
+  content: ${crontabBase64}
+  path: /home/${loginUser}/.sleeper/builder/crontab
+  owner: ${loginUser}:${loginUser}

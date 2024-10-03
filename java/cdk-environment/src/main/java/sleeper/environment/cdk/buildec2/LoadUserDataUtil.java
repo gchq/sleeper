@@ -19,6 +19,8 @@ import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.Objects;
 
 class LoadUserDataUtil {
@@ -28,7 +30,31 @@ class LoadUserDataUtil {
     }
 
     static String userData(BuildEC2Parameters params) {
-        return params.fillUserDataTemplate(templateString());
+        return params.fillUserDataTemplate(templateString())
+                .replace("%write-files-yaml%", writeFilesYaml(params));
+    }
+
+    static String writeFilesYaml(BuildEC2Parameters params) {
+        if (!params.isNightlyTestEnabled()) {
+            return "";
+        }
+        Encoder encoder = Base64.getEncoder();
+        String withContent = resourceString("write-files-nightly-tests.yaml")
+                .replace("${nightlyTestSettingsBase64}",
+                        encoder.encodeToString(nightlyTestSettingsJson(params).getBytes()))
+                .replace("${crontabBase64}",
+                        encoder.encodeToString(crontab(params).getBytes()));
+        return params.fillUserDataTemplate(withContent);
+    }
+
+    static String nightlyTestSettingsJson(BuildEC2Parameters params) {
+        String template = resourceString("nightlyTestSettings.json");
+        return params.fillUserDataTemplate(template);
+    }
+
+    static String crontab(BuildEC2Parameters params) {
+        String template = resourceString("crontab");
+        return params.fillUserDataTemplate(template);
     }
 
     private static String templateString() {
