@@ -19,6 +19,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 
@@ -29,10 +31,14 @@ public final class CompactionTaskRequirements {
 
     private final int cpu;
     private final int memoryLimitMiB;
+    private final int gpuCPU;
+    private final int gpuMemoryLimitMiB;
 
-    public CompactionTaskRequirements(int cpu, int memoryLimitMiB) {
+    public CompactionTaskRequirements(int cpu, int memoryLimitMiB, int gpuCPU, int gpuMemoryLimitMiB) {
         this.cpu = cpu;
         this.memoryLimitMiB = memoryLimitMiB;
+        this.gpuCPU = gpuCPU;
+        this.gpuMemoryLimitMiB = gpuMemoryLimitMiB;
     }
 
     /**
@@ -52,7 +58,9 @@ public final class CompactionTaskRequirements {
             cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
         }
-        return new CompactionTaskRequirements(cpu, memoryLimitMiB);
+        int gpuCPU = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_CPU);
+        int gpuMemoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_MEMORY);
+        return new CompactionTaskRequirements(cpu, memoryLimitMiB, gpuCPU, gpuMemoryLimitMiB);
     }
 
     public int getCpu() {
@@ -61,5 +69,13 @@ public final class CompactionTaskRequirements {
 
     public int getMemoryLimitMiB() {
         return memoryLimitMiB;
+    }
+
+    public int getGpuCPU() {
+        return gpuCPU;
+    }
+
+    public int getGpuMemoryLimitMiB() {
+        return gpuMemoryLimitMiB;
     }
 }

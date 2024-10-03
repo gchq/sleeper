@@ -140,8 +140,6 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_CPU;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_GPU_CONT_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_GPU_REPO;
 import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
@@ -596,8 +594,8 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createEC2GPUContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        int cpu = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_CPU);
-        int memoryLimitMiB  = instanceProperties.getInt(COMPACTION_TASK_GPU_CONT_MEMORY);
+        int cpu = requirements.getGpuCPU();
+        int memoryLimitMiB = requirements.getGpuMemoryLimitMiB();
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .gpuCount(1)
