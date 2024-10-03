@@ -24,7 +24,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.Optional;
 
-@SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class NightlyTestSummaryTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestSummaryTable.class);
 
@@ -77,7 +75,6 @@ public class NightlyTestSummaryTable {
                 .anyMatch(startTime -> startTime.truncatedTo(ChronoUnit.DAYS).equals(today));
     }
 
-    @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
     public static class Execution {
 
         private final Instant startTime;
