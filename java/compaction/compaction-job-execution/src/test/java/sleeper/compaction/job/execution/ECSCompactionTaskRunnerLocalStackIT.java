@@ -53,6 +53,7 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -102,8 +103,8 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
-import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -122,6 +123,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -273,6 +275,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
+            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -283,8 +286,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
 
         @Test
@@ -298,6 +299,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
+            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -311,8 +313,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
     }
 
@@ -461,10 +461,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
+        StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobStatusStore);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitForFileAssignmentWithAttempts(1, stateStoreProvider, tablePropertiesProvider),
-                committer, jobStatusStore, taskStatusStore, selector, taskId,
+                waitForFiles, committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;

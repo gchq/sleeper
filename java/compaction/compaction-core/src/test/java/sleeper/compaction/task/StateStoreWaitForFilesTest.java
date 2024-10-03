@@ -20,7 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.WaitAction;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -34,8 +35,10 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
+import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,8 +48,6 @@ import static java.util.stream.Collectors.reducing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
-import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttemptsAndThrottlingRetries;
-import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.withActionAfterWait;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -54,6 +55,7 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.withActionAfterWait;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -119,7 +121,7 @@ public class StateStoreWaitForFilesTest {
 
         // When / Then
         StateStoreWaitForFiles waiter = waiterWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
-        assertThatThrownBy(() -> waiter.wait(job))
+        assertThatThrownBy(() -> waiter.wait(job, "test-task", "test-job-run"))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
                 Duration.parse("PT2.923S"),
@@ -145,7 +147,7 @@ public class StateStoreWaitForFilesTest {
         // When / Then
         StateStoreWaitForFiles waiter = waiterWithAttempts(
                 JOB_ASSIGNMENT_WAIT_ATTEMPTS, constantJitterFraction(0.5));
-        assertThatThrownBy(() -> waiter.wait(job))
+        assertThatThrownBy(() -> waiter.wait(job, "test-task", "test-job-run"))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
                 Duration.ofSeconds(2),
@@ -178,7 +180,7 @@ public class StateStoreWaitForFilesTest {
                 Optional.empty()));
 
         // When
-        waiterWithAttempts(1).wait(job);
+        waiterWithAttempts(1).wait(job, "test-task", "test-job-run");
 
         // Then
         assertThat(foundWaits).containsExactly(
@@ -196,7 +198,7 @@ public class StateStoreWaitForFilesTest {
     }
 
     private void waitForFilesWithAttempts(int attempts, CompactionJob job) throws Exception {
-        waiterWithAttempts(attempts).wait(job);
+        waiterWithAttempts(attempts).wait(job, "test-task", "test-job-run");
     }
 
     private StateStoreWaitForFiles waiterWithAttempts(int attempts) {
@@ -204,10 +206,11 @@ public class StateStoreWaitForFilesTest {
     }
 
     private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter) {
-        return waitForFileAssignmentWithAttemptsAndThrottlingRetries(
-                attempts, jitter, waiter,
+        return new StateStoreWaitForFilesTestHelper(
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore));
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                CompactionJobStatusStore.NONE, waiter, Instant::now)
+                .withAttemptsAndThrottlingRetries(attempts, jitter);
     }
 
     protected void actionAfterWait(WaitAction action) throws Exception {

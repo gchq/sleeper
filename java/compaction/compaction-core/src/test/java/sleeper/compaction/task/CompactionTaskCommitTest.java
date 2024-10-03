@@ -313,7 +313,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         }
 
         @Test
-        void shouldFailWhenFileDoesNotExistInStateStore() throws Exception {
+        void shouldFailWhenFileDeletedDuringJob() throws Exception {
             // Given
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
@@ -322,11 +322,13 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     startTime, finishTime, failTime,
                     Instant.parse("2024-02-22T13:50:04Z"))); // Finish
-            CompactionJob job = createJobNotInStateStore("test-job");
+            CompactionJob job = createJob("test-job");
             send(job);
 
             // When
-            runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);
+            runTask("test-task", processJobs(jobSucceeds().withAction(() -> {
+                stateStore.clearFileData();
+            })), timesInTask::poll);
 
             // Then
             assertThat(stateStore.getFileReferences()).isEmpty();

@@ -26,7 +26,6 @@ import sleeper.compaction.task.CompactionTask.MessageReceiver;
 import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper;
-import sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.WaitAction;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -39,6 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
+import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -66,6 +66,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.withActionAfterWait;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -114,15 +115,15 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), waitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
 
     protected void runTaskCheckingFiles(StateStoreWaitForFiles fileAssignmentCheck, CompactionRunner compactor) throws Exception {
@@ -133,7 +134,7 @@ public class CompactionTaskTestBase {
             MessageReceiver messageReceiver,
             CompactionRunner compactor,
             Supplier<Instant> timeSupplier) throws Exception {
-        runTask(messageReceiver, waitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTask(messageReceiver, noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
@@ -152,13 +153,16 @@ public class CompactionTaskTestBase {
                 .run();
     }
 
-    private StateStoreWaitForFiles waitForFileAssignment() {
-        return waitForFileAssignmentWithAttempts(1);
+    private StateStoreWaitForFiles noWaitForFileAssignment() {
+        return waitForFileAssignment().withAttempts(1);
     }
 
-    protected StateStoreWaitForFiles waitForFileAssignmentWithAttempts(int attempts) {
-        return StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts(
-                attempts, waiterForFileAssignment, tablePropertiesProvider(), stateStoreProvider());
+    protected StateStoreWaitForFilesTestHelper waitForFileAssignment() {
+        return waitForFileAssignment(timePassesAMinuteAtATime());
+    }
+
+    protected StateStoreWaitForFilesTestHelper waitForFileAssignment(Supplier<Instant> timeSupplier) {
+        return new StateStoreWaitForFilesTestHelper(tablePropertiesProvider(), stateStoreProvider(), jobStore, waiterForFileAssignment, timeSupplier);
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
@@ -202,10 +206,6 @@ public class CompactionTaskTestBase {
         return job;
     }
 
-    protected CompactionJob createJobNotInStateStore(String jobId) throws Exception {
-        return createJobNotInStateStore(jobId, tableProperties);
-    }
-
     protected CompactionJob createJobNotInStateStore(String jobId, TableProperties tableProperties) throws Exception {
         CompactionJob job = CompactionJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
@@ -232,7 +232,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void actionAfterWaitForFileAssignment(WaitAction action) throws Exception {
-        waiterForFileAssignment = StateStoreWaitForFilesTestHelper.withActionAfterWait(waiterForFileAssignment, action);
+        waiterForFileAssignment = withActionAfterWait(waiterForFileAssignment, action);
     }
 
     private MessageReceiver pollQueue() {
@@ -315,13 +315,7 @@ public class CompactionTaskTestBase {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
         return (job, table, partition) -> {
             if (getAction.hasNext()) {
-                ProcessJob action = getAction.next();
-                if (action.failure != null) {
-                    throw action.failure;
-                } else {
-                    successfulJobs.add(job);
-                    return action.recordsProcessed;
-                }
+                return getAction.next().run(job);
             } else {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
@@ -343,6 +337,8 @@ public class CompactionTaskTestBase {
     protected class ProcessJob {
         private final RuntimeException failure;
         private final RecordsProcessed recordsProcessed;
+        private ProcessJobAction action = () -> {
+        };
 
         ProcessJob(RuntimeException failure) {
             this.failure = failure;
@@ -357,6 +353,29 @@ public class CompactionTaskTestBase {
             this.failure = null;
             this.recordsProcessed = summary;
         }
+
+        public ProcessJob withAction(ProcessJobAction action) {
+            this.action = action;
+            return this;
+        }
+
+        private RecordsProcessed run(CompactionJob job) {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (failure != null) {
+                throw failure;
+            } else {
+                successfulJobs.add(job);
+                return recordsProcessed;
+            }
+        }
+    }
+
+    public interface ProcessJobAction {
+        void run() throws Exception;
     }
 
     protected class FakeMessageHandle implements MessageHandle {

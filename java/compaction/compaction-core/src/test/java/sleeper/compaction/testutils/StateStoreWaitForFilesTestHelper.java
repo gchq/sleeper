@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.testutils;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
@@ -22,55 +23,47 @@ import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.core.util.PollWithRetries;
 
+import java.time.Instant;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noWaits;
 
 public class StateStoreWaitForFilesTestHelper {
-    private StateStoreWaitForFilesTestHelper() {
+
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
+    private final CompactionJobStatusStore jobStatusStore;
+    private final Waiter waiter;
+    private final Supplier<Instant> timeSupplier;
+
+    public StateStoreWaitForFilesTestHelper(
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, CompactionJobStatusStore jobStatusStore,
+            Waiter waiter, Supplier<Instant> timeSupplier) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
+        this.jobStatusStore = jobStatusStore;
+        this.waiter = waiter;
+        this.timeSupplier = timeSupplier;
     }
 
-    public static StateStoreWaitForFiles waitForFileAssignmentWithAttempts(
-            int attempts, StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider) {
-        return waitWithAttempts(attempts, noJitter(), noWaits(), PollWithRetries.noRetries(), tablePropertiesProvider, stateStoreProvider);
+    public StateStoreWaitForFiles withAttempts(int attempts) {
+        return waitWithAttempts(attempts, noJitter(), PollWithRetries.noRetries());
     }
 
-    public static StateStoreWaitForFiles waitForFileAssignmentWithAttempts(
-            int attempts, Waiter waiter,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return waitWithAttempts(attempts, noJitter(), waiter, PollWithRetries.noRetries(), tablePropertiesProvider, stateStoreProvider);
+    public StateStoreWaitForFiles withAttemptsAndThrottlingRetries(
+            int attempts, DoubleSupplier jitter) {
+        return waitWithAttempts(attempts, jitter, StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES);
     }
 
-    public static StateStoreWaitForFiles waitForFileAssignmentWithAttemptsAndThrottlingRetries(
-            int attempts, DoubleSupplier jitter, Waiter waiter,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return waitWithAttempts(attempts, jitter, waiter, StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider);
-    }
-
-    public static Waiter withActionAfterWait(Waiter waiter, WaitAction action) throws Exception {
-        return millis -> {
-            try {
-                action.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            waiter.waitForMillis(millis);
-        };
-    }
-
-    private static StateStoreWaitForFiles waitWithAttempts(
-            int attempts, DoubleSupplier jitter, Waiter waiter, PollWithRetries throttlingRetries,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+    private StateStoreWaitForFiles waitWithAttempts(
+            int attempts, DoubleSupplier jitter, PollWithRetries throttlingRetries) {
         return new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
                 throttlingRetries.toBuilder()
                         .sleepInInterval(waiter::waitForMillis)
                         .build(),
-                tablePropertiesProvider, stateStoreProvider);
-    }
-
-    public interface WaitAction {
-        void run() throws Exception;
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore, timeSupplier);
     }
 }

@@ -91,4 +91,35 @@ public class ExponentialBackoffWithJitterTestHelper {
         return millis -> {
         };
     }
+
+    /**
+     * Extends an implementation of a waiter to also perform another action.
+     *
+     * @param  waiter the waiter to extend
+     * @param  action the action to perform
+     * @return        a waiter which will behave like the original waiter but perform the action first
+     */
+    public static Waiter withActionAfterWait(Waiter waiter, WaitAction action) {
+        return millis -> {
+            try {
+                action.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            waiter.waitForMillis(millis);
+        };
+    }
+
+    /**
+     * An action to perform during a wait.
+     */
+    public interface WaitAction {
+
+        /**
+         * Perform the action.
+         *
+         * @throws Exception if anything went wrong
+         */
+        void run() throws Exception;
+    }
 }
