@@ -49,7 +49,7 @@ public class BuildEC2Parameters {
     private final String subnets;
 
     private BuildEC2Parameters(Builder builder) {
-        AppContext context = builder.context;
+        AppContext context = Objects.requireNonNull(builder.context, "context must not be null");
         repository = context.get(REPOSITORY);
         fork = context.get(FORK);
         branch = context.get(BRANCH);

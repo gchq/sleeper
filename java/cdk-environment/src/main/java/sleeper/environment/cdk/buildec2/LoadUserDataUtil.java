@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 import java.util.Objects;
@@ -41,9 +42,9 @@ class LoadUserDataUtil {
         Encoder encoder = Base64.getEncoder();
         String withContent = resourceString("write-files-nightly-tests.yaml")
                 .replace("${nightlyTestSettingsBase64}",
-                        encoder.encodeToString(nightlyTestSettingsJson(params).getBytes()))
+                        encoder.encodeToString(nightlyTestSettingsJson(params).getBytes(StandardCharsets.UTF_8)))
                 .replace("${crontabBase64}",
-                        encoder.encodeToString(crontab(params).getBytes()));
+                        encoder.encodeToString(crontab(params).getBytes(StandardCharsets.UTF_8)));
         return params.fillUserDataTemplate(withContent);
     }
 

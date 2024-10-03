@@ -19,6 +19,7 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
@@ -31,6 +32,7 @@ import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
@@ -58,7 +60,8 @@ public class BuildUptimeStack extends Stack {
                 .reservedConcurrentExecutions(1)
                 .build().getCurrentVersion();
 
-        function.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+        IRole role = Objects.requireNonNull(function.getRole());
+        role.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of(
                         "ec2:StartInstances", "ec2:StopInstances",
