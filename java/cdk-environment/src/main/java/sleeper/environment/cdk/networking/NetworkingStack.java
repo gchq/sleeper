@@ -35,7 +35,7 @@ public class NetworkingStack extends Stack {
     private final Vpc vpc;
 
     public NetworkingStack(Construct scope, StackProps props) {
-        super(scope, props.getStackName(), props);
+        super(scope, "Networking", props);
 
         vpc = Vpc.Builder.create(this, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
