@@ -20,12 +20,13 @@ import com.google.gson.GsonBuilder;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class BuildUptimeEventSerDe {
     private final Gson gson = new GsonBuilder().create();
 
     public BuildUptimeEvent fromJson(InputStream stream) {
-        return gson.fromJson(new InputStreamReader(stream), BuildUptimeEvent.class);
+        return gson.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), BuildUptimeEvent.class);
     }
 
     public String toJson(BuildUptimeEvent event) {
