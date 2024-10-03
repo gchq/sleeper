@@ -113,6 +113,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -123,7 +125,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -275,7 +276,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -299,7 +301,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.getFileReferences()).thenReturn(List.of(withJobId("job1", fileReference1), withJobId("job1", fileReference2)));
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -374,6 +377,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 1);
+        instanceProperties.setNumber(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         S3InstanceProperties.saveToS3(s3, instanceProperties);

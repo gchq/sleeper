@@ -23,13 +23,10 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.UncheckedStateStoreException;
-import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
@@ -38,13 +35,8 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static java.util.stream.Collectors.toMap;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -116,41 +108,23 @@ public class StateStoreWaitForFiles {
     private boolean allFilesAssignedToJob(
             PollWithRetries throttlingRetries, StateStore stateStore, CompactionJob job,
             String taskId, String jobRunId, Instant startTime) throws StateStoreException, InterruptedException {
-        AtomicReference<List<FileReference>> files = new AtomicReference<>();
+        ResultTracker result = new ResultTracker();
         try {
             DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                 try {
-                    files.set(stateStore.getFileReferences());
+                    result.set(stateStore.isPartitionFilesAssignedToJob(job.getPartitionId(), job.getInputFiles(), job.getId()));
                 } catch (StateStoreException e) {
                     throw new UncheckedStateStoreException(e);
                 }
             });
-            return isPartitionFilesAssignedToJob(files.get(), job.getPartitionId(), job.getInputFiles(), job.getId());
         } catch (UncheckedStateStoreException e) {
             reportFailure(job, taskId, jobRunId, startTime, e.getStateStoreException());
             throw e.getStateStoreException();
-        } catch (StateStoreException | RuntimeException e) {
+        } catch (RuntimeException e) {
             reportFailure(job, taskId, jobRunId, startTime, e);
             throw e;
         }
-    }
-
-    private static boolean isPartitionFilesAssignedToJob(List<FileReference> fileReferences, String partitionId, List<String> filenames, String jobId) throws StateStoreException {
-        Map<String, FileReference> partitionFileByName = fileReferences.stream()
-                .filter(reference -> Objects.equals(partitionId, reference.getPartitionId()))
-                .collect(toMap(FileReference::getFilename, f -> f));
-        boolean allAssigned = true;
-        for (String filename : filenames) {
-            FileReference reference = partitionFileByName.get(filename);
-            if (reference == null) {
-                throw new FileReferenceNotFoundException(filename, partitionId);
-            } else if (reference.getJobId() == null) {
-                allAssigned = false;
-            } else if (!reference.getJobId().equals(jobId)) {
-                throw new FileReferenceAssignedToJobException(reference);
-            }
-        }
-        return allAssigned;
+        return result.get();
     }
 
     private void reportFailure(CompactionJob job, String taskId, String jobRunId, Instant startTime, Exception e) {
@@ -159,6 +133,18 @@ public class StateStoreWaitForFiles {
         jobStatusStore.jobFailed(compactionJobFailed(job,
                 new ProcessRunTime(startTime, finishTime))
                 .failure(e).taskId(taskId).jobRunId(jobRunId).build());
+    }
+
+    private static class ResultTracker {
+        private boolean allFilesAssigned;
+
+        void set(boolean allFilesAssigned) {
+            this.allFilesAssigned = allFilesAssigned;
+        }
+
+        boolean get() throws StateStoreException {
+            return allFilesAssigned;
+        }
     }
 
 }
