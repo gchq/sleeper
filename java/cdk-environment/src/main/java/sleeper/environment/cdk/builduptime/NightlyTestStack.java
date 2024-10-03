@@ -16,6 +16,7 @@
 package sleeper.environment.cdk.builduptime;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.events.CronOptions;
@@ -24,12 +25,17 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.s3.BlockPublicAccess;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.buildec2.BuildEC2Stack;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.IntParameter;
+import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import java.util.List;
 import java.util.Map;
@@ -38,12 +44,23 @@ import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 public class NightlyTestStack extends Stack {
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
+    public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = AppParameters.NIGHTLY_TEST_BUCKET;
 
     private final IRule stopAfterTestsRule;
 
     public NightlyTestStack(Construct scope, StackProps props, BuildUptimeStack buildUptime, BuildEC2Stack buildEc2) {
         super(scope, props.getStackName(), props);
         AppContext context = AppContext.of(this);
+
+        IBucket bucket = context.get(NIGHTLY_TEST_BUCKET)
+                .map(bucketName -> Bucket.fromBucketName(this, "TestBucket", bucketName))
+                .orElseGet(() -> Bucket.Builder.create(this, "TestBucket")
+                        .bucketName("sleeper-" + context.get(INSTANCE_ID) + "-tests")
+                        .versioned(false)
+                        .encryption(BucketEncryption.S3_MANAGED)
+                        .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
+                        .removalPolicy(RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE)
+                        .build());
 
         String stopAfterTestsRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-stop-nightly-tests";
         stopAfterTestsRule = Rule.Builder.create(this, "StopAfterNightlyTests")
@@ -54,6 +71,7 @@ public class NightlyTestStack extends Stack {
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
                                 "condition", "testFinishedFromToday",
+                                "testBucket", bucket.getBucketName(),
                                 "ec2Ids", List.of(buildEc2.getInstance().getInstanceId()),
                                 "rules", List.of(stopAfterTestsRuleName))))
                         .build()))
