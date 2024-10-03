@@ -53,7 +53,11 @@ public class BuildEC2Stack extends Stack {
     public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc, NightlyTests nightlyTests) {
         super(scope, "BuildEC2", props);
         AppContext context = AppContext.of(this);
-        BuildEC2Parameters params = BuildEC2Parameters.from(context);
+        BuildEC2Parameters params = BuildEC2Parameters.builder()
+                .context(context)
+                .nightlyTests(nightlyTests)
+                .inheritVpc(inheritVpc)
+                .build();
         vpc = context.get(VPC_ID)
                 .map(vpcId -> Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);

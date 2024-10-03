@@ -24,20 +24,26 @@ import static sleeper.environment.cdk.buildec2.BuildEC2Image.LOGIN_USER;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_SUBNETS;
+import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
 public class BuildEC2ParametersTest {
 
     @Test
-    public void fillGitClone() {
+    void shouldFillGitClone() {
         assertThat(BuildEC2Parameters.from(AppContext.of(
-                BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
+                BRANCH.value("feature/test"),
+                FORK.value("test-fork"),
+                REPOSITORY.value("test-project")))
                 .fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }
 
     @Test
-    public void fillLoginUser() {
-        assertThat(BuildEC2Parameters.from(AppContext.of(LOGIN_USER.value("test-user")))
+    void shouldFillLoginUser() {
+        assertThat(BuildEC2Parameters.from(AppContext.of(
+                LOGIN_USER.value("test-user")))
                 .fillUserDataTemplate("LOGIN_USER=${loginUser}\n" +
                         "LOGIN_HOME=/home/$LOGIN_USER"))
                 .isEqualTo("LOGIN_USER=test-user\n" +
@@ -45,18 +51,60 @@ public class BuildEC2ParametersTest {
     }
 
     @Test
-    public void templateCanContainSameKeyMultipleTimes() {
-        assertThat(BuildEC2Parameters.from(AppContext.of(REPOSITORY.value("repeated-repo")))
+    void templateCanContainSameKeyMultipleTimes() {
+        assertThat(BuildEC2Parameters.from(AppContext.of(
+                REPOSITORY.value("repeated-repo")))
                 .fillUserDataTemplate("[ ! -d ~/${repository} ] && mkdir ~/${repository}"))
                 .isEqualTo("[ ! -d ~/repeated-repo ] && mkdir ~/repeated-repo");
     }
 
     @Test
-    public void setDefaultParametersWhenUsingEmptyContext() {
+    void shouldSetDefaultParametersWhenUsingEmptyContext() {
         assertThat(BuildEC2Parameters.from(AppContext.empty()))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Parameters.from(AppContext.of(
-                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("develop"))));
+                        REPOSITORY.value("sleeper"),
+                        FORK.value("gchq"),
+                        BRANCH.value("develop"))));
+    }
+
+    @Test
+    void shouldFillNightlyTestSettings() {
+        assertThat(BuildEC2Parameters.builder()
+                .context(AppContext.of(
+                        NIGHTLY_TEST_RUN_ENABLED.value(true),
+                        VPC_ID.value("my-vpc"),
+                        NIGHTLY_TEST_SUBNETS.value("subnet-1,subnet-2"),
+                        FORK.value("my-fork"),
+                        REPOSITORY.value("my-repo")))
+                .testBucket("nightly-test-results")
+                .build().fillUserDataTemplate("{" +
+                        "\"vpc\":\"${vpc}\"," +
+                        "\"subnets\":\"${subnets}\"," +
+                        "\"resultsBucket\":\"${testBucket}\"," +
+                        "\"repoPath\":\"${fork}/${repository}\"}"))
+                .isEqualTo("{" +
+                        "\"vpc\":\"my-vpc\"," +
+                        "\"subnets\":\"subnet-1,subnet-2\"," +
+                        "\"resultsBucket\":\"nightly-test-results\"," +
+                        "\"repoPath\":\"my-fork/my-repo\"}");
+    }
+
+    @Test
+    void shouldFillNoNightlyTestSettings() {
+        assertThat(BuildEC2Parameters.builder()
+                .context(AppContext.empty())
+                .testBucket(null)
+                .build().fillUserDataTemplate("{" +
+                        "\"vpc\":\"${vpc}\"," +
+                        "\"subnets\":\"${subnets}\"," +
+                        "\"resultsBucket\":\"${testBucket}\"," +
+                        "\"repoPath\":\"${fork}/${repository}\"}"))
+                .isEqualTo("{" +
+                        "\"vpc\":\"${vpc}\"," +
+                        "\"subnets\":\"${subnets}\"," +
+                        "\"resultsBucket\":\"${testBucket}\"," +
+                        "\"repoPath\":\"gchq/sleeper\"}");
     }
 
 }
