@@ -19,12 +19,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.gpu.GPUCompaction;
+import sleeper.compaction.gpu.GPUCompactionRunner;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.compaction.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.CompactionMethod;
 
@@ -46,13 +47,19 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     @Override
-    public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
+    public CompactionRunner createCompactor(CompactionJob job, InstanceProperties instanceProperties, TableProperties tableProperties) {
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
         CompactionRunner runner = createRunnerForMethod(method);
 
         // Is an iterator specifed? If so can we support this?
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
-            LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
+            LOGGER.warn("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
+            runner = createJavaRunner();
+        }
+
+        // Is this compactor compatible with the current instance configuration?
+        if (!runner.supportsInstanceConfiguration(instanceProperties)) {
+            LOGGER.warn("Selected compactor {} is not compatible with instance configuration, falling back to default", runner.getClass().getSimpleName());
             runner = createJavaRunner();
         }
 
@@ -65,7 +72,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
             case DATAFUSION:
                 return new RustCompactionRunner();
             case GPU:
-                return new GPUCompaction();
+                return new GPUCompactionRunner();
             case JAVA:
             default:
                 return createJavaRunner();

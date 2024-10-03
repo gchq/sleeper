@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
 public interface CompactionRunnerDetails {
     /**
      * Some compaction implementations may use hardware acceleration such as GPUs.
@@ -36,11 +38,23 @@ public interface CompactionRunnerDetails {
     }
 
     /**
-     * States whether this compactor compact Sleeper tables that have iterators attached to them.
+     * States whether this compactor can compact Sleeper tables that have iterators attached to them.
      *
      * @return true if iterators can be processed by this compactor
      */
     default boolean supportsIterators() {
         return false;
+    }
+
+    /**
+     * States whether this compactor can be used in the configuration of the current Sleeper instance. Compaction
+     * implementations should override this to validate things like compatible CPU architectures or other instance wide
+     * properties. The default implementation always returns true.
+     *
+     * @param  instanceProperties the Sleeper instance properties
+     * @return                    true if the compactor supports the current configuration
+     */
+    default boolean supportsInstanceConfiguration(InstanceProperties instanceProperties) {
+        return true;
     }
 }

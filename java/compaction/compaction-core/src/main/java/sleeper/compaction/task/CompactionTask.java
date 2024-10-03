@@ -183,7 +183,7 @@ public class CompactionTask {
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {
             TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-            CompactionRunner compactor = selector.createCompactor(job, tableProperties);
+            CompactionRunner compactor = selector.createCompactor(job, instanceProperties, tableProperties);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Partition partition = stateStore.getPartition(job.getPartitionId());
             RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);

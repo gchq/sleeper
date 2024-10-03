@@ -30,6 +30,7 @@ import sleeper.compaction.gpu.ProtoCompaction.ReturnCode;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionRunner;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -46,10 +47,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
@@ -59,15 +63,15 @@ import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
-public class GPUCompaction implements CompactionRunner {
+public class GPUCompactionRunner implements CompactionRunner {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GPUCompaction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GPUCompactionRunner.class);
     public static final int GRPC_PORT = 1430;
 
     /** Maximum number of rows in a Parquet row group. */
     private static final long GPU_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    public GPUCompaction() {
+    public GPUCompactionRunner() {
     }
 
     protected ManagedChannel createChannel() {
@@ -207,7 +211,7 @@ public class GPUCompaction implements CompactionRunner {
      */
     @SuppressWarnings("unchecked")
     public static Iterable<OptBytes> encodeRegionBounds(Stream<Object> bounds, boolean nullsAllowed) {
-        Stream<OptBytes> stream = bounds.map(item -> GPUCompaction.toOptBytes(item, nullsAllowed));
+        Stream<OptBytes> stream = bounds.map(item -> GPUCompactionRunner.toOptBytes(item, nullsAllowed));
         return (Iterable<OptBytes>) stream;
     }
 
@@ -287,5 +291,23 @@ public class GPUCompaction implements CompactionRunner {
     @Override
     public boolean supportsIterators() {
         return false;
+    }
+
+    @Override
+    public boolean supportsInstanceConfiguration(InstanceProperties instanceProperties) {
+        // Check architecture is compatible
+        String arch = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        boolean archSupported = arch.equals("X86_64");
+        if (!archSupported) {
+            LOGGER.warn("GPU compactor cannot run on selected CPU architecture ({})", arch);
+        }
+
+        // Check GPU is enabled in instance
+        boolean gpuInstanceEnabled = instanceProperties.getBoolean(COMPACTION_GPU_ENABLED);
+        if (!gpuInstanceEnabled) {
+            LOGGER.warn("GPU compactor can't be used as {} is not enabled.", COMPACTION_GPU_ENABLED.getPropertyName());
+        }
+
+        return gpuInstanceEnabled && archSupported;
     }
 }
