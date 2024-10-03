@@ -46,7 +46,7 @@ public interface EMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory.overhead")
             .description("The memory overhead for an executor. Used to set spark.executor.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("2g")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.memory.overhead")
