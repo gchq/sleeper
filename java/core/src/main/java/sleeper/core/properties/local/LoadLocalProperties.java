@@ -64,6 +64,18 @@ public class LoadLocalProperties {
     }
 
     /**
+     * Loads instance properties from a given directory, with no validation. Looks for an instance properties file and a
+     * tags file.
+     *
+     * @param  directory the directory
+     * @return           the instance properties
+     */
+    public static InstanceProperties loadInstancePropertiesNoValidationFromDirectory(Path directory) {
+        Path file = directory.resolve("instance.properties");
+        return loadInstancePropertiesNoValidation(file);
+    }
+
+    /**
      * Loads instance properties from a given instance properties file, with no validation. Also loads a tags file if
      * present.
      *
