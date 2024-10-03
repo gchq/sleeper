@@ -15,11 +15,11 @@
  */
 package sleeper.environment.cdk.builduptime;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
-import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
@@ -32,7 +32,6 @@ import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
@@ -42,6 +41,7 @@ public class BuildUptimeStack extends Stack {
 
     private final IFunction function;
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
         super(scope, props.getStackName(), props);
         AppContext context = AppContext.of(this);
@@ -60,8 +60,7 @@ public class BuildUptimeStack extends Stack {
                 .reservedConcurrentExecutions(1)
                 .build().getCurrentVersion();
 
-        IRole role = Objects.requireNonNull(function.getRole());
-        role.addToPrincipalPolicy(PolicyStatement.Builder.create()
+        function.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of(
                         "ec2:StartInstances", "ec2:StopInstances",
