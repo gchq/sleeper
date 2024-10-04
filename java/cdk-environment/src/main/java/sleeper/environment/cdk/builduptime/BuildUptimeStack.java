@@ -82,7 +82,8 @@ public class BuildUptimeStack extends Stack {
                 .schedule(Schedule.rate(Duration.minutes(10)))
                 .targets(List.of(LambdaFunction.Builder.create(function)
                         .event(RuleTargetInput.fromObject(Map.of(
-                                "operation", "stopIfNightlyTestsFinished",
+                                "operation", "stop",
+                                "condition", "nightlyTestsFinished",
                                 "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(takeDownRuleName))))
                         .build()))
