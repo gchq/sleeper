@@ -15,6 +15,7 @@
  */
 package sleeper.environment.cdk.builduptime;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -40,6 +41,7 @@ public class BuildUptimeStack extends Stack {
 
     private final IFunction function;
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
         super(scope, props.getStackName(), props);
         AppContext context = AppContext.of(this);
