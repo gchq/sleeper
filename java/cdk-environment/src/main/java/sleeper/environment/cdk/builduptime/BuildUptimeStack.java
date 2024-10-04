@@ -51,7 +51,7 @@ public class BuildUptimeStack extends Stack {
         function = Function.Builder.create(this, "BuildUptimeLambda")
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
-                .description("Create batches of tables and send requests to create compaction jobs for those batches")
+                .description("Start and stop EC2 instances and schedule rules")
                 .runtime(JAVA_11)
                 .memorySize(1024)
                 .timeout(Duration.minutes(10))
