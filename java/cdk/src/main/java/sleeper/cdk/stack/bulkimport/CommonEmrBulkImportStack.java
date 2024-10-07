@@ -33,6 +33,9 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.kms.IKey;
+import software.amazon.awscdk.services.kms.Key;
+import software.amazon.awscdk.services.kms.KeyLookupOptions;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -189,11 +192,23 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
+        IKey ebsKey = Key.fromLookup(scope, "EbsKey", KeyLookupOptions.builder().aliasName("alias/aws/ebs").build());
         CfnJson jsonObject = CfnJson.Builder.create(scope, "EMRSecurityConfigurationJSONObject")
                 .value("{\n" +
                         "  \"InstanceMetadataServiceConfiguration\": {\n" +
                         "    \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
                         "    \"HttpPutResponseHopLimit\": 1\n" +
+                        "  },\n" +
+                        "  \"EncryptionConfiguration\": {\n" +
+                        "    \"EnableInTransitEncryption\": false,\n" +
+                        "    \"EnableAtRestEncryption\": true,\n" +
+                        "    \"AtRestEncryptionConfiguration\": {\n" +
+                        "      \"LocalDiskEncryptionConfiguration\": {\n" +
+                        "        \"EnableEbsEncryption\": true,\n" +
+                        "        \"EncryptionKeyProviderType\": \"AwsKms\",\n" +
+                        "        \"AwsKmsKey\": \"" + ebsKey.getKeyArn() + "\"\n" +
+                        "      }\n" +
+                        "    }\n" +
                         "  }\n" +
                         "}")
                 .build();
