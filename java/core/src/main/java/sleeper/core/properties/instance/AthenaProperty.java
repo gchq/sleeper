@@ -47,6 +47,10 @@ public interface AthenaProperty {
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty ATHENA_SPILL_MASTER_KEY_ARN = Index.propertyBuilder("sleeper.athena.spill.master.key.arn")
+            .description("ARN of the KMS Key used to encrypt data in the Athena spill bucket.")
+            .propertyGroup(InstancePropertyGroup.ATHENA)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
