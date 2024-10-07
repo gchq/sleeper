@@ -26,8 +26,6 @@ import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.UserData;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -41,23 +39,19 @@ import sleeper.environment.cdk.nightlytests.NightlyTestDeployment;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
-
 public class BuildEC2Deployment {
 
     private final IVpc vpc;
     private final Instance instance;
 
-    public BuildEC2Deployment(Construct scope, IVpc inheritVpc, NightlyTestDeployment nightlyTests) {
+    public BuildEC2Deployment(Construct scope, IVpc vpc, NightlyTestDeployment nightlyTests) {
         AppContext context = AppContext.of(scope);
         BuildEC2Parameters params = BuildEC2Parameters.builder()
                 .context(context)
                 .testBucket(nightlyTests.getTestBucketName())
-                .inheritVpc(inheritVpc)
+                .inheritVpc(vpc)
                 .build();
-        vpc = context.get(VPC_ID)
-                .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
-                .orElse(inheritVpc);
+        this.vpc = vpc;
         BuildEC2Image image = params.image();
 
         instance = Instance.Builder.create(scope, "BuildEC2")

@@ -23,16 +23,28 @@ import software.amazon.awscdk.services.ec2.SubnetConfiguration;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
+
+import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
+
+import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
 public class NetworkingDeployment {
 
-    private final Vpc vpc;
+    private final IVpc vpc;
 
     public NetworkingDeployment(Construct scope) {
+        AppContext context = AppContext.of(scope);
+        Optional<String> vpcId = context.get(VPC_ID);
+        if (vpcId.isPresent()) {
+            vpc = Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId.get()).build());
+            return;
+        }
         vpc = Vpc.Builder.create(scope, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(3)
