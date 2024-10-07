@@ -192,7 +192,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-        IKey ebsKey = Key.fromLookup(scope, "EbsKey", KeyLookupOptions.builder().aliasName("alias/aws/ebs").build());
+        IKey ebsKey = Key.fromLookup(scope, "EbsKey", KeyLookupOptions.builder().aliasName("aws/ebs").build());
         CfnJson jsonObject = CfnJson.Builder.create(scope, "EMRSecurityConfigurationJSONObject")
                 .value("{\n" +
                         "  \"InstanceMetadataServiceConfiguration\": {\n" +
