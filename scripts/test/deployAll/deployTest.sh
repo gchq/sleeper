@@ -37,7 +37,12 @@ WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@"
+PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
+if [ ! -f "$PROPERTIES_FILE" ]; then
+   cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
+fi
+
+"$SCRIPTS_DIR/test/deploy.sh" "$PROPERTIES_FILE" "$@"
 END_DEPLOY_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
