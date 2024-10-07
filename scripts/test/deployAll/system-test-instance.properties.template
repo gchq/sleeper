@@ -2,8 +2,8 @@
 #                              System Test Properties                                  #
 ########################################################################################
 
-# Test runs will use a copy of this file without `.template` on the end.
-# Please do not edit the template.
+# Test runs will use a copy of this file with the same name but without `.template` on the end.
+# Please do not edit the template. If you do not create the copy it will be created automatically.
 
 # The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', or 'generate_only'.
 # Direct means that the data is written directly using an ingest coordinator.
