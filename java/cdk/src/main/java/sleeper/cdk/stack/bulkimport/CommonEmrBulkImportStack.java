@@ -70,15 +70,16 @@ public class CommonEmrBulkImportStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
+        IKey ebsKey = createEbsEncryptionKey(scope, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), coreStacks);
+                importBucketStack.getImportBucket(), coreStacks, ebsKey);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
-        securityConfiguration = createSecurityConfiguration(this, instanceProperties);
+        securityConfiguration = createSecurityConfiguration(this, instanceProperties, ebsKey);
     }
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks, IKey ebsKey) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
@@ -88,6 +89,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
+        ebsKey.grant(role, "kms:GenerateDataKey");
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -192,9 +194,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
+    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties, IKey ebsKey) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-        IKey ebsKey = getEbsEncryptionKey(scope, instanceProperties);
         CfnJson jsonObject = CfnJson.Builder.create(scope, "EMRSecurityConfigurationJSONObject")
                 .value("{\n" +
                         "  \"InstanceMetadataServiceConfiguration\": {\n" +
@@ -223,7 +224,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return conf;
     }
 
-    private static IKey getEbsEncryptionKey(Construct scope, InstanceProperties instanceProperties) {
+    private static IKey createEbsEncryptionKey(Construct scope, InstanceProperties instanceProperties) {
         String ebsKeyArn = instanceProperties.get(BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN);
         if (ebsKeyArn == null) {
             return Key.Builder.create(scope, "EbsKey")
