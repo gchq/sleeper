@@ -17,7 +17,6 @@ package sleeper.environment.cdk.builduptime;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
@@ -40,7 +39,7 @@ public class BuildUptimeDeployment {
     private final IFunction function;
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    public BuildUptimeDeployment(Construct scope, IInstance buildEc2) {
+    public BuildUptimeDeployment(Construct scope) {
         AppContext context = AppContext.of(scope);
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));

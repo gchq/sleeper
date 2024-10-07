@@ -32,6 +32,7 @@ import sleeper.environment.cdk.nightlytests.NightlyTestDeployment;
 import java.util.List;
 
 import static sleeper.environment.cdk.config.AppParameters.BUILD_UPTIME_LAMBDA_JAR;
+import static sleeper.environment.cdk.config.AppParameters.DEPLOY_EC2;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 /**
@@ -55,9 +56,12 @@ public class SleeperEnvironmentCdkApp {
         Stack stack = new Stack(app, "SleeperEnvironment", StackProps.builder().stackName(instanceId + "-SleeperEnvironment").env(environment).build());
         NightlyTestDeployment nightlyTests = new NightlyTestDeployment(stack);
         NetworkingDeployment networking = new NetworkingDeployment(stack);
-        BuildEC2Deployment buildEc2 = new BuildEC2Deployment(stack, networking.getVpc(), nightlyTests);
+        BuildEC2Deployment buildEc2 = null;
+        if (context.get(DEPLOY_EC2)) {
+            buildEc2 = new BuildEC2Deployment(stack, networking.getVpc(), nightlyTests);
+        }
         if (context.get(BUILD_UPTIME_LAMBDA_JAR).isPresent()) {
-            BuildUptimeDeployment buildUptime = new BuildUptimeDeployment(stack, buildEc2.getInstance());
+            BuildUptimeDeployment buildUptime = new BuildUptimeDeployment(stack);
             List<IRule> autoStopRules = nightlyTests.automateUptimeGetAutoStopRules(buildEc2, buildUptime);
             AutoShutdownSchedule.create(stack, buildUptime, buildEc2, autoStopRules);
         }

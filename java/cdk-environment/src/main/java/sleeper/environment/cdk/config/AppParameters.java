@@ -22,6 +22,7 @@ public class AppParameters {
 
     public static final RequiredStringParameter INSTANCE_ID = RequiredStringParameter.key("instanceId");
     public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
+    public static final BooleanParameter DEPLOY_EC2 = BooleanParameter.keyAndDefault("deployEc2", true);
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
     public static final StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");

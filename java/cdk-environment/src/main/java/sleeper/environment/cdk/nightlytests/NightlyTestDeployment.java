@@ -56,7 +56,7 @@ public class NightlyTestDeployment {
     }
 
     public List<IRule> automateUptimeGetAutoStopRules(BuildEC2Deployment buildEc2, BuildUptimeDeployment buildUptime) {
-        if (enabled) {
+        if (enabled && buildEc2 != null) {
             NightlyTestUptimeSchedules uptimeStack = new NightlyTestUptimeSchedules(scope,
                     buildUptime.getFunction(), buildEc2.getInstance(), getTestBucketName());
             return List.of(uptimeStack.getStopAfterTestsRule());
