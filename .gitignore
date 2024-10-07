@@ -25,3 +25,4 @@ __pycache__
 python/build/
 python/src/sleeper.egg-info/
 python/env/
+scripts/test/maven/system-test-instance.properties
