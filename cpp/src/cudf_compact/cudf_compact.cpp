@@ -139,7 +139,9 @@ std::optional<size_t> page_size(col_schema const &schema,
   parquet::format::ColumnIndex const &colidx,
   int pg_idx,
   int num_pages,
-  int num_rows_in_chunk) {
+  int num_rows_in_chunk,
+  bool print) {
+
     auto const pg_start_row = offidx.page_locations[pg_idx].first_row_index;
     auto const pg_end_row =
       pg_idx == (num_pages - 1) ? num_rows_in_chunk : offidx.page_locations[pg_idx + 1].first_row_index;
@@ -189,13 +191,34 @@ std::optional<size_t> page_size(col_schema const &schema,
         return std::nullopt;
     }
 
+    if (print) {
+        std::cout << ff(
+          "pg_idx {:Ld} pg_start_row {:Ld} pg_end_row {:Ld} num_rows {:Ld} num_values {:Ld} num_nulls {:Ld}\n",
+          pg_idx,
+          pg_start_row,
+          pg_end_row,
+          num_rows,
+          *num_values,
+          *num_nulls);
+    }
+
     // for strings return unencoded_byte_array_data_bytes + num_vals * sizeof(int)
     if (schema.se.type == parquet::format::Type::BYTE_ARRAY) {
         size_t res = 0;
         if (offidx.__isset.unencoded_byte_array_data_bytes) {
             res = offidx.unencoded_byte_array_data_bytes[pg_idx];
+            if (print) {
+                std::cout << ff("Byte array size {:Ld}", res);
+            }
+        } else {
+            if (print) {
+                std::cout << "Byte array size unknown";
+            }
         }
         res += (num_values.value() - num_nulls.value()) * sizeof(int);
+        if (print) {
+            std::cout << ff(" for a total size of {:Ld}\n", res);
+        }
         return res;
     }
 
@@ -240,11 +263,9 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
 
     // collect per-page sizing info
     std::vector<std::string> const &inputFiles = details.inputFiles;
-    int global_pg_idx = 0;
     for (size_t f = 0; f < inputFiles.size(); f++) {
         std::cout << "File " << f << "..." << std::flush;
         auto [fmeta, offset_index, column_index] = read_indexes(inputFiles[f]);
-
         // use first input file to get schema and column info
         if (f == 0) {
             schema = fmeta.schema;
@@ -258,22 +279,23 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
         for (int rg_idx = 0; rg_idx < static_cast<int>(fmeta.row_groups.size()); rg_idx++) {
             auto const &row_grp = fmeta.row_groups[rg_idx];
             total_rows += row_grp.num_rows;
-            // std::cout << "Row group " << rg_idx << " num rows " << row_grp.num_rows << std::endl;
+            std::cout << "Row group " << rg_idx << " num rows " << row_grp.num_rows << std::endl;
             for (int col_idx = 0; col_idx < static_cast<int>(row_grp.columns.size()); col_idx++, file_colidx++) {
                 auto const &offsets = offset_index[file_colidx];
                 auto const &colidxs = column_index[file_colidx];
                 int const global_col_idx = static_cast<int>(f * num_columns + col_idx);
-                // std::cout << "col_idx " << col_idx << std::endl;
+                std::cout << "col_idx " << col_idx << std::endl;
                 size_t const num_pages = offsets.page_locations.size();
-                for (unsigned int pg_idx = 0; pg_idx < num_pages; pg_idx++, global_pg_idx++) {
-
+                for (unsigned int pg_idx = 0; pg_idx < num_pages; pg_idx++) {
+                    bool const print = (rg_idx == 0 && col_idx == 0 && pg_idx < 5);
                     auto const &page_loc = offsets.page_locations[pg_idx];
                     auto const page_sz = page_size(flat_schema[col_idx],
                       offsets,
                       colidxs,
                       pg_idx,
                       static_cast<int>(num_pages),
-                      static_cast<int>(row_grp.num_rows));
+                      static_cast<int>(row_grp.num_rows),
+                      print);
                     if (not page_sz.has_value()) {
                         SPDLOG_CRITICAL(ff("no sizing info"));
                         throw std::runtime_error("no sizing info");
@@ -291,7 +313,6 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
                         global_col_idx,
                         num_rows,
                         page_sz.value() };
-                    // std::cout << pp << std::endl;
                     pages.push_back(std::move(pp));
                 }
             }

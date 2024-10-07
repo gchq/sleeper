@@ -16,7 +16,8 @@
 #include <utility>
 #include <vector>
 
-namespace gpu_compact::cudf_compact {
+namespace gpu_compact::cudf_compact
+{
 
 typedef struct
 {
@@ -50,12 +51,13 @@ class SeekableMemoryBuffer : public apache::thrift::transport::TMemoryBuffer
   public:
     SeekableMemoryBuffer(std::size_t len) : TMemoryBuffer(static_cast<uint32_t>(len)), _length(len) {}
 
-    inline void seek(uint32_t offset)
-    {
+    inline void seek(uint32_t offset) {
         resetBuffer();// sets read/write ptrs to 0
         wroteBytes(static_cast<uint32_t>(_length));// sets write ptr to length (bytes now available)
         resetConsumedMessageSize(-1);// tell transport we're clean again
-        if (offset == 0) { return; }
+        if (offset == 0) {
+            return;
+        }
         uint8_t *foo{ nullptr };
         uint32_t len{ offset };
         borrow(foo, &len);
@@ -63,8 +65,7 @@ class SeekableMemoryBuffer : public apache::thrift::transport::TMemoryBuffer
     }
 };
 
-inline bool read_footer(std::ifstream &source, std::string const &filepath, parquet::format::FileMetaData &fmd)
-{
+inline bool read_footer(std::ifstream &source, std::string const &filepath, parquet::format::FileMetaData &fmd) {
     using apache::thrift::protocol::TCompactProtocol;
     using apache::thrift::transport::TMemoryBuffer;
     constexpr auto header_len = sizeof(file_header_s);
@@ -95,8 +96,7 @@ inline bool read_footer(std::ifstream &source, std::string const &filepath, parq
     return true;
 }
 
-inline parquet::format::FileMetaData read_footer(std::string const &filepath)
-{
+inline parquet::format::FileMetaData read_footer(std::string const &filepath) {
     std::ifstream source(filepath, std::ios::binary);
     parquet::format::FileMetaData fmd;
     read_footer(source, filepath, fmd);
@@ -106,8 +106,7 @@ inline parquet::format::FileMetaData read_footer(std::string const &filepath)
 inline std::tuple<parquet::format::FileMetaData,
   std::vector<parquet::format::OffsetIndex>,
   std::vector<parquet::format::ColumnIndex>>
-  read_indexes(std::string const &filepath)
-{
+  read_indexes(std::string const &filepath) {
     using apache::thrift::protocol::TCompactProtocol;
     std::ifstream source(filepath, std::ios::binary);
     parquet::format::FileMetaData fmd;
@@ -162,11 +161,12 @@ inline std::tuple<parquet::format::FileMetaData,
 // takes a flattened parquet schema as retrieved from the FileMetaData and prunes out all but
 // the leaf elements.
 inline std::vector<parquet::format::SchemaElement> trim_schema(
-  std::vector<parquet::format::SchemaElement> const &schema)
-{
+  std::vector<parquet::format::SchemaElement> const &schema) {
     std::vector<parquet::format::SchemaElement> result;
     for (auto const &elem : schema) {
-        if (elem.num_children == 0) { result.push_back(elem); }
+        if (elem.num_children == 0) {
+            result.push_back(elem);
+        }
     }
     return result;
 }
