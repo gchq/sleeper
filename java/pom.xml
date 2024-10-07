@@ -118,7 +118,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.8</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.28.15</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.28.16</aws-java-sdk-v2.version>
         <aws-crt.version>0.31.3</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -139,7 +139,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.3.1-jre</guava.version>
-        <cdk.version>2.160.0</cdk.version>
+        <cdk.version>2.161.1</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.3.0</constructs.version>
         <gson.version>2.11.0</gson.version>
@@ -175,8 +175,8 @@
         <jnr.ffi.version>2.2.16</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.11.1</junit.version>
-        <junit.platform.version>1.11.1</junit.platform.version>
+        <junit.version>5.11.2</junit.version>
+        <junit.platform.version>1.11.2</junit.platform.version>
         <mockito.version>5.14.1</mockito.version>
         <testcontainers.version>1.20.2</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
@@ -196,7 +196,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
-        <surefire.plugin.version>3.5.0</surefire.plugin.version>
+        <surefire.plugin.version>3.5.1</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
