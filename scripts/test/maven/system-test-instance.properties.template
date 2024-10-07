@@ -3,7 +3,8 @@
 ########################################################################################
 
 # Set any instance or system test properties that you wish to override for all deployments here.
-# Make a copy of this file without `.template` on the end first, and edit that copy.
+# Test runs will use a copy of this file without `.template` on the end.
+# Please do not edit the template.
 
 # The minimum value of integers generated randomly during random record generation
 sleeper.systemtest.random.int.min=0
