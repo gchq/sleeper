@@ -44,6 +44,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -60,7 +61,6 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
@@ -150,14 +150,11 @@ public class SystemTestInstance {
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
+        properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         Map<String, String> tags = new HashMap<>(properties.getTags());
         tags.put("SystemTestInstance", "compactionPerformance");
         tags.put("Description", "Sleeper Maven system test compaction performance instance");
         properties.setTags(tags);
-
-        for (TableProperties tableProperties : configuration.getTableProperties()) {
-            tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
-        }
         return configuration;
     }
 
