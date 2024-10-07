@@ -196,6 +196,11 @@ public interface EMRProperty {
             .defaultValue("4").validationPredicate(s -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(s, 25))
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.encryption.key.arn")
+            .description("ARN of the KMS Key used to encrypt data at rest on the local file system in AWS EMR.\n" +
+                    "See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-encryption-enable.html#emr-encryption-create-keys.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
