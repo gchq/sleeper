@@ -20,7 +20,7 @@ public class AppParameters {
     private AppParameters() {
     }
 
-    public static final StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
+    public static final RequiredStringParameter INSTANCE_ID = RequiredStringParameter.key("instanceId");
     public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
@@ -32,4 +32,10 @@ public class AppParameters {
     public static final StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
     public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
     public static final IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
+
+    public static final OptionalStringParameter BUILD_UPTIME_LAMBDA_JAR = OptionalStringParameter.key("buildUptimeLambdaJar");
+    public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = StringListParameter.key("autoShutdownExistingEc2Ids");
+    public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = IntParameter.keyAndDefault("autoShutdownHourUtc", 19);
+    public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = BooleanParameter.keyAndDefault("nightlyTestsEnabled", false);
+    public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = IntParameter.keyAndDefault("nightlyTestHourUtc", 3);
 }

@@ -19,27 +19,27 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.environment.cdk.config.AppParameters.BUILD_REPOSITORY;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 
-public class StringParameterTest {
+public class BooleanParameterTest {
 
     @Test
     public void refuseEmptyString() {
-        AppContext context = AppContext.of(BUILD_REPOSITORY.value(""));
-        assertThatThrownBy(() -> context.get(BUILD_REPOSITORY))
+        AppContext context = AppContext.of(NIGHTLY_TEST_RUN_ENABLED.value(""));
+        assertThatThrownBy(() -> context.get(NIGHTLY_TEST_RUN_ENABLED))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("repository");
+                .hasMessageContaining("nightlyTestsEnabled");
     }
 
     @Test
     public void useDefaultValueWhenUnset() {
         AppContext context = AppContext.empty();
-        assertThat(context.get(BUILD_REPOSITORY)).isEqualTo("sleeper");
+        assertThat(context.get(NIGHTLY_TEST_RUN_ENABLED)).isFalse();
     }
 
     @Test
     public void canSetValue() {
-        AppContext context = AppContext.of(BUILD_REPOSITORY.value("some-repository"));
-        assertThat(context.get(BUILD_REPOSITORY)).isEqualTo("some-repository");
+        AppContext context = AppContext.of(NIGHTLY_TEST_RUN_ENABLED.value(true));
+        assertThat(context.get(NIGHTLY_TEST_RUN_ENABLED)).isTrue();
     }
 }

@@ -21,10 +21,15 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.environment.cdk.buildec2.BuildEC2Stack;
+import sleeper.environment.cdk.builduptime.AutoShutdownStack;
+import sleeper.environment.cdk.builduptime.BuildUptimeStack;
+import sleeper.environment.cdk.builduptime.NightlyTestStack;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.networking.NetworkingStack;
 
+import static sleeper.environment.cdk.config.AppParameters.BUILD_UPTIME_LAMBDA_JAR;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 
 /**
  * Deploys an environment suitable for Sleeper, including a VPC and an EC2 instance to run the deployment from.
@@ -42,12 +47,27 @@ public class SleeperEnvironmentCdkApp {
                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
-        String instanceId = AppContext.of(app).get(INSTANCE_ID);
+        AppContext context = AppContext.of(app);
+        String instanceId = context.get(INSTANCE_ID);
         NetworkingStack networking = new NetworkingStack(app,
                 StackProps.builder().stackName(instanceId + "-Networking").env(environment).build());
-        new BuildEC2Stack(app,
+        BuildEC2Stack buildEc2 = new BuildEC2Stack(app,
                 StackProps.builder().stackName(instanceId + "-BuildEC2").env(environment).build(),
                 networking.getVpc());
+        if (context.get(BUILD_UPTIME_LAMBDA_JAR).isPresent()) {
+            BuildUptimeStack buildUptime = new BuildUptimeStack(app,
+                    StackProps.builder().stackName(instanceId + "-BuildUptime").env(environment).build(),
+                    buildEc2.getInstance());
+            NightlyTestStack nightlyTest = null;
+            if (context.get(NIGHTLY_TEST_RUN_ENABLED)) {
+                nightlyTest = new NightlyTestStack(app,
+                        StackProps.builder().stackName(instanceId + "-NightlyTests").env(environment).build(),
+                        buildUptime, buildEc2);
+            }
+            new AutoShutdownStack(app,
+                    StackProps.builder().stackName(instanceId + "-AutoShutdown").env(environment).build(),
+                    buildUptime, buildEc2, nightlyTest);
+        }
         app.synth();
     }
 }

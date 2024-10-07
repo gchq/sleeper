@@ -24,14 +24,11 @@ fi
 ENVIRONMENT_ID=$1
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-UTIL_SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../util && pwd)
 CDK_ROOT_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 JARS_DIR=$(cd "$CDK_ROOT_DIR" && cd jars && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
-
-"$UTIL_SCRIPTS_DIR/configure-aws.sh"
 
 pushd "$CDK_ROOT_DIR" > /dev/null
 java -cp "${JARS_DIR}/cdk-environment.jar" sleeper.environment.cdk.GetStackOutputs "$ENVIRONMENT_ID" "$OUTPUTS_FILE"

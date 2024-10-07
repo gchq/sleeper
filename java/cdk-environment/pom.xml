@@ -54,6 +54,10 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
         <!-- Test Dependencies -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>

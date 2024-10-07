@@ -31,13 +31,10 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-UTIL_SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../util && pwd)
 CDK_ROOT_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
-
-"$UTIL_SCRIPTS_DIR/configure-aws.sh"
 
 pushd "$CDK_ROOT_DIR" > /dev/null
 cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
