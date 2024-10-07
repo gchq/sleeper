@@ -7,6 +7,7 @@ chunks:
       - cdk
       - cdk-custom-resources
       - cdk-environment
+      - build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
       - system-test/system-test-data-generation
