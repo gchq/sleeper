@@ -20,10 +20,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import software.amazon.awscdk.CfnJson;
-import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.emr.CfnSecurityConfiguration;
-import software.amazon.awscdk.services.emr.CfnSecurityConfigurationProps;
 import software.amazon.awscdk.services.iam.CfnInstanceProfile;
 import software.amazon.awscdk.services.iam.CfnInstanceProfileProps;
 import software.amazon.awscdk.services.iam.Effect;
@@ -191,21 +189,21 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-        String jsonSecurityConf = "{\n" +
-                "  \"InstanceMetadataServiceConfiguration\" : {\n" +
-                "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
-                "      \"HttpPutResponseHopLimit\": 1\n" +
-                "   }\n" +
-                "}";
-        CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
-        CfnJson jsonObject = new CfnJson(scope, "EMRSecurityConfigurationJSONObject", jsonProps);
-        CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
+        CfnJson jsonObject = CfnJson.Builder.create(scope, "EMRSecurityConfigurationJSONObject")
+                .value("{\n" +
+                        "  \"InstanceMetadataServiceConfiguration\": {\n" +
+                        "    \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
+                        "    \"HttpPutResponseHopLimit\": 1\n" +
+                        "  }\n" +
+                        "}")
+                .build();
+        CfnSecurityConfiguration conf = CfnSecurityConfiguration.Builder.create(scope, "EMRSecurityConfiguration")
                 .name(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
-        return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, conf.getName());
+        return conf;
     }
 
     public IRole getEc2Role() {
