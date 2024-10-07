@@ -108,10 +108,9 @@ class LoadUserDataUtilTest {
                 REPOSITORY.value("my-repo")));
         assertThat(LoadUserDataUtil.writeFilesYaml(parameters))
                 .contains("content: " + Base64.encodeBase64String(LoadUserDataUtil.nightlyTestSettingsJson(parameters).getBytes()))
-                .contains("path: /home/my-user/.sleeper/builder/nightlyTestSettings.json")
+                .contains("path: /home/my-user/.sleeper-init/nightlyTestSettings.json")
                 .contains("content: " + Base64.encodeBase64String(LoadUserDataUtil.crontab(parameters).getBytes()))
-                .contains("path: /home/my-user/.sleeper/builder/crontab")
-                .contains("owner: my-user:my-user");
+                .contains("path: /home/my-user/.sleeper-init/crontab");
     }
 
 }
