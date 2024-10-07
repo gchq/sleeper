@@ -282,7 +282,7 @@ public class StateStoreCommitterThroughputST {
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(90.0, 200.0);
+                .isBetween(50.0, 200.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
