@@ -1,7 +1,7 @@
 write_files:
 - encoding: b64
   content: ${nightlyTestSettingsBase64}
-  path: /home/${loginUser}/.sleeper-init/nightlyTestSettings.json
+  path: /sleeper-init/nightlyTestSettings.json
 - encoding: b64
   content: ${crontabBase64}
-  path: /home/${loginUser}/.sleeper-init/crontab
+  path: /sleeper-init/crontab

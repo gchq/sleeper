@@ -63,9 +63,9 @@ if [ ! -d "$REPOSITORY_DIR" ]; then
   runuser --login "$LOGIN_USER" -c "sleeper builder git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git"
 fi
 
-CRONTAB_FILE="$LOGIN_HOME/.sleeper-init/crontab"
+CRONTAB_FILE="/sleeper-init/crontab"
 if [ -f "$CRONTAB_FILE" ]; then
-  runuser --login "$LOGIN_USER" -c "cp $LOGIN_HOME/.sleeper-init/nightlyTestSettings.json $LOGIN_HOME/.sleeper/builder/"
+  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $LOGIN_HOME/.sleeper/builder/"
   chown "$LOGIN_USER:$LOGIN_USER" "$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
   runuser --login "$LOGIN_USER" -c "crontab $CRONTAB_FILE"
 fi
