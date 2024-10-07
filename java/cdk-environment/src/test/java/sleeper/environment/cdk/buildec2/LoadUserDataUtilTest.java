@@ -15,7 +15,6 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Test;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -93,25 +92,6 @@ class LoadUserDataUtilTest {
                 NIGHTLY_TEST_BUCKET.value("my-bucket")))))
                 .contains("PATH=$PATH:/usr/bin:/home/my-user/.local/bin")
                 .contains("0 3 * * TUE,THU,SAT,SUN");
-    }
-
-    @Test
-    void shouldLoadWriteFilesYaml() {
-        BuildEC2Parameters parameters = BuildEC2Parameters.from(AppContext.of(
-                NIGHTLY_TEST_RUN_ENABLED.value(true),
-                NIGHTLY_TEST_RUN_HOUR_UTC.value(3),
-                LOGIN_USER.value("my-user"),
-                VPC_ID.value("my-vpc"),
-                NIGHTLY_TEST_SUBNETS.value("subnet-1", "subnet-2"),
-                NIGHTLY_TEST_BUCKET.value("my-bucket"),
-                FORK.value("my-fork"),
-                REPOSITORY.value("my-repo")));
-        assertThat(LoadUserDataUtil.writeFilesYaml(parameters))
-                .contains("content: " + Base64.encodeBase64String(LoadUserDataUtil.nightlyTestSettingsJson(parameters).getBytes()))
-                .contains("path: /home/my-user/.sleeper/builder/nightlyTestSettings.json")
-                .contains("content: " + Base64.encodeBase64String(LoadUserDataUtil.crontab(parameters).getBytes()))
-                .contains("path: /home/my-user/.sleeper/builder/crontab")
-                .contains("owner: my-user:my-user");
     }
 
 }
