@@ -68,15 +68,15 @@ public class BuildEC2Deployment {
 
         Role restrictedRole = createRestrictedRole(scope);
 
-        CfnOutput.Builder.create(scope, "LoginUser")
+        CfnOutput.Builder.create(scope, "BuildEC2LoginUser")
                 .value(image.loginUser())
                 .description("User to SSH into on build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(scope, "InstanceId")
+        CfnOutput.Builder.create(scope, "BuildEC2Id")
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(scope, "RestrictedRoleArn")
+        CfnOutput.Builder.create(scope, "BuildEC2RestrictedRoleArn")
                 .value(restrictedRole.getRoleArn())
                 .description("Role with restricted access to deploy Sleeper instances. " +
                         "This can be assumed to test deploying a Sleeper instance with fewer permissions. " +

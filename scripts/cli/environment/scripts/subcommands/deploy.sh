@@ -40,13 +40,13 @@ pushd "$CDK_ROOT_DIR" > /dev/null
 cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" --all "${CDK_PARAMS[@]}"
 popd > /dev/null
 
-USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+USERNAME=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2LoginUser" "$OUTPUTS_FILE" --raw-output)
 
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 
 # If an EC2 was created, wait for deployment, make a test connection to remember SSH certificate
-INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
 if [ "$INSTANCE_ID" != "null" ]; then
   "$THIS_DIR/test-connection.sh"
 fi
