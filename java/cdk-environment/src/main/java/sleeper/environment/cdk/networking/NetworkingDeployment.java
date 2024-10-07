@@ -15,8 +15,6 @@
  */
 package sleeper.environment.cdk.networking;
 
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpointAwsService;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -30,14 +28,12 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class NetworkingStack extends Stack {
+public class NetworkingDeployment {
 
     private final Vpc vpc;
 
-    public NetworkingStack(Construct scope, StackProps props) {
-        super(scope, "Networking", props);
-
-        vpc = Vpc.Builder.create(this, "Vpc")
+    public NetworkingDeployment(Construct scope) {
+        vpc = Vpc.Builder.create(scope, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(3)
                 .natGateways(1)
@@ -50,13 +46,13 @@ public class NetworkingStack extends Stack {
                                 .cidrMask(19).build()))
                 .build();
 
-        GatewayVpcEndpoint.Builder.create(this, "S3").vpc(vpc)
+        GatewayVpcEndpoint.Builder.create(scope, "S3Endpoint").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.S3)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
                 .build();
 
-        GatewayVpcEndpoint.Builder.create(this, "DynamoDB").vpc(vpc)
+        GatewayVpcEndpoint.Builder.create(scope, "DynamoDBEndpoint").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.DYNAMODB)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))

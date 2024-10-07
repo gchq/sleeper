@@ -16,8 +16,6 @@
 package sleeper.environment.cdk.buildec2;
 
 import software.amazon.awscdk.CfnOutput;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Instance;
@@ -38,34 +36,33 @@ import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.nightlytests.NightlyTests;
+import sleeper.environment.cdk.nightlytests.NightlyTestDeployment;
 
 import java.util.Collections;
 import java.util.List;
 
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
-public class BuildEC2Stack extends Stack {
+public class BuildEC2Deployment {
 
     private final IVpc vpc;
     private final Instance instance;
 
-    public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc, NightlyTests nightlyTests) {
-        super(scope, "BuildEC2", props);
-        AppContext context = AppContext.of(this);
+    public BuildEC2Deployment(Construct scope, IVpc inheritVpc, NightlyTestDeployment nightlyTests) {
+        AppContext context = AppContext.of(scope);
         BuildEC2Parameters params = BuildEC2Parameters.builder()
                 .context(context)
                 .testBucket(nightlyTests.getTestBucketName())
                 .inheritVpc(inheritVpc)
                 .build();
         vpc = context.get(VPC_ID)
-                .map(vpcId -> Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
+                .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
-        instance = Instance.Builder.create(this, "EC2")
+        instance = Instance.Builder.create(scope, "BuildEC2")
                 .vpc(vpc)
-                .securityGroup(createSecurityGroup())
+                .securityGroup(createSecurityGroup(scope))
                 .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
@@ -75,17 +72,17 @@ public class BuildEC2Stack extends Stack {
                 .build();
         instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
 
-        Role restrictedRole = createRestrictedRole();
+        Role restrictedRole = createRestrictedRole(scope);
 
-        CfnOutput.Builder.create(this, "LoginUser")
+        CfnOutput.Builder.create(scope, "LoginUser")
                 .value(image.loginUser())
                 .description("User to SSH into on build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(this, "InstanceId")
+        CfnOutput.Builder.create(scope, "InstanceId")
                 .value(instance.getInstanceId())
                 .description("ID of the build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(this, "RestrictedRoleArn")
+        CfnOutput.Builder.create(scope, "RestrictedRoleArn")
                 .value(restrictedRole.getRoleArn())
                 .description("Role with restricted access to deploy Sleeper instances. " +
                         "This can be assumed to test deploying a Sleeper instance with fewer permissions. " +
@@ -93,12 +90,12 @@ public class BuildEC2Stack extends Stack {
                 .build();
     }
 
-    private Role createRestrictedRole() {
+    private Role createRestrictedRole(Construct scope) {
 
-        Role role = Role.Builder.create(this, "RestrictedRole")
+        Role role = Role.Builder.create(scope, "RestrictedRole")
                 .assumedBy(new AccountRootPrincipal())
                 .build();
-        ManagedPolicy policy = new ManagedPolicy(this, "BuildEC2Policy");
+        ManagedPolicy policy = new ManagedPolicy(scope, "BuildEC2Policy");
 
         // Allow running CDK by assuming roles created by cdk bootstrap
         // Allow interacting with Sleeper by assuming admin role
@@ -131,8 +128,8 @@ public class BuildEC2Stack extends Stack {
         return role;
     }
 
-    private SecurityGroup createSecurityGroup() {
-        return SecurityGroup.Builder.create(this, "AllowOutbound")
+    private SecurityGroup createSecurityGroup(Construct scope) {
+        return SecurityGroup.Builder.create(scope, "AllowOutbound")
                 .vpc(vpc)
                 .description("Allow outbound traffic")
                 .allowAllOutbound(true)

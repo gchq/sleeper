@@ -16,8 +16,6 @@
 package sleeper.environment.cdk.nightlytests;
 
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -30,18 +28,17 @@ import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
-public class NightlyTestBucketStack extends Stack {
+public class NightlyTestBucket {
     public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = AppParameters.NIGHTLY_TEST_BUCKET;
 
     private final IBucket bucket;
 
-    public NightlyTestBucketStack(Construct scope, StackProps props) {
-        super(scope, "NightlyTestBucket", props);
-        AppContext context = AppContext.of(this);
+    public NightlyTestBucket(Construct scope) {
+        AppContext context = AppContext.of(scope);
 
         bucket = context.get(NIGHTLY_TEST_BUCKET)
-                .map(bucketName -> Bucket.fromBucketName(this, "TestBucket", bucketName))
-                .orElseGet(() -> Bucket.Builder.create(this, "TestBucket")
+                .map(bucketName -> Bucket.fromBucketName(scope, "TestBucket", bucketName))
+                .orElseGet(() -> Bucket.Builder.create(scope, "TestBucket")
                         .bucketName("sleeper-" + context.get(INSTANCE_ID) + "-tests")
                         .versioned(false)
                         .encryption(BucketEncryption.S3_MANAGED)

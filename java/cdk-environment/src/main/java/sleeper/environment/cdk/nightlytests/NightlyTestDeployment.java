@@ -15,42 +15,33 @@
  */
 package sleeper.environment.cdk.nightlytests;
 
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.events.IRule;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.constructs.Construct;
 
-import sleeper.environment.cdk.buildec2.BuildEC2Stack;
-import sleeper.environment.cdk.builduptime.BuildUptimeStack;
+import sleeper.environment.cdk.buildec2.BuildEC2Deployment;
+import sleeper.environment.cdk.builduptime.BuildUptimeDeployment;
 import sleeper.environment.cdk.config.AppContext;
 
 import java.util.List;
 
-import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 
-public class NightlyTests {
+public class NightlyTestDeployment {
 
-    private final App app;
-    private final Environment environment;
+    private final Construct scope;
     private final boolean enabled;
-    private final String instanceId;
     private final String contextBucketName;
     private final IBucket testBucket;
 
-    public NightlyTests(App app, Environment environment) {
-        this.app = app;
-        this.environment = environment;
-        AppContext context = AppContext.of(app);
+    public NightlyTestDeployment(Construct scope) {
+        this.scope = scope;
+        AppContext context = AppContext.of(scope);
         enabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
-        instanceId = context.get(INSTANCE_ID);
         contextBucketName = context.get(NIGHTLY_TEST_BUCKET).orElse(null);
         if (enabled && contextBucketName == null) {
-            testBucket = new NightlyTestBucketStack(app,
-                    StackProps.builder().stackName(instanceId + "-NightlyTestBucket").env(environment).build())
-                    .getBucket();
+            testBucket = new NightlyTestBucket(scope).getBucket();
         } else {
             testBucket = null;
         }
@@ -64,10 +55,9 @@ public class NightlyTests {
         }
     }
 
-    public List<IRule> automateUptimeGetAutoStopRules(BuildEC2Stack buildEc2, BuildUptimeStack buildUptime) {
+    public List<IRule> automateUptimeGetAutoStopRules(BuildEC2Deployment buildEc2, BuildUptimeDeployment buildUptime) {
         if (enabled) {
-            NightlyTestUptimeStack uptimeStack = new NightlyTestUptimeStack(app,
-                    StackProps.builder().stackName(instanceId + "-NightlyTests").env(environment).build(),
+            NightlyTestUptimeSchedules uptimeStack = new NightlyTestUptimeSchedules(scope,
                     buildUptime.getFunction(), buildEc2.getInstance(), getTestBucketName());
             return List.of(uptimeStack.getStopAfterTestsRule());
         } else {

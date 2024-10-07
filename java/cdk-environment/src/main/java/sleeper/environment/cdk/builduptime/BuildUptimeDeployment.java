@@ -17,8 +17,6 @@ package sleeper.environment.cdk.builduptime;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
@@ -36,19 +34,18 @@ import java.util.Map;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
-public class BuildUptimeStack extends Stack {
+public class BuildUptimeDeployment {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
 
     private final IFunction function;
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    public BuildUptimeStack(Construct scope, StackProps props, IInstance buildEc2) {
-        super(scope, props.getStackName(), props);
-        AppContext context = AppContext.of(this);
+    public BuildUptimeDeployment(Construct scope, IInstance buildEc2) {
+        AppContext context = AppContext.of(scope);
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));
 
-        function = Function.Builder.create(this, "BuildUptimeLambda")
+        function = Function.Builder.create(scope, "BuildUptimeFunction")
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
                 .description("Start and stop EC2 instances and schedule rules")

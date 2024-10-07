@@ -16,8 +16,6 @@
 package sleeper.environment.cdk.nightlytests;
 
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.events.CronOptions;
 import software.amazon.awscdk.services.events.IRule;
@@ -38,20 +36,18 @@ import java.util.Map;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
-public class NightlyTestUptimeStack extends Stack {
+public class NightlyTestUptimeSchedules {
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
     public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = AppParameters.NIGHTLY_TEST_BUCKET;
 
     private final IRule stopAfterTestsRule;
 
-    public NightlyTestUptimeStack(
-            Construct scope, StackProps props,
-            IFunction buildUptimeFn, IInstance buildEc2, String testBucketName) {
-        super(scope, "NightlyTestUptime", props);
-        AppContext context = AppContext.of(this);
+    public NightlyTestUptimeSchedules(
+            Construct scope, IFunction buildUptimeFn, IInstance buildEc2, String testBucketName) {
+        AppContext context = AppContext.of(scope);
 
         String stopAfterTestsRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-stop-nightly-tests";
-        stopAfterTestsRule = Rule.Builder.create(this, "StopAfterNightlyTests")
+        stopAfterTestsRule = Rule.Builder.create(scope, "StopAfterNightlyTests")
                 .ruleName(stopAfterTestsRuleName)
                 .description("Periodic trigger to take the build EC2 down when nightly tests finish")
                 .schedule(Schedule.rate(Duration.minutes(10)))
@@ -65,7 +61,7 @@ public class NightlyTestUptimeStack extends Stack {
                         .build()))
                 .enabled(false)
                 .build();
-        Rule.Builder.create(this, "StartForNightlyTests")
+        Rule.Builder.create(scope, "StartForNightlyTests")
                 .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-start-for-nightly-tests")
                 .description("Nightly invocation to start the build EC2 for nightly tests")
                 .schedule(Schedule.cron(CronOptions.builder()

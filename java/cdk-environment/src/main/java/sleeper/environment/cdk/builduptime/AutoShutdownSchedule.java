@@ -15,8 +15,6 @@
  */
 package sleeper.environment.cdk.builduptime;
 
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.events.CronOptions;
 import software.amazon.awscdk.services.events.IRule;
 import software.amazon.awscdk.services.events.Rule;
@@ -25,7 +23,7 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.constructs.Construct;
 
-import sleeper.environment.cdk.buildec2.BuildEC2Stack;
+import sleeper.environment.cdk.buildec2.BuildEC2Deployment;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.IntParameter;
@@ -38,14 +36,16 @@ import java.util.Map;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
-public class AutoShutdownStack extends Stack {
+public class AutoShutdownSchedule {
 
     public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = AppParameters.AUTO_SHUTDOWN_EXISTING_EC2_IDS;
     public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = AppParameters.AUTO_SHUTDOWN_HOUR_UTC;
 
-    public AutoShutdownStack(Construct scope, StackProps props, BuildUptimeStack buildUptime, BuildEC2Stack buildEc2, List<IRule> autoStopRules) {
-        super(scope, "AutoShutdown", props);
-        AppContext context = AppContext.of(this);
+    private AutoShutdownSchedule() {
+    }
+
+    public static void create(Construct scope, BuildUptimeDeployment buildUptime, BuildEC2Deployment buildEc2, List<IRule> autoStopRules) {
+        AppContext context = AppContext.of(scope);
 
         List<String> ec2Ids = new ArrayList<>();
         ec2Ids.addAll(context.get(AUTO_SHUTDOWN_EXISTING_EC2_IDS));
@@ -55,7 +55,7 @@ public class AutoShutdownStack extends Stack {
 
         List<String> rules = autoStopRules.stream().map(IRule::getRuleName).collect(toUnmodifiableList());
 
-        Rule.Builder.create(this, "AutoShutdown")
+        Rule.Builder.create(scope, "AutoShutdownSchedule")
                 .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-auto-shutdown")
                 .description("Daily invocation to shut down EC2s for the night")
                 .schedule(Schedule.cron(CronOptions.builder()
