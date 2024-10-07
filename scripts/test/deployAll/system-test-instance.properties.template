@@ -34,14 +34,6 @@ sleeper.systemtest.records.per.ingest=40000000
 #                             Sleeper Instance Properties                              #
 ########################################################################################
 
-# The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.
-# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
-# Use -1 to indicate infinite retention.
-# sleeper.log.retention.days=30
-
-# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
-# sleeper.ecs.security.groups=
-
 # Logging level for sleeper classes
 sleeper.logging.level=debug
 
