@@ -25,7 +25,7 @@ ENVIRONMENT_ID=$1
 shift
 
 if [ "$#" -lt 1 ]; then
-  CDK_PARAMS=("--all")
+  CDK_PARAMS=()
 else
   CDK_PARAMS=("$@")
 fi
@@ -37,7 +37,7 @@ ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
 pushd "$CDK_ROOT_DIR" > /dev/null
-cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" --all "${CDK_PARAMS[@]}"
 popd > /dev/null
 
 USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
