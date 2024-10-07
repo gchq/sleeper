@@ -193,6 +193,7 @@
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname/>
         <sleeper.system.test.standalone.properties.template/>
+        <sleeper.system.test.instance.properties.overrides/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
@@ -1307,6 +1308,10 @@
                             <property>
                                 <name>sleeper.system.test.standalone.properties.template</name>
                                 <value>${sleeper.system.test.standalone.properties.template}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.instance.properties.overrides</name>
+                                <value>${sleeper.system.test.instance.properties.overrides}</value>
                             </property>
                         </systemProperties>
                     </configuration>

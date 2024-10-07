@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -59,6 +60,7 @@ public class SystemTestParameters {
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
     private final SystemTestStandaloneProperties standalonePropertiesTemplate;
+    private final InstanceProperties instancePropertiesOverrides;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
@@ -74,6 +76,7 @@ public class SystemTestParameters {
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
+        instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
     }
 
     public static Builder builder() {
@@ -173,6 +176,9 @@ public class SystemTestParameters {
         if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_LOG_RETENTION_DAYS)) {
             properties.set(LOG_RETENTION_IN_DAYS, standalonePropertiesTemplate.get(SYSTEM_TEST_LOG_RETENTION_DAYS));
         }
+        instancePropertiesOverrides.streamNonDefaultEntries().forEach(entry -> {
+            properties.set(entry.getKey(), entry.getValue());
+        });
         for (TableProperties tableProperties : deployConfig.getTableProperties()) {
             setRequiredProperties(tableProperties);
         }
@@ -239,6 +245,7 @@ public class SystemTestParameters {
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
         private SystemTestStandaloneProperties standalonePropertiesTemplate;
+        private InstanceProperties instancePropertiesOverrides;
 
         private Builder() {
         }
@@ -308,6 +315,11 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder instancePropertiesOverrides(InstanceProperties instancePropertiesOverrides) {
+            this.instancePropertiesOverrides = instancePropertiesOverrides;
+            return this;
+        }
+
         public Builder loadFromSystemProperties() {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
@@ -323,7 +335,11 @@ public class SystemTestParameters {
                     .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
                             .map(Paths::get)
                             .map(SystemTestStandaloneProperties::fromFile)
-                            .orElseThrow(() -> new IllegalArgumentException("Standalone properties template not specified")));
+                            .orElseGet(SystemTestStandaloneProperties::new))
+                    .instancePropertiesOverrides(getOptionalProperty("sleeper.system.test.instance.properties.overrides")
+                            .map(Paths::get)
+                            .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
+                            .orElseGet(InstanceProperties::new));
         }
 
         public Builder findDirectories() {

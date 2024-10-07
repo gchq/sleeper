@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.UnaryOperator;
@@ -247,11 +248,38 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         if (!properties.containsKey(property.getPropertyName())) {
             return false;
         }
+        return getValueIfSet(property) != null;
+    }
+
+    /**
+     * Streams through all properties with non-default values.
+     *
+     * @return the properties
+     */
+    public Stream<Entry<T, String>> streamNonDefaultEntries() {
+        SleeperPropertyIndex<T> index = getPropertiesIndex();
+        return properties.stringPropertyNames().stream()
+                .flatMap(propertyName -> index.getByName(propertyName)
+                        .map(this::getEntryIfSet)
+                        .stream());
+    }
+
+    private Entry<T, String> getEntryIfSet(T property) {
+        String value = getValueIfSet(property);
+        if (value == null) {
+            return null;
+        } else {
+            return Map.entry(property, value);
+        }
+    }
+
+    private String getValueIfSet(T property) {
         String rawValue = properties.getProperty(property.getPropertyName());
         if (property.isIgnoreEmptyValue() && rawValue.equals("")) {
-            return false;
+            return null;
+        } else {
+            return rawValue;
         }
-        return true;
     }
 
     public Properties getProperties() {
