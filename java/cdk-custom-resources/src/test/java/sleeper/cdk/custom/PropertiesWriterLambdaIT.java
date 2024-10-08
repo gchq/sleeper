@@ -54,7 +54,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
     public void shouldUpdateS3BucketOnCreate() throws IOException {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
+        createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
 
         // When
@@ -71,7 +71,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
     }
@@ -80,10 +80,10 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
     public void shouldUpdateS3BucketOnUpdate() throws IOException {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
+        createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
 
-        s3Client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
+        putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("bar", bucketName);
@@ -99,7 +99,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
     }
 
@@ -107,11 +107,11 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
     public void shouldUpdateS3BucketAccordingToProperties() throws IOException {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
+        createBucket(bucketName);
         PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
         String alternativeBucket = bucketName + "-alternative";
 
-        s3Client.createBucket(alternativeBucket);
+        createBucket(alternativeBucket);
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", alternativeBucket);
@@ -127,7 +127,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, alternativeBucket);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, alternativeBucket);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
     }
 
@@ -135,8 +135,8 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
     public void shouldDeleteConfigObjectWhenCalledWithDeleteRequest() throws IOException {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
-        s3Client.putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
+        createBucket(bucketName);
+        putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
@@ -153,6 +153,6 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         lambda.handleEvent(event, null);
 
         // Then
-        assertThat(s3Client.listObjects(bucketName).getObjectSummaries()).isEmpty();
+        assertThat(listObjectKeys(bucketName)).isEmpty();
     }
 }

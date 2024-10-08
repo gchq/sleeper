@@ -67,7 +67,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
@@ -710,7 +710,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
         }
 
         Builder instanceProperties(InstanceProperties instanceProperties) {
-            return activeTableName(instanceProperties.get(ACTIVE_FILES_TABLELENAME))
+            return activeTableName(instanceProperties.get(ACTIVE_FILES_TABLENAME))
                     .fileReferenceCountTableName(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME));
         }
 

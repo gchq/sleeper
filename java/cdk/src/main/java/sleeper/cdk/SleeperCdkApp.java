@@ -15,8 +15,6 @@
  */
 package sleeper.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -24,6 +22,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
@@ -352,8 +351,7 @@ public class SleeperCdkApp extends Stack {
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
+        try (S3Client s3Client = S3Client.create()) {
             BuiltJars jars = new BuiltJars(s3Client, instanceProperties.get(JARS_BUCKET));
 
             new SleeperCdkApp(app, id, StackProps.builder()
@@ -363,8 +361,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars).create();
 
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

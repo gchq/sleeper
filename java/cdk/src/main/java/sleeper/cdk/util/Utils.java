@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.util;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
@@ -38,6 +36,8 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.core.SleeperVersion;
@@ -58,7 +58,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -232,8 +231,9 @@ public class Utils {
             }
         }
         if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
-            new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
+            try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+                new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
+            }
         }
         String deployedVersion = properties.get(VERSION);
         String localVersion = SleeperVersion.getVersion();
@@ -242,7 +242,7 @@ public class Utils {
         if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
-            throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+            throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
                     "Please upgrade/downgrade to make these match",
                     localVersion, deployedVersion));
         }

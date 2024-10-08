@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.custom;
+package sleeper.cdk.testutils;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.AfterEach;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,7 +28,9 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
@@ -42,15 +45,12 @@ public abstract class LocalStackTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     protected final S3Client s3Client = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3Client.builder());
     protected final AmazonS3 s3ClientV1 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-
-    @AfterEach
-    void tearDownLocalStackBase() {
-        s3Client.close();
-    }
+    protected final DynamoDbClient dynamoClient = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, DynamoDbClient.builder());
+    protected final AmazonDynamoDB dynamoClientV1 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     private static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
         return builder
@@ -65,8 +65,8 @@ public abstract class LocalStackTestBase {
         s3Client.createBucket(builder -> builder.bucket(bucketName));
     }
 
-    protected void putObject(String bucketName, String key, String content) {
-        s3Client.putObject(builder -> builder.bucket(bucketName).key(key),
+    protected PutObjectResponse putObject(String bucketName, String key, String content) {
+        return s3Client.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
     }
 

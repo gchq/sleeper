@@ -17,31 +17,32 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteMarkerEntry;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.ObjectVersion;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class AutoDeleteS3ObjectsLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoDeleteS3ObjectsLambda.class);
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final int batchSize;
 
     public AutoDeleteS3ObjectsLambda() {
-        this(AmazonS3ClientBuilder.defaultClient(), 100);
+        this(S3Client.create(), 1000);
     }
 
-    public AutoDeleteS3ObjectsLambda(AmazonS3 s3Client, int batchSize) {
+    public AutoDeleteS3ObjectsLambda(S3Client s3Client, int batchSize) {
         this.s3Client = s3Client;
         this.batchSize = batchSize;
     }
@@ -55,46 +56,52 @@ public class AutoDeleteS3ObjectsLambda {
             case "Update":
                 break;
             case "Delete":
-                deleteAllObjectsInBucket(bucketName);
+                emptyBucket(bucketName);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
         }
     }
 
-    private void deleteAllObjectsInBucket(String bucketName) {
-        List<String> objectKeysForDeletion = new ArrayList<>();
-        ListObjectsV2Request req = new ListObjectsV2Request()
-                .withBucketName(bucketName)
-                .withMaxKeys(batchSize);
-        ListObjectsV2Result result;
-
-        LOGGER.info("Deleting all objects in the bucket {}", bucketName);
-        int totalObjectsDeleted = 0;
-        do {
-            objectKeysForDeletion.clear();
-            result = s3Client.listObjectsV2(req);
-            for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-                objectKeysForDeletion.add(objectSummary.getKey());
-            }
-            String token = result.getNextContinuationToken();
-            req.setContinuationToken(token);
-            totalObjectsDeleted += deleteObjects(s3Client, bucketName, objectKeysForDeletion);
-        } while (result.isTruncated());
-        LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
-    }
-
-    private static int deleteObjects(AmazonS3 s3Client, String bucketName, List<String> keys) {
-        int successfulDeletes = 0;
-        if (!keys.isEmpty()) {
-            DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(bucketName)
-                    .withKeys(keys.toArray(new String[0]))
-                    .withQuiet(false);
-            DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
-            successfulDeletes = delObjRes.getDeletedObjects().size();
-            LOGGER.info("{} objects successfully deleted from S3 bucket: {}", successfulDeletes, bucketName);
+    private void emptyBucket(String bucketName) {
+        try {
+            LOGGER.info("Emptying bucket {}", bucketName);
+            s3Client.listObjectVersionsPaginator(builder -> builder.bucket(bucketName).maxKeys(batchSize))
+                    .stream().parallel()
+                    .forEach(response -> {
+                        deleteVersions(bucketName, response);
+                        deleteMarkers(bucketName, response);
+                    });
+        } catch (NoSuchBucketException e) {
+            LOGGER.info("Bucket not found: {}", bucketName);
         }
-        return successfulDeletes;
     }
 
+    private void deleteVersions(String bucketName, ListObjectVersionsResponse response) {
+        if (!response.versions().isEmpty()) {
+            LOGGER.info("Deleting {} versions", response.versions().size());
+            s3Client.deleteObjects(builder -> builder.bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder
+                            .objects(objectIdentifiers(response.versions(), ObjectVersion::key, ObjectVersion::versionId))));
+        }
+
+    }
+
+    private void deleteMarkers(String bucketName, ListObjectVersionsResponse response) {
+        if (!response.deleteMarkers().isEmpty()) {
+            LOGGER.info("Deleting {} delete markers", response.deleteMarkers().size());
+            s3Client.deleteObjects(builder -> builder.bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder
+                            .objects(objectIdentifiers(response.deleteMarkers(), DeleteMarkerEntry::key, DeleteMarkerEntry::versionId))));
+        }
+    }
+
+    private static <T> Collection<ObjectIdentifier> objectIdentifiers(
+            List<T> versions, Function<T, String> getKey, Function<T, String> getVersionId) {
+        return versions.stream()
+                .map(version -> ObjectIdentifier.builder()
+                        .key(getKey.apply(version))
+                        .versionId(getVersionId.apply(version)).build())
+                .collect(Collectors.toList());
+    }
 }
