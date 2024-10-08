@@ -29,6 +29,7 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
+import sleeper.core.util.ThreadSleep;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -47,20 +48,23 @@ public class ShutdownSystemProcesses {
     private final EmrClient emrClient;
     private final EmrServerlessClient emrServerlessClient;
     private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
+    private final ThreadSleep threadSleep;
 
     public ShutdownSystemProcesses(TearDownClients clients) {
-        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
+        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT, Thread::sleep);
     }
 
     public ShutdownSystemProcesses(
             CloudWatchEventsClient cloudWatch, EcsClient ecs,
             EmrClient emrClient, EmrServerlessClient emrServerlessClient,
-            StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
+            StaticRateLimit<ListClustersResponse> listActiveClustersLimit,
+            ThreadSleep threadSleep) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
         this.emrServerlessClient = emrServerlessClient;
         this.listActiveClustersLimit = listActiveClustersLimit;
+        this.threadSleep = threadSleep;
     }
 
     public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
@@ -79,7 +83,7 @@ public class ShutdownSystemProcesses {
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
-        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit).run();
+        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit, threadSleep).run();
     }
 
     private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {

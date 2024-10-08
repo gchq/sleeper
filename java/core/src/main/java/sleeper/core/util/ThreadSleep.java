@@ -19,7 +19,7 @@ package sleeper.core.util;
  * Waits for a number of milliseconds. Implemented by <code>Thread.sleep</code>.
  */
 @FunctionalInterface
-public interface Waiter {
+public interface ThreadSleep {
     /**
      * Wait for the specified period.
      *

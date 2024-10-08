@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.StaticRateLimit;
+import sleeper.core.util.ThreadSleep;
 
 import java.time.Duration;
 import java.util.List;
@@ -42,11 +43,13 @@ public class TerminateEMRClusters {
     private final EmrClient emrClient;
     private final String clusterPrefix;
     private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
+    private final ThreadSleep threadSleep;
 
-    public TerminateEMRClusters(EmrClient emrClient, String instanceId, StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
+    public TerminateEMRClusters(EmrClient emrClient, String instanceId, StaticRateLimit<ListClustersResponse> listActiveClustersLimit, ThreadSleep threadSleep) {
         this.emrClient = emrClient;
         this.clusterPrefix = "sleeper-" + instanceId + "-";
         this.listActiveClustersLimit = listActiveClustersLimit;
+        this.threadSleep = threadSleep;
     }
 
     public void run() throws InterruptedException {
@@ -75,7 +78,7 @@ public class TerminateEMRClusters {
             LOGGER.info("Terminated {} clusters out of {}", endIndex, clusters.size());
             // Sustained limit of 0.5 calls per second
             // See https://docs.aws.amazon.com/general/latest/gr/emr.html
-            sleepForSustainedRatePerSecond(0.2);
+            sleepForSustainedRatePerSecond(0.2, threadSleep);
         }
     }
 
@@ -103,7 +106,7 @@ public class TerminateEMRClusters {
         String instanceId = args[0];
 
         try (EmrClient emrClient = EmrClient.create()) {
-            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, instanceId, StaticRateLimit.none());
+            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, instanceId, StaticRateLimit.none(), Thread::sleep);
             terminateClusters.run();
         }
     }

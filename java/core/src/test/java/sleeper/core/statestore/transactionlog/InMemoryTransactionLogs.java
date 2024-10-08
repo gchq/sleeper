@@ -18,15 +18,14 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.Waiter;
+import sleeper.core.util.ThreadSleep;
+import sleeper.core.util.ThreadSleepTestHelper;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.multipleWaitActions;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 /**
  * Gathers state for a state store backed by in-memory transaction logs. Helps with independent management of the
@@ -39,14 +38,14 @@ public class InMemoryTransactionLogs {
     private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
     private final List<Duration> retryWaits = new ArrayList<>();
-    private final Waiter retryWaiter;
+    private final ThreadSleep retryWaiter;
 
     public InMemoryTransactionLogs() {
-        retryWaiter = recordWaits(retryWaits);
+        retryWaiter = ThreadSleepTestHelper.recordWaits(retryWaits);
     }
 
-    private InMemoryTransactionLogs(Waiter extraWaiter) {
-        retryWaiter = multipleWaitActions(recordWaits(retryWaits), extraWaiter);
+    private InMemoryTransactionLogs(ThreadSleep extraWaiter) {
+        retryWaiter = ThreadSleepTestHelper.multipleWaitActions(ThreadSleepTestHelper.recordWaits(retryWaits), extraWaiter);
     }
 
     /**
@@ -56,7 +55,7 @@ public class InMemoryTransactionLogs {
      * @return            an instance of this class
      */
     public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
-        return new InMemoryTransactionLogs(recordWaits(retryWaits));
+        return new InMemoryTransactionLogs(ThreadSleepTestHelper.recordWaits(retryWaits));
     }
 
     /**

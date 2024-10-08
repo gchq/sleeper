@@ -32,10 +32,10 @@ public class ExponentialBackoffWithJitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(ExponentialBackoffWithJitter.class);
 
     private final DoubleSupplier randomJitterFraction;
-    private final Waiter waiter;
+    private final ThreadSleep waiter;
     private final WaitRange waitRange;
 
-    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, Waiter waiter) {
+    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, ThreadSleep waiter) {
         this.waitRange = Objects.requireNonNull(waitRange, "waitRange must not be null");
         this.randomJitterFraction = Objects.requireNonNull(randomJitterFraction, "randomJitterFraction must not be null");
         this.waiter = Objects.requireNonNull(waiter, "waiter must not be null");

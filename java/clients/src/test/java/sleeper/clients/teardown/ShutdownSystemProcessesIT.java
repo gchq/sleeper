@@ -85,6 +85,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -95,7 +96,7 @@ class ShutdownSystemProcessesIT {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
-                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none());
+                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none(), noWaits());
     }
 
     private void shutdown() throws Exception {

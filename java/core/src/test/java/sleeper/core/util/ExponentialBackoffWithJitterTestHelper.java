@@ -15,8 +15,6 @@
  */
 package sleeper.core.util;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Random;
 import java.util.function.DoubleSupplier;
 
@@ -54,70 +52,5 @@ public class ExponentialBackoffWithJitterTestHelper {
      */
     public static DoubleSupplier constantJitterFraction(double fraction) {
         return () -> fraction;
-    }
-
-    /**
-     * Creates an implementation of a waiter that records the wait times in a list.
-     *
-     * @param  recordWaits the list to store wait times
-     * @return             a {@link Waiter} that records wait times
-     */
-    public static Waiter recordWaits(List<Duration> recordWaits) {
-        return millis -> recordWaits.add(Duration.ofMillis(millis));
-    }
-
-    /**
-     * Creates an implementation of a waiter that performs multiple actions.
-     *
-     * @param  waiters actions to perform
-     * @return         a {@link Waiter} that performs the given actions
-     */
-    public static Waiter multipleWaitActions(Waiter... waiters) {
-        return millis -> {
-            for (Waiter waiter : waiters) {
-                waiter.waitForMillis(millis);
-            }
-        };
-    }
-
-    /**
-     * Creates an implementation of a waiter that does nothing.
-     *
-     * @return a {@link Waiter} that does nothing
-     */
-    public static Waiter noWaits() {
-        return millis -> {
-        };
-    }
-
-    /**
-     * Extends an implementation of a waiter to also perform another action.
-     *
-     * @param  waiter the waiter to extend
-     * @param  action the action to perform
-     * @return        a waiter which will behave like the original waiter but perform the action first
-     */
-    public static Waiter withActionAfterWait(Waiter waiter, WaitAction action) {
-        return millis -> {
-            try {
-                action.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            waiter.waitForMillis(millis);
-        };
-    }
-
-    /**
-     * An action to perform during a wait.
-     */
-    public interface WaitAction {
-
-        /**
-         * Perform the action.
-         *
-         * @throws Exception if anything went wrong
-         */
-        void run() throws Exception;
     }
 }

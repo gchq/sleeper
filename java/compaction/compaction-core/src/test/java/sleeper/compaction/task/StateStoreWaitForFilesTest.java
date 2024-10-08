@@ -34,8 +34,8 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
-import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
-import sleeper.core.util.Waiter;
+import sleeper.core.util.ThreadSleep;
+import sleeper.core.util.ThreadSleepTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,8 +54,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.withActionAfterWait;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -65,7 +63,7 @@ public class StateStoreWaitForFilesTest {
     private final StateStore stateStore = new DelegatingStateStore(fileStore, InMemoryPartitionStore.withSinglePartition(schema));
     private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     private final List<Duration> foundWaits = new ArrayList<>();
-    private Waiter waiter = recordWaits(foundWaits);
+    private ThreadSleep waiter = ThreadSleepTestHelper.recordWaits(foundWaits);
 
     @Test
     void shouldSkipWaitIfFilesAreAlreadyAssignedToJob() throws Exception {
@@ -213,7 +211,7 @@ public class StateStoreWaitForFilesTest {
                 .withAttemptsAndThrottlingRetries(attempts, jitter);
     }
 
-    protected void actionAfterWait(WaitAction action) throws Exception {
-        waiter = withActionAfterWait(waiter, action);
+    protected void actionAfterWait(ThreadSleepTestHelper.WaitAction action) throws Exception {
+        waiter = ThreadSleepTestHelper.withActionAfterWait(waiter, action);
     }
 }

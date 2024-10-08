@@ -21,7 +21,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
-import sleeper.core.util.Waiter;
+import sleeper.core.util.ThreadSleep;
 
 import java.time.Instant;
 import java.util.function.DoubleSupplier;
@@ -34,13 +34,13 @@ public class StateStoreWaitForFilesTestHelper {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final Waiter waiter;
+    private final ThreadSleep waiter;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreWaitForFilesTestHelper(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobStatusStore jobStatusStore,
-            Waiter waiter, Supplier<Instant> timeSupplier) {
+            ThreadSleep waiter, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;

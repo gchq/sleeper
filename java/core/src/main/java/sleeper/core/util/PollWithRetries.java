@@ -36,7 +36,7 @@ public class PollWithRetries {
     private final long pollIntervalMillis;
     private final int maxRetries;
     private final RetriesTracker retriesTracker;
-    private final Waiter sleepInInterval;
+    private final ThreadSleep sleepInInterval;
 
     private PollWithRetries(Builder builder) {
         pollIntervalMillis = builder.pollIntervalMillis;
@@ -195,7 +195,7 @@ public class PollWithRetries {
         private long pollIntervalMillis;
         private int maxRetries;
         private RetriesTracker pollsTracker = TrackRetriesPerInvocation.INSTANCE;
-        private Waiter sleepInInterval = Thread::sleep;
+        private ThreadSleep sleepInInterval = Thread::sleep;
 
         /**
          * Sets the interval between polls.
@@ -274,7 +274,7 @@ public class PollWithRetries {
          * @param  sleepInInterval the function
          * @return                 the builder
          */
-        public Builder sleepInInterval(Waiter sleepInInterval) {
+        public Builder sleepInInterval(ThreadSleep sleepInInterval) {
             this.sleepInInterval = sleepInInterval;
             return this;
         }
