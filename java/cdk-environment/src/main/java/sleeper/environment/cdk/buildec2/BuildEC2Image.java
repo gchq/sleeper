@@ -67,7 +67,7 @@ public class BuildEC2Image {
         return BlockDevice.builder()
                 .deviceName(rootDeviceName)
                 .volume(BlockDeviceVolume.ebs(rootVolumeSizeGiB,
-                        EbsDeviceOptions.builder().volumeType(EbsDeviceVolumeType.GP3).build()))
+                        EbsDeviceOptions.builder().volumeType(EbsDeviceVolumeType.GP3).encrypted(true).build()))
                 .build();
     }
 

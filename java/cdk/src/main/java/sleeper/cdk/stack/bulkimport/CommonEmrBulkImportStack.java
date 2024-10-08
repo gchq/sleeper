@@ -20,10 +20,10 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import software.amazon.awscdk.CfnJson;
-import software.amazon.awscdk.CfnJsonProps;
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.emr.CfnSecurityConfiguration;
-import software.amazon.awscdk.services.emr.CfnSecurityConfigurationProps;
 import software.amazon.awscdk.services.iam.CfnInstanceProfile;
 import software.amazon.awscdk.services.iam.CfnInstanceProfileProps;
 import software.amazon.awscdk.services.iam.Effect;
@@ -35,6 +35,8 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.kms.IKey;
+import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -57,6 +59,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
@@ -67,15 +70,16 @@ public class CommonEmrBulkImportStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
+        IKey ebsKey = createEbsEncryptionKey(scope, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), coreStacks);
+                importBucketStack.getImportBucket(), coreStacks, ebsKey);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
-        securityConfiguration = createSecurityConfiguration(this, instanceProperties);
+        securityConfiguration = createSecurityConfiguration(this, instanceProperties, ebsKey);
     }
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks, IKey ebsKey) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
@@ -85,6 +89,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
+        ebsKey.grant(role, "kms:GenerateDataKey");
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -189,23 +194,48 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
+    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties, IKey ebsKey) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-        String jsonSecurityConf = "{\n" +
-                "  \"InstanceMetadataServiceConfiguration\" : {\n" +
-                "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
-                "      \"HttpPutResponseHopLimit\": 1\n" +
-                "   }\n" +
-                "}";
-        CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
-        CfnJson jsonObject = new CfnJson(scope, "EMRSecurityConfigurationJSONObject", jsonProps);
-        CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
+        CfnJson jsonObject = CfnJson.Builder.create(scope, "EMRSecurityConfigurationJSONObject")
+                .value("{\n" +
+                        "  \"InstanceMetadataServiceConfiguration\": {\n" +
+                        "    \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
+                        "    \"HttpPutResponseHopLimit\": 1\n" +
+                        "  },\n" +
+                        "  \"EncryptionConfiguration\": {\n" +
+                        "    \"EnableInTransitEncryption\": false,\n" +
+                        "    \"EnableAtRestEncryption\": true,\n" +
+                        "    \"AtRestEncryptionConfiguration\": {\n" +
+                        "      \"LocalDiskEncryptionConfiguration\": {\n" +
+                        "        \"EnableEbsEncryption\": true,\n" +
+                        "        \"EncryptionKeyProviderType\": \"AwsKms\",\n" +
+                        "        \"AwsKmsKey\": \"" + ebsKey.getKeyArn() + "\"\n" +
+                        "      }\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}")
+                .build();
+        CfnSecurityConfiguration conf = CfnSecurityConfiguration.Builder.create(scope, "EMRSecurityConfiguration")
                 .name(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
-        return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, conf.getName());
+        return conf;
+    }
+
+    private static IKey createEbsEncryptionKey(Construct scope, InstanceProperties instanceProperties) {
+        String ebsKeyArn = instanceProperties.get(BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN);
+        if (ebsKeyArn == null) {
+            return Key.Builder.create(scope, "EbsKey")
+                    .description("Key used to encrypt data at rest in the local filesystem in AWS EMR for Sleeper.")
+                    .enableKeyRotation(true)
+                    .removalPolicy(RemovalPolicy.DESTROY)
+                    .pendingWindow(Duration.days(7))
+                    .build();
+        } else {
+            return Key.fromKeyArn(scope, "EbsKey", ebsKeyArn);
+        }
     }
 
     public IRole getEc2Role() {
