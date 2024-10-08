@@ -16,13 +16,12 @@
 
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -57,8 +56,7 @@ public class SystemTestStandaloneApp extends Stack {
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
+        try (S3Client s3Client = S3Client.create()) {
             BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
@@ -70,8 +68,6 @@ public class SystemTestStandaloneApp extends Stack {
                     StackProps.builder().stackName(id).env(environment).build(),
                     systemTestProperties, jars);
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

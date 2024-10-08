@@ -15,12 +15,11 @@
  */
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
@@ -90,8 +89,7 @@ public class SystemTestApp extends SleeperCdkApp {
                 .region(systemTestProperties.get(REGION))
                 .build();
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
+        try (S3Client s3Client = S3Client.create()) {
             BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(JARS_BUCKET));
 
             new SystemTestApp(app, id, StackProps.builder()
@@ -101,8 +99,6 @@ public class SystemTestApp extends SleeperCdkApp {
                     systemTestProperties, jars).create();
 
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

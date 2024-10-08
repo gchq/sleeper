@@ -30,6 +30,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
@@ -64,8 +65,8 @@ public abstract class LocalStackTestBase {
         s3Client.createBucket(builder -> builder.bucket(bucketName));
     }
 
-    protected void putObject(String bucketName, String key, String content) {
-        s3Client.putObject(builder -> builder.bucket(bucketName).key(key),
+    protected PutObjectResponse putObject(String bucketName, String key, String content) {
+        return s3Client.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
     }
 
