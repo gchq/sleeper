@@ -45,12 +45,10 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emr</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>
