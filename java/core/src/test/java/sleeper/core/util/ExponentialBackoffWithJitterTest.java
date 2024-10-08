@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 
 public class ExponentialBackoffWithJitterTest {
 
@@ -164,13 +163,13 @@ public class ExponentialBackoffWithJitterTest {
     private void makeAttempts(
             int attempts, WaitRange waitRange, DoubleSupplier randomJitterFraction) throws Exception {
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
-                waitRange, randomJitterFraction, recordWaits(foundWaits));
+                waitRange, randomJitterFraction, ThreadSleepTestHelper.recordWaits(foundWaits));
         for (int i = 1; i <= attempts; i++) {
             backoff.waitBeforeAttempt(i);
         }
     }
 
     private ExponentialBackoffWithJitter backoff() {
-        return new ExponentialBackoffWithJitter(WAIT_RANGE, fixJitterSeed(), recordWaits(foundWaits));
+        return new ExponentialBackoffWithJitter(WAIT_RANGE, fixJitterSeed(), ThreadSleepTestHelper.recordWaits(foundWaits));
     }
 }

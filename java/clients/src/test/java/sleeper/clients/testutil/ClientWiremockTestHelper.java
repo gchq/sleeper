@@ -15,19 +15,16 @@
  */
 package sleeper.clients.testutil;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import static sleeper.task.common.WiremockTestHelper.wiremockAwsV2Client;
-import static sleeper.task.common.WiremockTestHelper.wiremockCredentialsProvider;
-import static sleeper.task.common.WiremockTestHelper.wiremockEndpointConfiguration;
 
 public class ClientWiremockTestHelper {
 
@@ -36,11 +33,8 @@ public class ClientWiremockTestHelper {
     private ClientWiremockTestHelper() {
     }
 
-    public static AmazonECS wiremockEcsClientV1(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonECSClientBuilder.standard()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static EcsClient wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
     public static EcrClient wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {

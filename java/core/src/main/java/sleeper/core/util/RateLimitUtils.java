@@ -35,10 +35,20 @@ public class RateLimitUtils {
      * @param ratePerSecond the target rate per second
      */
     public static void sleepForSustainedRatePerSecond(double ratePerSecond) {
+        sleepForSustainedRatePerSecond(ratePerSecond, Thread::sleep);
+    }
+
+    /**
+     * Sleeps for a duration in order to achieve a target rate.
+     *
+     * @param ratePerSecond the target rate per second
+     * @param threadSleep   a reference to Thread.sleep or a test fake
+     */
+    public static void sleepForSustainedRatePerSecond(double ratePerSecond, ThreadSleep threadSleep) {
         try {
             long millisecondsToSleep = calculateMillisSleepForSustainedRatePerSecond(ratePerSecond);
             LOGGER.trace("Sleeping for {} ", millisecondsToSleep);
-            Thread.sleep(millisecondsToSleep);
+            threadSleep.waitForMillis(millisecondsToSleep);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

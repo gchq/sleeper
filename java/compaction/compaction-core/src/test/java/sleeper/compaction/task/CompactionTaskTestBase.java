@@ -37,8 +37,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
-import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
+import sleeper.core.util.ThreadSleep;
+import sleeper.core.util.ThreadSleepTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -65,8 +65,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.withActionAfterWait;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -89,7 +87,7 @@ public class CompactionTaskTestBase {
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
-    private Waiter waiterForFileAssignment = recordWaits(foundWaitsForFileAssignment);
+    private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
     @BeforeEach
     void setUpBase() {
@@ -231,8 +229,8 @@ public class CompactionTaskTestBase {
         jobsOnQueue.add(job);
     }
 
-    protected void actionAfterWaitForFileAssignment(WaitAction action) throws Exception {
-        waiterForFileAssignment = withActionAfterWait(waiterForFileAssignment, action);
+    protected void actionAfterWaitForFileAssignment(ThreadSleepTestHelper.WaitAction action) throws Exception {
+        waiterForFileAssignment = ThreadSleepTestHelper.withActionAfterWait(waiterForFileAssignment, action);
     }
 
     private MessageReceiver pollQueue() {
