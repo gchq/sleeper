@@ -15,8 +15,7 @@
  */
 package sleeper.environment.cdk.config;
 
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Stack;
+import software.constructs.Construct;
 import software.constructs.Node;
 
 import java.util.List;
@@ -51,12 +50,8 @@ public interface AppContext {
         return integer.get(this);
     }
 
-    static AppContext of(App app) {
-        return of(app.getNode());
-    }
-
-    static AppContext of(Stack stack) {
-        return of(stack.getNode());
+    static AppContext of(Construct construct) {
+        return of(construct.getNode());
     }
 
     static AppContext of(Node node) {

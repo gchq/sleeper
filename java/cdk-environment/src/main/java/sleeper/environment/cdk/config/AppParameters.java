@@ -22,12 +22,13 @@ public class AppParameters {
 
     public static final RequiredStringParameter INSTANCE_ID = RequiredStringParameter.key("instanceId");
     public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
+    public static final BooleanParameter DEPLOY_EC2 = BooleanParameter.keyAndDefault("deployEc2", true);
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
     public static final StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
     public static final StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "develop");
 
-    public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*");
+    public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*");
     public static final StringParameter BUILD_IMAGE_OWNER = StringParameter.keyAndDefault("buildImageOwner", "099720109477");
     public static final StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
     public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");

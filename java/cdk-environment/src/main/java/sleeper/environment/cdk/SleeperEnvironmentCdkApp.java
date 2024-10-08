@@ -18,19 +18,21 @@ package sleeper.environment.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.events.IRule;
 
-import sleeper.environment.cdk.buildec2.BuildEC2Stack;
-import sleeper.environment.cdk.builduptime.AutoShutdownStack;
-import sleeper.environment.cdk.builduptime.BuildUptimeStack;
+import sleeper.environment.cdk.buildec2.BuildEC2Deployment;
+import sleeper.environment.cdk.builduptime.AutoShutdownSchedule;
+import sleeper.environment.cdk.builduptime.BuildUptimeDeployment;
 import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.networking.NetworkingStack;
-import sleeper.environment.cdk.nightlytests.NightlyTests;
+import sleeper.environment.cdk.networking.NetworkingDeployment;
+import sleeper.environment.cdk.nightlytests.NightlyTestDeployment;
 
 import java.util.List;
 
 import static sleeper.environment.cdk.config.AppParameters.BUILD_UPTIME_LAMBDA_JAR;
+import static sleeper.environment.cdk.config.AppParameters.DEPLOY_EC2;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 /**
@@ -51,20 +53,17 @@ public class SleeperEnvironmentCdkApp {
                 .build();
         AppContext context = AppContext.of(app);
         String instanceId = context.get(INSTANCE_ID);
-        NightlyTests nightlyTests = new NightlyTests(app, environment);
-        NetworkingStack networking = new NetworkingStack(app,
-                StackProps.builder().stackName(instanceId + "-Networking").env(environment).build());
-        BuildEC2Stack buildEc2 = new BuildEC2Stack(app,
-                StackProps.builder().stackName(instanceId + "-BuildEC2").env(environment).build(),
-                networking.getVpc(), nightlyTests);
+        Stack stack = new Stack(app, "SleeperEnvironment", StackProps.builder().stackName(instanceId + "-SleeperEnvironment").env(environment).build());
+        NightlyTestDeployment nightlyTests = new NightlyTestDeployment(stack);
+        NetworkingDeployment networking = new NetworkingDeployment(stack);
+        BuildEC2Deployment buildEc2 = null;
+        if (context.get(DEPLOY_EC2)) {
+            buildEc2 = new BuildEC2Deployment(stack, networking.getVpc(), nightlyTests);
+        }
         if (context.get(BUILD_UPTIME_LAMBDA_JAR).isPresent()) {
-            BuildUptimeStack buildUptime = new BuildUptimeStack(app,
-                    StackProps.builder().stackName(instanceId + "-BuildUptime").env(environment).build(),
-                    buildEc2.getInstance());
+            BuildUptimeDeployment buildUptime = new BuildUptimeDeployment(stack);
             List<IRule> autoStopRules = nightlyTests.automateUptimeGetAutoStopRules(buildEc2, buildUptime);
-            new AutoShutdownStack(app,
-                    StackProps.builder().stackName(instanceId + "-AutoShutdown").env(environment).build(),
-                    buildUptime, buildEc2, autoStopRules);
+            AutoShutdownSchedule.create(stack, buildUptime, buildEc2, autoStopRules);
         }
         app.synth();
     }

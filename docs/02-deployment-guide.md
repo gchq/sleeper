@@ -104,17 +104,20 @@ The Sleeper CLI also lets you manage multiple environments.
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
 You must specify an environment ID when deploying an environment. Parameters after the environment ID will be passed to
-a `cdk deploy` command.
+a `cdk deploy --all` command.
 
 ```bash
 # Deploy EC2 in a new VPC
 sleeper environment deploy MyEnvironment
 
 # Only deploy VPC
-sleeper environment deploy VPCEnvironment "*-Networking"
+sleeper environment deploy VPCEnvironment -c deployEc2=false
 
 # Deploy EC2 in an existing VPC
-sleeper environment deploy EC2Environment -c vpcId=[vpc-id] "*-BuildEC2"
+sleeper environment deploy EC2Environment -c vpcId=[vpc-id]
+
+# Deploy with nightly system test automation
+sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true
 ```
 
 You can switch environments like this:

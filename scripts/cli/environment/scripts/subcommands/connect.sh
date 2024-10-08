@@ -33,7 +33,7 @@ ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 
-INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
 TEMP_KEY_DIR=$(mktemp -d)
 TEMP_KEY_PATH="$TEMP_KEY_DIR/sleeper-environment-connect-key"
 
