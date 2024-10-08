@@ -16,13 +16,12 @@
 
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -35,7 +34,7 @@ public class TearDownClients {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final CloudWatchEventsClient cloudWatch;
-    private final AmazonECS ecs;
+    private final EcsClient ecs;
     private final EcrClient ecr;
     private final EmrClient emr;
     private final EmrServerlessClient emrServerless;
@@ -54,10 +53,10 @@ public class TearDownClients {
 
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         try (S3Client s3v2Client = S3Client.create();
                 CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
                 EcrClient ecrClient = EcrClient.create();
+                EcsClient ecsClient = EcsClient.create();
                 EmrClient emrClient = EmrClient.create();
                 EmrServerlessClient emrServerless = EmrServerlessClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
@@ -74,7 +73,6 @@ public class TearDownClients {
             operation.tearDown(clients);
         } finally {
             s3Client.shutdown();
-            ecsClient.shutdown();
         }
     }
 
@@ -94,7 +92,7 @@ public class TearDownClients {
         return cloudWatch;
     }
 
-    public AmazonECS getEcs() {
+    public EcsClient getEcs() {
         return ecs;
     }
 
@@ -118,7 +116,7 @@ public class TearDownClients {
         private AmazonS3 s3;
         private S3Client s3v2;
         private CloudWatchEventsClient cloudWatch;
-        private AmazonECS ecs;
+        private EcsClient ecs;
         private EcrClient ecr;
         private EmrClient emr;
         private EmrServerlessClient emrServerless;
@@ -142,7 +140,7 @@ public class TearDownClients {
             return this;
         }
 
-        public Builder ecs(AmazonECS ecs) {
+        public Builder ecs(EcsClient ecs) {
             this.ecs = ecs;
             return this;
         }
