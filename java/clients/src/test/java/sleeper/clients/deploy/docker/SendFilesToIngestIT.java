@@ -24,7 +24,6 @@ import sleeper.clients.docker.SendFilesToIngest;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.IngestJobSerDe;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -57,7 +56,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         // Then
         assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
                 .isEqualTo("abc");
-        assertThat(receiveAndDeserialiseMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe()::fromJson))
+        assertThat(receiveIngestJob(instanceProperties.get(INGEST_JOB_QUEUE_URL)))
                 .isEqualTo(IngestJob.builder()
                         .tableName("system-test")
                         .files(List.of(instanceProperties.get(DATA_BUCKET) + "/ingest/test-file.parquet"))

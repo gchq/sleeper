@@ -43,6 +43,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.query.model.Query;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
@@ -51,7 +53,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -91,12 +92,13 @@ public class DockerInstanceTestBase {
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 
-    protected <T> T receiveAndDeserialiseMessage(String queueUrl, Function<String, T> deserialiser) {
+    protected IngestJob receiveIngestJob(String queueUrl) {
         List<Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
-        return deserialiser.apply(messages.get(0).getBody());
+        String json = messages.get(0).getBody();
+        return new IngestJobSerDe().fromJson(json);
     }
 
     private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
