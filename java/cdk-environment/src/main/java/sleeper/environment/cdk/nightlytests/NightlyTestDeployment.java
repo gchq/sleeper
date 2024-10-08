@@ -25,22 +25,19 @@ import sleeper.environment.cdk.config.AppContext;
 
 import java.util.List;
 
-import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 
 public class NightlyTestDeployment {
 
     private final Construct scope;
     private final boolean enabled;
-    private final String contextBucketName;
     private final IBucket testBucket;
 
     public NightlyTestDeployment(Construct scope) {
         this.scope = scope;
         AppContext context = AppContext.of(scope);
         enabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
-        contextBucketName = context.get(NIGHTLY_TEST_BUCKET).orElse(null);
-        if (enabled && contextBucketName == null) {
+        if (enabled) {
             testBucket = new NightlyTestBucket(scope).getBucket();
         } else {
             testBucket = null;
@@ -48,17 +45,18 @@ public class NightlyTestDeployment {
     }
 
     public String getTestBucketName() {
-        if (testBucket != null) {
+        if (enabled) {
             return testBucket.getBucketName();
         } else {
-            return contextBucketName;
+            return null;
         }
     }
 
     public List<IRule> automateUptimeGetAutoStopRules(BuildEC2Deployment buildEc2, BuildUptimeDeployment buildUptime) {
         if (enabled && buildEc2 != null) {
+            testBucket.grantRead(buildUptime.getFunction());
             NightlyTestUptimeSchedules uptimeStack = new NightlyTestUptimeSchedules(scope,
-                    buildUptime.getFunction(), buildEc2.getInstance(), getTestBucketName());
+                    buildUptime.getFunction(), buildEc2.getInstance(), testBucket.getBucketName());
             return List.of(uptimeStack.getStopAfterTestsRule());
         } else {
             return List.of();
