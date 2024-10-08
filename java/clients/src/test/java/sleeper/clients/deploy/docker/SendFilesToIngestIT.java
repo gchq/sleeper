@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy.docker;
 
-import com.amazonaws.services.sqs.model.Message;
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,16 +52,16 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         Files.writeString(filePath, "abc");
 
         // When
-        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, sqsClient);
+        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, sqsClientV1);
 
         // Then
         assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
                 .isEqualTo("abc");
-        assertThat(sqsClient.receiveMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL)).getMessages())
-                .map(Message::getBody)
-                .map(new IngestJobSerDe()::fromJson)
-                .flatMap(IngestJob::getFiles)
-                .containsExactly(instanceProperties.get(DATA_BUCKET) + "/ingest/test-file.parquet");
+        assertThat(receiveAndDeserialiseMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe()::fromJson))
+                .isEqualTo(IngestJob.builder()
+                        .tableName("system-test")
+                        .files(List.of(instanceProperties.get(DATA_BUCKET) + "/ingest/test-file.parquet"))
+                        .build());
     }
 
     private String getObjectContents(String bucketName, String key) throws IOException {
