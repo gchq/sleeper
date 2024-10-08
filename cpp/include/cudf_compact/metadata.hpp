@@ -1,13 +1,14 @@
 #pragma once
 
+#include <cudf/types.hpp>
 #include <thrift/protocol/TCompactProtocol.h>
 #include <thrift/transport/TBufferTransports.h>
 
 #include "cudf_compact/parquet_types.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cudf/types.hpp>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -49,7 +50,9 @@ class SeekableMemoryBuffer : public apache::thrift::transport::TMemoryBuffer
     std::size_t _length;
 
   public:
-    SeekableMemoryBuffer(std::size_t len) : TMemoryBuffer(static_cast<uint32_t>(len)), _length(len) {}
+    SeekableMemoryBuffer(std::size_t len) : TMemoryBuffer(static_cast<uint32_t>(len)), _length(len) {
+        getConfiguration()->setMaxMessageSize(static_cast<int>(len));
+    }
 
     inline void seek(uint32_t offset) {
         resetBuffer();// sets read/write ptrs to 0
@@ -110,6 +113,7 @@ inline std::tuple<parquet::format::FileMetaData,
     using apache::thrift::protocol::TCompactProtocol;
     std::ifstream source(filepath, std::ios::binary);
     parquet::format::FileMetaData fmd;
+
     read_footer(source, filepath, fmd);
 
     std::vector<parquet::format::OffsetIndex> offset_index;

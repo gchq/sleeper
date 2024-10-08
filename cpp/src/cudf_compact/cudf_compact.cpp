@@ -279,16 +279,20 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
         for (int rg_idx = 0; rg_idx < static_cast<int>(fmeta.row_groups.size()); rg_idx++) {
             auto const &row_grp = fmeta.row_groups[rg_idx];
             total_rows += row_grp.num_rows;
-            std::cout << "Row group " << rg_idx << " num rows " << row_grp.num_rows << std::endl;
+
             for (int col_idx = 0; col_idx < static_cast<int>(row_grp.columns.size()); col_idx++, file_colidx++) {
                 auto const &offsets = offset_index[file_colidx];
                 auto const &colidxs = column_index[file_colidx];
                 int const global_col_idx = static_cast<int>(f * num_columns + col_idx);
-                std::cout << "col_idx " << col_idx << std::endl;
+
                 size_t const num_pages = offsets.page_locations.size();
                 for (unsigned int pg_idx = 0; pg_idx < num_pages; pg_idx++) {
-                    bool const print = (rg_idx == 0 && col_idx == 0 && pg_idx < 5);
+                    bool const print = (rg_idx == 0 && col_idx < 2 && pg_idx < 5);
                     auto const &page_loc = offsets.page_locations[pg_idx];
+                    if (print) {
+                        std::cout << "Row group " << rg_idx << " num rows " << row_grp.num_rows << std::endl;
+                        std::cout << "col_idx " << col_idx << std::endl;
+                    }
                     auto const page_sz = page_size(flat_schema[col_idx],
                       offsets,
                       colidxs,

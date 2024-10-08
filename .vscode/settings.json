@@ -75,5 +75,6 @@
     "cstddef": "cpp",
     "bitset": "cpp",
     "string_view": "cpp"
-  }
+  },
+  "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
