@@ -15,27 +15,23 @@
  */
 package sleeper.cdk.custom;
 
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
-import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import com.google.common.collect.Lists;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Filter;
+import software.amazon.awssdk.services.ec2.model.VpcEndpoint;
 
 import java.util.List;
 import java.util.Map;
 
 public class VpcCheckLambda {
-    private final AmazonEC2 vpcClient;
+    private final Ec2Client vpcClient;
 
     public VpcCheckLambda() {
-        this(AmazonEC2ClientBuilder.defaultClient());
+        this(Ec2Client.create());
     }
 
-    public VpcCheckLambda(AmazonEC2 vpcClient) {
+    public VpcCheckLambda(Ec2Client vpcClient) {
         this.vpcClient = vpcClient;
     }
 
@@ -57,10 +53,10 @@ public class VpcCheckLambda {
     }
 
     private void validateVpc(String vpcId, String region) {
-        DescribeVpcEndpointsResult s3Endpoints = vpcClient.describeVpcEndpoints(new DescribeVpcEndpointsRequest()
-                .withFilters(new Filter("vpc-id", Lists.newArrayList(vpcId)),
-                        new Filter("service-name", Lists.newArrayList("com.amazonaws." + region + ".s3"))));
-        List<VpcEndpoint> vpcEndpoints = s3Endpoints.getVpcEndpoints();
+        List<VpcEndpoint> vpcEndpoints = vpcClient.describeVpcEndpoints(builder -> builder
+                .filters(Filter.builder().name("vpc-id").values(vpcId).build(),
+                        Filter.builder().name("service-name").values("com.amazonaws." + region + ".s3").build()))
+                .vpcEndpoints();
 
         if (vpcEndpoints.size() != 1) {
             throw new IllegalArgumentException("The S3 endpoint for the requested VPC for this deployment is missing. This can mean very high cost "
