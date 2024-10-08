@@ -20,8 +20,8 @@ import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.Waiter;
 
 import java.time.Instant;
 import java.util.function.DoubleSupplier;

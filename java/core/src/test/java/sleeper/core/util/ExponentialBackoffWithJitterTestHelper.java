@@ -15,8 +15,6 @@
  */
 package sleeper.core.util;
 
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;

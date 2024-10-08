@@ -18,7 +18,7 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
+import sleeper.core.util.Waiter;
 
 import java.time.Duration;
 import java.util.ArrayList;

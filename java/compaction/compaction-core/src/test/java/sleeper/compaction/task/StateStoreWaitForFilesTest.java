@@ -34,8 +34,8 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
+import sleeper.core.util.Waiter;
 
 import java.time.Duration;
 import java.time.Instant;

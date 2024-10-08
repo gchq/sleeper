@@ -37,8 +37,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.util.ExponentialBackoffWithJitter.Waiter;
 import sleeper.core.util.ExponentialBackoffWithJitterTestHelper.WaitAction;
+import sleeper.core.util.Waiter;
 
 import java.time.Duration;
 import java.time.Instant;
