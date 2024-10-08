@@ -29,7 +29,6 @@ import software.constructs.Construct;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.IntParameter;
-import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 public class NightlyTestUptimeSchedules {
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
-    public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = AppParameters.NIGHTLY_TEST_BUCKET;
 
     private final IRule stopAfterTestsRule;
 
