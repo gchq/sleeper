@@ -36,7 +36,7 @@ public class PollWithRetries {
     private final long pollIntervalMillis;
     private final int maxRetries;
     private final RetriesTracker retriesTracker;
-    private final SleepInInterval sleepInInterval;
+    private final Waiter sleepInInterval;
 
     private PollWithRetries(Builder builder) {
         pollIntervalMillis = builder.pollIntervalMillis;
@@ -102,7 +102,7 @@ public class PollWithRetries {
         while (!finished) {
             failIfMetMaxRetries(description, retries);
             retries++;
-            sleepInInterval.sleep(pollIntervalMillis);
+            sleepInInterval.waitForMillis(pollIntervalMillis);
             retriesTracker.beforeRetry();
             finished = checkFinished.getAsBoolean();
         }
@@ -195,7 +195,7 @@ public class PollWithRetries {
         private long pollIntervalMillis;
         private int maxRetries;
         private RetriesTracker pollsTracker = TrackRetriesPerInvocation.INSTANCE;
-        private SleepInInterval sleepInInterval = Thread::sleep;
+        private Waiter sleepInInterval = Thread::sleep;
 
         /**
          * Sets the interval between polls.
@@ -274,7 +274,7 @@ public class PollWithRetries {
          * @param  sleepInInterval the function
          * @return                 the builder
          */
-        public Builder sleepInInterval(SleepInInterval sleepInInterval) {
+        public Builder sleepInInterval(Waiter sleepInInterval) {
             this.sleepInInterval = sleepInInterval;
             return this;
         }
@@ -300,19 +300,6 @@ public class PollWithRetries {
         private TimedOutException(String message) {
             super(message);
         }
-    }
-
-    /**
-     * Sleeps for a given period of time in between polls. Usually implemented by Thread.sleep.
-     */
-    public interface SleepInInterval {
-        /**
-         * Sleeps for the given period.
-         *
-         * @param  millis               the number of milliseconds to wait for
-         * @throws InterruptedException thrown if the thread was interrupted while waiting
-         */
-        void sleep(long millis) throws InterruptedException;
     }
 
     /**
