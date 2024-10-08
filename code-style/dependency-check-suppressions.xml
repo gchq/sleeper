@@ -292,4 +292,14 @@
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This seems to be a false positive, as the CVE is for Eclipse Glassfish, which isn't on the classpath for Sleeper
+        anywhere. The dependency it flagged is for HK2, which is a dependency injection framework used by both Glassfish
+        and Jersey. We only have Jersey and not Glassfish. The version number it's flagged is also specific to the OSGi
+        Resource Locator, and not Glassfish, and it's comparing it to the vulnerable version of Glassfish.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
+    </suppress>
 </suppressions>
