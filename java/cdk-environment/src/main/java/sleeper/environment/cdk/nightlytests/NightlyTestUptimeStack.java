@@ -13,36 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.environment.cdk.builduptime;
+package sleeper.environment.cdk.nightlytests;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.events.CronOptions;
 import software.amazon.awscdk.services.events.IRule;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
-import sleeper.environment.cdk.buildec2.BuildEC2Stack;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.IntParameter;
+import sleeper.environment.cdk.config.OptionalStringParameter;
 
 import java.util.List;
 import java.util.Map;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
-public class NightlyTestStack extends Stack {
+public class NightlyTestUptimeStack extends Stack {
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
+    public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = AppParameters.NIGHTLY_TEST_BUCKET;
 
     private final IRule stopAfterTestsRule;
 
-    public NightlyTestStack(Construct scope, StackProps props, BuildUptimeStack buildUptime, BuildEC2Stack buildEc2) {
-        super(scope, props.getStackName(), props);
+    public NightlyTestUptimeStack(
+            Construct scope, StackProps props,
+            IFunction buildUptimeFn, IInstance buildEc2, String testBucketName) {
+        super(scope, "NightlyTestUptime", props);
         AppContext context = AppContext.of(this);
 
         String stopAfterTestsRuleName = "sleeper-" + context.get(INSTANCE_ID) + "-stop-nightly-tests";
@@ -50,11 +55,12 @@ public class NightlyTestStack extends Stack {
                 .ruleName(stopAfterTestsRuleName)
                 .description("Periodic trigger to take the build EC2 down when nightly tests finish")
                 .schedule(Schedule.rate(Duration.minutes(10)))
-                .targets(List.of(LambdaFunction.Builder.create(buildUptime.getFunction())
+                .targets(List.of(LambdaFunction.Builder.create(buildUptimeFn)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "stop",
                                 "condition", "testFinishedFromToday",
-                                "ec2Ids", List.of(buildEc2.getInstance().getInstanceId()),
+                                "testBucket", testBucketName,
+                                "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(stopAfterTestsRuleName))))
                         .build()))
                 .enabled(false)
@@ -66,10 +72,10 @@ public class NightlyTestStack extends Stack {
                         .hour("" + (context.get(NIGHTLY_TEST_RUN_HOUR_UTC) - 1))
                         .minute("50")
                         .build()))
-                .targets(List.of(LambdaFunction.Builder.create(buildUptime.getFunction())
+                .targets(List.of(LambdaFunction.Builder.create(buildUptimeFn)
                         .event(RuleTargetInput.fromObject(Map.of(
                                 "operation", "start",
-                                "ec2Ids", List.of(buildEc2.getInstance().getInstanceId()),
+                                "ec2Ids", List.of(buildEc2.getInstanceId()),
                                 "rules", List.of(stopAfterTestsRuleName))))
                         .build()))
                 .build();

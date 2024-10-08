@@ -18,6 +18,7 @@ package sleeper.environment.cdk.builduptime;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.events.CronOptions;
+import software.amazon.awscdk.services.events.IRule;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 
 public class AutoShutdownStack extends Stack {
@@ -41,8 +43,8 @@ public class AutoShutdownStack extends Stack {
     public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = AppParameters.AUTO_SHUTDOWN_EXISTING_EC2_IDS;
     public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = AppParameters.AUTO_SHUTDOWN_HOUR_UTC;
 
-    public AutoShutdownStack(Construct scope, StackProps props, BuildUptimeStack buildUptime, BuildEC2Stack buildEc2, NightlyTestStack nightlyTestStack) {
-        super(scope, props.getStackName(), props);
+    public AutoShutdownStack(Construct scope, StackProps props, BuildUptimeStack buildUptime, BuildEC2Stack buildEc2, List<IRule> autoStopRules) {
+        super(scope, "AutoShutdown", props);
         AppContext context = AppContext.of(this);
 
         List<String> ec2Ids = new ArrayList<>();
@@ -51,10 +53,7 @@ public class AutoShutdownStack extends Stack {
             ec2Ids.add(buildEc2.getInstance().getInstanceId());
         }
 
-        List<String> rules = new ArrayList<>();
-        if (nightlyTestStack != null) {
-            rules.add(nightlyTestStack.getStopAfterTestsRule().getRuleName());
-        }
+        List<String> rules = autoStopRules.stream().map(IRule::getRuleName).collect(toUnmodifiableList());
 
         Rule.Builder.create(this, "AutoShutdown")
                 .ruleName("sleeper-" + context.get(INSTANCE_ID) + "-auto-shutdown")

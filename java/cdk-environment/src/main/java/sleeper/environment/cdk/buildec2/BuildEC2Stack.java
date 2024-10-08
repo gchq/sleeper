@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.nightlytests.NightlyTests;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,10 +50,14 @@ public class BuildEC2Stack extends Stack {
     private final IVpc vpc;
     private final Instance instance;
 
-    public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc) {
-        super(scope, props.getStackName(), props);
+    public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc, NightlyTests nightlyTests) {
+        super(scope, "BuildEC2", props);
         AppContext context = AppContext.of(this);
-        BuildEC2Parameters params = BuildEC2Parameters.from(context);
+        BuildEC2Parameters params = BuildEC2Parameters.builder()
+                .context(context)
+                .testBucket(nightlyTests.getTestBucketName())
+                .inheritVpc(inheritVpc)
+                .build();
         vpc = context.get(VPC_ID)
                 .map(vpcId -> Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);
