@@ -47,6 +47,10 @@
             <artifactId>aws-lambda-java-events</artifactId>
             <version>${aws-lambda-java-events.version}</version>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

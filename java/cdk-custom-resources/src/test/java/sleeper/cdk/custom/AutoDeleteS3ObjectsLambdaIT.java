@@ -16,7 +16,6 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -30,60 +29,58 @@ public class AutoDeleteS3ObjectsLambdaIT extends LocalStackTestBase {
     void shouldDeleteObjectOnDelete() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
-        s3Client.putObject(bucketName, "test.txt", "some content");
+        createBucket(bucketName);
+        putObject(bucketName, "test.txt", "some content");
 
         // When
         lambda().handleEvent(deleteEventForBucket(bucketName), null);
 
         // Then
-        assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        assertThat(listObjectKeys(bucketName)).isEmpty();
     }
 
     @Test
     void shouldDeleteMoreObjectsThanBatchSizeOnDelete() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
-        s3Client.putObject(bucketName, "test1.txt", "some content");
-        s3Client.putObject(bucketName, "test2.txt", "other content");
-        s3Client.putObject(bucketName, "test3.txt", "more content");
+        createBucket(bucketName);
+        putObject(bucketName, "test1.txt", "some content");
+        putObject(bucketName, "test2.txt", "other content");
+        putObject(bucketName, "test3.txt", "more content");
         int batchSize = 2;
 
         // When
         lambdaWithBatchSize(batchSize).handleEvent(deleteEventForBucket(bucketName), null);
 
         // Then
-        assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        assertThat(listObjectKeys(bucketName)).isEmpty();
     }
 
     @Test
     void shouldDeleteNoObjectsOnDelete() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
+        createBucket(bucketName);
 
         // When
         lambda().handleEvent(deleteEventForBucket(bucketName), null);
 
         // Then
-        assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        assertThat(listObjectKeys(bucketName)).isEmpty();
     }
 
     @Test
     void shouldDoNothingOnCreate() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
-        s3Client.putObject(bucketName, "test.txt", "some content");
+        createBucket(bucketName);
+        putObject(bucketName, "test.txt", "some content");
 
         // When
         lambda().handleEvent(createEventForBucket(bucketName), null);
 
         // Then
-        assertThat(s3Client.listObjectsV2(bucketName).getObjectSummaries())
-                .extracting(S3ObjectSummary::getKey)
-                .containsExactly("test.txt");
+        assertThat(listObjectKeys(bucketName)).containsExactly("test.txt");
     }
 
     private CloudFormationCustomResourceEvent createEventForBucket(String bucketName) {
