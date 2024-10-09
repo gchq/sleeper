@@ -12,12 +12,13 @@
 #include "cudf_compact/filters.hpp"
 
 #include <iostream>
+#include <vector>
 
-namespace gpu_compact::cudf_compact {
+namespace gpu_compact::cudf_compact
+{
 
 template<typename UnaryFunction>
-inline __device__ auto make_counting_transform_iterator(cudf::size_type start, UnaryFunction f)
-{
+inline __device__ auto make_counting_transform_iterator(cudf::size_type start, UnaryFunction f) {
     return thrust::make_transform_iterator(thrust::make_counting_iterator(start), f);
 }
 
@@ -27,17 +28,20 @@ struct row_total_size
     int const *key_offsets;
     size_t num_keys;
 
-    __device__ inline page_info operator()(page_info const &i)
-    {
+    __device__ inline page_info operator()(page_info const &i) {
         // sum sizes for each input column at this row
         size_t sum = 0;
+        // iterate over each global_col_idx
         for (int idx = 0; idx < num_keys; idx++) {
             auto const start = key_offsets[idx];
             auto const end = key_offsets[idx + 1];
             auto iter = make_counting_transform_iterator(0, [&] __device__(int i) { return cum_pages[i].row_count; });
+            // for the number of rows in i, find where in the list of pages that number of rows should be inserted
             auto const page_index = thrust::lower_bound(thrust::seq, iter + start, iter + end, i.row_count) - iter;
+            // add the size of all those pages to that point for this column to the total size
             sum += cum_pages[page_index].size_bytes;
         }
+        // so now we know for the given page i, what the total size of all rows across all files is to that point
         return { i.file_idx, i.rg_idx, i.col_idx, i.page_idx, i.schema_idx, i.global_col_idx, i.row_count, sum };
     }
 };
@@ -46,7 +50,9 @@ struct page_info_by_index
 {
     page_info *data;
 
-    __device__ inline page_info operator()(int index) { return data[index]; }
+    __device__ inline page_info operator()(int index) {
+        return data[index];
+    }
 };
 
 std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
@@ -54,30 +60,38 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
   parquet::format::Type::type col_type,
   parquet::format::ConvertedType::type conv_type,
   size_t chunk_read_limit,
-  std::vector<std::vector<parquet::format::ColumnIndex>> const &indexes_per_file)
-{
+  std::vector<std::vector<parquet::format::ColumnIndex>> const &indexes_per_file) {
     auto stream = rmm::cuda_stream_default;
 
-    // create page keys and copy to device
+    // create page keys (transformed into global column index) and copy to device
     std::vector<int> h_page_keys(pages.size());
     std::transform(
       pages.begin(), pages.end(), h_page_keys.begin(), [](auto const &page) { return page.global_col_idx; });
 
+    // Copy to device
     rmm::device_uvector<int> page_keys(pages.size(), stream);
     cudaMemcpyAsync(page_keys.data(), h_page_keys.data(), sizeof(int) * h_page_keys.size(), cudaMemcpyDefault, stream);
 
+    // Create device numerical sequence from 0
     rmm::device_uvector<int> page_index(page_keys.size(), stream);
     thrust::sequence(thrust::device, page_index.begin(), page_index.end());
 
+    // Sort key/value with global column index as key and page idx as value. Therefore all pages indexes for a single
+    // column are contiguous in page_index. page_keys will now contain contiguous runs of global_col_idxs, e.g. all 0's,
+    // followed by all 1's, etc.
     thrust::stable_sort_by_key(
       thrust::device, page_keys.begin(), page_keys.end(), page_index.begin(), thrust::less<int>());
 
-    // copy pages vector to device
+    // copy page_info vector to device
     rmm::device_uvector<page_info> d_pages(pages.size(), stream);
     cudaMemcpyAsync(d_pages.data(), pages.data(), sizeof(page_info) * pages.size(), cudaMemcpyDefault, stream);
 
     rmm::device_uvector<page_info> cum_pages(page_keys.size(), stream);
+    // Make an iterator of the page indexes that will return the page_info object
     auto page_input = thrust::make_transform_iterator(page_index.begin(), page_info_by_index{ d_pages.data() });
+
+    // Fill cum_pages vector with page_info's where each successive object contains the cumulative row count and data
+    // size and order will be file 0, col 0, col 1, ..., col N, file 1 col 0, col 1, ..., col N, ...
     thrust::inclusive_scan_by_key(thrust::device,
       page_keys.begin(),
       page_keys.end(),
@@ -95,6 +109,7 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
               a.size_bytes + b.size_bytes };
       });
 
+    // Now sort that to a new vector by row count
     rmm::device_uvector<page_info> cum_pages_sorted{ cum_pages, stream };
     thrust::sort(thrust::device,
       cum_pages_sorted.begin(),
@@ -102,6 +117,10 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
       [] __device__(page_info const &a, page_info const &b) { return a.row_count < b.row_count; });
 
     rmm::device_uvector<int> key_offsets(page_keys.size() + 1, stream);
+    // Work out how many pages per global_col_idx, e.g. how many pages in file 0 col 0, file 0 col 1, ..., col N,
+    // file 1 col 0, file 1 col 1, ...
+
+    // key_offsets_end is iterator positioned at end of filled part of vector
     auto const key_offsets_end = thrust::reduce_by_key(thrust::device,
       page_keys.begin(),
       page_keys.end(),
@@ -109,9 +128,16 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
       thrust::make_discard_iterator(),
       key_offsets.begin())
                                    .second;
+
+    // Number of cols * number of files
     size_t const num_unique_keys = key_offsets_end - key_offsets.begin();
+
+    // Reductive sum (first element 0) of key_offsets to get final result, key_offsets gives you index
+    // into cum_pages where each new column starts
     thrust::exclusive_scan(thrust::device, key_offsets.begin(), key_offsets.end(), key_offsets.begin());
 
+    // Working from cum_pages_sorted which is sorted based on cumulative row count, create vector of pages with size
+    // set to the total size to that row position
     rmm::device_uvector<page_info> aggregated_info(cum_pages.size(), stream);
     thrust::transform(thrust::device,
       cum_pages_sorted.begin(),
@@ -119,6 +145,7 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
       aggregated_info.begin(),
       row_total_size{ cum_pages.data(), key_offsets.data(), num_unique_keys });
 
+    // Just keep the pages for the sorting column
     rmm::device_uvector<page_info> d_filtered_pages(aggregated_info.size(), stream);
     auto filtered_end = thrust::copy_if(thrust::device,
       aggregated_info.begin(),
@@ -134,6 +161,8 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
       sizeof(page_info) * d_filtered_pages.size(),
       cudaMemcpyDefault,
       stream);
+
+    // wait for all pending operations
     stream.synchronize();
 
     std::deque<scalar_pair> ranges;
@@ -172,7 +201,8 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
         auto const start_row = cur_row_count;
         cur_row_count = filtered_pages[split_pos].row_count;
 
-        if (cur_row_count == start_row) break;
+        if (cur_row_count == start_row)
+            break;
 
         cur_pos = split_pos;
         cur_cumulative_size = filtered_pages[split_pos].size_bytes;
