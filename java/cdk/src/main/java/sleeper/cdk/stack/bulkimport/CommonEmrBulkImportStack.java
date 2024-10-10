@@ -62,6 +62,11 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
 public class CommonEmrBulkImportStack extends NestedStack {
+
+    private static final String[] KMS_GRANTS = new String[]{
+        "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey",
+        "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant"};
+
     private final IRole ec2Role;
     private final IRole emrRole;
     private final CfnSecurityConfiguration securityConfiguration;
@@ -89,7 +94,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
-        ebsKey.grantEncryptDecrypt(role);
+        ebsKey.grant(role, KMS_GRANTS);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -189,7 +194,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
-        ebsKey.grantEncryptDecrypt(role);
+        ebsKey.grant(role, KMS_GRANTS);
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
