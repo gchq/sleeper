@@ -73,7 +73,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         IKey ebsKey = createEbsEncryptionKey(this, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks, ebsKey);
-        emrRole = createEmrRole(this, instanceProperties, ec2Role);
+        emrRole = createEmrRole(this, instanceProperties, ec2Role, ebsKey);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties, ebsKey);
     }
 
@@ -132,7 +132,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
+    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role, IKey ebsKey) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
@@ -189,6 +189,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
+        ebsKey.grant(role, "kms:GenerateDataKey");
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
