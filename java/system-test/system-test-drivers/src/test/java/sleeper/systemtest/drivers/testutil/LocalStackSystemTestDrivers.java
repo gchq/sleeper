@@ -23,6 +23,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -52,6 +53,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .s3Async(buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()))
                 .dynamoDB(buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard()))
                 .sqs(buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard()))
+                .sqsV2(buildAwsV2Client(localStackContainer, Service.SQS, SqsClient.builder()))
                 .configureHadoopSetter(conf -> configureHadoop(conf, localStackContainer))
                 .skipAssumeRole(true)
                 .build());
