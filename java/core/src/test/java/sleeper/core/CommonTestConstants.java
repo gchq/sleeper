@@ -20,6 +20,7 @@ package sleeper.core;
  */
 public final class CommonTestConstants {
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:1.4.0";
+    public static final String LOCALSTACK_DOCKER_IMAGE_V2 = "localstack/localstack:3.8.1";
 
     private CommonTestConstants() {
         // Empty

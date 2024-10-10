@@ -24,6 +24,7 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class CompactionDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -44,7 +45,9 @@ public class CompactionDockerStack implements DockerStack {
     public void deploy() {
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        sqsClient.createQueue(instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
+        String queueName = "sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ";
+        String queueUrl = sqsClient.createQueue(queueName).getQueueUrl();
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
     }
 
     @Override

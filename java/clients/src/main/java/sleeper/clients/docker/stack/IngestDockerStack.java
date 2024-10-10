@@ -24,6 +24,7 @@ import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -51,7 +52,9 @@ public class IngestDockerStack implements DockerStack {
     public void deploy() {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        sqsClient.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
+        String queueName = "sleeper-" + instanceProperties.get(ID) + "-IngestJobQ";
+        String queueUrl = sqsClient.createQueue(queueName).getQueueUrl();
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, queueUrl);
     }
 
     public void tearDown() {

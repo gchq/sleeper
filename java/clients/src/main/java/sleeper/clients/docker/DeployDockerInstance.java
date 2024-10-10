@@ -46,9 +46,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -114,6 +112,8 @@ public class DeployDockerInstance {
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
+        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
+        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
 
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
@@ -124,9 +124,6 @@ public class DeployDockerInstance {
                 throw new RuntimeIOException(e);
             }
         }
-
-        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
-        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
     }
 
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
@@ -137,8 +134,6 @@ public class DeployDockerInstance {
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
         instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
     }

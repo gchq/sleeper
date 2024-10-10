@@ -22,17 +22,15 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
@@ -57,10 +55,8 @@ import java.util.function.Consumer;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-@Testcontainers
 public class DockerInstanceTestBase {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
     protected final AmazonS3 s3Client = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -69,6 +65,10 @@ public class DockerInstanceTestBase {
     protected final SqsClient sqsClient = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.SQS, SqsClient.builder());
     protected final AmazonSQS sqsClientV1 = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+
+    static {
+        localStackContainer.start();
+    }
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -93,7 +93,16 @@ public class DockerInstanceTestBase {
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
-        List<Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
+        List<Message> messages = sqsClient.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
+        if (messages.size() != 1) {
+            throw new IllegalStateException("Expected to receive one message, found: " + messages);
+        }
+        String json = messages.get(0).body();
+        return new IngestJobSerDe().fromJson(json);
+    }
+
+    protected IngestJob receiveIngestJobV1(String queueUrl) {
+        List<com.amazonaws.services.sqs.model.Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
