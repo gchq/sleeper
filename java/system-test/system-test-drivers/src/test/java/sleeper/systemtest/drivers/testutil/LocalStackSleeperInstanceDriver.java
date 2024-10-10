@@ -75,7 +75,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         DeployDockerInstance.builder()
                 .s3Client(clients.getS3())
                 .dynamoDB(clients.getDynamoDB())
-                .sqsClient(clients.getSqs())
+                .sqsClient(clients.getSqsV2())
                 .configuration(clients.createHadoopConf())
                 .build().deploy(instanceProperties, deployConfig.getTableProperties());
         return true;
