@@ -89,7 +89,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
-        ebsKey.grant(role, "kms:GenerateDataKey");
+        ebsKey.grantEncryptDecrypt(role);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -189,7 +189,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
-        ebsKey.grant(role, "kms:GenerateDataKey");
+        ebsKey.grantEncryptDecrypt(role);
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
