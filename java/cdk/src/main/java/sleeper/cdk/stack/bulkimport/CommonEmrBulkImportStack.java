@@ -70,7 +70,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
-        IKey ebsKey = createEbsEncryptionKey(scope, instanceProperties);
+        IKey ebsKey = createEbsEncryptionKey(this, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks, ebsKey);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
