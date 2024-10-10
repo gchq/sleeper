@@ -17,7 +17,7 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
@@ -28,7 +28,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final AmazonDynamoDB dynamoDB;
 
     private IngestDockerStack(Builder builder) {
@@ -43,7 +43,7 @@ public class IngestDockerStack implements DockerStack {
 
     public static IngestDockerStack from(
             InstanceProperties instanceProperties,
-            AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+            AmazonDynamoDB dynamoDB, SqsClient sqsClient) {
         return builder().instanceProperties(instanceProperties)
                 .dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();
@@ -53,19 +53,19 @@ public class IngestDockerStack implements DockerStack {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         String queueName = "sleeper-" + instanceProperties.get(ID) + "-IngestJobQ";
-        String queueUrl = sqsClient.createQueue(queueName).getQueueUrl();
+        String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, queueUrl);
     }
 
     public void tearDown() {
         DynamoDBIngestJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
-        sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
+        sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL)));
     }
 
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private AmazonSQS sqsClient;
+        private SqsClient sqsClient;
         private AmazonDynamoDB dynamoDB;
 
         public Builder() {
@@ -76,7 +76,7 @@ public class IngestDockerStack implements DockerStack {
             return this;
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }

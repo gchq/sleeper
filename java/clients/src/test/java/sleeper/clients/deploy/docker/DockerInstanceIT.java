@@ -91,7 +91,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -131,7 +131,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -173,7 +173,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))

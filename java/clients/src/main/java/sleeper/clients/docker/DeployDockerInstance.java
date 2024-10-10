@@ -20,10 +20,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.eclipse.jetty.io.RuntimeIOException;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.docker.stack.CompactionDockerStack;
@@ -45,6 +44,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -61,7 +61,7 @@ import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurat
 public class DeployDockerInstance {
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final Configuration configuration;
     private final Consumer<TableProperties> extraTableProperties;
 
@@ -87,15 +87,13 @@ public class DeployDockerInstance {
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
                     .configuration(getConfigurationForClient()).build()
                     .deploy(instanceId);
         } finally {
             s3Client.shutdown();
             dynamoDB.shutdown();
-            sqsClient.shutdown();
         }
     }
 
@@ -148,7 +146,7 @@ public class DeployDockerInstance {
     public static final class Builder {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
-        private AmazonSQS sqsClient;
+        private SqsClient sqsClient;
         private Configuration configuration;
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
@@ -166,7 +164,7 @@ public class DeployDockerInstance {
             return this;
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }

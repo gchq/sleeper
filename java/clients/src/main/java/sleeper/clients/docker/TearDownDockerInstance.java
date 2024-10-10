@@ -20,8 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
@@ -30,6 +29,7 @@ import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TearDownDockerInstance {
@@ -46,18 +46,16 @@ public class TearDownDockerInstance {
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
-        try {
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             tearDown(instanceId, s3Client, dynamoDBClient, sqsClient);
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
-            sqsClient.shutdown();
         }
     }
 
-    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, SqsClient sqsClient) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();

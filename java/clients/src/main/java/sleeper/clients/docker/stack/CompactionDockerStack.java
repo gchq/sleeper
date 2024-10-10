@@ -17,7 +17,7 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
@@ -28,7 +28,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class CompactionDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final AmazonDynamoDB dynamoDB;
 
     private CompactionDockerStack(Builder builder) {
@@ -37,7 +37,7 @@ public class CompactionDockerStack implements DockerStack {
         dynamoDB = builder.dynamoDB;
     }
 
-    public static CompactionDockerStack from(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+    public static CompactionDockerStack from(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB, SqsClient sqsClient) {
         return builder().instanceProperties(instanceProperties).dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();
     }
@@ -46,7 +46,7 @@ public class CompactionDockerStack implements DockerStack {
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         String queueName = "sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ";
-        String queueUrl = sqsClient.createQueue(queueName).getQueueUrl();
+        String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
     }
 
@@ -54,7 +54,7 @@ public class CompactionDockerStack implements DockerStack {
     public void tearDown() {
         DynamoDBCompactionJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
-        sqsClient.deleteQueue(instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
+        sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL)));
     }
 
     public static Builder builder() {
@@ -63,7 +63,7 @@ public class CompactionDockerStack implements DockerStack {
 
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private AmazonSQS sqsClient;
+        private SqsClient sqsClient;
         private AmazonDynamoDB dynamoDB;
 
         private Builder() {
@@ -74,7 +74,7 @@ public class CompactionDockerStack implements DockerStack {
             return this;
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
