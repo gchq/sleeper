@@ -15,10 +15,10 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -71,7 +71,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName());
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).getQueueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
                 .s3Client(clients.getS3())
                 .dynamoDB(clients.getDynamoDB())
@@ -81,12 +81,13 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         return true;
     }
 
-    private CreateQueueResult createStateStoreCommitterQueue(String instanceId) {
-        return clients.getSqs().createQueue(new CreateQueueRequest()
-                .withQueueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
-                .withAttributes(Map.of("FifoQueue", "true",
-                        "FifoThroughputLimit", "perMessageGroupId",
-                        "DeduplicationScope", "messageGroup")));
+    private CreateQueueResponse createStateStoreCommitterQueue(String instanceId) {
+        return clients.getSqsV2().createQueue(request -> request
+                .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
+                .attributes(Map.of(
+                        QueueAttributeName.FIFO_QUEUE, "true",
+                        QueueAttributeName.FIFO_THROUGHPUT_LIMIT, "perMessageGroupId",
+                        QueueAttributeName.DEDUPLICATION_SCOPE, "messageGroup")));
     }
 
     @Override

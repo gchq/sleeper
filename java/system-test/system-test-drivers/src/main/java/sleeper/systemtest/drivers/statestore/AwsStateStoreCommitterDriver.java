@@ -15,13 +15,12 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingResponse;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
@@ -43,10 +42,10 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
 
     private final SystemTestInstanceContext instance;
-    private final AmazonSQS sqs;
+    private final SqsClient sqs;
     private final LambdaClient lambda;
 
-    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, AmazonSQS sqs, LambdaClient lambda) {
+    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SqsClient sqs, LambdaClient lambda) {
         this.instance = instance;
         this.sqs = sqs;
         this.lambda = lambda;
@@ -63,14 +62,15 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {
-        sqs.sendMessageBatch(new SendMessageBatchRequest()
-                .withQueueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withEntries(batch.stream()
-                        .map(message -> new SendMessageBatchRequestEntry()
-                                .withMessageDeduplicationId(UUID.randomUUID().toString())
-                                .withId(UUID.randomUUID().toString())
-                                .withMessageGroupId(message.getTableId())
-                                .withMessageBody(message.getBody()))
+        sqs.sendMessageBatch(request -> request
+                .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
+                .entries(batch.stream()
+                        .map(message -> SendMessageBatchRequestEntry.builder()
+                                .messageDeduplicationId(UUID.randomUUID().toString())
+                                .id(UUID.randomUUID().toString())
+                                .messageGroupId(message.getTableId())
+                                .messageBody(message.getBody())
+                                .build())
                         .collect(toUnmodifiableList())));
     }
 
