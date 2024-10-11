@@ -25,6 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
@@ -36,8 +37,18 @@ public class LoggingStack extends NestedStack {
     public LoggingStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
+
+        // For core stacks, accessed directly by getter
         createLogGroup("vpc-check");
         createLogGroup("statestore-committer");
+
+        // For non-core stacks, accessed via CoreStacks getters
+        createLogGroup("state-snapshot-creation-trigger");
+        createLogGroup("state-snapshot-creation");
+        createLogGroup("state-transaction-deletion-trigger");
+        createLogGroup("state-transaction-deletion");
+        createLogGroup("metrics-trigger");
+        createLogGroup("metrics-publisher");
         createLogGroup("Simple-athena-handler");
         createLogGroup("IteratorApplying-athena-handler");
     }
@@ -47,7 +58,7 @@ public class LoggingStack extends NestedStack {
     }
 
     private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {
-        return logGroupByName.get(nameWithPrefixes);
+        return Objects.requireNonNull(logGroupByName.get(nameWithPrefixes), "No log group found: " + nameWithPrefixes);
     }
 
     private void createLogGroup(String logGroupName) {
