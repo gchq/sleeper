@@ -112,9 +112,9 @@ public class LoggingStack extends NestedStack {
         return Objects.requireNonNull(logGroupByName.get(nameWithPrefixes), "No log group found: " + nameWithPrefixes);
     }
 
-    private void createLogGroup(String logGroupName) {
-        String nameWithPrefixes = addNamePrefixes(logGroupName);
-        logGroupByName.put(nameWithPrefixes, LogGroup.Builder.create(this, logGroupName)
+    private void createLogGroup(String shortName) {
+        String nameWithPrefixes = addNamePrefixes(shortName);
+        logGroupByName.put(nameWithPrefixes, LogGroup.Builder.create(this, shortName)
                 .logGroupName(addNamePrefixes(nameWithPrefixes))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
