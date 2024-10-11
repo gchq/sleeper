@@ -65,7 +65,6 @@ import java.util.stream.Stream;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
 import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
@@ -162,13 +161,9 @@ public class Utils {
                 .build());
     }
 
-    public static LogOptions createStateMachineLogOptions(Construct scope, String id, InstanceProperties instanceProperties) {
-        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
+    public static LogOptions createStateMachineLogOptions(CoreStacks coreStacks, String id) {
         return LogOptions.builder()
-                .destination(LogGroup.Builder.create(scope, id)
-                        .logGroupName(logGroupName)
-                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build())
+                .destination(coreStacks.getLogGroupByStateMachineId(id))
                 .level(LogLevel.ALL)
                 .includeExecutionData(true)
                 .build();

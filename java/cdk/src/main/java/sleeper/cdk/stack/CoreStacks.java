@@ -68,6 +68,10 @@ public class CoreStacks {
         return loggingStack.getLogGroupByECSLogDriverId(id);
     }
 
+    public ILogGroup getLogGroupByStateMachineId(String id) {
+        return loggingStack.getLogGroupByStateMachineId(id);
+    }
+
     public void grantReadInstanceConfig(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
     }
