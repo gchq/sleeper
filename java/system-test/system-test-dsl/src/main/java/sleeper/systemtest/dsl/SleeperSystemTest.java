@@ -175,8 +175,16 @@ public class SleeperSystemTest {
         new SystemTestOptionalStacks(context.instance()).addOptionalStack(stack);
     }
 
+    public void enableOptionalStacks(OptionalStack... stacks) {
+        new SystemTestOptionalStacks(context.instance()).addOptionalStacks(stacks);
+    }
+
     public void disableOptionalStack(OptionalStack stack) {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stack);
+    }
+
+    public void disableOptionalStacks(OptionalStack... stacks) {
+        new SystemTestOptionalStacks(context.instance()).removeOptionalStacks(stacks);
     }
 
     public SystemTestStateStore stateStore() {
