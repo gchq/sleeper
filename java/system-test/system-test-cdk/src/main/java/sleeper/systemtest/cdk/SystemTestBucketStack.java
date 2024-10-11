@@ -73,7 +73,7 @@ public class SystemTestBucketStack extends NestedStack {
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket,
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket, bucketName,
                 functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
                         .logGroupName(functionName)
                         .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))

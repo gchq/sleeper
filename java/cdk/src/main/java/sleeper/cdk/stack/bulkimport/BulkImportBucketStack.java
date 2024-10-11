@@ -36,9 +36,10 @@ public class BulkImportBucketStack extends NestedStack {
 
     public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, CoreStacks coreStacks, BuiltJars jars) {
         super(scope, id);
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "bulk-import");
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
-                .bucketName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "bulk-import"))
+                .bucketName(bucketName)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .versioned(false)
                 .removalPolicy(RemovalPolicy.DESTROY)
@@ -46,7 +47,7 @@ public class BulkImportBucketStack extends NestedStack {
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, jars, importBucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, jars, importBucket, bucketName);
     }
 
     public IBucket getImportBucket() {

@@ -349,10 +349,11 @@ public class QueryStack extends NestedStack {
      */
     private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode customResourcesJar) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-results");
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "query-results"))
+                .bucketName(bucketName)
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -363,7 +364,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, customResourcesJar, resultsBucket);
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, customResourcesJar, resultsBucket, bucketName);
         }
 
         return resultsBucket;
