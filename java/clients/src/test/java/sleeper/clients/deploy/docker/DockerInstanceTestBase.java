@@ -22,11 +22,17 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
@@ -37,6 +43,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.query.model.Query;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
@@ -58,7 +66,8 @@ public class DockerInstanceTestBase {
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final AmazonSQS sqsClient = buildAwsV1Client(
+    protected final SqsClient sqsClient = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.SQS, SqsClient.builder());
+    protected final AmazonSQS sqsClientV1 = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
 
     public void deployInstance(String instanceId) {
@@ -67,7 +76,7 @@ public class DockerInstanceTestBase {
     }
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClientV1)
                 .configuration(getHadoopConfiguration()).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
@@ -81,6 +90,15 @@ public class DockerInstanceTestBase {
                 stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
+    }
+
+    protected IngestJob receiveIngestJob(String queueUrl) {
+        List<Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
+        if (messages.size() != 1) {
+            throw new IllegalStateException("Expected to receive one message, found: " + messages);
+        }
+        String json = messages.get(0).getBody();
+        return new IngestJobSerDe().fromJson(json);
     }
 
     private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
@@ -100,5 +118,14 @@ public class DockerInstanceTestBase {
         configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
         configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
         return configuration;
+    }
+
+    private static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
+        return builder
+                .endpointOverride(localStackContainer.getEndpointOverride(service))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
+                .region(Region.of(localStackContainer.getRegion()))
+                .build();
     }
 }

@@ -17,14 +17,11 @@ package sleeper.clients.status.report;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,6 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.HashSet;
 import java.util.Set;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -46,11 +44,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  */
 public class RetryMessages {
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final String stack;
     private final int maxMessages;
 
-    public RetryMessages(InstanceProperties instanceProperties, AmazonSQS sqsClient, String stack, int maxMessages) {
+    public RetryMessages(InstanceProperties instanceProperties, SqsClient sqsClient, String stack, int maxMessages) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
         this.stack = stack;
@@ -64,21 +62,16 @@ public class RetryMessages {
 
         int count = 0;
         while (count < maxMessages) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(deadLetterUrl)
-                    .withMaxNumberOfMessages(Math.min(maxMessages, 10))
-                    .withWaitTimeSeconds(1); // Must be >= 0 and <= 20
-            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-            if (receiveMessageResult.getMessages().isEmpty()) {
+            ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
+                    .queueUrl(deadLetterUrl).maxNumberOfMessages(Math.min(maxMessages, 10)).waitTimeSeconds(1));
+            if (response.messages().isEmpty()) {
                 System.out.println("Received no messages, terminating");
                 break;
             }
-            System.out.println("Received " + receiveMessageResult.getMessages().size() + " messages");
-            for (Message message : receiveMessageResult.getMessages()) {
-                System.out.println("Received message with id " + message.getMessageId());
-                SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                        .withQueueUrl(originalQueueUrl)
-                        .withMessageBody(message.getBody());
-                sqsClient.sendMessage(sendMessageRequest);
+            System.out.println("Received " + response.messages().size() + " messages");
+            for (Message message : response.messages()) {
+                System.out.println("Received message with id " + message.messageId());
+                sqsClient.sendMessage(request -> request.queueUrl(originalQueueUrl).messageBody(message.body()));
                 System.out.println("Sent message back to original queue");
                 count++;
             }
@@ -121,12 +114,9 @@ public class RetryMessages {
             s3Client.shutdown();
         }
 
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             RetryMessages retryMessages = new RetryMessages(instanceProperties, sqsClient, stack, maxMessages);
             retryMessages.run();
-        } finally {
-            sqsClient.shutdown();
         }
     }
 }

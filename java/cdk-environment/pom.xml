@@ -39,7 +39,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudformation</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Utilities -->
         <dependency>

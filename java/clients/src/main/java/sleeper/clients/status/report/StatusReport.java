@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
@@ -40,7 +41,9 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.task.common.QueueMessageCount;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -55,14 +58,15 @@ public class StatusReport {
     private final StateStore stateStore;
     private final CompactionJobStatusStore compactionStatusStore;
     private final CompactionTaskStatusStore compactionTaskStatusStore;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
+    private final QueueMessageCount.Client messageCount;
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public StatusReport(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             boolean verbose, StateStore stateStore,
             CompactionJobStatusStore compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
-            AmazonSQS sqsClient, TablePropertiesProvider tablePropertiesProvider) {
+            SqsClient sqsClient, QueueMessageCount.Client messageCount, TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.verbose = verbose;
@@ -70,6 +74,7 @@ public class StatusReport {
         this.compactionStatusStore = compactionStatusStore;
         this.compactionTaskStatusStore = compactionTaskStatusStore;
         this.sqsClient = sqsClient;
+        this.messageCount = messageCount;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
@@ -93,7 +98,7 @@ public class StatusReport {
                 CompactionTaskQuery.UNFINISHED).run();
 
         // Dead letters
-        new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider).run();
+        new DeadLettersStatusReport(sqsClient, messageCount, instanceProperties, tablePropertiesProvider).run();
     }
 
     public static void main(String[] args) throws StateStoreException {
@@ -108,8 +113,8 @@ public class StatusReport {
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        AmazonSQS sqsClientV1 = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
@@ -121,12 +126,12 @@ public class StatusReport {
             StatusReport statusReport = new StatusReport(
                     instanceProperties, tableProperties, verbose,
                     stateStore, compactionStatusStore, compactionTaskStatusStore,
-                    sqsClient, tablePropertiesProvider);
+                    sqsClient, QueueMessageCount.withSqsClient(sqsClientV1), tablePropertiesProvider);
             statusReport.run();
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
-            sqsClient.shutdown();
+            sqsClientV1.shutdown();
         }
     }
 }
