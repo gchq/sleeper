@@ -24,12 +24,22 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
 // Slow because it needs to do many CDK deployments
 @Slow
 public class RedeployOptionalStacksST {
+
+    private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());
+    static {
+        // We're currently unable to configure log groups related to an EKS cluster,
+        // so it fails to redeploy because those log groups already exist.
+        REDEPLOYABLE_STACKS.remove(OptionalStack.EksBulkImportStack);
+    }
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
@@ -38,14 +48,14 @@ public class RedeployOptionalStacksST {
 
     @AfterEach
     void tearDown(SleeperSystemTest sleeper) {
-        sleeper.disableOptionalStacks(OptionalStack.values());
+        sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
     @Test
     void shouldDisableAndReenableAllOptionalStacks(SleeperSystemTest sleeper) {
-        sleeper.enableOptionalStacks(OptionalStack.values());
-        sleeper.disableOptionalStacks(OptionalStack.values());
-        sleeper.enableOptionalStacks(OptionalStack.values());
+        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
+        sleeper.disableOptionalStacks(OptionalStack.all());
+        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
     }
 
 }

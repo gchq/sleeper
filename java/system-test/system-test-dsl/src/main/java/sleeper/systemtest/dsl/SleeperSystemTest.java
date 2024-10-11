@@ -43,6 +43,7 @@ import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -175,7 +176,7 @@ public class SleeperSystemTest {
         new SystemTestOptionalStacks(context.instance()).addOptionalStack(stack);
     }
 
-    public void enableOptionalStacks(OptionalStack... stacks) {
+    public void enableOptionalStacks(Collection<OptionalStack> stacks) {
         new SystemTestOptionalStacks(context.instance()).addOptionalStacks(stacks);
     }
 
@@ -183,7 +184,7 @@ public class SleeperSystemTest {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStack(stack);
     }
 
-    public void disableOptionalStacks(OptionalStack... stacks) {
+    public void disableOptionalStacks(Collection<OptionalStack> stacks) {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStacks(stacks);
     }
 
