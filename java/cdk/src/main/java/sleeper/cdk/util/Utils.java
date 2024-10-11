@@ -32,6 +32,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
@@ -42,6 +43,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -125,8 +127,11 @@ public class Utils {
      * @return            the cleaned up instance ID
      */
     public static String cleanInstanceId(InstanceProperties properties) {
-        return properties.get(ID)
-                .toLowerCase(Locale.ROOT)
+        return cleanInstanceId(properties.get(ID));
+    }
+
+    public static String cleanInstanceId(String instanceId) {
+        return instanceId.toLowerCase(Locale.ROOT)
                 .replace(".", "-");
     }
 
@@ -136,11 +141,15 @@ public class Utils {
      * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
      * A value of -1 represents an infinite number of days.
      *
+     * @param  scope        the scope for the new construct
+     * @param  id           the ID for the new construct
+     * @param  logGroupName the name for the log group
      * @param  numberOfDays number of days you want to retain the logs
      * @return              The RetentionDays equivalent
      */
-    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
+    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, String logGroupName, int numberOfDays) {
         return LogGroup.Builder.create(scope, id)
+                .logGroupName(logGroupName)
                 .retention(getRetentionDays(numberOfDays))
                 .build();
     }
@@ -161,16 +170,12 @@ public class Utils {
                 .build();
     }
 
-    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
-        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(logGroupName)
-                .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(logGroupName)
-                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build())
-                .build();
-        return LogDriver.awsLogs(logDriverProps);
+    public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
+        ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
+        return LogDriver.awsLogs(AwsLogDriverProps.builder()
+                .streamPrefix(logGroup.getLogGroupName())
+                .logGroup(logGroup)
+                .build());
     }
 
     public static LogOptions createStateMachineLogOptions(Construct scope, String id, InstanceProperties instanceProperties) {

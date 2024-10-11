@@ -29,16 +29,17 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createLogGroupWithRetentionDays;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestPropertiesStack extends NestedStack {
 
@@ -54,8 +55,7 @@ public class SystemTestPropertiesStack extends NestedStack {
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
 
-        String functionName = String.join("-", "sleeper",
-                systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer");
+        String functionName = String.join("-", "sleeper", Utils.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
 
         IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
@@ -63,14 +63,14 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", functionName, systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                 .runtime(Runtime.JAVA_11));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", 30))
+                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", functionName + "-provider", systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                 .build();
 
         CustomResource.Builder.create(this, "SystemTestProperties")

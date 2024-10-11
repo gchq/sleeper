@@ -396,8 +396,8 @@ public class CompactionStack extends NestedStack {
             FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
-            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
+            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(
+                    coreStacks, containerImage, environmentVariables, instanceProperties);
             fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     fargateContainerDefinitionOptions);
             grantPermissions.accept(fargateTaskDefinition);
@@ -405,8 +405,8 @@ public class CompactionStack extends NestedStack {
             Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
             String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties);
+            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(
+                    coreStacks, containerImage, environmentVariables, instanceProperties);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
             grantPermissions.accept(ec2TaskDefinition);
             addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
@@ -551,7 +551,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private ContainerDefinitionOptions createFargateContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -559,12 +559,12 @@ public class CompactionStack extends NestedStack {
                 .environment(environment)
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "FargateCompactionTasks"))
                 .build();
     }
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -575,7 +575,7 @@ public class CompactionStack extends NestedStack {
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (requirements.getMemoryLimitMiB() * 0.95))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "EC2CompactionTasks"))
                 .build();
     }
 

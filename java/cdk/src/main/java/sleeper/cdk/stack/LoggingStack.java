@@ -38,23 +38,36 @@ public class LoggingStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
 
-        // For core stacks, accessed directly by getter
+        // Accessed directly by getter on this class
         createLogGroup("vpc-check");
         createLogGroup("statestore-committer");
 
-        // For non-core stacks, accessed via CoreStacks getters
+        // Accessed via CoreStacks getters
         createLogGroup("state-snapshot-creation-trigger");
         createLogGroup("state-snapshot-creation");
         createLogGroup("state-transaction-deletion-trigger");
         createLogGroup("state-transaction-deletion");
         createLogGroup("metrics-trigger");
         createLogGroup("metrics-publisher");
+        createLogGroup("bulk-import-EMRServerless-start");
+        createLogGroup("bulk-import-NonPersistentEMR-start");
+        createLogGroup("bulk-import-PersistentEMR-start");
+        createLogGroup("bulk-import-eks-starter");
+        createLogGroup("IngestTasks");
+        createLogGroup("FargateCompactionTasks");
+        createLogGroup("EC2CompactionTasks");
+        createLogGroup("garbage-collector-trigger");
+        createLogGroup("garbage-collector");
         createLogGroup("Simple-athena-handler");
         createLogGroup("IteratorApplying-athena-handler");
     }
 
     public ILogGroup getLogGroupByFunctionName(String functionName) {
         return getLogGroupByNameWithPrefixes(functionName);
+    }
+
+    public ILogGroup getLogGroupByECSLogDriverId(String id) {
+        return getLogGroupByNameWithPrefixes(addNamePrefixes(id));
     }
 
     private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {

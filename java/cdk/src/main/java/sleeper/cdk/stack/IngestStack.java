@@ -213,7 +213,7 @@ public class IngestStack extends NestedStack {
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "IngestTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "IngestTasks"))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer("IngestContainer", containerDefinitionOptions);

@@ -25,10 +25,12 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
+import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -58,6 +60,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BU
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
@@ -94,10 +97,10 @@ public class SystemTestClusterStack extends NestedStack {
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "SystemTestVPC", vpcLookupOptions);
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // ECS cluster for tasks to write data
-        String clusterName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "system-test-cluster");
+        String clusterName = String.join("-", "sleeper", instanceId, "system-test-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
@@ -126,9 +129,13 @@ public class SystemTestClusterStack extends NestedStack {
         IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", properties.get(SYSTEM_TEST_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
+        String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "SystemTestTasks"))
+                .logging(LogDriver.awsLogs(AwsLogDriverProps.builder()
+                        .streamPrefix(logGroupName)
+                        .logGroup(Utils.createLogGroupWithRetentionDays(this, "SystemTestTasks", logGroupName, properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build()))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer(SystemTestConstants.SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
