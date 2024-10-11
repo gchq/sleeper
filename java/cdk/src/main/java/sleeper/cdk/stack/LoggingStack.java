@@ -115,7 +115,7 @@ public class LoggingStack extends NestedStack {
     private void createLogGroup(String shortName) {
         String nameWithPrefixes = addNamePrefixes(shortName);
         logGroupByName.put(nameWithPrefixes, LogGroup.Builder.create(this, shortName)
-                .logGroupName(addNamePrefixes(nameWithPrefixes))
+                .logGroupName(nameWithPrefixes)
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
     }
