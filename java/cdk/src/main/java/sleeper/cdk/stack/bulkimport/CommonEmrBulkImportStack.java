@@ -62,6 +62,11 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
 public class CommonEmrBulkImportStack extends NestedStack {
+
+    private static final String[] KMS_GRANTS = new String[]{
+        "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey",
+        "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant"};
+
     private final IRole ec2Role;
     private final IRole emrRole;
     private final CfnSecurityConfiguration securityConfiguration;
@@ -70,10 +75,10 @@ public class CommonEmrBulkImportStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
-        IKey ebsKey = createEbsEncryptionKey(scope, instanceProperties);
+        IKey ebsKey = createEbsEncryptionKey(this, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks, ebsKey);
-        emrRole = createEmrRole(this, instanceProperties, ec2Role);
+        emrRole = createEmrRole(this, instanceProperties, ec2Role, ebsKey);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties, ebsKey);
     }
 
@@ -89,7 +94,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
-        ebsKey.grant(role, "kms:GenerateDataKey");
+        ebsKey.grant(role, KMS_GRANTS);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -132,7 +137,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
+    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role, IKey ebsKey) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
@@ -189,6 +194,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
+        ebsKey.grant(role, KMS_GRANTS);
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
