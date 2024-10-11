@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.clients.docker.TearDownDockerInstance;
@@ -63,7 +62,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
-@Testcontainers
 public class DockerInstanceIT extends DockerInstanceTestBase {
     @Nested
     @DisplayName("Using DynamoDB state store")
@@ -93,7 +91,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -133,7 +131,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -175,7 +173,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClientV1);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoDB, sqsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))

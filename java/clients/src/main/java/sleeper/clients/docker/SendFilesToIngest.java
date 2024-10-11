@@ -18,9 +18,8 @@ package sleeper.clients.docker;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -53,18 +53,16 @@ public class SendFilesToIngest {
                 .filter(Files::isRegularFile)
                 .collect(Collectors.toList());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
         } finally {
             s3Client.shutdown();
-            sqsClient.shutdown();
         }
     }
 
     public static void uploadFilesAndSendJob(
-            InstanceProperties properties, String tableName, List<Path> filePaths, AmazonS3 s3Client, AmazonSQS sqsClient) {
+            InstanceProperties properties, String tableName, List<Path> filePaths, AmazonS3 s3Client, SqsClient sqsClient) {
         uploadFiles(properties, filePaths, s3Client);
         sendJobForFiles(properties, tableName, filePaths, sqsClient);
     }
@@ -74,13 +72,15 @@ public class SendFilesToIngest {
                 "ingest/" + filePath.getFileName().toString(), filePath.toFile()));
     }
 
-    public static void sendJobForFiles(InstanceProperties properties, String tableName, List<Path> filePaths, AmazonSQS sqsClient) {
+    public static void sendJobForFiles(InstanceProperties properties, String tableName, List<Path> filePaths, SqsClient sqsClient) {
         IngestJob job = IngestJob.builder()
                 .files(filePaths.stream()
                         .map(filePath -> properties.get(DATA_BUCKET) + "/ingest/" + filePath.getFileName().toString())
                         .collect(Collectors.toList()))
                 .tableName(tableName)
                 .build();
-        sqsClient.sendMessage(properties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(job));
+        sqsClient.sendMessage(request -> request
+                .queueUrl(properties.get(INGEST_JOB_QUEUE_URL))
+                .messageBody(new IngestJobSerDe().toJson(job)));
     }
 }
