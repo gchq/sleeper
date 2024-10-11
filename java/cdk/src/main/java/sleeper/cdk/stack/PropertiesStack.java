@@ -32,8 +32,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 
-import static sleeper.cdk.util.Utils.createCustomResourceProviderLogGroup;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
@@ -61,14 +59,14 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logGroup(createLambdaLogGroup(this, "PropertiesWriterLambdaLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .runtime(Runtime.JAVA_11));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createCustomResourceProviderLogGroup(this, "PropertiesWriterProviderLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getProviderLogGroupByFunctionName(functionName))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")

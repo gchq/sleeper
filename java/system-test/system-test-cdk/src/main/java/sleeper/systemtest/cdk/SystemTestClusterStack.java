@@ -51,20 +51,14 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 public class SystemTestClusterStack extends NestedStack {
@@ -72,13 +66,7 @@ public class SystemTestClusterStack extends NestedStack {
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
         super(scope, id);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, properties.get(SYSTEM_TEST_ID));
-        instanceProperties.set(VPC_ID, properties.get(SYSTEM_TEST_VPC_ID));
-        instanceProperties.set(JARS_BUCKET, properties.get(SYSTEM_TEST_JARS_BUCKET));
-        instanceProperties.set(CONFIG_BUCKET, properties.get(SYSTEM_TEST_BUCKET_NAME));
-        instanceProperties.set(LOGGING_LEVEL, "debug");
-        createSystemTestCluster(properties, properties, instanceProperties, bucketStack);
+        createSystemTestCluster(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 

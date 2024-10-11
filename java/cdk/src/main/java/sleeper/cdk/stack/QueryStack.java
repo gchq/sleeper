@@ -63,7 +63,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -131,14 +130,16 @@ public class QueryStack extends NestedStack {
      * Creates a Lambda Function.
      *
      * @param  id                 of the function to be created
-     * @param  queryJar           the jar containing the code for the Lambda
+     * @param  coreStacks         the core stacks
      * @param  instanceProperties containing configuration details
+     * @param  queryJar           the jar containing the code for the Lambda
      * @param  functionName       the name of the function
      * @param  handler            the path for the method be be used as the entry point for the Lambda
      * @param  description        a description for the function
      * @return                    an IFunction
      */
-    private IFunction createFunction(String id, LambdaCode queryJar, InstanceProperties instanceProperties,
+    private IFunction createFunction(
+            String id, CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode queryJar,
             String functionName, String handler, String description) {
         return queryJar.buildFunction(this, id, builder -> builder
                 .functionName(functionName)
@@ -148,7 +149,7 @@ public class QueryStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
     }
 
     /***
@@ -165,7 +166,7 @@ public class QueryStack extends NestedStack {
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
-        IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
+        IFunction lambda = createFunction("QueryExecutorLambda", coreStacks, instanceProperties, queryJar, functionName,
                 "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
 
@@ -212,10 +213,10 @@ public class QueryStack extends NestedStack {
             IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
-        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, customResourcesJar);
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, customResourcesJar);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
-        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
+        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", coreStacks, instanceProperties, queryJar, leafQueryFunctionName,
                 "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
 
@@ -346,7 +347,7 @@ public class QueryStack extends NestedStack {
      * @param  customResourcesJar the jar for deploying custom CDK resources
      * @return                    the bucket created
      */
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties, LambdaCode customResourcesJar) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode customResourcesJar) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
@@ -362,7 +363,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, customResourcesJar, instanceProperties, resultsBucket);
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, customResourcesJar, resultsBucket);
         }
 
         return resultsBucket;

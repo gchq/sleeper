@@ -37,7 +37,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -76,7 +75,7 @@ public class KeepLambdaWarmStack extends NestedStack {
                 .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder

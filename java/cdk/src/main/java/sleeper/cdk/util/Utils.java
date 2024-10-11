@@ -154,22 +154,6 @@ public class Utils {
                 .build();
     }
 
-    public static LogGroup createLambdaLogGroup(
-            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(functionName)
-                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-    }
-
-    public static LogGroup createCustomResourceProviderLogGroup(
-            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(functionName + "-provider")
-                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-    }
-
     public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
         ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
         return LogDriver.awsLogs(AwsLogDriverProps.builder()

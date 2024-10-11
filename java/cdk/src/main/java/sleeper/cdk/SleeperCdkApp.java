@@ -129,7 +129,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack, jars);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
@@ -140,7 +140,7 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, policiesStack).getResources();
         CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
                 instanceProperties, policiesStack).getResources();
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack, jars);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,

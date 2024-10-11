@@ -41,7 +41,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createCustomResourceProviderLogGroup;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -83,7 +82,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logGroup(createCustomResourceProviderLogGroup(this, "VpcCustomResourceProviderLogGroup", functionName, instanceProperties))
+                        .logGroup(logging.getProviderLogGroupByFunctionName(functionName))
                         .build());
 
         // Custom resource to check whether VPC is valid

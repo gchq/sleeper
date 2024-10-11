@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class CommonEmrBulkImportHelper {
@@ -128,7 +127,6 @@ public class CommonEmrBulkImportHelper {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .logGroup(createLambdaLogGroup(scope, "BulkImport" + platform + "JobStarterLogGroup", functionName, instanceProperties))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantValidateBulkImport(function.getRole());

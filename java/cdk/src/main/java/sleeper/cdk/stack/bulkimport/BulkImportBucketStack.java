@@ -46,7 +46,7 @@ public class BulkImportBucketStack extends NestedStack {
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
-        AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, importBucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, jars, importBucket);
     }
 
     public IBucket getImportBucket() {

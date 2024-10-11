@@ -95,7 +95,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -278,7 +277,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
@@ -289,7 +288,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
@@ -593,7 +592,7 @@ public class CompactionStack extends NestedStack {
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
                 .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
-                .logGroup(createLambdaLogGroup(this, "CompactionTerminatorLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .timeout(Duration.seconds(10)));
@@ -626,7 +625,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionTasksCreatorLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

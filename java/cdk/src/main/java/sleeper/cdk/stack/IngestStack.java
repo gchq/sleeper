@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -257,7 +256,7 @@ public class IngestStack extends NestedStack {
                 .handler("sleeper.ingest.starter.RunIngestTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "IngestTasksCreatorLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

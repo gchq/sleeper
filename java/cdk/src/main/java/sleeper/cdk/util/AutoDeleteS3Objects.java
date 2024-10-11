@@ -20,6 +20,7 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -27,25 +28,47 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.stack.LoggingStack;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
-
-import static sleeper.cdk.util.Utils.createCustomResourceProviderLogGroup;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import java.util.function.Function;
 
 public class AutoDeleteS3Objects {
 
     private AutoDeleteS3Objects() {
     }
 
-    public static void autoDeleteForBucket(Construct scope, BuiltJars jars, InstanceProperties instanceProperties, IBucket bucket) {
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
-        autoDeleteForBucket(scope, jar, instanceProperties, bucket);
+    public static void autoDeleteForBucket(Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks, BuiltJars jars, IBucket bucket) {
+        autoDeleteForBucket(scope, instanceProperties, jars, bucket, coreStacks::getLogGroupByFunctionName, coreStacks::getProviderLogGroupByFunctionName);
     }
 
-    public static void autoDeleteForBucket(Construct scope, LambdaCode customResourcesJar, InstanceProperties instanceProperties, IBucket bucket) {
+    public static void autoDeleteForBucket(Construct scope, InstanceProperties instanceProperties, LoggingStack logging, BuiltJars jars, IBucket bucket) {
+        autoDeleteForBucket(scope, instanceProperties, jars, bucket, logging::getLogGroupByFunctionName, logging::getProviderLogGroupByFunctionName);
+    }
+
+    public static void autoDeleteForBucket(Construct scope, InstanceProperties instanceProperties, LoggingStack logging, LambdaCode customResourcesJar, IBucket bucket) {
+        autoDeleteForBucket(scope, instanceProperties, customResourcesJar, bucket, logging::getLogGroupByFunctionName, logging::getProviderLogGroupByFunctionName);
+    }
+
+    public static void autoDeleteForBucket(Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode customResourcesJar, IBucket bucket) {
+        autoDeleteForBucket(scope, instanceProperties, customResourcesJar, bucket, coreStacks::getLogGroupByFunctionName, coreStacks::getProviderLogGroupByFunctionName);
+    }
+
+    public static void autoDeleteForBucket(
+            Construct scope, InstanceProperties instanceProperties, BuiltJars jars, IBucket bucket,
+            Function<String, ILogGroup> getLogGroupByFunctionName,
+            Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
+        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+        autoDeleteForBucket(scope, instanceProperties, jar, bucket, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
+    }
+
+    public static void autoDeleteForBucket(
+            Construct scope, InstanceProperties instanceProperties, LambdaCode customResourcesJar, IBucket bucket,
+            Function<String, ILogGroup> getLogGroupByFunctionName,
+            Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
 
         String id = bucket.getNode().getId() + "-AutoDelete";
         String functionName = bucket.getBucketName() + "-autodelete";
@@ -56,7 +79,7 @@ public class AutoDeleteS3Objects {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
-                .logGroup(createLambdaLogGroup(scope, id + "LambdaLogGroup", functionName, instanceProperties))
+                .logGroup(getLogGroupByFunctionName.apply(functionName))
                 .runtime(Runtime.JAVA_11)
                 .timeout(Duration.minutes(10)));
 
@@ -65,7 +88,7 @@ public class AutoDeleteS3Objects {
 
         Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
-                .logGroup(createCustomResourceProviderLogGroup(scope, id + "ProviderLogGroup", functionName, instanceProperties))
+                .logGroup(getProviderLogGroupByFunctionName.apply(functionName))
                 .build();
 
         CustomResource.Builder.create(scope, id)

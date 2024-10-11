@@ -38,7 +38,8 @@ public class TableDataStack extends NestedStack {
     private final IBucket dataBucket;
 
     public TableDataStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack, BuiltJars jars) {
+            Construct scope, String id, InstanceProperties instanceProperties,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, BuiltJars jars) {
         super(scope, id);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -54,7 +55,7 @@ public class TableDataStack extends NestedStack {
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, dataBucket);
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, loggingStack, jars, dataBucket);
         }
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());

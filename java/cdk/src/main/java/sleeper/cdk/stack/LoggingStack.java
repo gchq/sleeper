@@ -40,11 +40,20 @@ public class LoggingStack extends NestedStack {
 
         // Accessed directly by getter on this class
         createLogGroup("vpc-check");
+        createLogGroup("vpc-check-provider");
+        createLogGroup("config-autodelete");
+        createLogGroup("config-autodelete-provider");
+        createLogGroup("table-data-autodelete");
+        createLogGroup("table-data-autodelete-provider");
         createLogGroup("statestore-committer");
 
         // Accessed via CoreStacks getters
+        createLogGroup("properties-writer");
+        createLogGroup("properties-writer-provider");
         createLogGroup("state-snapshot-creation-trigger");
         createLogGroup("state-snapshot-creation");
+        createLogGroup("state-snapshot-deletion-trigger");
+        createLogGroup("state-snapshot-deletion");
         createLogGroup("state-transaction-deletion-trigger");
         createLogGroup("state-transaction-deletion");
         createLogGroup("metrics-trigger");
@@ -53,17 +62,41 @@ public class LoggingStack extends NestedStack {
         createLogGroup("bulk-import-NonPersistentEMR-start");
         createLogGroup("bulk-import-PersistentEMR-start");
         createLogGroup("bulk-import-eks-starter");
+        createLogGroup("bulk-import-autodelete");
+        createLogGroup("bulk-import-autodelete-provider");
         createLogGroup("IngestTasks");
+        createLogGroup("ingest-create-tasks");
+        createLogGroup("ingest-batcher-submit-files");
+        createLogGroup("ingest-batcher-create-jobs");
+        createLogGroup("partition-splitting-trigger");
+        createLogGroup("partition-splitting-find-to-split");
+        createLogGroup("partition-splitting-handler");
         createLogGroup("FargateCompactionTasks");
         createLogGroup("EC2CompactionTasks");
+        createLogGroup("compaction-job-creation-trigger");
+        createLogGroup("compaction-job-creation-handler");
+        createLogGroup("compaction-tasks-creator");
+        createLogGroup("compaction-custom-termination");
         createLogGroup("garbage-collector-trigger");
         createLogGroup("garbage-collector");
+        createLogGroup("query-executor");
+        createLogGroup("query-leaf-partition");
+        createLogGroup("query-websocket-handler");
+        createLogGroup("query-results-autodelete");
+        createLogGroup("query-results-autodelete-provider");
+        createLogGroup("query-keep-warm");
         createLogGroup("Simple-athena-handler");
         createLogGroup("IteratorApplying-athena-handler");
+        createLogGroup("spill-bucket-autodelete");
+        createLogGroup("spill-bucket-autodelete-provider");
     }
 
     public ILogGroup getLogGroupByFunctionName(String functionName) {
         return getLogGroupByNameWithPrefixes(functionName);
+    }
+
+    public ILogGroup getProviderLogGroupByFunctionName(String functionName) {
+        return getLogGroupByNameWithPrefixes(functionName + "-provider");
     }
 
     public ILogGroup getLogGroupByECSLogDriverId(String id) {
