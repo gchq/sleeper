@@ -120,7 +120,7 @@ public class LoggingStack extends NestedStack {
                 .build());
     }
 
-    private String addNamePrefixes(String id) {
-        return String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id);
+    private String addNamePrefixes(String shortName) {
+        return String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), shortName);
     }
 }
