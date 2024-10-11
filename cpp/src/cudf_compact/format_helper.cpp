@@ -1,6 +1,7 @@
 
 #include "cudf_compact/format_helper.hpp"
 
+#include <iostream>
 #include <locale>
 #include <string>
 
@@ -25,4 +26,9 @@ void switchLocale() noexcept {
     static std::locale spare{ std::locale(), &punct };
     // swap the global locale
     spare = std::locale::global(spare);
+}
+
+void imbueCout() noexcept {
+    static thousands_sep deleteThis{};
+    std::cout.imbue(std::locale{ std::locale(), &deleteThis });
 }

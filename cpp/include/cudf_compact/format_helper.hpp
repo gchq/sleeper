@@ -15,3 +15,5 @@ template<typename Msg, typename... Args> auto ff(Msg &&msg, Args &&...args) noex
     switchLocale();
     return ret;
 }
+
+void imbueCout() noexcept;

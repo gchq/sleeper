@@ -135,6 +135,7 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
 
     // Number of cols * number of files
     size_t const num_unique_keys = key_offsets_end - key_offsets.begin();
+    std::cout << "Num unique keys " << num_unique_keys << '\n';
 
     // Reductive sum (first element 0) of key_offsets to get final result, key_offsets gives you index
     // into cum_pages where each new column starts
@@ -208,6 +209,10 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
                && (split_pos < 0 || filtered_pages[split_pos].row_count == cur_row_count)) {
             split_pos++;
         }
+
+        auto const range_rows = filtered_pages[split_pos].row_count - cur_row_count;
+        auto const range_size = filtered_pages[split_pos].size_bytes - cur_cumulative_size;
+
         auto const start_row = cur_row_count;
         // how many cumulative rows to next split point
         cur_row_count = filtered_pages[split_pos].row_count;
@@ -236,7 +241,9 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
         std::string rangeBegin = to_string(last_val, col_type, conv_type);
         std::string rangeEnd = to_string(end_val, col_type, conv_type);
 
-        std::cout << "Adding range \"" << rangeBegin << "\"->\"" << rangeEnd << "\"\n";
+        std::cout << "Adding range \"" << rangeBegin << "\"->\"" << rangeEnd << "\" size " << range_size
+                  << " row count " << range_rows << " cumulative size " << cur_cumulative_size << " and row count "
+                  << cur_row_count << "\n";
 
         // update previous values
         last_val = min;
