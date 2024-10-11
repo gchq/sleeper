@@ -185,7 +185,7 @@ public class Utils {
                 .build();
     }
 
-    private static RetentionDays getRetentionDays(int numberOfDays) {
+    public static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
             case -1:
                 return RetentionDays.INFINITE;

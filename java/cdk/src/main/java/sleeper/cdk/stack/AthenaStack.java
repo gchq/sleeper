@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
@@ -113,7 +112,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceProperties, jarCode, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceProperties, coreStacks, jarCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -151,7 +150,9 @@ public class AthenaStack extends NestedStack {
         }
     }
 
-    private IFunction createConnector(String className, InstanceProperties instanceProperties, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private IFunction createConnector(
+            String className, InstanceProperties instanceProperties, CoreStacks coreStacks,
+            LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String simpleClassName = getSimpleClassName(className);
 
@@ -162,7 +163,7 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logGroup(createLambdaLogGroup(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .handler(className)
                 .environment(env));
 
