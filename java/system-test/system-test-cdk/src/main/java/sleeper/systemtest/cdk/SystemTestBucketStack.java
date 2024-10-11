@@ -19,6 +19,7 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -36,7 +37,6 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.util.List;
 import java.util.Locale;
 
-import static sleeper.cdk.util.Utils.createLogGroupWithRetentionDays;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -74,8 +74,14 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
         AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket,
-                functionName -> createLogGroupWithRetentionDays(this, id + "-AutoDeleteLambdaLogGroup", functionName, properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)),
-                functionName -> createLogGroupWithRetentionDays(this, id + "-AutoDeleteProviderLogGroup", functionName + "-provider", properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)));
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+                        .logGroupName(functionName)
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build(),
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+                        .logGroupName(functionName + "-provider")
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build());
         return bucket;
     }
 

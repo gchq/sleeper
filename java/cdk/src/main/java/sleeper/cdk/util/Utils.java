@@ -33,7 +33,6 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -132,25 +131,6 @@ public class Utils {
     public static String cleanInstanceId(String instanceId) {
         return instanceId.toLowerCase(Locale.ROOT)
                 .replace(".", "-");
-    }
-
-    /**
-     * Configures a log group with the specified number of days. Valid values are taken from
-     * <a href=
-     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
-     * A value of -1 represents an infinite number of days.
-     *
-     * @param  scope        the scope for the new construct
-     * @param  id           the ID for the new construct
-     * @param  logGroupName the name for the log group
-     * @param  numberOfDays number of days you want to retain the logs
-     * @return              The RetentionDays equivalent
-     */
-    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, String logGroupName, int numberOfDays) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(logGroupName)
-                .retention(getRetentionDays(numberOfDays))
-                .build();
     }
 
     public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {

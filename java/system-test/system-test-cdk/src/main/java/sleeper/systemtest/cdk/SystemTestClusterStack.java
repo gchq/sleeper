@@ -34,6 +34,7 @@ import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
@@ -122,7 +123,10 @@ public class SystemTestClusterStack extends NestedStack {
                 .image(containerImage)
                 .logging(LogDriver.awsLogs(AwsLogDriverProps.builder()
                         .streamPrefix(logGroupName)
-                        .logGroup(Utils.createLogGroupWithRetentionDays(this, "SystemTestTasks", logGroupName, properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .logGroup(LogGroup.Builder.create(this, "SystemTestTasks")
+                                .logGroupName(logGroupName)
+                                .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                                .build())
                         .build()))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();

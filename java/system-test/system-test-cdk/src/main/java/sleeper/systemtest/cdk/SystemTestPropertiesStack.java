@@ -22,6 +22,7 @@ import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -35,7 +36,6 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createLogGroupWithRetentionDays;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
@@ -63,14 +63,20 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", functionName, systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                .logGroup(LogGroup.Builder.create(this, "PropertiesWriterLambdaLogGroup")
+                        .logGroupName(functionName)
+                        .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build())
                 .runtime(Runtime.JAVA_11));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", functionName + "-provider", systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                .logGroup(LogGroup.Builder.create(this, "PropertiesWriterProviderLogGroup")
+                        .logGroupName(functionName + "-provider")
+                        .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build())
                 .build();
 
         CustomResource.Builder.create(this, "SystemTestProperties")
