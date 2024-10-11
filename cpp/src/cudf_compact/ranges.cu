@@ -35,13 +35,15 @@ struct row_total_size
         for (int idx = 0; idx < num_keys; idx++) {
             auto const start = key_offsets[idx];
             auto const end = key_offsets[idx + 1];
+            // an iterator that returns row counts from successive cum_pages
             auto iter = make_counting_transform_iterator(0, [&] __device__(int i) { return cum_pages[i].row_count; });
             // for the number of rows in i, find where in the list of pages that number of rows should be inserted
             auto const page_index = thrust::lower_bound(thrust::seq, iter + start, iter + end, i.row_count) - iter;
             // add the size of all those pages to that point for this column to the total size
             sum += cum_pages[page_index].size_bytes;
         }
-        // so now we know for the given page i, what the total size of all rows across all files is to that point
+        // so now we know for the given after row i.row_count, what the total size is of pages to that point across that
+        // row across all files
         return { i.file_idx, i.rg_idx, i.col_idx, i.page_idx, i.schema_idx, i.global_col_idx, i.row_count, sum };
     }
 };
@@ -55,6 +57,8 @@ struct page_info_by_index
     }
 };
 
+// This algorithm works by placing split points at starts of page boundaries in the sorting column. The pages that
+// define split points may come from any file.
 std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
   cudf::size_type sort_col,
   parquet::format::Type::type col_type,
@@ -137,7 +141,7 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
     thrust::exclusive_scan(thrust::device, key_offsets.begin(), key_offsets.end(), key_offsets.begin());
 
     // Working from cum_pages_sorted which is sorted based on cumulative row count, create vector of pages with size
-    // set to the total size to that row position
+    // set to the total size across all files to that row position (row counts and data sizes cumulative to that point)
     rmm::device_uvector<page_info> aggregated_info(cum_pages.size(), stream);
     thrust::transform(thrust::device,
       cum_pages_sorted.begin(),
@@ -165,20 +169,26 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
     // wait for all pending operations
     stream.synchronize();
 
+    // This algorithm works by finding where in the list of pages (sorted by cumulative row count / size) the next
+    // boundary should be
     std::deque<scalar_pair> ranges;
     size_t cur_pos = 0;
     size_t cur_cumulative_size = 0;
     size_t cur_row_count = 0;
+    // make an iterator that gives the page size, minus the cumulative data size already processed
     auto start = thrust::make_transform_iterator(
       filtered_pages.begin(), [&](page_info const &i) { return i.size_bytes - cur_cumulative_size; });
     auto end = start + filtered_pages.size();
 
+    // the end of the last range
     auto last_scalar = min_for_type(col_type, conv_type);
+    // this is the highest value this column type can have
     auto max_scalar = max_for_type(col_type, conv_type);
 
     std::string last_val = "-inf";
     std::string const max_val = "inf";
     while (true) {
+        // find where in the list of pages the next range split point should be
         int64_t split_pos = thrust::lower_bound(thrust::seq, start + cur_pos, end, chunk_read_limit) - start;
 
         // if we're past the end, or if the returned bucket is > than the chunk_read_limit, move
@@ -199,16 +209,21 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
             split_pos++;
         }
         auto const start_row = cur_row_count;
+        // how many cumulative rows to next split point
         cur_row_count = filtered_pages[split_pos].row_count;
 
+        // reached end -> break
         if (cur_row_count == start_row)
             break;
 
+        // update current positions and size accounted for
         cur_pos = split_pos;
         cur_cumulative_size = filtered_pages[split_pos].size_bytes;
 
         auto const &splt = filtered_pages[split_pos];
+        // find column index for the page we are splitting at
         auto const &colidx = indexes_per_file[splt.file_idx][splt.col_idx];
+        // grab the minimum value and get the cudf scalar version of it
         auto const &min = colidx.min_values[splt.page_idx];
         auto const &end_val = split_pos == filtered_pages.size() - 1 ? max_val : min;
         auto end_sclr = to_scalar(min, col_type, conv_type);
@@ -223,6 +238,7 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
 
         std::cout << "Adding range \"" << rangeBegin << "\"->\"" << rangeEnd << "\"\n";
 
+        // update previous values
         last_val = min;
         last_scalar = end_sclr;
     }
