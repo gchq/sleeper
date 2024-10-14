@@ -62,7 +62,7 @@ public class LoggingStack extends NestedStack {
         createLogGroup("bulk-import-NonPersistentEMR-start");
         createLogGroup("bulk-import-PersistentEMR-start");
         createLogGroup("bulk-import-eks-starter");
-        createLogGroup("EksBulkImportStateMachine");
+        createStateMachineLogGroup("EksBulkImportStateMachine");
         createLogGroup("bulk-import-autodelete");
         createLogGroup("bulk-import-autodelete-provider");
         createLogGroup("IngestTasks");
@@ -105,7 +105,7 @@ public class LoggingStack extends NestedStack {
     }
 
     public ILogGroup getLogGroupByStateMachineId(String id) {
-        return getLogGroupByNameWithPrefixes(addNamePrefixes(id));
+        return getLogGroupByNameWithPrefixes(addStateMachineNamePrefixes(id));
     }
 
     private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {
@@ -113,11 +113,22 @@ public class LoggingStack extends NestedStack {
     }
 
     private void createLogGroup(String shortName) {
-        String nameWithPrefixes = addNamePrefixes(shortName);
+        createLogGroup(shortName, addNamePrefixes(shortName));
+    }
+
+    private void createStateMachineLogGroup(String shortName) {
+        createLogGroup(shortName, addStateMachineNamePrefixes(shortName));
+    }
+
+    private void createLogGroup(String shortName, String nameWithPrefixes) {
         logGroupByName.put(nameWithPrefixes, LogGroup.Builder.create(this, shortName)
                 .logGroupName(nameWithPrefixes)
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
+    }
+
+    private String addStateMachineNamePrefixes(String shortName) {
+        return "/aws/vendedlogs/states/" + addNamePrefixes(shortName);
     }
 
     private String addNamePrefixes(String shortName) {
