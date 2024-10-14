@@ -36,8 +36,9 @@ public class RedeployOptionalStacksST {
 
     private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());
     static {
-        // We're currently unable to configure log groups related to an EKS cluster,
-        // so it fails to redeploy because those log groups already exist.
+        // We're currently unable to configure some of the log groups related to an EKS cluster, so it fails to redeploy
+        // because those log groups are retained and already exist. Here's the issue for this problem:
+        // https://github.com/gchq/sleeper/issues/3480 (Can't redeploy EKS bulk import optional stack)
         REDEPLOYABLE_STACKS.remove(OptionalStack.EksBulkImportStack);
     }
 
