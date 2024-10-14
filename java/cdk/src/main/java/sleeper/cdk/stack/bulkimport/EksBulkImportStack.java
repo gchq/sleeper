@@ -78,6 +78,7 @@ import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -267,6 +268,7 @@ public final class EksBulkImportStack extends NestedStack {
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build())))))
+                .logs(createStateMachineLogOptions(this, "EksBulkImportStateMachineLogs", instanceProperties))
                 .build();
     }
 

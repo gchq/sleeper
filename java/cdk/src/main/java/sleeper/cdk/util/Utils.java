@@ -36,6 +36,8 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awscdk.services.stepfunctions.LogLevel;
+import software.amazon.awscdk.services.stepfunctions.LogOptions;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
@@ -169,6 +171,18 @@ public class Utils {
                         .build())
                 .build();
         return LogDriver.awsLogs(logDriverProps);
+    }
+
+    public static LogOptions createStateMachineLogOptions(Construct scope, String id, InstanceProperties instanceProperties) {
+        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
+        return LogOptions.builder()
+                .destination(LogGroup.Builder.create(scope, id)
+                        .logGroupName(logGroupName)
+                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build())
+                .level(LogLevel.ALL)
+                .includeExecutionData(true)
+                .build();
     }
 
     private static RetentionDays getRetentionDays(int numberOfDays) {
