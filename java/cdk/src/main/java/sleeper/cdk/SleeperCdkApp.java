@@ -21,6 +21,7 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.customresources.CustomResourceConfig;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
@@ -79,6 +80,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
@@ -357,6 +359,8 @@ public class SleeperCdkApp extends Stack {
                 .build();
         try (S3Client s3Client = S3Client.create()) {
             BuiltJars jars = new BuiltJars(s3Client, instanceProperties.get(JARS_BUCKET));
+            CustomResourceConfig.of(app).addLogRetentionLifetime(
+                    Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)));
 
             new SleeperCdkApp(app, id, StackProps.builder()
                     .stackName(id)
