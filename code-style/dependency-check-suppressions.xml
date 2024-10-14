@@ -290,7 +290,7 @@
         we're using uses Jetty 9.
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+        <vulnerabilityName regex="true">CVE-2024-45801|CVE-2024-47875</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
