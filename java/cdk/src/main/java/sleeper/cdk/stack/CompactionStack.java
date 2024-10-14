@@ -63,9 +63,8 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.InstanceProfile;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.lambda.CfnPermission;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -73,6 +72,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+import software.constructs.IDependable;
 
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -427,11 +427,13 @@ public class CompactionStack extends NestedStack {
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
         IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
-        customTermination.addPermission("AutoscalingCall", Permission.builder()
+
+        IDependable autoScalingPermission = CfnPermission.Builder.create(this, "AutoscalingCall")
                 .action("lambda:InvokeFunction")
-                .principal(Role.fromRoleArn(this, "compaction_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
-                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
-                .build());
+                .principal("arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling")
+                .functionName(customTermination.getFunctionArn())
+                .build();
 
         SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingDefaultSG")
                 .vpc(vpc)
@@ -473,6 +475,7 @@ public class CompactionStack extends NestedStack {
                 .terminationPolicies(List.of(TerminationPolicy.CUSTOM_LAMBDA_FUNCTION))
                 .terminationPolicyCustomLambdaFunctionArn(customTermination.getFunctionArn())
                 .build();
+        ec2scalingGroup.getNode().addDependency(autoScalingPermission);
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
                 .create(this, "CompactionCapacityProvider")
