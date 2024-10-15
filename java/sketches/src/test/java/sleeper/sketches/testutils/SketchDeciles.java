@@ -42,7 +42,7 @@ public class SketchDeciles {
     }
 
     public static SketchDeciles from(ItemsSketch<?> sketch) {
-        return new SketchDeciles(sketch.getMinValue(), sketch.getMaxValue(), readDecilesByRank(sketch));
+        return new SketchDeciles(sketch.getMinItem(), sketch.getMaxItem(), readDecilesByRank(sketch));
     }
 
     public static Builder builder() {

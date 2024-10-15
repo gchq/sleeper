@@ -22,6 +22,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,10 +40,22 @@ public class Sketches {
     public static Sketches from(Schema schema) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            ItemsSketch<?> sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-            keyFieldToSketch.put(rowKeyField.getName(), sketch);
+            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField));
         }
         return new Sketches(keyFieldToSketch);
+    }
+
+    private static ItemsSketch<?> createSketch(Field field) {
+        if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
+            Comparator<Number> comparator = (Comparator<Number>) Comparator.naturalOrder();
+            return ItemsSketch.getInstance(Number.class, 1024, comparator);
+        } else if (field.getType() instanceof StringType) {
+            return ItemsSketch.getInstance(String.class, 1024, Comparator.naturalOrder());
+        } else if (field.getType() instanceof ByteArrayType) {
+            return ItemsSketch.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + field.getType());
+        }
     }
 
     public Map<String, ItemsSketch> getQuantilesSketches() {
