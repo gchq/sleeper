@@ -503,7 +503,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedLeftRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Number> union = ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+        ItemsUnion<Number> union = Sketches.createUnion(new LongType(), 1024);
         for (String file : partitionToFileMapping.get("L")) {
             Sketches readSketches = getSketches(schema, file);
             union.union(readSketches.getQuantilesSketch("key"));
@@ -522,7 +522,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedRightRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Number> union2 = ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+        ItemsUnion<Number> union2 = Sketches.createUnion(new LongType(), 1024);
         for (String file : partitionToFileMapping.get("R")) {
             Sketches readSketches = getSketches(schema, file);
             union2.union(readSketches.getQuantilesSketch("key"));
