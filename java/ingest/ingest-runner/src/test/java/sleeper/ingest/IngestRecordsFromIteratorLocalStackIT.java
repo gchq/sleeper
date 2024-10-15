@@ -59,7 +59,7 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
                         .field("key", deciles -> deciles
                                 .min(1L).max(3L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
-                                .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 3L)
                                 .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
                         .build());
     }

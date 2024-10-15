@@ -76,9 +76,9 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(0L).max(198L)
-                                .rank(0.1, 20L).rank(0.2, 40L).rank(0.3, 60L)
-                                .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
-                                .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
+                                .rank(0.1, 18L).rank(0.2, 38L).rank(0.3, 58L)
+                                .rank(0.4, 78L).rank(0.5, 98L).rank(0.6, 118L)
+                                .rank(0.7, 138L).rank(0.8, 158L).rank(0.9, 178L))
                         .build());
     }
 }

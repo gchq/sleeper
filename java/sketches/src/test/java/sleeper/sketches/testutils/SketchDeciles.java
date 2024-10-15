@@ -42,6 +42,9 @@ public class SketchDeciles {
     }
 
     public static SketchDeciles from(ItemsSketch<?> sketch) {
+        if (sketch.isEmpty()) {
+            return empty();
+        }
         return new SketchDeciles(sketch.getMinItem(), sketch.getMaxItem(), readDecilesByRank(sketch));
     }
 

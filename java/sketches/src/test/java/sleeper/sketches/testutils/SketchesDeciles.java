@@ -17,6 +17,8 @@ package sleeper.sketches.testutils;
 
 import com.google.common.base.Strings;
 
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
@@ -36,6 +38,14 @@ public class SketchesDeciles {
 
     public static SketchesDeciles from(Sketches sketches) {
         return new SketchesDeciles(createDecilesByField(sketches));
+    }
+
+    public static SketchesDeciles from(Schema schema, List<Record> records) {
+        Sketches sketches = Sketches.from(schema);
+        for (Record record : records) {
+            sketches.update(schema, record);
+        }
+        return from(sketches);
     }
 
     public static Builder builder() {
