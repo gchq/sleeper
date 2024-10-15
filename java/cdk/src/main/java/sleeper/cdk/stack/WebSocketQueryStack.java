@@ -48,8 +48,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.Collections;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
-
 public final class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
@@ -86,7 +84,7 @@ public final class WebSocketQueryStack extends NestedStack {
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)
-                .logGroup(createLambdaLogGroup(this, "WebSocketApiHandlerLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 

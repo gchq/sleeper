@@ -40,12 +40,13 @@ public class ConfigBucketStack extends NestedStack {
     private final IBucket configBucket;
 
     public ConfigBucketStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack, BuiltJars jars) {
+            Construct scope, String id, InstanceProperties instanceProperties,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, BuiltJars jars) {
         super(scope, id);
-
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "config");
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
-                .bucketName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "config"))
+                .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -54,7 +55,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, configBucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, loggingStack, jars, configBucket, bucketName);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());
