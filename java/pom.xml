@@ -56,7 +56,7 @@
         <java.version>11</java.version>
         <!-- Scala is just used for Spark -->
         <scala.version>2.13</scala.version>
-        <scala.minor.version>2.13.15</scala.minor.version>
+        <scala.minor.version>2.13.8</scala.minor.version>
         <!--
         The Spark and Hadoop versions must match the EMR release we use for bulk import.
         See the versions listed in the documentation:
