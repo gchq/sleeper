@@ -16,7 +16,6 @@
 
 package sleeper.ingest.testutils;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -33,8 +32,6 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -305,14 +302,5 @@ public class IngestRecordsTestDataHelper {
             clonedRecord.put(field.getName(), record.get(field.getName()));
         }
         return clonedRecord;
-    }
-
-    public static Sketches getSketches(Schema schema, String filename) throws IOException {
-        String sketchFile = filename.replace(".parquet", ".sketches");
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
-    }
-
-    public static Sketches getSketches(Schema schema, FileReference fileReference) throws IOException {
-        return getSketches(schema, fileReference.getFilename());
     }
 }

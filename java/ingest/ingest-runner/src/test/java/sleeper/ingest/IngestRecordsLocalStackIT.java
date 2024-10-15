@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 
 public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
@@ -60,7 +59,7 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
                 .isEqualTo(SketchesDeciles.from(schema, records));
     }
 

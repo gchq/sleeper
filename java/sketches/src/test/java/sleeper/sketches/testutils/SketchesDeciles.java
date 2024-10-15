@@ -16,17 +16,27 @@
 package sleeper.sketches.testutils;
 
 import com.google.common.base.Strings;
+import org.apache.datasketches.quantiles.ItemsUnion;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+
+import static java.util.stream.Collectors.toMap;
 
 public class SketchesDeciles {
 
@@ -46,6 +56,34 @@ public class SketchesDeciles {
             sketches.update(schema, record);
         }
         return from(sketches);
+    }
+
+    public static SketchesDeciles fromFile(Schema schema, FileReference file) throws IOException {
+        return fromFile(schema, file.getFilename());
+    }
+
+    public static SketchesDeciles fromFile(Schema schema, String file) throws IOException {
+        return from(getSketches(schema, file));
+    }
+
+    public static SketchesDeciles fromFiles(Schema schema, List<String> files) throws IOException {
+        Map<String, ItemsUnion> unionByField = schema.getRowKeyFields().stream()
+                .collect(toMap(Field::getName, field -> Sketches.createUnion(field.getType(), 1024)));
+        for (String file : files) {
+            Sketches sketches = getSketches(schema, file);
+            for (Field field : schema.getRowKeyFields()) {
+                ItemsUnion union = unionByField.get(field.getName());
+                union.union(sketches.getQuantilesSketch(field.getName()));
+            }
+        }
+        Sketches sketches = new Sketches(unionByField.entrySet().stream()
+                .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
+        return from(sketches);
+    }
+
+    private static Sketches getSketches(Schema schema, String filename) throws IOException {
+        String sketchFile = filename.replace(".parquet", ".sketches");
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
     }
 
     public static Builder builder() {
