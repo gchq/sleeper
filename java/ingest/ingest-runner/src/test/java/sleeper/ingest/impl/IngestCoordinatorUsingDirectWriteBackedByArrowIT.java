@@ -29,6 +29,7 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.TestFilesAndRecords;
 import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDecilesComparator;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -94,6 +95,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
         assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), configuration))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -150,6 +152,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                                 "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
         assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), configuration))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 

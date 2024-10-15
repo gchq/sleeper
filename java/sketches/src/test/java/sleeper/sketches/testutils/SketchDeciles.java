@@ -24,6 +24,7 @@ import sleeper.core.schema.Field;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,24 @@ public class SketchDeciles {
             sketch.update(record.get(field.getName()));
         }
         return from(sketch);
+    }
+
+    public static int compare(SketchDeciles deciles1, SketchDeciles deciles2, Comparator<Object> comparator) {
+        int max = comparator.compare(deciles1.max, deciles2.max);
+        if (max != 0) {
+            return max;
+        }
+        int min = comparator.compare(deciles1.min, deciles2.min);
+        if (min != 0) {
+            return min;
+        }
+        for (double rank : DECILES_QUANTILE_BOUNDARIES) {
+            int comparison = comparator.compare(deciles1.decileByRank.get(rank), deciles2.decileByRank.get(rank));
+            if (comparison != 0) {
+                return comparison;
+            }
+        }
+        return 0;
     }
 
     public static Builder builder() {

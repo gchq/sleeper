@@ -112,6 +112,10 @@ public class SketchesDeciles {
         return decilesByField;
     }
 
+    public SketchDeciles getDecilesByField(Field field) {
+        return decilesByField.get(field.getName());
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(decilesByField);
