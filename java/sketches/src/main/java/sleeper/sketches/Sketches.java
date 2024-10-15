@@ -47,15 +47,15 @@ public class Sketches {
         return new Sketches(keyFieldToSketch);
     }
 
-    public static ItemsSketch<?> createSketch(Type type, int k) {
+    public static <T> ItemsSketch<T> createSketch(Type type, int k) {
         if (type instanceof IntType) {
-            return ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::intValue));
+            return (ItemsSketch<T>) ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::intValue));
         } else if (type instanceof LongType) {
-            return ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::longValue));
+            return (ItemsSketch<T>) ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::longValue));
         } else if (type instanceof StringType) {
-            return ItemsSketch.getInstance(String.class, k, Comparator.naturalOrder());
+            return (ItemsSketch<T>) ItemsSketch.getInstance(String.class, k, Comparator.naturalOrder());
         } else if (type instanceof ByteArrayType) {
-            return ItemsSketch.getInstance(ByteArray.class, k, Comparator.naturalOrder());
+            return (ItemsSketch<T>) ItemsSketch.getInstance(ByteArray.class, k, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
         }

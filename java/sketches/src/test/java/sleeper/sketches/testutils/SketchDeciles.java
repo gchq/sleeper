@@ -19,6 +19,10 @@ import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.sketches.Sketches;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +51,14 @@ public class SketchDeciles {
             return empty();
         }
         return new SketchDeciles(sketch.getMinItem(), sketch.getMaxItem(), readDecilesByRank(sketch));
+    }
+
+    public static SketchDeciles from(Field field, List<Record> records) {
+        ItemsSketch sketch = Sketches.createSketch(field.getType(), 1024);
+        for (Record record : records) {
+            sketch.update(record.get(field.getName()));
+        }
+        return from(sketch);
     }
 
     public static Builder builder() {

@@ -16,7 +16,6 @@
 
 package sleeper.ingest;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.SketchDeciles;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.ArrayList;
@@ -508,14 +508,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             Sketches readSketches = getSketches(schema, file);
             union.union(readSketches.getQuantilesSketch("key"));
         }
-        ItemsSketch<Number> readSketch0 = union.getResult();
-        ItemsSketch<Number> expectedSketch0 = ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
-        expectedLeftRecords.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketch0.getMinItem()).isEqualTo(expectedSketch0.getMinItem());
-        assertThat(readSketch0.getMaxItem()).isEqualTo(expectedSketch0.getMaxItem());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketch0.getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
+        assertThat(SketchDeciles.from(union.getResult()))
+                .isEqualTo(SketchDeciles.from(field, expectedLeftRecords));
         List<Record> expectedRightRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
@@ -527,14 +521,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
             Sketches readSketches = getSketches(schema, file);
             union2.union(readSketches.getQuantilesSketch("key"));
         }
-        ItemsSketch<Number> readSketch1 = union2.getResult();
-        ItemsSketch<Number> expectedSketch1 = ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
-        expectedRightRecords.forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketch1.getMinItem()).isEqualTo(expectedSketch1.getMinItem());
-        assertThat(readSketch1.getMaxItem()).isEqualTo(expectedSketch1.getMaxItem());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketch1.getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        assertThat(SketchDeciles.from(union2.getResult()))
+                .isEqualTo(SketchDeciles.from(field, expectedRightRecords));
     }
 
     @Test
