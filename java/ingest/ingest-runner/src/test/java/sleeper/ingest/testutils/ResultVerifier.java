@@ -79,13 +79,13 @@ public class ResultVerifier {
     }
 
     private static ItemsSketch mergeSketches(Field field, List<ItemsSketch> itemsSketchList) {
-        ItemsUnion union = Sketches.createUnion(field.getType());
+        ItemsUnion union = Sketches.createUnion(field.getType(), 1024);
         itemsSketchList.forEach(union::union);
         return union.getResult();
     }
 
     private static ItemsSketch createItemSketch(Field field, List<Record> recordList) {
-        ItemsSketch itemsSketch = Sketches.createSketch(field.getType());
+        ItemsSketch itemsSketch = Sketches.createSketch(field.getType(), 1024);
         if (field.getType() instanceof ByteArrayType) {
             recordList.forEach(record -> itemsSketch.update(ByteArray.wrap((byte[]) record.get(field.getName()))));
         } else {

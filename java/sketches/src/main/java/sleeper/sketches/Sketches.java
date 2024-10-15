@@ -42,34 +42,34 @@ public class Sketches {
     public static Sketches from(Schema schema) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType()));
+            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType(), 1024));
         }
         return new Sketches(keyFieldToSketch);
     }
 
-    public static ItemsSketch<?> createSketch(Type type) {
-        if (type instanceof IntType || type instanceof LongType) {
-            return ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::intValue));
+    public static ItemsSketch<?> createSketch(Type type, int k) {
+        if (type instanceof IntType) {
+            return ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::intValue));
         } else if (type instanceof LongType) {
-            return ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+            return ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::longValue));
         } else if (type instanceof StringType) {
-            return ItemsSketch.getInstance(String.class, 1024, Comparator.naturalOrder());
+            return ItemsSketch.getInstance(String.class, k, Comparator.naturalOrder());
         } else if (type instanceof ByteArrayType) {
-            return ItemsSketch.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
+            return ItemsSketch.getInstance(ByteArray.class, k, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
         }
     }
 
-    public static ItemsUnion<?> createUnion(Type type) {
-        if (type instanceof IntType || type instanceof LongType) {
-            return ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::intValue));
+    public static <T> ItemsUnion<T> createUnion(Type type, int maxK) {
+        if (type instanceof IntType) {
+            return (ItemsUnion<T>) ItemsUnion.getInstance(Number.class, maxK, Comparator.comparing(Number::intValue));
         } else if (type instanceof LongType) {
-            return ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+            return (ItemsUnion<T>) ItemsUnion.getInstance(Number.class, maxK, Comparator.comparing(Number::longValue));
         } else if (type instanceof StringType) {
-            return ItemsUnion.getInstance(String.class, 1024, Comparator.naturalOrder());
+            return (ItemsUnion<T>) ItemsUnion.getInstance(String.class, maxK, Comparator.naturalOrder());
         } else if (type instanceof ByteArrayType) {
-            return ItemsUnion.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
+            return (ItemsUnion<T>) ItemsUnion.getInstance(ByteArray.class, maxK, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
         }

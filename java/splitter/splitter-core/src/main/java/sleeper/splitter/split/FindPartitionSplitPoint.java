@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -37,8 +38,6 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -67,13 +66,13 @@ public class FindPartitionSplitPoint {
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 schema.getRowKeyFieldNames().get(dimension), rowKeyType, dimension);
         if (rowKeyType instanceof IntType) {
-            return splitPointForDimension(getMinMedianMaxIntKey(dimension), dimension);
+            return splitPointForDimension(getMinMedianMaxKey(dimension), dimension);
         } else if (rowKeyType instanceof LongType) {
-            return splitPointForDimension(getMinMedianMaxLongKey(dimension), dimension);
+            return splitPointForDimension(getMinMedianMaxKey(dimension), dimension);
         } else if (rowKeyType instanceof StringType) {
-            return splitPointForDimension(getMinMedianMaxStringKey(dimension), dimension);
+            return splitPointForDimension(getMinMedianMaxKey(dimension), dimension);
         } else if (rowKeyType instanceof ByteArrayType) {
-            return splitPointForDimension(getMinMedianMaxByteArrayKey(dimension), dimension, ByteArray::getArray);
+            return splitPointForDimension(getMinMedianMaxKey(dimension), dimension, ByteArray::getArray);
         } else {
             throw new IllegalArgumentException("Unknown type " + rowKeyType);
         }
@@ -102,103 +101,25 @@ public class FindPartitionSplitPoint {
         }
     }
 
-    private Triple<Integer, Integer, Integer> getMinMedianMaxIntKey(int dimension) {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<Integer>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = loadSketches(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<Integer> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<Integer> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<Integer> sketch = union.getResult();
-
-        Integer min = sketch.getMinValue();
-        Integer median = sketch.getQuantile(0.5D);
-        Integer max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
+    private <T> Triple<T, T, T> getMinMedianMaxKey(int dimension) {
+        return getMinMedianMaxKey(schema.getRowKeyFields().get(dimension));
     }
 
-    private Triple<Long, Long, Long> getMinMedianMaxLongKey(int dimension) {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
+    private <T> Triple<T, T, T> getMinMedianMaxKey(Field field) {
 
-        // Read all sketches
-        List<ItemsSketch<Long>> sketchList = new ArrayList<>();
+        // Union all sketches
+        ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
         for (String fileName : fileNames) {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = loadSketches(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
+            union.union(sketches.getQuantilesSketch(field.getName()));
         }
+        ItemsSketch<T> sketch = union.getResult();
 
-        // Union all the sketches
-        ItemsUnion<Long> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<Long> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<Long> sketch = union.getResult();
-
-        Long min = sketch.getMinValue();
-        Long median = sketch.getQuantile(0.5D);
-        Long max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private Triple<String, String, String> getMinMedianMaxStringKey(int dimension) {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<String>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = loadSketches(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<String> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<String> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<String> sketch = union.getResult();
-
-        String min = sketch.getMinValue();
-        String median = sketch.getQuantile(0.5D);
-        String max = sketch.getMaxValue();
-        return new ImmutableTriple<>(min, median, max);
-    }
-
-    private Triple<ByteArray, ByteArray, ByteArray> getMinMedianMaxByteArrayKey(int dimension) {
-        String keyField = schema.getRowKeyFields().get(dimension).getName();
-
-        // Read all sketches
-        List<ItemsSketch<ByteArray>> sketchList = new ArrayList<>();
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = loadSketches(sketchesFile);
-            sketchList.add(sketches.getQuantilesSketch(keyField));
-        }
-
-        // Union all the sketches
-        ItemsUnion<ByteArray> union = ItemsUnion.getInstance(16384, Comparator.naturalOrder());
-        for (ItemsSketch<ByteArray> s : sketchList) {
-            union.update(s);
-        }
-        ItemsSketch<ByteArray> sketch = union.getResult();
-
-        ByteArray min = sketch.getMinValue();
-        ByteArray median = sketch.getQuantile(0.5D);
-        ByteArray max = sketch.getMaxValue();
+        T min = sketch.getMinItem();
+        T median = sketch.getQuantile(0.5D);
+        T max = sketch.getMaxItem();
         return new ImmutableTriple<>(min, median, max);
     }
 
