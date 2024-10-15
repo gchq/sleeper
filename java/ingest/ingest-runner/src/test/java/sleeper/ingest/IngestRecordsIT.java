@@ -503,13 +503,13 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedLeftRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Number> union = ItemsUnion.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
+        ItemsUnion<Number> union = ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
         for (String file : partitionToFileMapping.get("L")) {
             Sketches readSketches = getSketches(schema, file);
             union.union(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Number> readSketch0 = union.getResult();
-        ItemsSketch<Number> expectedSketch0 = ItemsSketch.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
+        ItemsSketch<Number> expectedSketch0 = ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
         expectedLeftRecords.forEach(r -> expectedSketch0.update((Long) r.get("key")));
         assertThat(readSketch0.getMinItem()).isEqualTo(expectedSketch0.getMinItem());
         assertThat(readSketch0.getMaxItem()).isEqualTo(expectedSketch0.getMaxItem());
@@ -522,13 +522,13 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedRightRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Number> union2 = ItemsUnion.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
+        ItemsUnion<Number> union2 = ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
         for (String file : partitionToFileMapping.get("R")) {
             Sketches readSketches = getSketches(schema, file);
             union2.union(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Number> readSketch1 = union2.getResult();
-        ItemsSketch<Number> expectedSketch1 = ItemsSketch.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
+        ItemsSketch<Number> expectedSketch1 = ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
         expectedRightRecords.forEach(r -> expectedSketch1.update((Long) r.get("key")));
         assertThat(readSketch1.getMinItem()).isEqualTo(expectedSketch1.getMinItem());
         assertThat(readSketch1.getMaxItem()).isEqualTo(expectedSketch1.getMaxItem());
