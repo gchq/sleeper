@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.Slow;
@@ -33,6 +34,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -48,19 +50,32 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 public class EksBulkImportST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, SystemTestParameters parameters) {
+        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
+            return;
+        }
         sleeper.connectToInstance(BULK_IMPORT_EKS);
         sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
+            return;
+        }
         sleeper.disableOptionalStack(OptionalStack.EksBulkImportStack);
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper) {
+    void shouldBulkImport100Records(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+        // This is intended to ignore this test when running in an environment where log retention must not be set.
+        // This is because we're currently unable to prevent an EKS cluster deployment from creating log groups with log
+        // retention set. See the following issue:
+        // https://github.com/gchq/sleeper/issues/3451 (Logs retention policy is not applied to all EKS cluster resources)
+        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
+            return;
+        }
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)

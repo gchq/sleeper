@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -200,6 +201,10 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
+    }
+
+    public boolean isInstancePropertyOverridden(InstanceProperty property) {
+        return instancePropertiesOverrides.isSet(property);
     }
 
     private static Path findScriptsDir() {
