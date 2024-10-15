@@ -38,9 +38,7 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,24 +74,18 @@ public class ResultVerifier {
                 .map(fieldName -> {
                     List<ItemsSketch> itemsSketchList = readSketchesList.stream().map(sketches -> sketches.getQuantilesSketch(fieldName)).collect(Collectors.toList());
                     Field field = sleeperSchema.getField(fieldName).orElseThrow();
-                    return new AbstractMap.SimpleEntry<>(field, mergeSketches(itemsSketchList));
+                    return Map.entry(field, mergeSketches(field, itemsSketchList));
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public static Map<Field, ItemsSketch> createFieldToItemSketchMap(Schema sleeperSchema, List<Record> recordList) {
-        return sleeperSchema.getRowKeyFields().stream()
-                .map(field -> new AbstractMap.SimpleEntry<>(field, createItemSketch(field, recordList)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static ItemsSketch mergeSketches(List<ItemsSketch> itemsSketchList) {
-        ItemsUnion union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
-        itemsSketchList.forEach(union::update);
+    private static ItemsSketch mergeSketches(Field field, List<ItemsSketch> itemsSketchList) {
+        ItemsUnion union = Sketches.createUnion(field.getType());
+        itemsSketchList.forEach(union::union);
         return union.getResult();
     }
 
     private static ItemsSketch createItemSketch(Field field, List<Record> recordList) {
-        ItemsSketch itemsSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch itemsSketch = Sketches.createSketch(field.getType());
         if (field.getType() instanceof ByteArrayType) {
             recordList.forEach(record -> itemsSketch.update(ByteArray.wrap((byte[]) record.get(field.getName()))));
         } else {

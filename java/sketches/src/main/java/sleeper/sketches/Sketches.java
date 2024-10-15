@@ -17,6 +17,7 @@ package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.datasketches.quantiles.ItemsUnion;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -46,7 +47,7 @@ public class Sketches {
         return new Sketches(keyFieldToSketch);
     }
 
-    private static ItemsSketch<?> createSketch(Type type) {
+    public static ItemsSketch<?> createSketch(Type type) {
         if (type instanceof IntType || type instanceof LongType) {
             return ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::intValue));
         } else if (type instanceof LongType) {
@@ -55,6 +56,20 @@ public class Sketches {
             return ItemsSketch.getInstance(String.class, 1024, Comparator.naturalOrder());
         } else if (type instanceof ByteArrayType) {
             return ItemsSketch.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + type);
+        }
+    }
+
+    public static ItemsUnion<?> createUnion(Type type) {
+        if (type instanceof IntType || type instanceof LongType) {
+            return ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::intValue));
+        } else if (type instanceof LongType) {
+            return ItemsUnion.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+        } else if (type instanceof StringType) {
+            return ItemsUnion.getInstance(String.class, 1024, Comparator.naturalOrder());
+        } else if (type instanceof ByteArrayType) {
+            return ItemsUnion.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
         }
