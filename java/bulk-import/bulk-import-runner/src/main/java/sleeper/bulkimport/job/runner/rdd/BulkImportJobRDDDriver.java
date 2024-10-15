@@ -19,7 +19,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
@@ -54,6 +54,6 @@ public class BulkImportJobRDDDriver {
                         input.conf(), input.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
+        return session.createDataset(rdd.rdd(), ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 }

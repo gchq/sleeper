@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -64,7 +64,7 @@ public class BulkImportJobDataframeDriver {
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
                 new AddPartitionFunction(schemaAsString, input.broadcastedPartitions()),
-                RowEncoder.encoderFor(schemaWithPartitionField));
+                ExpressionEncoder.apply(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
                 Lists.newArrayList(PARTITION_FIELD_NAME),
@@ -83,7 +83,7 @@ public class BulkImportJobDataframeDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf()),
-                RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
+                ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

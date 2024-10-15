@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -66,7 +66,7 @@ public class BulkImportDataframeLocalSortDriver {
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
                 new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
-                RowEncoder.encoderFor(schemaWithPartitionField));
+                ExpressionEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
@@ -90,7 +90,7 @@ public class BulkImportDataframeLocalSortDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf(), input.broadcastedPartitions()),
-                RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
+                ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {
