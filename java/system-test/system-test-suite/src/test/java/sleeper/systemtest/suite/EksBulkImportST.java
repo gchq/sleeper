@@ -37,7 +37,7 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_P
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
@@ -49,7 +49,7 @@ public class EksBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(BULK_IMPORT_EKS);
         sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
