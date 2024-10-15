@@ -30,6 +30,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -71,30 +72,26 @@ public class SketchSerialiser {
     public Sketches deserialise(DataInputStream dis) throws IOException {
         Map<String, ItemsSketch> keyFieldToQuantilesSketch = new HashMap<>();
         for (Field field : schema.getRowKeyFields()) {
-            if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
-                int length = dis.readInt();
-                byte[] b = new byte[length];
-                dis.readFully(b);
-                Comparator<Number> comparator = (Comparator<Number>) Comparator.naturalOrder();
-                ItemsSketch<Number> sketch = ItemsSketch.getInstance(Number.class, Memory.wrap(b), comparator, new ArrayOfNumbersSerDe());
-                keyFieldToQuantilesSketch.put(field.getName(), sketch);
-            } else if (field.getType() instanceof StringType) {
-                int length = dis.readInt();
-                byte[] b = new byte[length];
-                dis.readFully(b);
-                ItemsSketch<String> sketch = ItemsSketch.getInstance(String.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
-                keyFieldToQuantilesSketch.put(field.getName(), sketch);
-            } else if (field.getType() instanceof ByteArrayType) {
-                int length = dis.readInt();
-                byte[] b = new byte[length];
-                dis.readFully(b);
-                ItemsSketch<ByteArray> sketch = ItemsSketch.getInstance(ByteArray.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
-                keyFieldToQuantilesSketch.put(field.getName(), sketch);
-            } else {
-                throw new IOException("Unknown key type of " + field.getType());
-            }
+            keyFieldToQuantilesSketch.put(field.getName(), deserialise(dis, field.getType()));
         }
         return new Sketches(keyFieldToQuantilesSketch);
+    }
+
+    private static ItemsSketch<?> deserialise(DataInputStream dis, Type type) throws IOException {
+        int length = dis.readInt();
+        byte[] b = new byte[length];
+        dis.readFully(b);
+        if (type instanceof IntType) {
+            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::intValue), new ArrayOfNumbersSerDe());
+        } else if (type instanceof LongType) {
+            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::longValue), new ArrayOfNumbersSerDe());
+        } else if (type instanceof StringType) {
+            return ItemsSketch.getInstance(String.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
+        } else if (type instanceof ByteArrayType) {
+            return ItemsSketch.getInstance(ByteArray.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
+        } else {
+            throw new IOException("Unknown key type of " + type);
+        }
     }
 
     /**

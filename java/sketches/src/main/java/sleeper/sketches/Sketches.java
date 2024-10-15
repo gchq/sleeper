@@ -25,6 +25,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -40,21 +41,22 @@ public class Sketches {
     public static Sketches from(Schema schema) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField));
+            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType()));
         }
         return new Sketches(keyFieldToSketch);
     }
 
-    private static ItemsSketch<?> createSketch(Field field) {
-        if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
-            Comparator<Number> comparator = (Comparator<Number>) Comparator.naturalOrder();
-            return ItemsSketch.getInstance(Number.class, 1024, comparator);
-        } else if (field.getType() instanceof StringType) {
+    private static ItemsSketch<?> createSketch(Type type) {
+        if (type instanceof IntType || type instanceof LongType) {
+            return ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::intValue));
+        } else if (type instanceof LongType) {
+            return ItemsSketch.getInstance(Number.class, 1024, Comparator.comparing(Number::longValue));
+        } else if (type instanceof StringType) {
             return ItemsSketch.getInstance(String.class, 1024, Comparator.naturalOrder());
-        } else if (field.getType() instanceof ByteArrayType) {
+        } else if (type instanceof ByteArrayType) {
             return ItemsSketch.getInstance(ByteArray.class, 1024, Comparator.naturalOrder());
         } else {
-            throw new IllegalArgumentException("Unknown key type of " + field.getType());
+            throw new IllegalArgumentException("Unknown key type of " + type);
         }
     }
 
