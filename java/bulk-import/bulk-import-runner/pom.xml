@@ -48,7 +48,6 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>${scala.minor.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
