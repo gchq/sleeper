@@ -160,7 +160,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(2, 2)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
-                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 2, 2).rankBytes(0.6, 2, 2)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 1, 1).rankBytes(0.6, 2, 2)
                                 .rankBytes(0.7, 2, 2).rankBytes(0.8, 2, 2).rankBytes(0.9, 2, 2))
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
@@ -218,12 +218,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key1", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(5)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
-                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 5).rankBytes(0.6, 5)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 1, 1).rankBytes(0.6, 5)
                                 .rankBytes(0.7, 5).rankBytes(0.8, 5).rankBytes(0.9, 5))
                         .field("key2", deciles -> deciles
                                 .minBytes(2, 3).maxBytes(99)
                                 .rankBytes(0.1, 2, 3).rankBytes(0.2, 2, 3).rankBytes(0.3, 2, 3)
-                                .rankBytes(0.4, 2, 3).rankBytes(0.5, 99).rankBytes(0.6, 99)
+                                .rankBytes(0.4, 2, 3).rankBytes(0.5, 2, 3).rankBytes(0.6, 99)
                                 .rankBytes(0.7, 99).rankBytes(0.8, 99).rankBytes(0.9, 99))
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
@@ -314,7 +314,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key1", deciles -> deciles
                                 .min(0).max(100)
                                 .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
-                                .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
+                                .rank(0.4, 0).rank(0.5, 0).rank(0.6, 100)
                                 .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
                         .field("key2", deciles -> deciles
                                 .min(1L).max(1L)
@@ -327,12 +327,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key1", deciles -> deciles
                                 .min(0).max(100)
                                 .rank(0.1, 0).rank(0.2, 0).rank(0.3, 0)
-                                .rank(0.4, 0).rank(0.5, 100).rank(0.6, 100)
+                                .rank(0.4, 0).rank(0.5, 0).rank(0.6, 100)
                                 .rank(0.7, 100).rank(0.8, 100).rank(0.9, 100))
                         .field("key2", deciles -> deciles
                                 .min(20L).max(50L)
                                 .rank(0.1, 20L).rank(0.2, 20L).rank(0.3, 20L)
-                                .rank(0.4, 20L).rank(0.5, 50L).rank(0.6, 50L)
+                                .rank(0.4, 20L).rank(0.5, 20L).rank(0.6, 50L)
                                 .rank(0.7, 50L).rank(0.8, 50L).rank(0.9, 50L))
                         .build());
     }
@@ -370,7 +370,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key", deciles -> deciles
                                 .min(0L).max(1L)
                                 .rank(0.1, 0L).rank(0.2, 0L).rank(0.3, 0L)
-                                .rank(0.4, 0L).rank(0.5, 1L).rank(0.6, 1L)
+                                .rank(0.4, 0L).rank(0.5, 0L).rank(0.6, 1L)
                                 .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
                         .build());
     }
@@ -410,7 +410,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key", deciles -> deciles
                                 .min(1L).max(3L)
                                 .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
-                                .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 3L)
                                 .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
                         .build());
     }
@@ -461,17 +461,17 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(-198L).max(1L)
-                                .rank(0.1, -178L).rank(0.2, -158L).rank(0.3, -138L)
-                                .rank(0.4, -118L).rank(0.5, -98L).rank(0.6, -78L)
-                                .rank(0.7, -58L).rank(0.8, -38L).rank(0.9, -18L))
+                                .rank(0.1, -179L).rank(0.2, -159L).rank(0.3, -139L)
+                                .rank(0.4, -119L).rank(0.5, -99L).rank(0.6, -79L)
+                                .rank(0.7, -59L).rank(0.8, -39L).rank(0.9, -19L))
                         .build());
         assertThat(SketchesDeciles.from(getSketches(schema, rightFile.getFilename())))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(2L).max(201L)
-                                .rank(0.1, 22L).rank(0.2, 42L).rank(0.3, 62L)
-                                .rank(0.4, 82L).rank(0.5, 102L).rank(0.6, 122L)
-                                .rank(0.7, 142L).rank(0.8, 162L).rank(0.9, 182L))
+                                .rank(0.1, 21L).rank(0.2, 41L).rank(0.3, 61L)
+                                .rank(0.4, 81L).rank(0.5, 101L).rank(0.6, 121L)
+                                .rank(0.7, 141L).rank(0.8, 161L).rank(0.9, 181L))
                         .build());
     }
 
@@ -503,16 +503,16 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedLeftRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Long> union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
+        ItemsUnion<Number> union = ItemsUnion.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get("L")) {
             Sketches readSketches = getSketches(schema, file);
-            union.update(readSketches.getQuantilesSketch("key"));
+            union.union(readSketches.getQuantilesSketch("key"));
         }
-        ItemsSketch<Long> readSketch0 = union.getResult();
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<Number> readSketch0 = union.getResult();
+        ItemsSketch<Number> expectedSketch0 = ItemsSketch.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
         expectedLeftRecords.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketch0.getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketch0.getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
+        assertThat(readSketch0.getMinItem()).isEqualTo(expectedSketch0.getMinItem());
+        assertThat(readSketch0.getMaxItem()).isEqualTo(expectedSketch0.getMaxItem());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
             assertThat(readSketch0.getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
@@ -522,16 +522,16 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedRightRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        ItemsUnion<Long> union2 = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
+        ItemsUnion<Number> union2 = ItemsUnion.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get("R")) {
             Sketches readSketches = getSketches(schema, file);
-            union2.update(readSketches.getQuantilesSketch("key"));
+            union2.union(readSketches.getQuantilesSketch("key"));
         }
-        ItemsSketch<Long> readSketch1 = union2.getResult();
-        ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<Number> readSketch1 = union2.getResult();
+        ItemsSketch<Number> expectedSketch1 = ItemsSketch.getInstance(Number.class, 1024, (Comparator<Number>) Comparator.naturalOrder());
         expectedRightRecords.forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketch1.getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketch1.getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
+        assertThat(readSketch1.getMinItem()).isEqualTo(expectedSketch1.getMinItem());
+        assertThat(readSketch1.getMaxItem()).isEqualTo(expectedSketch1.getMaxItem());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
             assertThat(readSketch1.getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
@@ -566,9 +566,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(10L)
-                                .rank(0.1, 3L).rank(0.2, 5L).rank(0.3, 5L)
+                                .rank(0.1, 2L).rank(0.2, 4L).rank(0.3, 5L)
                                 .rank(0.4, 5L).rank(0.5, 5L).rank(0.6, 5L)
-                                .rank(0.7, 5L).rank(0.8, 7L).rank(0.9, 9L))
+                                .rank(0.7, 5L).rank(0.8, 6L).rank(0.9, 8L))
                         .build());
     }
 
@@ -616,7 +616,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(11, 2)
                                 .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
-                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 1, 1).rankBytes(0.6, 11, 2)
                                 .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
                         .build());
     }
