@@ -18,6 +18,7 @@ package sleeper.core.util;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +32,7 @@ public class DurationStatisticsTest {
 
         // When / Then
         assertThat(DurationStatistics.fromIfAny(data))
-                .get().hasToString("avg: 10s, min: 10s, max: 10s, std dev: 0s");
+                .get().hasToString("avg: 10s, min: 10s, 99%: 10s, 99.9%: 10s, max: 10s, std dev: 0s");
     }
 
     @Test
@@ -46,7 +47,18 @@ public class DurationStatisticsTest {
 
         // When / Then
         assertThat(DurationStatistics.fromIfAny(data))
-                .get().hasToString("avg: 1m 0s, min: 58s, max: 1m 2s, std dev: 1.414s");
+                .get().hasToString("avg: 1m 0s, min: 58s, 99%: 1m 2s, 99.9%: 1m 2s, max: 1m 2s, std dev: 1.414s");
+    }
+
+    @Test
+    void shouldReportStatisticsForManyDurations() {
+        // Given
+        Stream<Duration> data = IntStream.rangeClosed(1, 7200)
+                .mapToObj(Duration::ofSeconds);
+
+        // When / Then
+        assertThat(DurationStatistics.fromIfAny(data))
+                .get().hasToString("avg: 1h 0.5s, min: 1s, 99%: 1h 58m 48s, 99.9%: 1h 59m 53s, max: 2h 0s, std dev: 34m 38.46s");
     }
 
     @Test
