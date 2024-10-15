@@ -54,6 +54,6 @@ public class BulkImportJobRDDDriver {
                         input.conf(), input.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+        return session.createDataset(rdd.rdd(), RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 }

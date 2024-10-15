@@ -66,7 +66,7 @@ public class BulkImportDataframeLocalSortDriver {
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
                 new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
-                RowEncoder.apply(schemaWithPartitionField));
+                RowEncoder.encoderFor(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
@@ -90,7 +90,7 @@ public class BulkImportDataframeLocalSortDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf(), input.broadcastedPartitions()),
-                RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+                RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

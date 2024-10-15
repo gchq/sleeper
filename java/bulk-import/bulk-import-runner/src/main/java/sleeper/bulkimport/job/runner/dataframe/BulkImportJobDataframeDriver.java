@@ -64,7 +64,7 @@ public class BulkImportJobDataframeDriver {
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
                 new AddPartitionFunction(schemaAsString, input.broadcastedPartitions()),
-                RowEncoder.apply(schemaWithPartitionField));
+                RowEncoder.encoderFor(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
                 Lists.newArrayList(PARTITION_FIELD_NAME),
@@ -83,7 +83,7 @@ public class BulkImportJobDataframeDriver {
                         input.instanceProperties().saveAsString(),
                         input.tableProperties().saveAsString(),
                         input.conf()),
-                RowEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+                RowEncoder.encoderFor(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {
