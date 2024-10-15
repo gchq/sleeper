@@ -75,6 +75,20 @@ public class Sketches {
         }
     }
 
+    public static <T> Comparator<T> createComparator(Type type) {
+        if (type instanceof IntType) {
+            return (Comparator<T>) Comparator.comparing(Number::intValue);
+        } else if (type instanceof LongType) {
+            return (Comparator<T>) Comparator.comparing(Number::longValue);
+        } else if (type instanceof StringType) {
+            return (Comparator<T>) Comparator.naturalOrder();
+        } else if (type instanceof ByteArrayType) {
+            return (Comparator<T>) Comparator.naturalOrder();
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + type);
+        }
+    }
+
     public Map<String, ItemsSketch> getQuantilesSketches() {
         return keyFieldToQuantilesSketch;
     }
