@@ -264,7 +264,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildren("A", "B", "C", 499)
+                            .splitToNewChildren("A", "B", "C", 500)
                             .buildList());
         }
 
@@ -287,7 +287,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildren("A", "B", "C", 499L)
+                            .splitToNewChildren("A", "B", "C", 500L)
                             .buildList());
         }
 
@@ -301,7 +301,7 @@ public class SplitPartitionTest {
             IntStream.range(0, 10)
                     .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
-                                    .mapToObj(r -> new Record(Map.of("key", String.format("A%1d%2d", i, r))))));
+                                    .mapToObj(r -> new Record(Map.of("key", String.format("A%1d%02d", i, r))))));
 
             // When
             splitSinglePartition(schema, stateStore, generateIds("B", "C"));
@@ -310,7 +310,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildren("A", "B", "C", "A499")
+                            .splitToNewChildren("A", "B", "C", "A500")
                             .buildList());
         }
 
@@ -333,7 +333,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildren("A", "B", "C", new byte[]{(byte) 49})
+                            .splitToNewChildren("A", "B", "C", new byte[]{(byte) 50})
                             .buildList());
         }
     }
@@ -364,7 +364,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 49)
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
                             .buildList());
         }
 
@@ -391,7 +391,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 49)
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
                             .buildList());
         }
 
@@ -418,7 +418,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 49)
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
                             .buildList());
         }
 
@@ -446,7 +446,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 49)
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
                             .buildList());
         }
 
@@ -474,7 +474,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 0, new byte[]{49})
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, new byte[]{50})
                             .buildList());
         }
 
@@ -501,7 +501,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 1, new byte[]{49})
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, new byte[]{50})
                             .buildList());
         }
     }
@@ -534,7 +534,7 @@ public class SplitPartitionTest {
 
             PartitionTree resultant = new PartitionsBuilder(schema)
                     .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", 50)
+                    .splitToNewChildren("A", "B", "C", 51)
                     .buildTree();
 
             assertThat(sentAsyncCommits).containsExactly(new SplitPartitionCommitRequest(

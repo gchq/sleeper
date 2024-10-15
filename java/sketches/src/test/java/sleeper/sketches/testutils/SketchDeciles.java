@@ -17,6 +17,7 @@ package sleeper.sketches.testutils;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -57,7 +58,7 @@ public class SketchDeciles {
     }
 
     private static Map<Double, Object> readDecilesByRank(ItemsSketch<?> sketch) {
-        Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES);
+        Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES, QuantileSearchCriteria.EXCLUSIVE);
         if (values == null) {
             return Map.of();
         }

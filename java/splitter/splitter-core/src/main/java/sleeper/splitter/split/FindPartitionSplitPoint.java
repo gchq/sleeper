@@ -18,6 +18,7 @@ package sleeper.splitter.split;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
+import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -72,7 +73,7 @@ public class FindPartitionSplitPoint {
         ItemsSketch<T> sketch = unionSketches(field);
         Comparator<T> comparator = Sketches.createComparator(field.getType());
         T min = sketch.getMinItem();
-        T median = sketch.getQuantile(0.5D);
+        T median = sketch.getQuantile(0.5D, QuantileSearchCriteria.EXCLUSIVE);
         T max = sketch.getMaxItem();
         LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
         if (comparator.compare(min, max) > 0) {
