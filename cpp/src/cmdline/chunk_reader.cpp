@@ -59,17 +59,19 @@ int main(int argc, char **argv) {
 
     // Loop doing reads
     ::size_t chunkNo = 0;
+    ::size_t rowsProcessed = 0;
     while (reader.has_next()) {
         SPDLOG_INFO("Reading chunk {:d}...", chunkNo);
         auto const table = reader.read_chunk();
         SPDLOG_INFO("Read chunk of {:d} rows", table.metadata.num_rows_per_source.at(0));
+        rowsProcessed += table.metadata.num_rows_per_source.at(0);
         std::cout << "Write chunk ";
         for (::size_t i = 0; i < writeRepeats; i++) {
             std::cout << i << ", " << std::flush;
             writer.write(*table.tbl);
         }
         std::cout << '\n';
-        SPDLOG_INFO("Wrote chunk {:d}", chunkNo);
+        SPDLOG_INFO("Wrote chunk {:d}, rows processed {:d}", chunkNo, rowsProcessed);
         chunkNo++;
     }
 
