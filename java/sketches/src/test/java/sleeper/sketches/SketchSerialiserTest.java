@@ -32,6 +32,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,23 +48,28 @@ public class SketchSerialiserTest {
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
-        Sketches sketches = Sketches.from(schema);
-        ItemsSketch<Number> sketch1 = sketches.getQuantilesSketch("key1");
+        ItemsSketch<Integer> sketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (int i = 0; i < 100; i++) {
             sketch1.update(i);
         }
-        ItemsSketch<Number> sketch2 = sketches.getQuantilesSketch("key2");
+        ItemsSketch<Long> sketch2 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (long i = 1_000_000L; i < 1_000_500L; i++) {
             sketch2.update(i);
         }
-        ItemsSketch<String> sketch3 = sketches.getQuantilesSketch("key3");
+        ItemsSketch<String> sketch3 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (long i = 1_000_000L; i < 1_000_500L; i++) {
             sketch3.update("" + i);
         }
-        ItemsSketch<ByteArray> sketch4 = sketches.getQuantilesSketch("key4");
+        ItemsSketch<ByteArray> sketch4 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (byte i = 0; i < 100; i++) {
             sketch4.update(ByteArray.wrap(new byte[]{i, (byte) (i + 1)}));
         }
+        Map<String, ItemsSketch> map = new HashMap<>();
+        map.put("key1", sketch1);
+        map.put("key2", sketch2);
+        map.put("key3", sketch3);
+        map.put("key4", sketch4);
+        Sketches sketches = new Sketches(map);
         SketchSerialiser sketchSerialiser = new SketchSerialiser(schema);
 
         // When

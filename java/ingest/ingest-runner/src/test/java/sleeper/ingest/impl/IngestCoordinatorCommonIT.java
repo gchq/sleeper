@@ -55,7 +55,6 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
-import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -169,8 +168,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -218,8 +221,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(IntStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(2, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -265,8 +272,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(LongStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(2, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -317,8 +328,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(keys.subList(0, 102));
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(102, 200));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -369,8 +384,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2});
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{64, 65});
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -432,8 +451,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(stringKeys.subList(306, 600));
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(306, 600));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -490,8 +513,17 @@ public class IngestCoordinatorCommonIT {
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -543,8 +575,17 @@ public class IngestCoordinatorCommonIT {
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 20L), List.of(100, 50L));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -602,8 +643,17 @@ public class IngestCoordinatorCommonIT {
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -644,8 +694,12 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactly(List.of(0L), List.of(1L));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -691,8 +745,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue, longValue))
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                duplicatedRecordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @ParameterizedTest
@@ -770,8 +828,12 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, expectedRecords));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key").orElseThrow(),
+                new RecordGenerator.RecordListAndSchema(expectedRecords, recordListAndSchema.sleeperSchema),
+                actualFiles,
+                hadoopConfiguration);
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {

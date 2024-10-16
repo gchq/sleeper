@@ -15,7 +15,18 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import com.facebook.collections.ByteArray;
+import org.apache.datasketches.quantiles.ItemsSketch;
+
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileReference;
+
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A utility class providing static functions that are useful when wrtiting partition files.
@@ -45,5 +56,42 @@ public class PartitionFileWriterUtils {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
+    }
+
+    /**
+     * Create a map with an empty sketch for all row keys in a schema. This is to be used with
+     * {@link #updateQuantileSketchMap} to create sketches for a file.
+     *
+     * @param  sleeperSchema The schema to create sketches for
+     * @return               A map from each row key field name to an empty sketch
+     */
+    public static Map<String, ItemsSketch> createQuantileSketchMap(Schema sleeperSchema) {
+        Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
+        sleeperSchema.getRowKeyFields().forEach(rowKeyField -> {
+            ItemsSketch sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+            keyFieldToSketch.put(rowKeyField.getName(), sketch);
+        });
+        return keyFieldToSketch;
+    }
+
+    /**
+     * Updates sketches with a new record, for every row key in a schema. The map and sketches are updated in-place.
+     * This is to be used with {@link #createQuantileSketchMap} to create sketches for a file.
+     *
+     * @param sleeperSchema       The schema to create sketches for
+     * @param keyFieldToSketchMap A map from each row key field name to a sketch
+     * @param record              The record to update each sketch with
+     */
+    public static void updateQuantileSketchMap(
+            Schema sleeperSchema, Map<String, ItemsSketch> keyFieldToSketchMap, Record record) {
+        for (Field rowKeyField : sleeperSchema.getRowKeyFields()) {
+            if (rowKeyField.getType() instanceof ByteArrayType) {
+                byte[] value = (byte[]) record.get(rowKeyField.getName());
+                keyFieldToSketchMap.get(rowKeyField.getName()).update(ByteArray.wrap(value));
+            } else {
+                Object value = record.get(rowKeyField.getName());
+                keyFieldToSketchMap.get(rowKeyField.getName()).update(value);
+            }
+        }
     }
 }

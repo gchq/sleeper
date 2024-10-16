@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
+
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.commit.CompactionJobCommitter;
@@ -44,8 +46,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -73,12 +75,12 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
-    private final InMemoryDataStore dataStore;
-    private final InMemorySketchesStore sketchesStore;
+    private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
 
-    public InMemoryCompaction(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
-        this.dataStore = dataStore;
-        this.sketchesStore = sketchesStore;
+    public InMemoryCompaction(InMemoryDataStore data, InMemorySketchesStore sketches) {
+        this.data = data;
+        this.sketches = sketches;
     }
 
     public CompactionDriver driver(SystemTestInstanceContext instance) {
@@ -221,14 +223,14 @@ public class InMemoryCompaction {
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
-        Sketches sketches = Sketches.from(schema);
+        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
         List<Record> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
-            sketches.update(schema, record);
+            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
         });
-        dataStore.addFile(job.getOutputFile(), records);
-        sketchesStore.addSketchForFile(job.getOutputFile(), sketches);
+        data.addFile(job.getOutputFile(), records);
+        sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
         return new RecordsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
@@ -245,7 +247,7 @@ public class InMemoryCompaction {
         private long count = 0;
 
         CountingIterator(String filename, Region region, Schema schema) {
-            iterator = dataStore.streamRecords(List.of(filename))
+            iterator = data.streamRecords(List.of(filename))
                     .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
                     .iterator();
         }

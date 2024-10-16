@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
+
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -24,11 +26,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,21 +41,21 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryPartitionFileWriter implements PartitionFileWriter {
 
-    private final InMemoryDataStore dataStore;
-    private final InMemorySketchesStore sketchesStore;
+    private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
     private final Partition partition;
     private final String filename;
     private final List<Record> records = new ArrayList<>();
-    private final Sketches sketches;
+    private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private final Schema schema;
 
-    private InMemoryPartitionFileWriter(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
-        this.dataStore = dataStore;
-        this.sketchesStore = sketchesStore;
+    private InMemoryPartitionFileWriter(InMemoryDataStore data, InMemorySketchesStore sketches, Partition partition, String filename, Schema schema) {
+        this.data = data;
+        this.sketches = sketches;
         this.partition = partition;
         this.filename = filename;
         this.schema = schema;
-        this.sketches = Sketches.from(schema);
+        this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
     }
 
     public static PartitionFileWriterFactory factory(
@@ -67,13 +70,16 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) {
         records.add(record);
-        sketches.update(schema, record);
+        PartitionFileWriterUtils.updateQuantileSketchMap(
+                schema,
+                keyFieldToSketchMap,
+                record);
     }
 
     @Override
     public CompletableFuture<FileReference> close() {
-        dataStore.addFile(filename, records);
-        sketchesStore.addSketchForFile(filename, sketches);
+        data.addFile(filename, records);
+        sketches.addSketchForFile(filename, keyFieldToSketchMap);
         return CompletableFuture.completedFuture(FileReference.builder()
                 .filename(filename)
                 .partitionId(partition.getId())

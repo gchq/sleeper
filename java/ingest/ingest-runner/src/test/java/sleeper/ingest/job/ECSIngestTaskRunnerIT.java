@@ -30,7 +30,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.ingest.testutils.ResultVerifier;
 
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -88,8 +88,12 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @Test
@@ -130,8 +134,11 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .containsExactlyElementsOf(Collections.nCopies(10,
                         fileReferenceFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     private void sendJobs(List<IngestJob> jobs) {

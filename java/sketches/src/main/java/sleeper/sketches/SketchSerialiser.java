@@ -16,10 +16,10 @@
 package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
-import org.apache.datasketches.common.ArrayOfItemsSerDe;
-import org.apache.datasketches.common.ArrayOfNumbersSerDe;
-import org.apache.datasketches.common.ArrayOfStringsSerDe;
-import org.apache.datasketches.common.Util;
+import org.apache.datasketches.ArrayOfItemsSerDe;
+import org.apache.datasketches.ArrayOfNumbersSerDe;
+import org.apache.datasketches.ArrayOfStringsSerDe;
+import org.apache.datasketches.Util;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
 import org.apache.datasketches.quantiles.ItemsSketch;
@@ -30,7 +30,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -72,42 +71,35 @@ public class SketchSerialiser {
     public Sketches deserialise(DataInputStream dis) throws IOException {
         Map<String, ItemsSketch> keyFieldToQuantilesSketch = new HashMap<>();
         for (Field field : schema.getRowKeyFields()) {
-            keyFieldToQuantilesSketch.put(field.getName(), deserialise(dis, field.getType()));
+            if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
+                int length = dis.readInt();
+                byte[] b = new byte[length];
+                dis.readFully(b);
+                ItemsSketch<Object> sketch = ItemsSketch.getInstance(WritableMemory.writableWrap(b), Comparator.naturalOrder(), (ArrayOfItemsSerDe) new ArrayOfNumbersSerDe());
+                keyFieldToQuantilesSketch.put(field.getName(), sketch);
+            } else if (field.getType() instanceof StringType) {
+                int length = dis.readInt();
+                byte[] b = new byte[length];
+                dis.readFully(b);
+                ItemsSketch<String> sketch = ItemsSketch.getInstance(Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
+                keyFieldToQuantilesSketch.put(field.getName(), sketch);
+            } else if (field.getType() instanceof ByteArrayType) {
+                int length = dis.readInt();
+                byte[] b = new byte[length];
+                dis.readFully(b);
+                ItemsSketch<ByteArray> sketch = ItemsSketch.getInstance(WritableMemory.writableWrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
+                keyFieldToQuantilesSketch.put(field.getName(), sketch);
+            } else {
+                throw new IOException("Unknown key type of " + field.getType());
+            }
         }
         return new Sketches(keyFieldToQuantilesSketch);
-    }
-
-    private static ItemsSketch<?> deserialise(DataInputStream dis, Type type) throws IOException {
-        int length = dis.readInt();
-        byte[] b = new byte[length];
-        dis.readFully(b);
-        if (type instanceof IntType) {
-            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::intValue), new ArrayOfNumbersSerDe());
-        } else if (type instanceof LongType) {
-            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::longValue), new ArrayOfNumbersSerDe());
-        } else if (type instanceof StringType) {
-            return ItemsSketch.getInstance(String.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
-        } else if (type instanceof ByteArrayType) {
-            return ItemsSketch.getInstance(ByteArray.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
-        } else {
-            throw new IOException("Unknown key type of " + type);
-        }
     }
 
     /**
      * The following code is heavily based on ArrayOfStringsSerDe from the DataSketches library.
      */
     public static class ArrayOfByteArraysSerSe extends ArrayOfItemsSerDe<ByteArray> {
-
-        @Override
-        public byte[] serializeToByteArray(ByteArray item) {
-            byte[] array = item.getArray();
-            byte[] bytes = new byte[array.length + Integer.BYTES];
-            WritableMemory mem = WritableMemory.writableWrap(bytes);
-            mem.putInt(0, array.length);
-            mem.putByteArray(Integer.BYTES, array, 0, array.length);
-            return bytes;
-        }
 
         @Override
         public byte[] serializeToByteArray(ByteArray[] items) {
@@ -130,9 +122,9 @@ public class SketchSerialiser {
         }
 
         @Override
-        public ByteArray[] deserializeFromMemory(Memory memory, long startOffsetBytes, int numItems) {
+        public ByteArray[] deserializeFromMemory(Memory memory, int numItems) {
             ByteArray[] array = new ByteArray[numItems];
-            long offsetBytes = startOffsetBytes;
+            long offsetBytes = 0;
             for (int i = 0; i < numItems; i++) {
                 Util.checkBounds(offsetBytes, Integer.BYTES, memory.getCapacity());
                 int byteArrayLength = memory.getInt(offsetBytes);
@@ -144,31 +136,6 @@ public class SketchSerialiser {
                 array[i] = ByteArray.wrap(bytes);
             }
             return array;
-        }
-
-        @Override
-        public int sizeOf(ByteArray item) {
-            return Integer.BYTES + item.getLength();
-        }
-
-        @Override
-        public int sizeOf(Memory memory, long startOffsetBytes, int numItems) {
-            long offsetBytes = startOffsetBytes;
-            for (int i = 0; i < numItems; i++) {
-                int byteArrayLength = memory.getInt(offsetBytes);
-                offsetBytes += Integer.BYTES + byteArrayLength;
-            }
-            return (int) (offsetBytes - startOffsetBytes);
-        }
-
-        @Override
-        public String toString(ByteArray item) {
-            return item.toString();
-        }
-
-        @Override
-        public Class<ByteArray> getClassOfT() {
-            return ByteArray.class;
         }
     }
 }

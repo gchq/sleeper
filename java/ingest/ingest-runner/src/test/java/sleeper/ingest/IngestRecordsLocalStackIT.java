@@ -17,7 +17,6 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -31,20 +30,20 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 
 public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
-        List<Record> records = getRecords();
 
         // When
-        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(records.size());
+        assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences().stream()
@@ -55,12 +54,18 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
                 .containsExactly(fileReferenceFactory.rootFile(2L));
         //  - Read file and check it has correct records
         assertThat(readRecords(fileReferences.get(0)))
-                .containsExactlyElementsOf(records);
+                .containsExactlyElementsOf(getRecords());
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
-                .isEqualTo(SketchesDeciles.from(schema, records));
+        assertThat(SketchesDeciles.from(getSketches(schema, fileReferences.get(0).getFilename())))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .min(1L).max(3L)
+                                .rank(0.1, 1L).rank(0.2, 1L).rank(0.3, 1L)
+                                .rank(0.4, 1L).rank(0.5, 3L).rank(0.6, 3L)
+                                .rank(0.7, 3L).rank(0.8, 3L).rank(0.9, 3L))
+                        .build());
     }
 
     @Test

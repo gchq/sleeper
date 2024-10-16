@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -31,6 +32,7 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
@@ -48,7 +50,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
     private final ParquetWriter<Record> parquetWriter;
-    private final Sketches sketches;
+    private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
 
     /**
@@ -80,7 +82,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesFileName = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
-        this.sketches = Sketches.from(sleeperSchema);
+        this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;
     }
 
@@ -93,7 +95,10 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) throws IOException {
         parquetWriter.write(record);
-        sketches.update(sleeperSchema, record);
+        PartitionFileWriterUtils.updateQuantileSketchMap(
+                sleeperSchema,
+                keyFieldToSketchMap,
+                record);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -114,7 +119,8 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
         new SketchesSerDeToS3(sleeperSchema).saveToHadoopFS(
                 new Path(quantileSketchesFileName),
-                sketches, hadoopConfiguration);
+                new Sketches(keyFieldToSketchMap),
+                hadoopConfiguration);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
         FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,

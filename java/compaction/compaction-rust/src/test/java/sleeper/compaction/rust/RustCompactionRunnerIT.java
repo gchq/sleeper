@@ -237,7 +237,13 @@ public class RustCompactionRunnerIT {
 
             // Then
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.builder()
+                            .field("key", deciles -> deciles
+                                    .min("record-1").max("record-2")
+                                    .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
+                                    .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")
+                                    .rank(0.7, "record-2").rank(0.8, "record-2").rank(0.9, "record-2"))
+                            .build());
         }
     }
 

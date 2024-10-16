@@ -301,7 +301,7 @@ public class SplitPartitionTest {
             IntStream.range(0, 10)
                     .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
                             IntStream.range(0, 100)
-                                    .mapToObj(r -> new Record(Map.of("key", String.format("A%1d%02d", i, r))))));
+                                    .mapToObj(r -> new Record(Map.of("key", String.format("A%s%s", i, r))))));
 
             // When
             splitSinglePartition(schema, stateStore, generateIds("B", "C"));
@@ -310,7 +310,7 @@ public class SplitPartitionTest {
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildren("A", "B", "C", "A500")
+                            .splitToNewChildren("A", "B", "C", "A50")
                             .buildList());
         }
 

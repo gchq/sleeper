@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
+import com.facebook.collections.ByteArray;
+import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -32,6 +34,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.util.LoggedDuration;
@@ -41,8 +44,11 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class SingleFileWritingIterator implements Iterator<Row> {
@@ -56,7 +62,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final Configuration conf;
     private final PartitionTree partitionTree;
     private ParquetWriter<Record> parquetWriter;
-    private Sketches sketches;
+    private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
     private final String outputFilename;
@@ -119,14 +125,14 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         if (numRecords % 1_000_000L == 0) {
             LOGGER.info("Wrote {} records", numRecords);
         }
-        sketches.update(schema, record);
+        updateQuantilesSketch(record, sketches, schema.getRowKeyFields());
     }
 
     private void initialiseState(String partitionId) throws IOException {
         // Create writer
         parquetWriter = createWriter(partitionId);
         // Initialise sketches
-        sketches = Sketches.from(schema);
+        sketches = getSketches(schema.getRowKeyFields());
     }
 
     private void closeFile() throws IOException {
@@ -135,7 +141,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             return;
         }
         parquetWriter.close();
-        new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), sketches, conf);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Finished writing {} records to file {} in {} (rate was {} per second)",
@@ -156,6 +162,30 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             i++;
         }
         return record;
+    }
+
+    // TODO These methods are copies of the same ones in IngestRecordsFromIterator -
+    // move to sketches module
+    private Map<String, ItemsSketch> getSketches(List<Field> rowKeyFields) {
+        Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
+        for (Field rowKeyField : rowKeyFields) {
+            ItemsSketch<?> sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+            keyFieldToSketch.put(rowKeyField.getName(), sketch);
+        }
+        return keyFieldToSketch;
+    }
+
+    private void updateQuantilesSketch(
+            Record record, Map<String, ItemsSketch> keyFieldToSketch, List<Field> rowKeyFields) {
+        for (Field rowKeyField : rowKeyFields) {
+            if (rowKeyField.getType() instanceof ByteArrayType) {
+                byte[] value = (byte[]) record.get(rowKeyField.getName());
+                keyFieldToSketch.get(rowKeyField.getName()).update(ByteArray.wrap(value));
+            } else {
+                Object value = record.get(rowKeyField.getName());
+                keyFieldToSketch.get(rowKeyField.getName()).update(value);
+            }
+        }
     }
 
     private ParquetWriter<Record> createWriter(String partitionId) throws IOException {

@@ -16,31 +16,34 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
+
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 
     private final InMemoryDataStore sourceFiles;
-    private final InMemoryDataStore dataStore;
-    private final InMemorySketchesStore sketchesStore;
+    private final InMemoryDataStore data;
+    private final InMemorySketchesStore sketches;
 
     public InMemorySourceFilesDriver(
-            InMemoryDataStore sourceFiles, InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
+            InMemoryDataStore sourceFiles, InMemoryDataStore data, InMemorySketchesStore sketches) {
         this.sourceFiles = sourceFiles;
-        this.dataStore = dataStore;
-        this.sketchesStore = sketchesStore;
+        this.data = data;
+        this.sketches = sketches;
     }
 
     @Override
@@ -48,18 +51,18 @@ public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
             String path, boolean writeSketches, Iterator<Record> records) {
         List<Record> recordList = new ArrayList<>();
         Schema schema = tableProperties.getSchema();
-        Sketches sketches = Sketches.from(schema);
+        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
         for (Record record : (Iterable<Record>) () -> records) {
             recordList.add(record);
-            sketches.update(schema, record);
+            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
         }
         if (path.contains(instanceProperties.get(DATA_BUCKET))) {
-            dataStore.addFile(path, recordList);
+            data.addFile(path, recordList);
         } else {
             sourceFiles.addFile(path, recordList);
         }
         if (writeSketches) {
-            sketchesStore.addSketchForFile(path, sketches);
+            sketches.addSketchForFile(path, keyFieldToSketchMap);
         }
     }
 }

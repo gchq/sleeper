@@ -45,7 +45,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -136,8 +136,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .containsExactly(LongStream.range(-100, 0).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(0, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     @Test
@@ -166,8 +170,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .containsExactly(-90L, -79L, -68L, -50L, -2L);
         assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(12L, 14L, 41L, 47L, 83L);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration);
     }
 
     private void ingestRecords(
