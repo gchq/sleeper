@@ -162,7 +162,7 @@ public class AthenaStack extends NestedStack {
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
-                .runtime(Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .handler(className)
                 .environment(env));

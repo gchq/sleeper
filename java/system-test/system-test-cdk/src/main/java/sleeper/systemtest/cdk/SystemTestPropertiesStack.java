@@ -67,7 +67,7 @@ public class SystemTestPropertiesStack extends NestedStack {
                         .logGroupName(functionName)
                         .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                         .build())
-                .runtime(Runtime.JAVA_11));
+                .runtime(Runtime.JAVA_17));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
