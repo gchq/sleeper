@@ -18,7 +18,6 @@ package sleeper.splitter.split;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
-import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -72,9 +71,9 @@ public class FindPartitionSplitPoint {
     private <T> Optional<T> splitPointForField(Field field, int dimension) {
         ItemsSketch<T> sketch = unionSketches(field);
         Comparator<T> comparator = Sketches.createComparator(field.getType());
-        T min = sketch.getMinItem();
-        T median = sketch.getQuantile(0.5D, QuantileSearchCriteria.EXCLUSIVE);
-        T max = sketch.getMaxItem();
+        T min = sketch.getMinValue();
+        T median = sketch.getQuantile(0.5D);
+        T max = sketch.getMaxValue();
         LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
         if (comparator.compare(min, max) > 0) {
             throw new IllegalStateException("Min > max");
@@ -94,7 +93,7 @@ public class FindPartitionSplitPoint {
             String sketchesFile = fileName.replace(".parquet", ".sketches");
             LOGGER.info("Loading Sketches from {}", sketchesFile);
             Sketches sketches = loadSketches(sketchesFile);
-            union.union(sketches.getQuantilesSketch(field.getName()));
+            union.update(sketches.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
     }
