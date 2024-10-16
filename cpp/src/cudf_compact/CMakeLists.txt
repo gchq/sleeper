@@ -36,7 +36,7 @@ target_link_options(
   "LINKER:--copy-dt-needed-entries")
 
 set_source_files_properties(
-  ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all")
+  ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all;-ccbin=${CMAKE_C_COMPILER}")
 
 set_target_properties(
   cudf_compact

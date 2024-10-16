@@ -43,7 +43,8 @@ RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.
     && mkdir -p /opt/cmake \
     && tar --strip-components 1 -C /opt/cmake -zxf cmake-3.30.5-linux-x86_64.tar.gz \
     && rm -rf cmake-3.30.5-linux-x86_64.tar.gz \
-    && echo "export PATH=\$PATH:/opt/cmake/bin" >"/etc/profile.d/cmake.sh"
+    && echo "export PATH=\$PATH:/opt/cmake/bin" >"/etc/profile.d/cmake.sh" \
+    && chmod 755 /etc/profile.d/cmake.sh
 
 # Install include-what-you-use
 RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -b clang_18 \
@@ -51,6 +52,7 @@ RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -
     && cd build \
     && make -j $(nproc) \
     && make install \
+    && cd .. \
     && rm -rf include-what-you-use build
 
 # Drop to normal user
