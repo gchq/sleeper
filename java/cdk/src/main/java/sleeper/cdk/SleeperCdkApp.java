@@ -42,6 +42,7 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.InstanceRolesStack;
 import sleeper.cdk.stack.KeepLambdaWarmStack;
+import sleeper.cdk.stack.LoggingStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
@@ -117,15 +118,18 @@ public class SleeperCdkApp extends Stack {
                 .collect(toUnmodifiableSet());
 
         List<IMetric> errorMetrics = new ArrayList<>();
+
+        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties, jars);
+        new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack, jars);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
@@ -136,15 +140,15 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, policiesStack).getResources();
         CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
                 instanceProperties, policiesStack).getResources();
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack, jars);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
-                configBucketStack, tableIndexStack,
+                loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestStatusStore, compactionStatusStore,
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
-                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",

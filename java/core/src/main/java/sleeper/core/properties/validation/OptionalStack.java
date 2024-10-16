@@ -18,8 +18,8 @@ package sleeper.core.properties.validation;
 import org.apache.commons.lang3.EnumUtils;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Valid values for optional deployment stacks. Determines which components of Sleeper will be deployed.
@@ -93,6 +93,11 @@ public enum OptionalStack {
             PartitionSplittingStack,
             QueryStack);
 
+    public static final List<OptionalStack> DEFAULT_STACKS = List.of(
+            IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrStudioStack,
+            QueryStack, AthenaStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
+            DashboardStack, TableMetricsStack);
+
     /**
      * Checks if the value is a valid optional deployment stack.
      *
@@ -104,10 +109,24 @@ public enum OptionalStack {
                 .allMatch(item -> EnumUtils.isValidEnumIgnoreCase(OptionalStack.class, item));
     }
 
+    /**
+     * Returns the default value for the property to set optional stacks for an instance. This value is a
+     * comma-separated string.
+     *
+     * @return the default value
+     */
     public static String getDefaultValue() {
-        return Stream.of(CompactionStack, GarbageCollectorStack, IngestStack, IngestBatcherStack, PartitionSplittingStack,
-                QueryStack, AthenaStack, EmrServerlessBulkImportStack, EmrStudioStack, DashboardStack, TableMetricsStack)
-                .map(a -> a.toString())
-                .collect(Collectors.joining(","));
+        return DEFAULT_STACKS.stream()
+                .map(OptionalStack::toString)
+                .collect(joining(","));
+    }
+
+    /**
+     * Returns a list of all optional stacks.
+     *
+     * @return all optional stacks
+     */
+    public static List<OptionalStack> all() {
+        return List.of(values());
     }
 }
