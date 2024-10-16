@@ -16,10 +16,10 @@
 package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
-import org.apache.datasketches.common.ArrayOfItemsSerDe;
-import org.apache.datasketches.common.ArrayOfNumbersSerDe;
-import org.apache.datasketches.common.ArrayOfStringsSerDe;
-import org.apache.datasketches.common.Util;
+import org.apache.datasketches.ArrayOfItemsSerDe;
+import org.apache.datasketches.ArrayOfNumbersSerDe;
+import org.apache.datasketches.ArrayOfStringsSerDe;
+import org.apache.datasketches.Util;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
 import org.apache.datasketches.quantiles.ItemsSketch;
@@ -82,13 +82,13 @@ public class SketchSerialiser {
         byte[] b = new byte[length];
         dis.readFully(b);
         if (type instanceof IntType) {
-            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::intValue), new ArrayOfNumbersSerDe());
+            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.comparing(Number::intValue), new ArrayOfNumbersSerDe());
         } else if (type instanceof LongType) {
-            return ItemsSketch.getInstance(Number.class, Memory.wrap(b), Comparator.comparing(Number::longValue), new ArrayOfNumbersSerDe());
+            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.comparing(Number::longValue), new ArrayOfNumbersSerDe());
         } else if (type instanceof StringType) {
-            return ItemsSketch.getInstance(String.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
+            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
         } else if (type instanceof ByteArrayType) {
-            return ItemsSketch.getInstance(ByteArray.class, Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
+            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
         } else {
             throw new IOException("Unknown key type of " + type);
         }
@@ -98,16 +98,6 @@ public class SketchSerialiser {
      * The following code is heavily based on ArrayOfStringsSerDe from the DataSketches library.
      */
     public static class ArrayOfByteArraysSerSe extends ArrayOfItemsSerDe<ByteArray> {
-
-        @Override
-        public byte[] serializeToByteArray(ByteArray item) {
-            byte[] array = item.getArray();
-            byte[] bytes = new byte[array.length + Integer.BYTES];
-            WritableMemory mem = WritableMemory.writableWrap(bytes);
-            mem.putInt(0, array.length);
-            mem.putByteArray(Integer.BYTES, array, 0, array.length);
-            return bytes;
-        }
 
         @Override
         public byte[] serializeToByteArray(ByteArray[] items) {
@@ -130,9 +120,9 @@ public class SketchSerialiser {
         }
 
         @Override
-        public ByteArray[] deserializeFromMemory(Memory memory, long startOffsetBytes, int numItems) {
+        public ByteArray[] deserializeFromMemory(Memory memory, int numItems) {
             ByteArray[] array = new ByteArray[numItems];
-            long offsetBytes = startOffsetBytes;
+            long offsetBytes = 0;
             for (int i = 0; i < numItems; i++) {
                 Util.checkBounds(offsetBytes, Integer.BYTES, memory.getCapacity());
                 int byteArrayLength = memory.getInt(offsetBytes);
@@ -144,31 +134,6 @@ public class SketchSerialiser {
                 array[i] = ByteArray.wrap(bytes);
             }
             return array;
-        }
-
-        @Override
-        public int sizeOf(ByteArray item) {
-            return Integer.BYTES + item.getLength();
-        }
-
-        @Override
-        public int sizeOf(Memory memory, long startOffsetBytes, int numItems) {
-            long offsetBytes = startOffsetBytes;
-            for (int i = 0; i < numItems; i++) {
-                int byteArrayLength = memory.getInt(offsetBytes);
-                offsetBytes += Integer.BYTES + byteArrayLength;
-            }
-            return (int) (offsetBytes - startOffsetBytes);
-        }
-
-        @Override
-        public String toString(ByteArray item) {
-            return item.toString();
-        }
-
-        @Override
-        public Class<ByteArray> getClassOfT() {
-            return ByteArray.class;
         }
     }
 }

@@ -83,7 +83,7 @@ public class SketchesDeciles {
             Sketches sketches = getSketches(schema, file, conf);
             for (Field field : schema.getRowKeyFields()) {
                 ItemsUnion union = unionByField.get(field.getName());
-                union.union(sketches.getQuantilesSketch(field.getName()));
+                union.update(sketches.getQuantilesSketch(field.getName()));
             }
         }
         Sketches sketches = new Sketches(unionByField.entrySet().stream()
