@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.LoggedDuration;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -35,6 +36,7 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.util.TestContext;
 
+import java.time.Instant;
 import java.util.Set;
 
 public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
@@ -54,6 +56,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private SleeperSystemTest dsl = null;
     private AfterTestReports reporting = null;
     private AfterTestPurgeQueues queuePurging = null;
+    private Instant testStartTime = null;
 
     protected SleeperSystemTestExtension(SystemTestDeploymentContext context) {
         parameters = context.parameters();
@@ -100,6 +103,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        testStartTime = Instant.now();
         LOGGER.info("Beginning system test: {}",
                 TestContextFactory.testContext(context).getTestClassAndMethod());
         deployedResources.resetProperties();
@@ -116,12 +120,17 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         context.getExecutionException().ifPresentOrElse(failure -> {
             reporting.afterTestFailed(testContext);
             queuePurging.testFailed();
-            LOGGER.error("Failed system test: {}", testContext.getTestClassAndMethod(), failure);
+            LOGGER.error("Failed system test in {}: {}",
+                    LoggedDuration.withShortOutput(testStartTime, Instant.now()),
+                    testContext.getTestClassAndMethod(), failure);
         }, () -> {
             reporting.afterTestPassed(testContext);
             queuePurging.testPassed();
-            LOGGER.info("Passed system test: {}", testContext.getTestClassAndMethod());
+            LOGGER.info("Passed system test in {}: {}",
+                    LoggedDuration.withShortOutput(testStartTime, Instant.now()),
+                    testContext.getTestClassAndMethod());
         });
+        testStartTime = null;
         dsl = null;
         reporting = null;
         queuePurging = null;
