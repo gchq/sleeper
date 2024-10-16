@@ -28,7 +28,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     man-db \
     unminimize \
     && yes | unminimize \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && groupdel systemd-journal
+# The systemd-journal group is deleted because it is installed by one of the above packages and causes conflicts
+# propagating the host group ID for the docker group.
 
 RUN mkdir -p /etc/apt/keyrings
 
