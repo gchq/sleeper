@@ -68,6 +68,11 @@
         <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
         <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
         <!--
+        Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as it is
+        provided in EMR.
+        -->
+        <datasketches.version>3.3.0</datasketches.version>
+        <!--
         Hadoop AWS uses an old version of wildfly-openssl.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
         -->
@@ -143,7 +148,6 @@
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.11.0</gson.version>
-        <datasketches.version>6.1.1</datasketches.version>
         <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.7</java-websocket.version>
