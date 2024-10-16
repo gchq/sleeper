@@ -29,9 +29,12 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unminimize \
     && yes | unminimize \
     && rm -rf /var/lib/apt/lists/* \
+    && userdel -r ubuntu \
     && groupdel systemd-journal
-# The systemd-journal group is deleted because it is installed by one of the above packages and causes conflicts
-# propagating the host group ID for the docker group.
+# The deleted user and group are added either by one of the above packages, or by unminimize. They are deleted to avoid
+# conflicts when propagating the host user and group IDs.
+# The ubuntu user is deleted because it conflicts with the sleeper user.
+# The systemd-journal group is deleted because it conflicts with the docker group.
 
 RUN mkdir -p /etc/apt/keyrings
 

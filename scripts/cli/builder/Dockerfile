@@ -26,10 +26,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     gcc g++ cmake make \
     pkg-config libssl-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && userdel -r ubuntu
-# The ubuntu user is deleted because it is installed by one of the above packages and causes conflicts with the user &
-# group ID when propagating the host user IDs to the sleeper user.
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
 # Change install location because the default is in the home directory, which is overwritten by Dev Containers.
