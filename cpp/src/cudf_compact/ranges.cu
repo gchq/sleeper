@@ -218,8 +218,9 @@ std::deque<scalar_pair> getRanges(std::vector<page_info> const &pages,
         cur_row_count = filtered_pages[split_pos].row_count;
 
         // reached end -> break
-        if (cur_row_count == start_row)
+        if (cur_row_count == start_row) {
             break;
+        }
 
         // update current positions and size accounted for
         cur_pos = split_pos;
