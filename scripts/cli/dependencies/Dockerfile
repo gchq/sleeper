@@ -14,14 +14,13 @@
 
 FROM ubuntu:24.04
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     ca-certificates \
     curl \
     gnupg \
     lsb-release \
     unzip \
     less \
-    openjdk-17-jre \
     nano \
     vim \
     emacs \
@@ -32,6 +31,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /etc/apt/keyrings
+
+# Install Amazon Corretto JDK
+RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
+    | tee /etc/apt/sources.list.d/corretto.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    java-17-amazon-corretto-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg

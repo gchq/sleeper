@@ -17,8 +17,6 @@ FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
     maven \
-    openjdk-17-jdk \
-    openjdk-17-source \
     git \
     python3 \
     python3-pip \
