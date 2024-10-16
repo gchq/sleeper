@@ -17,11 +17,16 @@ package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.datasketches.quantiles.ItemsUnion;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,10 +42,51 @@ public class Sketches {
     public static Sketches from(Schema schema) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            ItemsSketch<?> sketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-            keyFieldToSketch.put(rowKeyField.getName(), sketch);
+            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType(), 1024));
         }
         return new Sketches(keyFieldToSketch);
+    }
+
+    public static <T> ItemsSketch<T> createSketch(Type type, int k) {
+        if (type instanceof IntType) {
+            return (ItemsSketch<T>) ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::intValue));
+        } else if (type instanceof LongType) {
+            return (ItemsSketch<T>) ItemsSketch.getInstance(Number.class, k, Comparator.comparing(Number::longValue));
+        } else if (type instanceof StringType) {
+            return (ItemsSketch<T>) ItemsSketch.getInstance(String.class, k, Comparator.naturalOrder());
+        } else if (type instanceof ByteArrayType) {
+            return (ItemsSketch<T>) ItemsSketch.getInstance(ByteArray.class, k, Comparator.naturalOrder());
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + type);
+        }
+    }
+
+    public static <T> ItemsUnion<T> createUnion(Type type, int maxK) {
+        if (type instanceof IntType) {
+            return (ItemsUnion<T>) ItemsUnion.getInstance(Number.class, maxK, Comparator.comparing(Number::intValue));
+        } else if (type instanceof LongType) {
+            return (ItemsUnion<T>) ItemsUnion.getInstance(Number.class, maxK, Comparator.comparing(Number::longValue));
+        } else if (type instanceof StringType) {
+            return (ItemsUnion<T>) ItemsUnion.getInstance(String.class, maxK, Comparator.naturalOrder());
+        } else if (type instanceof ByteArrayType) {
+            return (ItemsUnion<T>) ItemsUnion.getInstance(ByteArray.class, maxK, Comparator.naturalOrder());
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + type);
+        }
+    }
+
+    public static <T> Comparator<T> createComparator(Type type) {
+        if (type instanceof IntType) {
+            return (Comparator<T>) Comparator.comparing(Number::intValue);
+        } else if (type instanceof LongType) {
+            return (Comparator<T>) Comparator.comparing(Number::longValue);
+        } else if (type instanceof StringType) {
+            return (Comparator<T>) Comparator.naturalOrder();
+        } else if (type instanceof ByteArrayType) {
+            return (Comparator<T>) Comparator.naturalOrder();
+        } else {
+            throw new IllegalArgumentException("Unknown key type of " + type);
+        }
     }
 
     public Map<String, ItemsSketch> getQuantilesSketches() {

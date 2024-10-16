@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -36,13 +35,10 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createFileReference;
-import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createQuantileSketchMap;
-import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.updateQuantileSketchMap;
 
 /**
  * Writes partition files to S3 in an asynchronous manner. Here's a summary of this process:
@@ -76,7 +72,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final String quantileSketchesLocalFileName;
     private final String quantileSketchesS3Key;
     private final ParquetWriter<Record> parquetWriter;
-    private final Map<String, ItemsSketch> keyFieldToSketchMap;
+    private final Sketches sketches;
     private long recordsWrittenToCurrentPartition;
 
     /**
@@ -115,7 +111,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesS3Key = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
-        this.keyFieldToSketchMap = createQuantileSketchMap(sleeperSchema);
+        this.sketches = Sketches.from(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;
     }
 
@@ -166,7 +162,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) throws IOException {
         parquetWriter.write(record);
-        updateQuantileSketchMap(sleeperSchema, keyFieldToSketchMap, record);
+        sketches.update(sleeperSchema, record);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -191,8 +187,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         // Write sketches to a local file
         new SketchesSerDeToS3(sleeperSchema).saveToHadoopFS(
                 new Path(quantileSketchesLocalFileName),
-                new Sketches(keyFieldToSketchMap),
-                hadoopConfiguration);
+                sketches, hadoopConfiguration);
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
         FileReference fileReference = createFileReference(
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),

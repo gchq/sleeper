@@ -17,20 +17,23 @@ package sleeper.clients.util;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.sketches.Sketches;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class EstimateSplitPoints {
     private final Field rowKey1;
@@ -58,7 +61,7 @@ public class EstimateSplitPoints {
         }
 
         // Add all the values to the sketch
-        ItemsSketch sketch = ItemsSketch.getInstance(sketchSize, Comparator.naturalOrder());
+        ItemsSketch sketch = Sketches.createSketch(rowKey1.getType(), sketchSize);
         for (Record record : records) {
             Object firstRowKey = record.get(rowKey1.getName());
             if (rowKey1.getType() instanceof ByteArrayType) {
@@ -70,20 +73,26 @@ public class EstimateSplitPoints {
 
         // The getQuantiles method returns the min and median and max given a value of 3; hence need to add one to get
         // the correct number of split points, and need to remove the first and last entries.
-        Object[] splitPointsWithMinAndMax = sketch.getQuantiles(numPartitions + 1);
-        Object[] splitPoints = Arrays.copyOfRange(splitPointsWithMinAndMax, 1, splitPointsWithMinAndMax.length - 1);
+        Object[] splitPoints = sketch.getQuantiles(getRanks(), QuantileSearchCriteria.EXCLUSIVE);
         if (splitPoints.length != numPartitions - 1) {
             throw new RuntimeException("There should have been " + (numPartitions - 1) + "partitions; got " + splitPoints.length);
         }
 
         // Remove any duplicate values (which means the number of split points returned may be less than that requested.
-        List<Object> deduplicatedSplitPoints = Arrays.asList(splitPoints);
-        deduplicatedSplitPoints = deduplicatedSplitPoints.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        SortedSet<Object> sortedSet = new TreeSet<>(deduplicatedSplitPoints);
+        SortedSet<Object> sortedSet = new TreeSet<>(Stream.of(splitPoints).filter(Objects::nonNull).collect(toList()));
 
         if (rowKey1.getType() instanceof ByteArrayType) {
-            return sortedSet.stream().map(b -> (ByteArray) b).map(ByteArray::getArray).collect(Collectors.toList());
+            return sortedSet.stream().map(b -> (ByteArray) b).map(ByteArray::getArray).collect(toList());
         }
         return Arrays.asList(sortedSet.toArray());
+    }
+
+    private double[] getRanks() {
+        int numRanks = numPartitions - 1;
+        double[] ranks = new double[numRanks];
+        for (int i = 0; i < numRanks; i++) {
+            ranks[i] = (double) (i + 1) / (double) numPartitions;
+        }
+        return ranks;
     }
 }
