@@ -17,7 +17,6 @@ package sleeper.sketches.testutils;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -51,7 +50,7 @@ public class SketchDeciles {
         if (sketch.isEmpty()) {
             return empty();
         }
-        return new SketchDeciles(sketch.getMinItem(), sketch.getMaxItem(), readDecilesByRank(sketch));
+        return new SketchDeciles(sketch.getMinValue(), sketch.getMaxValue(), readDecilesByRank(sketch));
     }
 
     public static SketchDeciles from(Field field, List<Record> records) {
@@ -89,7 +88,7 @@ public class SketchDeciles {
     }
 
     private static Map<Double, Object> readDecilesByRank(ItemsSketch<?> sketch) {
-        Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES, QuantileSearchCriteria.EXCLUSIVE);
+        Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES);
         if (values == null) {
             return Map.of();
         }

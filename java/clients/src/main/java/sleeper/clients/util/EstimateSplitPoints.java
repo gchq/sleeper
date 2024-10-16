@@ -17,7 +17,6 @@ package sleeper.clients.util;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -73,7 +72,7 @@ public class EstimateSplitPoints {
 
         // The getQuantiles method returns the min and median and max given a value of 3; hence need to add one to get
         // the correct number of split points, and need to remove the first and last entries.
-        Object[] splitPoints = sketch.getQuantiles(getRanks(), QuantileSearchCriteria.EXCLUSIVE);
+        Object[] splitPoints = sketch.getQuantiles(getRanks());
         if (splitPoints.length != numPartitions - 1) {
             throw new RuntimeException("There should have been " + (numPartitions - 1) + "partitions; got " + splitPoints.length);
         }
