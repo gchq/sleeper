@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     emacs \
     bash-completion \
     man-db \
+    unminimize \
     && yes | unminimize \
     && rm -rf /var/lib/apt/lists/*
 
