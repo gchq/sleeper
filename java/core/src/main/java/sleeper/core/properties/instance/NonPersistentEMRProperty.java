@@ -32,7 +32,7 @@ public interface NonPersistentEMRProperty {
                     "using Spark running on EMR.\n" +
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
-            .defaultValue("emr-6.13.0")
+            .defaultValue("emr-7.2.0")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.default.bulk.import.emr.instance.architecture")
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +

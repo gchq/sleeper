@@ -31,6 +31,7 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
+import scala.collection.Seq;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.partition.Partition;
@@ -45,7 +46,6 @@ import sleeper.core.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,8 +73,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         // Initialise Spark
         LOGGER.info("Initialising Spark");
         SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
-        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters
-                .collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
+        Seq<SparkStrategy> strategies = JavaConverters.iterableAsScalaIterable(List.<SparkStrategy>of(ExplicitRepartitionStrategy$.MODULE$)).toSeq();
         session.experimental().extraStrategies_$eq(strategies);
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);

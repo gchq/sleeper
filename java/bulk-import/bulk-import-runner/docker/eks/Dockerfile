@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/spark:3.4.1-scala2.12-java11-ubuntu
+FROM apache/spark:3.5.1-scala2.12-java11-ubuntu
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root

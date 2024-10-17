@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM public.ecr.aws/emr-serverless/spark/emr-6.13.0:latest
+FROM public.ecr.aws/emr-serverless/spark/emr-7.2.0:latest
 
 USER root
 
