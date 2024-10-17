@@ -17,6 +17,7 @@
 package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
@@ -49,6 +51,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -60,12 +63,12 @@ public class UploadDockerImagesTest {
             OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
     private static final List<LambdaJar> LAMBDA_JARS = List.of(
-            new LambdaJar("statestore.jar", List.of()),
-            new LambdaJar("ingest.jar", List.of(OptionalStack.IngestStack)),
-            new LambdaJar("bulk-import-starter.jar", List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)));
+            LambdaJar.builder().fileNameFormat("statestore.jar").imageName("statestore-lambda").core().build(),
+            LambdaJar.builder().fileNameFormat("ingest.jar").imageName("ingest-task-creator-lambda").optionalStack(OptionalStack.IngestStack).build(),
+            LambdaJar.builder().fileNameFormat("bulk-import-starter.jar").imageName("bulk-import-starter-lambda")
+                    .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build());
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
-    private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES, LAMBDA_JARS);
 
     @BeforeEach
     void setUp() {
@@ -73,18 +76,6 @@ public class UploadDockerImagesTest {
         properties.set(ACCOUNT, "123");
         properties.set(REGION, "test-region");
         properties.set(VERSION, "1.0.0");
-    }
-
-    private UploadDockerImages uploader() {
-        return UploadDockerImages.builder()
-                .baseDockerDirectory(Path.of("./docker"))
-                .ecrClient(ecrClient)
-                .dockerImageConfig(dockerImageConfiguration)
-                .build();
-    }
-
-    private RunCommandTestHelper.PipelineInvoker upload(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.from(properties));
     }
 
     @Nested
@@ -97,7 +88,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -116,7 +107,7 @@ public class UploadDockerImagesTest {
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -139,7 +130,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/custom-ecr-prefix/ingest:1.0.0";
@@ -153,6 +144,46 @@ public class UploadDockerImagesTest {
     }
 
     @Nested
+    @DisplayName("Upload lambda images")
+    class UploadLambdaImages {
+
+        @Test
+        @Disabled("TODO")
+        void shouldCreateRepositoryAndPushCoreImage() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "jar=statestore.jar", "./docker/lambda"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
+        }
+
+        @Test
+        void shouldDoNothingWhenDeployingLambdasByJar() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR.toString());
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
+
+            // Then
+            assertThat(commandsThatRan).isEmpty();
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("Handle stacks not needing uploads")
     class HandleStacksNotNeedingUploads {
         @Test
@@ -161,7 +192,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.AthenaStack);
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -174,7 +205,7 @@ public class UploadDockerImagesTest {
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.AthenaStack, OptionalStack.IngestStack));
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             assertThat(commandsThatRan)
@@ -195,7 +226,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
@@ -215,7 +246,7 @@ public class UploadDockerImagesTest {
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.CompactionStack));
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -243,7 +274,7 @@ public class UploadDockerImagesTest {
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EmrServerlessBulkImportStack));
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -272,7 +303,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When / Then
-            assertThatThrownBy(() -> uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties)))
+            assertThatThrownBy(() -> ecsUploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties)))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -286,7 +317,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties),
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties),
                     returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
 
             // Then
@@ -307,7 +338,7 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When / Then
-            assertThatThrownBy(() -> uploader().upload(
+            assertThatThrownBy(() -> ecsUploader().upload(
                     returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
                     StacksForDockerUpload.from(properties)))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
@@ -326,7 +357,7 @@ public class UploadDockerImagesTest {
             CommandPipeline buildImageCommand = buildImageCommand(
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
-            assertThatThrownBy(() -> uploader().upload(
+            assertThatThrownBy(() -> ecsUploader().upload(
                     returningExitCodeForCommand(42, buildImageCommand),
                     StacksForDockerUpload.from(properties)))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
@@ -348,7 +379,7 @@ public class UploadDockerImagesTest {
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -369,13 +400,37 @@ public class UploadDockerImagesTest {
             ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
             assertThat(commandsThatRan).isEmpty();
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }
+    }
+
+    private RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
+        return runCommand -> ecsUploader().upload(runCommand, StacksForDockerUpload.from(properties));
+    }
+
+    private RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
+        return runCommand -> lambdaUploader().upload(runCommand, StacksForDockerUpload.from(properties));
+    }
+
+    private UploadDockerImages ecsUploader() {
+        return UploadDockerImages.builder()
+                .baseDockerDirectory(Path.of("./docker"))
+                .ecrClient(ecrClient)
+                .dockerImageConfig(new DockerImageConfiguration(STACK_DOCKER_IMAGES, List.of()))
+                .build();
+    }
+
+    private UploadDockerImages lambdaUploader() {
+        return UploadDockerImages.builder()
+                .baseDockerDirectory(Path.of("./docker"))
+                .ecrClient(ecrClient)
+                .dockerImageConfig(new DockerImageConfiguration(Map.of(), LAMBDA_JARS))
+                .build();
     }
 
     private CommandPipeline loginDockerCommand() {
@@ -386,6 +441,12 @@ public class UploadDockerImagesTest {
 
     private CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+    }
+
+    private CommandPipeline buildImageCommandWithArgs(String... args) {
+        List<String> fullArgs = new ArrayList<>(List.of("docker", "build"));
+        fullArgs.addAll(List.of(args));
+        return pipeline(command(fullArgs.toArray(String[]::new)));
     }
 
     private CommandPipeline pushImageCommand(String tag) {

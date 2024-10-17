@@ -17,10 +17,12 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
@@ -77,6 +79,14 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true)
             .ignoreEmptyValue(false).build();
+    UserDefinedInstanceProperty LAMBDA_DEPLOY_TYPE = Index.propertyBuilder("sleeper.lambda.deploy.type")
+            .description("The deployment type for AWS Lambda. Not case sensitive.\n" +
+                    "Valid values: " + SleeperPropertyValueUtils.describeEnumValuesInLowerCase(LambdaDeployType.class))
+            .defaultValue(LambdaDeployType.JAR.toString().toLowerCase(Locale.ROOT))
+            .validationPredicate(LambdaDeployType::isValid)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)

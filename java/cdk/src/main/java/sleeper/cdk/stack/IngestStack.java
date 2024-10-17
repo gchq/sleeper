@@ -113,7 +113,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Job creation code
-        LambdaCode taskCreatorJar = jars.lambdaCode(LambdaJar.INGEST_STARTER, jarsBucket);
+        LambdaCode taskCreatorJar = jars.lambdaCode(LambdaJar.INGEST_TASK_CREATOR, jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
