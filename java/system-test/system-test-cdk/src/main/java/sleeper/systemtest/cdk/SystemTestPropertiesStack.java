@@ -27,9 +27,9 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
@@ -50,7 +50,7 @@ public class SystemTestPropertiesStack extends NestedStack {
 
         String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode jar = jars.lambdaCode(LambdaJar.CUSTOM_RESOURCES, jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());

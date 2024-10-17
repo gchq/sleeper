@@ -29,7 +29,7 @@ public class BuiltJars {
 
     private final S3Client s3;
     private final String bucketName;
-    private final Map<BuiltJar, String> latestVersionIdByJar = new HashMap<>();
+    private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
     public BuiltJars(S3Client s3, String bucketName) {
         this.s3 = s3;
@@ -40,11 +40,11 @@ public class BuiltJars {
         return bucketName;
     }
 
-    public LambdaCode lambdaCode(BuiltJar jar, IBucket bucketConstruct) {
+    public LambdaCode lambdaCode(LambdaJar jar, IBucket bucketConstruct) {
         return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
     }
 
-    public String getLatestVersionId(BuiltJar jar) {
+    public String getLatestVersionId(LambdaJar jar) {
         return latestVersionIdByJar.computeIfAbsent(jar,
                 missingJar -> {
                     String versionId = s3.headObject(builder -> builder.bucket(bucketName).key(missingJar.getFileName())).versionId();

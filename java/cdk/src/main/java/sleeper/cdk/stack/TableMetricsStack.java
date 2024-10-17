@@ -34,9 +34,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -65,7 +65,7 @@ public class TableMetricsStack extends NestedStack {
             BuiltJars jars, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
+        LambdaCode metricsJar = jars.lambdaCode(LambdaJar.METRICS, jarsBucket);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
         String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");

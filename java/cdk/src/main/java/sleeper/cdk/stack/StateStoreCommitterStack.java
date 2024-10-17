@@ -34,9 +34,9 @@ import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -78,7 +78,7 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
+        LambdaCode committerJar = jars.lambdaCode(LambdaJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(

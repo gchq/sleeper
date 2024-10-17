@@ -31,9 +31,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -114,7 +114,7 @@ public class CommonEmrBulkImportHelper {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
-        LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
+        LambdaCode bulkImportStarterJar = jars.lambdaCode(LambdaJar.BULK_IMPORT_STARTER, jarsBucket);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-import", platform, "start");

@@ -46,9 +46,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -113,7 +113,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Job creation code
-        LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
+        LambdaCode taskCreatorJar = jars.lambdaCode(LambdaJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);

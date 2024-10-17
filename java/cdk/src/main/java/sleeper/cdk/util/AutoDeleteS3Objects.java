@@ -25,9 +25,9 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.LoggingStack;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -69,7 +69,7 @@ public class AutoDeleteS3Objects {
             Function<String, ILogGroup> getLogGroupByFunctionName,
             Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode jar = jars.lambdaCode(LambdaJar.CUSTOM_RESOURCES, jarsBucket);
         autoDeleteForBucket(scope, instanceProperties, jar, bucket, bucketName, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
     }
 

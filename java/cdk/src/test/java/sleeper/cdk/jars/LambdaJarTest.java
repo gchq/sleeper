@@ -21,12 +21,12 @@ import sleeper.core.SleeperVersion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BuiltJarTest {
+class LambdaJarTest {
 
     @Test
     void shouldBuildJarNameWithoutVersion() {
         // When
-        BuiltJar jar = BuiltJar.fromFormat("test.jar");
+        LambdaJar jar = LambdaJar.fromFormat("test.jar");
 
         // Then
         assertThat(jar.getFileName()).isEqualTo("test.jar");
@@ -35,7 +35,7 @@ class BuiltJarTest {
     @Test
     void shouldBuildJarNameWithVersion() {
         // When
-        BuiltJar jar = BuiltJar.fromFormat("test-%s.jar");
+        LambdaJar jar = LambdaJar.fromFormat("test-%s.jar");
 
         // Then
         assertThat(jar.getFileName()).contains(SleeperVersion.getVersion());

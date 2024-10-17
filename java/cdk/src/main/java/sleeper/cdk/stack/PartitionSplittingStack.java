@@ -34,9 +34,9 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -96,7 +96,7 @@ public class PartitionSplittingStack extends NestedStack {
         this.partitionSplittingJobQueue = createJobQueues(instanceProperties, topic, coreStacks, errorMetrics);
 
         // Partition splitting code
-        LambdaCode splitterJar = jars.lambdaCode(BuiltJar.PARTITION_SPLITTER, jarsBucket);
+        LambdaCode splitterJar = jars.lambdaCode(LambdaJar.PARTITION_SPLITTER, jarsBucket);
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         // Lambda to batch tables and put requests on the batch SQS queue, to be consumed by FindPartitionsToSplit

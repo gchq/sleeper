@@ -31,9 +31,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -73,7 +73,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
+        LambdaCode statestoreJar = jars.lambdaCode(LambdaJar.STATESTORE, jarsBucket);
         createSnapshotCreationLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         createSnapshotDeletionLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);

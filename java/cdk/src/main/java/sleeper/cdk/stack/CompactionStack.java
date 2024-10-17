@@ -75,9 +75,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 import software.constructs.IDependable;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
@@ -184,8 +184,8 @@ public class CompactionStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_JOB_CREATOR, jarsBucket);
-        LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.COMPACTION_TASK_CREATOR, jarsBucket);
+        LambdaCode jobCreatorJar = jars.lambdaCode(LambdaJar.COMPACTION_JOB_CREATOR, jarsBucket);
+        LambdaCode taskCreatorJar = jars.lambdaCode(LambdaJar.COMPACTION_TASK_CREATOR, jarsBucket);
 
         // SQS queue for the compaction jobs
         Queue compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);

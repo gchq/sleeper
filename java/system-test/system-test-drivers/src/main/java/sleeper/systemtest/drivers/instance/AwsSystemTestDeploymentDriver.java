@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.LambdaJar;
 import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.SyncJars;
 import sleeper.clients.deploy.UploadDockerImages;
@@ -44,7 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
+import static sleeper.cdk.jars.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
@@ -112,7 +112,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())
-                .uploadFilter(jar -> BuiltJar.isFileJar(jar, CUSTOM_RESOURCES))
+                .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                 .deleteOldJars(false).build().sync();
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
