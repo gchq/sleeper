@@ -41,7 +41,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;

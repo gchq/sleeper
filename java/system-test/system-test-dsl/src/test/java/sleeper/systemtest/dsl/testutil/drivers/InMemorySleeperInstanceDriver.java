@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;

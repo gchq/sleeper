@@ -81,7 +81,7 @@ import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
