@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.core.deploy.LambdaJar;
+
 import java.util.HashMap;
 import java.util.Map;
 

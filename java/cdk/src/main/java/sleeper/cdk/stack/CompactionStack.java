@@ -77,10 +77,10 @@ import software.constructs.IDependable;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.testutils.LocalStackTestBase;
+import sleeper.core.deploy.LambdaJar;
 
 import java.util.UUID;
 

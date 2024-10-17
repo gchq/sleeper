@@ -41,8 +41,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 

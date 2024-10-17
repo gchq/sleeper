@@ -27,9 +27,9 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.jars.LambdaJar;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.LoggingStack;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
