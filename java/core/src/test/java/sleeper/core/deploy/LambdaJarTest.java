@@ -26,7 +26,7 @@ class LambdaJarTest {
     @Test
     void shouldBuildJarNameWithoutVersion() {
         // When
-        LambdaJar jar = LambdaJar.fromFormat("test.jar");
+        LambdaJar jar = LambdaJar.createWithFilenameFormat("test.jar");
 
         // Then
         assertThat(jar.getFileName()).isEqualTo("test.jar");
@@ -35,7 +35,7 @@ class LambdaJarTest {
     @Test
     void shouldBuildJarNameWithVersion() {
         // When
-        LambdaJar jar = LambdaJar.fromFormat("test-%s.jar");
+        LambdaJar jar = LambdaJar.createWithFilenameFormat("test-%s.jar");
 
         // Then
         assertThat(jar.getFileName()).contains(SleeperVersion.getVersion());

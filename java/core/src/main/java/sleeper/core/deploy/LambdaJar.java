@@ -20,21 +20,24 @@ import sleeper.core.SleeperVersion;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+/**
+ * Definitions of jar files used to deploy lambda functions.
+ */
 public class LambdaJar {
 
-    public static final LambdaJar ATHENA = fromFormat("athena-%s.jar");
-    public static final LambdaJar BULK_IMPORT_STARTER = fromFormat("bulk-import-starter-%s.jar");
-    public static final LambdaJar INGEST_STARTER = fromFormat("ingest-starter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_SUBMITTER = fromFormat("ingest-batcher-submitter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = fromFormat("ingest-batcher-job-creator-%s.jar");
-    public static final LambdaJar GARBAGE_COLLECTOR = fromFormat("lambda-garbagecollector-%s.jar");
-    public static final LambdaJar COMPACTION_JOB_CREATOR = fromFormat("lambda-jobSpecCreationLambda-%s.jar");
-    public static final LambdaJar COMPACTION_TASK_CREATOR = fromFormat("runningjobs-%s.jar");
-    public static final LambdaJar PARTITION_SPLITTER = fromFormat("lambda-splitter-%s.jar");
-    public static final LambdaJar QUERY = fromFormat("query-%s.jar");
-    public static final LambdaJar CUSTOM_RESOURCES = fromFormat("cdk-custom-resources-%s.jar");
-    public static final LambdaJar METRICS = fromFormat("metrics-%s.jar");
-    public static final LambdaJar STATESTORE = fromFormat("statestore-lambda-%s.jar");
+    public static final LambdaJar ATHENA = createWithFilenameFormat("athena-%s.jar");
+    public static final LambdaJar BULK_IMPORT_STARTER = createWithFilenameFormat("bulk-import-starter-%s.jar");
+    public static final LambdaJar INGEST_STARTER = createWithFilenameFormat("ingest-starter-%s.jar");
+    public static final LambdaJar INGEST_BATCHER_SUBMITTER = createWithFilenameFormat("ingest-batcher-submitter-%s.jar");
+    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = createWithFilenameFormat("ingest-batcher-job-creator-%s.jar");
+    public static final LambdaJar GARBAGE_COLLECTOR = createWithFilenameFormat("lambda-garbagecollector-%s.jar");
+    public static final LambdaJar COMPACTION_JOB_CREATOR = createWithFilenameFormat("lambda-jobSpecCreationLambda-%s.jar");
+    public static final LambdaJar COMPACTION_TASK_CREATOR = createWithFilenameFormat("runningjobs-%s.jar");
+    public static final LambdaJar PARTITION_SPLITTER = createWithFilenameFormat("lambda-splitter-%s.jar");
+    public static final LambdaJar QUERY = createWithFilenameFormat("query-%s.jar");
+    public static final LambdaJar CUSTOM_RESOURCES = createWithFilenameFormat("cdk-custom-resources-%s.jar");
+    public static final LambdaJar METRICS = createWithFilenameFormat("metrics-%s.jar");
+    public static final LambdaJar STATESTORE = createWithFilenameFormat("statestore-lambda-%s.jar");
 
     private final String fileName;
 
@@ -42,7 +45,13 @@ public class LambdaJar {
         this.fileName = fileName;
     }
 
-    public static LambdaJar fromFormat(String format) {
+    /**
+     * Creates a new jar file definition by populating a filename format with the version of Sleeper.
+     *
+     * @param  format the filename format
+     * @return        the jar file definition
+     */
+    public static LambdaJar createWithFilenameFormat(String format) {
         return new LambdaJar(String.format(format, SleeperVersion.getVersion()));
     }
 
@@ -50,11 +59,18 @@ public class LambdaJar {
         return fileName;
     }
 
+    /**
+     * Checks whether a given file is one of a specified list of jars.
+     *
+     * @param  file the file
+     * @param  jars the jars
+     * @return      true if the file is one of the given jars
+     */
     public static boolean isFileJar(Path file, LambdaJar... jars) {
         return isFilenameOfJar(String.valueOf(file.getFileName()), jars);
     }
 
-    public static boolean isFilenameOfJar(String fileName, LambdaJar... jars) {
+    private static boolean isFilenameOfJar(String fileName, LambdaJar... jars) {
         return Stream.of(jars)
                 .map(LambdaJar::getFileName)
                 .anyMatch(fileName::equals);
