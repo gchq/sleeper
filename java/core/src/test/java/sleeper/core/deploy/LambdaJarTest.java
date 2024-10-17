@@ -24,20 +24,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LambdaJarTest {
 
     @Test
-    void shouldBuildJarNameWithoutVersion() {
-        // When
-        LambdaJar jar = LambdaJar.createWithFilenameFormat("test.jar");
-
-        // Then
-        assertThat(jar.getFileName()).isEqualTo("test.jar");
+    void shouldBuildJarDefinitions() {
+        assertThat(LambdaJar.all())
+                .hasSizeGreaterThan(1);
     }
 
     @Test
-    void shouldBuildJarNameWithVersion() {
-        // When
-        LambdaJar jar = LambdaJar.createWithFilenameFormat("test-%s.jar");
+    void shouldIncludeVersionInJarNames() {
+        assertThat(LambdaJar.all())
+                .extracting(LambdaJar::getFileName)
+                .allSatisfy(fileName -> assertThat(fileName)
+                        .contains(SleeperVersion.getVersion()));
+    }
 
-        // Then
-        assertThat(jar.getFileName()).contains(SleeperVersion.getVersion());
+    @Test
+    void shouldBuildCoreJars() {
+        assertThat(LambdaJar.all())
+                .filteredOn(jar -> jar.getOptionalStacks().isEmpty())
+                .hasSizeGreaterThan(1);
+    }
+
+    @Test
+    void shouldBuildOptionalStackJars() {
+        assertThat(LambdaJar.all())
+                .filteredOn(jar -> !jar.getOptionalStacks().isEmpty())
+                .hasSizeGreaterThan(1);
     }
 }

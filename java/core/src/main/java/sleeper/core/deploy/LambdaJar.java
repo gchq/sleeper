@@ -16,8 +16,12 @@
 package sleeper.core.deploy;
 
 import sleeper.core.SleeperVersion;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -25,38 +29,54 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    public static final LambdaJar ATHENA = createWithFilenameFormat("athena-%s.jar");
-    public static final LambdaJar BULK_IMPORT_STARTER = createWithFilenameFormat("bulk-import-starter-%s.jar");
-    public static final LambdaJar INGEST_STARTER = createWithFilenameFormat("ingest-starter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_SUBMITTER = createWithFilenameFormat("ingest-batcher-submitter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = createWithFilenameFormat("ingest-batcher-job-creator-%s.jar");
-    public static final LambdaJar GARBAGE_COLLECTOR = createWithFilenameFormat("lambda-garbagecollector-%s.jar");
-    public static final LambdaJar COMPACTION_JOB_CREATOR = createWithFilenameFormat("lambda-jobSpecCreationLambda-%s.jar");
-    public static final LambdaJar COMPACTION_TASK_CREATOR = createWithFilenameFormat("runningjobs-%s.jar");
-    public static final LambdaJar PARTITION_SPLITTER = createWithFilenameFormat("lambda-splitter-%s.jar");
-    public static final LambdaJar QUERY = createWithFilenameFormat("query-%s.jar");
+    private static final List<LambdaJar> ALL = new ArrayList<>();
+    public static final LambdaJar ATHENA = createWithFilenameFormat("athena-%s.jar", OptionalStack.AthenaStack);
+    public static final LambdaJar BULK_IMPORT_STARTER = createWithFilenameFormat("bulk-import-starter-%s.jar", OptionalStack.BULK_IMPORT_STACKS);
+    public static final LambdaJar INGEST_STARTER = createWithFilenameFormat("ingest-starter-%s.jar", OptionalStack.IngestStack);
+    public static final LambdaJar INGEST_BATCHER_SUBMITTER = createWithFilenameFormat("ingest-batcher-submitter-%s.jar", OptionalStack.IngestBatcherStack);
+    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = createWithFilenameFormat("ingest-batcher-job-creator-%s.jar", OptionalStack.IngestBatcherStack);
+    public static final LambdaJar GARBAGE_COLLECTOR = createWithFilenameFormat("lambda-garbagecollector-%s.jar", OptionalStack.GarbageCollectorStack);
+    public static final LambdaJar COMPACTION_JOB_CREATOR = createWithFilenameFormat("lambda-jobSpecCreationLambda-%s.jar", OptionalStack.CompactionStack);
+    public static final LambdaJar COMPACTION_TASK_CREATOR = createWithFilenameFormat("runningjobs-%s.jar", OptionalStack.CompactionStack);
+    public static final LambdaJar PARTITION_SPLITTER = createWithFilenameFormat("lambda-splitter-%s.jar", OptionalStack.PartitionSplittingStack);
+    public static final LambdaJar QUERY = createWithFilenameFormat("query-%s.jar", OptionalStack.QUERY_STACKS);
     public static final LambdaJar CUSTOM_RESOURCES = createWithFilenameFormat("cdk-custom-resources-%s.jar");
-    public static final LambdaJar METRICS = createWithFilenameFormat("metrics-%s.jar");
+    public static final LambdaJar METRICS = createWithFilenameFormat("metrics-%s.jar", OptionalStack.TableMetricsStack);
     public static final LambdaJar STATESTORE = createWithFilenameFormat("statestore-lambda-%s.jar");
 
     private final String fileName;
+    private final List<OptionalStack> optionalStacks;
 
-    private LambdaJar(String fileName) {
+    private LambdaJar(String fileName, List<OptionalStack> optionalStacks) {
         this.fileName = fileName;
+        this.optionalStacks = optionalStacks;
     }
 
     /**
-     * Creates a new jar file definition by populating a filename format with the version of Sleeper.
+     * Returns all lambda jar definitions.
      *
-     * @param  format the filename format
-     * @return        the jar file definition
+     * @return the definitions
      */
-    public static LambdaJar createWithFilenameFormat(String format) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()));
+    public static List<LambdaJar> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    private static LambdaJar createWithFilenameFormat(String format, OptionalStack... optionalStacks) {
+        return createWithFilenameFormat(format, List.of(optionalStacks));
+    }
+
+    private static LambdaJar createWithFilenameFormat(String format, List<OptionalStack> optionalStacks) {
+        LambdaJar jar = new LambdaJar(String.format(format, SleeperVersion.getVersion()), optionalStacks);
+        ALL.add(jar);
+        return jar;
     }
 
     public String getFileName() {
         return fileName;
+    }
+
+    public List<OptionalStack> getOptionalStacks() {
+        return optionalStacks;
     }
 
     /**
