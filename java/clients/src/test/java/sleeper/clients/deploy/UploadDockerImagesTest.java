@@ -25,6 +25,7 @@ import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
@@ -58,9 +59,13 @@ public class UploadDockerImagesTest {
             OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
             OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
+    private static final List<LambdaJar> LAMBDA_JARS = List.of(
+            new LambdaJar("statestore.jar", List.of()),
+            new LambdaJar("ingest.jar", List.of(OptionalStack.IngestStack)),
+            new LambdaJar("bulk-import-starter.jar", List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)));
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
-    private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES);
+    private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(STACK_DOCKER_IMAGES, LAMBDA_JARS);
 
     @BeforeEach
     void setUp() {
@@ -83,8 +88,8 @@ public class UploadDockerImagesTest {
     }
 
     @Nested
-    @DisplayName("Upload images")
-    class UploadImages {
+    @DisplayName("Upload ECS images")
+    class UploadEcsImages {
 
         @Test
         void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {

@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Collection;
@@ -39,10 +40,10 @@ public class DockerImageConfiguration {
     private final Map<OptionalStack, StackDockerImage> imageByStack;
 
     public DockerImageConfiguration() {
-        this(DEFAULT_DOCKER_IMAGE_BY_STACK);
+        this(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaJar.all());
     }
 
-    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack) {
+    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaJar> lambdaJars) {
         this.imageByStack = imageByStack;
     }
 

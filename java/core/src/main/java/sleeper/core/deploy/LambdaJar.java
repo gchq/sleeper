@@ -47,7 +47,7 @@ public class LambdaJar {
     private final String fileName;
     private final List<OptionalStack> optionalStacks;
 
-    private LambdaJar(String fileName, List<OptionalStack> optionalStacks) {
+    public LambdaJar(String fileName, List<OptionalStack> optionalStacks) {
         this.fileName = fileName;
         this.optionalStacks = optionalStacks;
     }
