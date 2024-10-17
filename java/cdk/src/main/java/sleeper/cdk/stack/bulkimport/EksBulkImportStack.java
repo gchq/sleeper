@@ -43,6 +43,7 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -143,7 +144,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .memorySize(1024)
                 .timeout(Duration.minutes(2))
                 .environment(env)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));

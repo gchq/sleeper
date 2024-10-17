@@ -14,4 +14,8 @@
 # limitations under the License.
 
 # Command line arguments for the following line are: bucket, output filename, number of lines
-java -cp /system-test.jar sleeper.systemtest.datageneration.IngestRandomData "$@"
+java --add-opens java.base/java.nio=ALL-UNNAMED \
+    --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+    --add-opens java.base/java.util=ALL-UNNAMED \
+    --add-opens java.base/java.lang.invoke=ALL-UNNAMED \
+    -cp /system-test.jar sleeper.systemtest.datageneration.IngestRandomData "$@"

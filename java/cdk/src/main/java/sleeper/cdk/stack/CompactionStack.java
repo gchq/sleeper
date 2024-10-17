@@ -65,6 +65,7 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.CfnPermission;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -138,7 +139,6 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUE
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 /**
  * Deploys the resources needed to perform compaction jobs. Specifically, there is:
@@ -271,7 +271,7 @@ public class CompactionStack extends NestedStack {
         IFunction triggerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Create batches of tables and send requests to create compaction jobs for those batches")
-                .runtime(JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
@@ -282,7 +282,7 @@ public class CompactionStack extends NestedStack {
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state stores of the provided tables looking for compaction jobs to create")
-                .runtime(JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
@@ -594,7 +594,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .memorySize(512)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .timeout(Duration.seconds(10)));
 
         coreStacks.grantReadInstanceConfig(handler);
@@ -619,7 +619,7 @@ public class CompactionStack extends NestedStack {
         IFunction handler = taskCreatorJar.buildFunction(this, "CompactionTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")

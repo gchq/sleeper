@@ -34,6 +34,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -86,7 +87,7 @@ public final class WebSocketQueryStack extends NestedStack {
                 .memorySize(256)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .timeout(Duration.seconds(29))
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
+                .runtime(Runtime.JAVA_17));
 
         queryQueueStack.grantSendMessages(webSocketApiHandler);
         coreStacks.grantReadTablesConfig(webSocketApiHandler);

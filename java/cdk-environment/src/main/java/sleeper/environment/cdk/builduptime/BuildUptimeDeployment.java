@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
-import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class BuildUptimeDeployment {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
@@ -48,7 +48,7 @@ public class BuildUptimeDeployment {
                 .code(Code.fromAsset(lambdaJarPath))
                 .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
                 .description("Start and stop EC2 instances and schedule rules")
-                .runtime(JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(1024)
                 .timeout(Duration.minutes(10))
                 .handler("sleeper.build.uptime.lambda.BuildUptimeLambda::handleRequest")

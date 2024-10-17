@@ -60,7 +60,7 @@ public class PropertiesStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .runtime(Runtime.JAVA_11));
+                .runtime(Runtime.JAVA_17));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 

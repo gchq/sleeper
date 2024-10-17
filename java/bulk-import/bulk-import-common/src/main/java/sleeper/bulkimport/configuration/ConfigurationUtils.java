@@ -74,7 +74,7 @@ import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
  */
 public class ConfigurationUtils {
 
-    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.%s";
+    private static final String JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.%s";
 
     private ConfigurationUtils() {
     }
