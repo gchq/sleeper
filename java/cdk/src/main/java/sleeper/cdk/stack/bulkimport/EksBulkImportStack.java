@@ -277,6 +277,8 @@ public final class EksBulkImportStack extends NestedStack {
 
     @SuppressWarnings("unchecked")
     private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, InstanceProperties instanceProperties, ILogGroup logGroup) {
+        // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html
+
         KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
                 "apiVersion", "v1",
                 "kind", "Namespace",
