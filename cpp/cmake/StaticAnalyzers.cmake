@@ -51,7 +51,12 @@ endmacro()
 
 macro(gpu_compact_enable_clang_tidy target WARNINGS_AS_ERRORS)
 
-  find_program(CLANGTIDY NAMES clang-tidy clang-tidy-18 clang-tidy-19)
+  find_program(
+    CLANGTIDY
+    NAMES clang-tidy
+          clang-tidy-17
+          clang-tidy-18
+          clang-tidy-19)
   if(CLANGTIDY)
     if(NOT
        CMAKE_CXX_COMPILER_ID
