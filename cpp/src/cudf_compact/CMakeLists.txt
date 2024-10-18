@@ -8,8 +8,6 @@ add_library(
   format_helper.cpp
   parquet_types.cpp
   ranges.cu
-  s3/s3_sink.cpp
-  s3/s3_utils.cpp
   ../../include/cudf_compact/common_types.hpp
   ../../include/cudf_compact/cudf_compact.hpp
   ../../include/cudf_compact/cudf_utils.hpp
@@ -18,11 +16,10 @@ add_library(
   ../../include/cudf_compact/metadata.hpp
   ../../include/cudf_compact/parquet_types.h
   ../../include/cudf_compact/ranges.hpp
-  ../../include/cudf_compact/s3/s3_sink.hpp
-  ../../include/cudf_compact/s3/s3_utils.hpp)
+)
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
-target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog aws-cpp-sdk-s3)
+target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog gpu_compact::s3)
 target_link_libraries(cudf_compact PUBLIC cudf::cudf thrift::thrift)
 target_link_libraries(cudf_compact PRIVATE gpu_compact_options gpu_compact_warnings)
 target_include_directories(cudf_compact ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -36,7 +33,7 @@ target_link_options(
   "LINKER:--copy-dt-needed-entries")
 
 set_source_files_properties(
-  ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all;-ccbin=${CMAKE_C_COMPILER}")
+  ranges.cu PROPERTIES COMPILE_OPTIONS "--expt-relaxed-constexpr;--expt-extended-lambda;-Xfatbin;-compress-all;")
 
 set_target_properties(
   cudf_compact

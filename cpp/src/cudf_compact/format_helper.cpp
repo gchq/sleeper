@@ -27,8 +27,3 @@ void switchLocale() noexcept {
     // swap the global locale
     spare = std::locale::global(spare);
 }
-
-void imbueCout() noexcept {
-    static thousands_sep deleteThis{};
-    std::cout.imbue(std::locale{ std::locale(), &deleteThis });
-}

@@ -36,6 +36,7 @@ inline Aws::String getKey(std::convertible_to<std::string_view> auto const &path
     return get_part(path, 3);
 }
 
+
 template<typename T, typename E> inline T const &unwrap(Aws::Utils::Outcome<T, E> const &outcome) noexcept(false) {
     if (outcome.IsSuccess()) {
         return outcome.GetResult();
