@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -84,7 +85,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -185,7 +185,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, uniqueBulkImportId);
+        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroupByEksClusterName(uniqueBulkImportId));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -276,7 +276,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, InstanceProperties instanceProperties, String uniqueBulkImportId) {
+    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, InstanceProperties instanceProperties, ILogGroup logGroup) {
         KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
                 "apiVersion", "v1",
                 "kind", "Namespace",
@@ -285,10 +285,10 @@ public final class EksBulkImportStack extends NestedStack {
                         "labels", Map.of("aws-observability", "enabled"))));
 
         // Fluent Bit configuration
+        // See https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch
         Function<String, String> outputReplacements = replacements(Map.of(
                 "region-placeholder", instanceProperties.get(REGION),
-                "log-group-placeholder", uniqueBulkImportId,
-                "log-retention-days-placeholder", instanceProperties.get(LOG_RETENTION_IN_DAYS)));
+                "log-group-placeholder", logGroup.getLogGroupName()));
         withDependencyOn(namespace, cluster.addManifest("LoggingConfig", Map.of(
                 "apiVersion", "v1",
                 "kind", "ConfigMap",
