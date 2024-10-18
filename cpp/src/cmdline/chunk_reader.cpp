@@ -3,6 +3,8 @@
 #include <CLI/CLI.hpp>// NOLINT
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
+#include <cudf/merge.hpp>
+#include <cudf/types.hpp>
 #include <internal_use_only/config.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/owning_wrapper.hpp>
@@ -13,9 +15,13 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <vector>
 
 int main(int argc, char **argv) {
     configure_logging();
@@ -25,8 +31,8 @@ int main(int argc, char **argv) {
 
     std::string outputFile;
     app.add_option("output", outputFile, "Output path for Parquet file")->required();
-    std::string inputFile;
-    app.add_option("input", inputFile, "Input Parquet file")->required();
+    std::vector<std::string> inputFiles;
+    app.add_option("input", inputFiles, "Input Parquet files")->required()->expected(1, -1);
     std::size_t chunkReadLimit{ 1000 };
     app.add_option("-c,--chunk-read-limit", chunkReadLimit, "cuDF Parquet reader chunk read limit in MiB");
     std::size_t passReadLimit{ 1000 };
@@ -43,14 +49,17 @@ int main(int argc, char **argv) {
       rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, rmm::percent_of_free_device_memory(95));
     rmm::mr::set_current_device_resource(mr.get());
 
-    // Make reader
-    auto source = cudf::io::source_info(inputFile);
-    auto reader_builder = cudf::io::parquet_reader_options::builder(source);
-    auto reader = cudf::io::chunked_parquet_reader{
-        chunkReadLimit * 1'048'576,
-        passReadLimit * 1'048'576,
-        reader_builder.build(),
-    };
+    // Make readers
+    std::vector<std::tuple<std::unique_ptr<cudf::io::chunked_parquet_reader>, ::size_t, ::size_t>> readers;
+    readers.reserve(inputFiles.size());
+
+    for (auto const &f : inputFiles) {
+        auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(f));
+        readers.emplace_back(std::make_unique<cudf::io::chunked_parquet_reader>(
+                               chunkReadLimit * 1'048'576, passReadLimit * 1'048'576, reader_builder.build()),
+          0,
+          0);
+    }
 
     // Make writer
     auto sink = cudf::io::sink_info(outputFile);
@@ -58,22 +67,52 @@ int main(int argc, char **argv) {
     auto writer = cudf::io::parquet_chunked_writer{ writer_builder.build() };
 
     // Loop doing reads
-    ::size_t chunkNo = 0;
-    ::size_t rowsProcessed = 0;
-    while (reader.has_next()) {
-        SPDLOG_INFO("Reading chunk {:d}...", chunkNo);
-        auto const table = reader.read_chunk();
-        SPDLOG_INFO("Read chunk of {:d} rows", table.metadata.num_rows_per_source.at(0));
-        rowsProcessed += table.metadata.num_rows_per_source.at(0);
-        std::cout << "Write chunk ";
-        for (::size_t i = 0; i < writeRepeats; i++) {
-            std::cout << i << ", " << std::flush;
-            writer.write(*table.tbl);
+    ::size_t lastTotalRowCount = std::numeric_limits<::size_t>::max();
+    while (lastTotalRowCount) {
+        lastTotalRowCount = 0;
+        // Loop through each reader
+        std::vector<cudf::io::table_with_metadata> tables;
+
+        for (::size_t rc = 0; auto &[reader, chunkNo, rowCount] : readers) {
+            // If reader has data, read a chunk and write, otherwise flag and ignore
+            SPDLOG_INFO("Reader {:d}", rc);
+            if (reader->has_next()) {
+                SPDLOG_INFO("    Chunk: {:d}", chunkNo);
+                tables.push_back(reader->read_chunk());
+                auto const rowsInChunk = tables.back().metadata.num_rows_per_source.at(0);
+                SPDLOG_INFO("    Read chunk of {:d} rows", rowsInChunk);
+
+                // Increment chunk number in reader and add to row count
+                chunkNo++;
+                rowCount += rowsInChunk;
+
+                // Update overall count
+                lastTotalRowCount += rowsInChunk;
+            } else {
+                SPDLOG_INFO("    Reader {:d} has no more rows", rc);
+            }
+            rc++;
         }
-        std::cout << '\n';
-        SPDLOG_INFO("Wrote chunk {:d}, rows processed {:d}", chunkNo, rowsProcessed);
-        chunkNo++;
+
+        // Merge and write tables
+        if (lastTotalRowCount) {
+            std::vector<cudf::table_view> views;
+            views.reserve(tables.size());
+            for (auto const &table : tables) { views.push_back(*table.tbl); }
+            SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
+            auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
+            SPDLOG_INFO("Writing rows");
+            writer.write(*merged);
+        }
     }
 
     writer.close();
+
+    // Grab total row count from each reader
+    auto const totalRows = std::accumulate(
+      readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) constexpr noexcept {
+          return acc + std::get<2>(item);
+      });
+
+    SPDLOG_INFO("Finished, read/wrote {:d} rows from {:d} readers", totalRows, inputFiles.size());
 }

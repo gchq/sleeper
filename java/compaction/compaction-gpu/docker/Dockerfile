@@ -31,6 +31,18 @@ RUN printf 'deb https://apt.corretto.aws stable main' >/etc/apt/sources.list.d/c
 RUN apt-get update && apt-get install -y java-17-amazon-corretto-jdk make cmake-format gcc-13 g++-13 \
     maven ccache cppcheck doxygen pkg-config git libboost-dev && apt-get clean
 
+# Update compiler symlinks
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 \
+    && update-alternatives --install /usr/bin/cpp cpp-bin /usr/bin/cpp-13 100 \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 100 \
+    && update-alternatives --auto g++ \
+    && update-alternatives --auto gcc \
+    && update-alternatives --auto cpp-bin \
+    && update-alternatives --auto c++ \
+    && update-alternatives --auto cc
+
 # Install certs and LLVM repository
 RUN wget -O- "https://apt.llvm.org/llvm-snapshot.gpg.key" | apt-key add -
 RUN printf 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main\ndeb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main' >/etc/apt/sources.list.d/llvm.list
@@ -45,18 +57,6 @@ RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.
     && rm -rf cmake-3.30.5-linux-x86_64.tar.gz \
     && echo "export PATH=\$PATH:/opt/cmake/bin" >"/etc/profile.d/cmake.sh" \
     && chmod 755 /etc/profile.d/cmake.sh
-
-# Update compiler symlinks
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 \
-    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 \
-    && update-alternatives --install /usr/bin/cpp cpp-bin /usr/bin/cpp-13 100 \
-    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 100 \
-    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 100 \
-    && update-alternatives --auto g++ \
-    && update-alternatives --auto gcc \
-    && update-alternatives --auto cpp-bin \
-    && update-alternatives --auto c++ \
-    && update-alternatives --auto cc
 
 # Install include-what-you-use
 RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -b clang_17 \
