@@ -32,10 +32,10 @@ public class ExponentialBackoffWithJitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(ExponentialBackoffWithJitter.class);
 
     private final DoubleSupplier randomJitterFraction;
-    private final Waiter waiter;
+    private final ThreadSleep waiter;
     private final WaitRange waitRange;
 
-    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, Waiter waiter) {
+    public ExponentialBackoffWithJitter(WaitRange waitRange, DoubleSupplier randomJitterFraction, ThreadSleep waiter) {
         this.waitRange = Objects.requireNonNull(waitRange, "waitRange must not be null");
         this.randomJitterFraction = Objects.requireNonNull(randomJitterFraction, "randomJitterFraction must not be null");
         this.waiter = Objects.requireNonNull(waiter, "waiter must not be null");
@@ -69,20 +69,6 @@ public class ExponentialBackoffWithJitter {
                 waitRange.maxWaitCeilingSecs,
                 waitRange.firstWaitCeilingSecs * Math.pow(2.0, attempt - 2)); // First retry is attempt 2
         return (long) (randomJitterFraction.getAsDouble() * waitCeilingInSeconds * 1000L);
-    }
-
-    /**
-     * Waits for a number of milliseconds. Implemented by <code>Thread.sleep</code>.
-     */
-    @FunctionalInterface
-    public interface Waiter {
-        /**
-         * Wait for the specified period.
-         *
-         * @param  milliseconds         milliseconds to wait for
-         * @throws InterruptedException if the thread is interrupted while waiting
-         */
-        void waitForMillis(long milliseconds) throws InterruptedException;
     }
 
     /**

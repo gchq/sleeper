@@ -22,9 +22,19 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
 
+import java.util.List;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -34,10 +44,35 @@ public abstract class LocalStackTestBase {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3Client s3Client = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3Client.builder());
+    protected final AmazonS3 s3ClientV1 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
     @AfterEach
     void tearDownLocalStackBase() {
-        s3Client.shutdown();
+        s3Client.close();
+    }
+
+    private static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
+        return builder
+                .endpointOverride(localStackContainer.getEndpointOverride(service))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
+                .region(Region.of(localStackContainer.getRegion()))
+                .build();
+    }
+
+    protected void createBucket(String bucketName) {
+        s3Client.createBucket(builder -> builder.bucket(bucketName));
+    }
+
+    protected void putObject(String bucketName, String key, String content) {
+        s3Client.putObject(builder -> builder.bucket(bucketName).key(key),
+                RequestBody.fromString(content));
+    }
+
+    protected List<String> listObjectKeys(String bucketName) {
+        return s3Client.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
+                .contents().stream().map(S3Object::key)
+                .collect(toUnmodifiableList());
     }
 }

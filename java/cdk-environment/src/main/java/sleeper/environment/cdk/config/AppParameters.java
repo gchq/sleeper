@@ -20,16 +20,25 @@ public class AppParameters {
     private AppParameters() {
     }
 
-    public static final StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
+    public static final RequiredStringParameter INSTANCE_ID = RequiredStringParameter.key("instanceId");
     public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
+    public static final BooleanParameter DEPLOY_EC2 = BooleanParameter.keyAndDefault("deployEc2", true);
 
     public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
     public static final StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
     public static final StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "develop");
 
-    public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*");
+    public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*");
     public static final StringParameter BUILD_IMAGE_OWNER = StringParameter.keyAndDefault("buildImageOwner", "099720109477");
     public static final StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
     public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
     public static final IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
+
+    public static final OptionalStringParameter BUILD_UPTIME_LAMBDA_JAR = OptionalStringParameter.key("buildUptimeLambdaJar");
+    public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = StringListParameter.key("autoShutdownExistingEc2Ids");
+    public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = IntParameter.keyAndDefault("autoShutdownHourUtc", 19);
+    public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = BooleanParameter.keyAndDefault("nightlyTestsEnabled", false);
+    public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = IntParameter.keyAndDefault("nightlyTestHourUtc", 3);
+    public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = OptionalStringParameter.key("nightlyTestBucket");
+    public static final StringListParameter NIGHTLY_TEST_SUBNETS = StringListParameter.key("subnetIds");
 }

@@ -23,7 +23,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_EVENT_SOURCE_ID;
@@ -61,11 +60,13 @@ public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
     private final Queue commitQueue;
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public StateStoreCommitterStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            LoggingStack loggingStack,
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
@@ -80,7 +81,8 @@ public class StateStoreCommitterStack extends NestedStack {
         LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
-        lambdaToCommitStateStoreUpdates(policiesStack, committerJar,
+        lambdaToCommitStateStoreUpdates(
+                loggingStack, policiesStack, committerJar,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionStatusStore, ingestStatusStore);
     }
@@ -119,7 +121,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            ManagedPoliciesStack policiesStack, LambdaCode committerJar,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode committerJar,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionStatusStoreResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore) {
@@ -127,7 +129,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
-        LogGroup logGroup = createLambdaLogGroup(this, "StateStoreCommitterLogGroup", functionName, instanceProperties);
+        ILogGroup logGroup = loggingStack.getLogGroupByFunctionName(functionName);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 
         IFunction handlerFunction = committerJar.buildFunction(this, "StateStoreCommitter", builder -> builder

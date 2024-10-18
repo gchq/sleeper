@@ -64,9 +64,8 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.InstanceProfile;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.lambda.CfnPermission;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -74,6 +73,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+import software.constructs.IDependable;
 
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
@@ -96,7 +96,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -281,7 +280,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
 
         IFunction handlerFunction = jobCreatorJar.buildFunction(this, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
@@ -292,7 +291,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(createLambdaLogGroup(this, "CompactionJobsCreationHandlerLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
@@ -399,9 +398,8 @@ public class CompactionStack extends NestedStack {
             FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
-            LogDriver logDriver = Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks");
-            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, logDriver);
+            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(
+                    coreStacks, containerImage, environmentVariables, instanceProperties);
             fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     fargateContainerDefinitionOptions);
             grantPermissions.accept(fargateTaskDefinition);
@@ -409,9 +407,8 @@ public class CompactionStack extends NestedStack {
             Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
             String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
             instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-            LogDriver logDriver = Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks");
-            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
-                    environmentVariables, instanceProperties, logDriver);
+            ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(
+                    coreStacks, containerImage, environmentVariables, instanceProperties);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
 
             if (instanceProperties.getBoolean(COMPACTION_GPU_ENABLED)) {
@@ -446,11 +443,13 @@ public class CompactionStack extends NestedStack {
                 .build());
 
         IFunction customTermination = lambdaForCustomTerminationPolicy(coreStacks, taskCreatorJar);
-        customTermination.addPermission("AutoscalingCall", Permission.builder()
+
+        IDependable autoScalingPermission = CfnPermission.Builder.create(this, "AutoscalingCall")
                 .action("lambda:InvokeFunction")
-                .principal(Role.fromRoleArn(this, "compaction_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
-                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
-                .build());
+                .principal("arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling")
+                .functionName(customTermination.getFunctionArn())
+                .build();
 
         SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(this, "CompactionScalingDefaultSG")
                 .vpc(vpc)
@@ -489,6 +488,7 @@ public class CompactionStack extends NestedStack {
                 .terminationPolicies(List.of(TerminationPolicy.CUSTOM_LAMBDA_FUNCTION))
                 .terminationPolicyCustomLambdaFunctionArn(customTermination.getFunctionArn())
                 .build();
+        ec2scalingGroup.getNode().addDependency(autoScalingPermission);
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
                 .create(this, "CompactionCapacityProvider")
@@ -564,7 +564,7 @@ public class CompactionStack extends NestedStack {
     }
 
     private ContainerDefinitionOptions createFargateContainerDefinition(
-            ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -572,11 +572,12 @@ public class CompactionStack extends NestedStack {
                 .environment(environment)
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "FargateCompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "FargateCompactionTasks"))
                 .build();
     }
 
-    private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+    private ContainerDefinitionOptions createEC2ContainerDefinition(
+            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -587,7 +588,7 @@ public class CompactionStack extends NestedStack {
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (requirements.getMemoryLimitMiB() * 0.95))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "EC2CompactionTasks"))
                 .build();
     }
 
@@ -623,7 +624,7 @@ public class CompactionStack extends NestedStack {
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
                 .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
-                .logGroup(createLambdaLogGroup(this, "CompactionTerminatorLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .timeout(Duration.seconds(10)));
@@ -656,7 +657,7 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "CompactionTasksCreatorLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

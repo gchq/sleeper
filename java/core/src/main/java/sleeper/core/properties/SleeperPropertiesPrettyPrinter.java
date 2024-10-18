@@ -38,6 +38,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
     private final boolean hideUnknownProperties;
     private final boolean printTemplate;
+    private final boolean printGroupDetails;
 
     private SleeperPropertiesPrettyPrinter(Builder<T> builder) {
         sortedProperties = builder.sortedProperties;
@@ -45,6 +46,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
         hideUnknownProperties = builder.hideUnknownProperties;
         printTemplate = builder.printTemplate;
+        printGroupDetails = builder.printGroupDetails;
     }
 
     public static Builder<?> builder() {
@@ -67,6 +69,21 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     /**
+     * Creates a builder for a printer to be used to generate a properties template.
+     *
+     * @param  <T>        the type of properties to be printed
+     * @param  properties the properties to be printed
+     * @param  groups     the groups to organise properties into
+     * @param  writer     the writer to write to
+     * @return            the builder
+     */
+    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter.Builder<T> builderForPropertiesTemplate(
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+        return builder().properties(properties, groups)
+                .writer(writer).printTemplate(true);
+    }
+
+    /**
      * Pretty prints the given property values.
      *
      * @param properties the property values
@@ -76,13 +93,11 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         for (T property : sortedProperties) {
             if (currentGroup == null) {
                 currentGroup = property.getPropertyGroup();
-                println();
-                println(formatDescription(currentGroup));
+                printGroupHeader(currentGroup);
             } else if (!currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
                 println();
-                println();
-                println(formatDescription(currentGroup));
+                printGroupHeader(currentGroup);
             }
             printProperty(properties, property);
         }
@@ -99,9 +114,18 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         writer.flush();
     }
 
+    private void printGroupHeader(PropertyGroup group) {
+        println();
+        println(formatDescription("## ", group.getDescription()));
+        if (printGroupDetails && group.getDetails() != null) {
+            println("## ");
+            println(formatDescription("## ", group.getDetails()));
+        }
+    }
+
     private void printProperty(SleeperProperties<T> properties, T property) {
         println();
-        println(formatDescription(property));
+        println(formatDescription("# ", property.getDescription()));
         if (!property.isUserDefined()) {
             println("# (this property is system-defined and may not be edited)");
         }
@@ -141,14 +165,6 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         }
     }
 
-    private static String formatDescription(SleeperProperty property) {
-        return formatDescription("# ", property.getDescription());
-    }
-
-    private static String formatDescription(PropertyGroup group) {
-        return formatDescription("## ", group.getDescription());
-    }
-
     /**
      * Formats a property description with line wrapping for a short line length.
      *
@@ -171,6 +187,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         private PrintWriter writer;
         private boolean hideUnknownProperties;
         private boolean printTemplate;
+        private boolean printGroupDetails = true;
 
         private Builder() {
         }
@@ -231,6 +248,17 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
          */
         public Builder<T> printTemplate(boolean printTemplate) {
             this.printTemplate = printTemplate;
+            return this;
+        }
+
+        /**
+         * Sets whether to print extra details about property groups.
+         *
+         * @param  printGroupDetails true to include extra details, false otherwise
+         * @return                   this builder
+         */
+        public Builder<T> printGroupDetails(boolean printGroupDetails) {
+            this.printGroupDetails = printGroupDetails;
             return this;
         }
 

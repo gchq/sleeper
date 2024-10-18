@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ThreadSleepTestHelper;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -32,7 +33,6 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.recordWaits;
 import static sleeper.statestore.s3.InMemoryS3StateStoreDataFiles.buildPathFromRevisionId;
 import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 
@@ -246,7 +246,7 @@ public class S3StateStoreDataFileTest {
                 .loadAndWriteData(dataFiles::load, dataFiles::write)
                 .deleteFile(dataFiles::delete)
                 .retryBackoff(new ExponentialBackoffWithJitter(
-                        S3StateStoreDataFile.RETRY_WAIT_RANGE, jitterFractionSupplier, recordWaits(foundWaits)))
+                        S3StateStoreDataFile.RETRY_WAIT_RANGE, jitterFractionSupplier, ThreadSleepTestHelper.recordWaits(foundWaits)))
                 .build().updateWithAttempts(attempts, update, conditionCheckFor(condition));
     }
 

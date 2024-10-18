@@ -28,7 +28,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Stores information about the data files in a Sleeper table. This includes a count of the number of references
@@ -179,6 +182,32 @@ public interface FileReferenceStore {
      * @throws StateStoreException if query fails
      */
     List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
+
+    /**
+     * Checks if files on a given partition are assigned to a certain job.
+     *
+     * @param  partitionId         the ID of the partition to query
+     * @return                     a list of {@link FileReference}s on the partition
+     * @throws StateStoreException if query fails
+     */
+    default boolean isPartitionFilesAssignedToJob(String partitionId, List<String> filenames, String jobId) throws StateStoreException {
+        List<FileReference> fileReferences = getFileReferences();
+        Map<String, FileReference> partitionFileByName = fileReferences.stream()
+                .filter(reference -> Objects.equals(partitionId, reference.getPartitionId()))
+                .collect(toMap(FileReference::getFilename, f -> f));
+        boolean allAssigned = true;
+        for (String filename : filenames) {
+            FileReference reference = partitionFileByName.get(filename);
+            if (reference == null) {
+                throw new FileReferenceNotFoundException(filename, partitionId);
+            } else if (reference.getJobId() == null) {
+                allAssigned = false;
+            } else if (!reference.getJobId().equals(jobId)) {
+                throw new FileReferenceAssignedToJobException(reference);
+            }
+        }
+        return allAssigned;
+    }
 
     /**
      * Returns a map from the partition id to a list of file references in that partition. Each file may be included

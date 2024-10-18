@@ -34,7 +34,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ecs</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

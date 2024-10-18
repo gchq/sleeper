@@ -586,6 +586,108 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     }
 
     @Nested
+    @DisplayName("Query compaction file assignment")
+    class QueryCompactionFileAssignment {
+
+        @Test
+        void shouldFilesNotYetAssigned() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+
+            // When / Then
+            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldCheckAllFilesAssigned() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
+
+            // When / Then
+            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldCheckSomeFilesAssigned() throws Exception {
+            // Given
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            store.addFiles(List.of(file1, file2));
+            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
+
+            // When / Then
+            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldCheckFilesAssignedOnOnePartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            FileReference file1 = factory.rootFile("file1", 100L);
+            FileReference file2 = factory.rootFile("file2", 100L);
+            FileReference file1L = splitFile(file1, "L");
+            FileReference file1R = splitFile(file1, "R");
+            FileReference file2L = splitFile(file2, "L");
+            FileReference file2R = splitFile(file2, "R");
+            store.addFiles(List.of(file1L, file1R, file2L, file2R));
+            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
+
+            // When / Then
+            assertThat(store.isPartitionFilesAssignedToJob("R", List.of("file1", "file2"), "test-job"))
+                    .isFalse();
+            assertThat(store.isPartitionFilesAssignedToJob("L", List.of("file1", "file2"), "test-job"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldFailIfFileDoesNotExist() {
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailIfFileDoesNotExistOnPartition() throws Exception {
+            // Given
+            splitPartition("root", "L", "R", 5);
+            store.addFile(factory.partitionFile("L", "file", 100L));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("R", List.of("file"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailIfFileAssignedToOtherJob() throws Exception {
+            // Given
+            store.addFile(factory.rootFile("file", 100L));
+            store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "B"))
+                    .isInstanceOf(FileReferenceAssignedToJobException.class);
+        }
+
+        @Test
+        void shouldFailIfOneFileDoesNotExist() throws Exception {
+            // Given
+            store.addFile(factory.rootFile("file1", 100L));
+
+            // When / Then
+            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+                    .isInstanceOf(FileReferenceNotFoundException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("Apply compaction")
     class ApplyCompaction {
 

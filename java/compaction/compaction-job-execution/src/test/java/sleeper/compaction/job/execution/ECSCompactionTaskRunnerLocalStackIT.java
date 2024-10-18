@@ -53,6 +53,7 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTask;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -102,8 +103,8 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
-import static sleeper.compaction.testutils.StateStoreWaitForFilesTestHelper.waitForFileAssignmentWithAttempts;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -112,6 +113,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
@@ -273,6 +276,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -283,8 +288,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
 
         @Test
@@ -298,6 +301,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
+            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
@@ -311,8 +316,6 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL))
                     .map(Message::getBody)
                     .containsExactly(jobJson);
-            // - No file references should be in the state store
-            assertThat(stateStore.getFileReferences()).isEmpty();
         }
     }
 
@@ -374,6 +377,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
+        instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 1);
+        instanceProperties.setNumber(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         S3InstanceProperties.saveToS3(s3, instanceProperties);
@@ -461,10 +466,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore,
                 instanceProperties, sqs);
+        StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobStatusStore);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitForFileAssignmentWithAttempts(1, stateStoreProvider, tablePropertiesProvider),
-                committer, jobStatusStore, taskStatusStore, selector, taskId,
+                waitForFiles, committer, jobStatusStore, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;

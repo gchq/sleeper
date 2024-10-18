@@ -15,91 +15,27 @@
  */
 package sleeper.ingest.testutils;
 
-import com.facebook.collections.ByteArray;
-import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.key.Key;
-import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileReference;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ResultVerifier {
 
     private ResultVerifier() {
-    }
-
-    public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
-            List<FileReference> partitionFileReferenceList,
-            Configuration hadoopConfiguration) {
-        List<Sketches> readSketchesList = partitionFileReferenceList.stream()
-                .map(fileReference -> {
-                    try {
-                        String sketchFileName = fileReference.getFilename().replace(".parquet", ".sketches");
-                        return new SketchesSerDeToS3(sleeperSchema).loadFromHadoopFS(new Path(sketchFileName), hadoopConfiguration);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toList());
-        Set<String> fieldNameSet = readSketchesList.stream()
-                .flatMap(sketches -> sketches.getQuantilesSketches().keySet().stream())
-                .collect(Collectors.toSet());
-        return fieldNameSet.stream()
-                .map(fieldName -> {
-                    List<ItemsSketch> itemsSketchList = readSketchesList.stream().map(sketches -> sketches.getQuantilesSketch(fieldName)).collect(Collectors.toList());
-                    Field field = sleeperSchema.getField(fieldName).orElseThrow();
-                    return new AbstractMap.SimpleEntry<>(field, mergeSketches(itemsSketchList));
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    public static Map<Field, ItemsSketch> createFieldToItemSketchMap(Schema sleeperSchema, List<Record> recordList) {
-        return sleeperSchema.getRowKeyFields().stream()
-                .map(field -> new AbstractMap.SimpleEntry<>(field, createItemSketch(field, recordList)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static ItemsSketch mergeSketches(List<ItemsSketch> itemsSketchList) {
-        ItemsUnion union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
-        itemsSketchList.forEach(union::update);
-        return union.getResult();
-    }
-
-    private static ItemsSketch createItemSketch(Field field, List<Record> recordList) {
-        ItemsSketch itemsSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        if (field.getType() instanceof ByteArrayType) {
-            recordList.forEach(record -> itemsSketch.update(ByteArray.wrap((byte[]) record.get(field.getName()))));
-        } else {
-            recordList.forEach(record -> itemsSketch.update(record.get(field.getName())));
-        }
-        return itemsSketch;
     }
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
@@ -146,76 +82,6 @@ public class ResultVerifier {
             return new ParquetReaderIterator(recordParquetReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<FileReference> actualFiles, Configuration hadoopConfiguration) {
-        ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
-        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
-        assertOnSketch(field, expectedSketch, savedSketch);
-    }
-
-    public static void assertOnSketch(Field field, ItemsSketch expectedSketch, ItemsSketch savedSketch) {
-        KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
-        Function<Object, Key> readKey = field.getType() instanceof ByteArrayType
-                ? object -> Key.create(((ByteArray) object).getArray())
-                : Key::create;
-        Object[] actual = savedSketch.getQuantiles(ACTUAL_QUANTILES_QUERY);
-        Object[] expected = expectedSketch.getQuantiles(EXPECTED_QUANTILES_QUERY);
-        for (TestQuantile quantile : TEST_QUANTILES) {
-            assertThat(List.of(
-                    readKey.apply(quantile.expectedLowerValue(expected)),
-                    readKey.apply(quantile.actualValue(actual)),
-                    readKey.apply(quantile.expectedUpperValue(expected))))
-                    .isSortedAccordingTo(keyComparator);
-        }
-    }
-
-    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
-    private static final List<TestQuantile> TEST_QUANTILES = IntStream.rangeClosed(0, 10)
-            .mapToObj(index -> new TestQuantile(index, index * 0.1, QUANTILE_SKETCH_TOLERANCE))
-            .collect(Collectors.toUnmodifiableList());
-    private static final double[] ACTUAL_QUANTILES_QUERY = TEST_QUANTILES.stream()
-            .mapToDouble(TestQuantile::actualQuantile).toArray();
-    private static final double[] EXPECTED_QUANTILES_QUERY = TEST_QUANTILES.stream()
-            .flatMapToDouble(TestQuantile::expectedQuantiles).toArray();
-
-    private static class TestQuantile {
-        private final double quantile;
-        private final double quantileWithToleranceLower;
-        private final double quantileWithToleranceUpper;
-        private final int actualOffset;
-        private final int expectedLowerOffset;
-        private final int expectedUpperOffset;
-
-        TestQuantile(int index, double quantile, double tolerance) {
-            this.quantile = quantile;
-            quantileWithToleranceLower = Math.max(quantile - tolerance, 0);
-            quantileWithToleranceUpper = Math.min(quantile + tolerance, 1);
-            actualOffset = index;
-            expectedLowerOffset = index * 2;
-            expectedUpperOffset = index * 2 + 1;
-        }
-
-        public Object expectedLowerValue(Object[] expected) {
-            return expected[expectedLowerOffset];
-        }
-
-        public Object expectedUpperValue(Object[] expected) {
-            return expected[expectedUpperOffset];
-        }
-
-        public Object actualValue(Object[] actual) {
-            return actual[actualOffset];
-        }
-
-        public DoubleStream expectedQuantiles() {
-            return DoubleStream.of(quantileWithToleranceLower, quantileWithToleranceUpper);
-        }
-
-        public double actualQuantile() {
-            return quantile;
         }
     }
 }

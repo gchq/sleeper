@@ -41,7 +41,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL;
@@ -94,7 +93,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotCreationTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
         IFunction snapshotCreationLambda = statestoreJar.buildFunction(this, "TransactionLogSnapshotCreation", builder -> builder
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
@@ -104,7 +103,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
-                .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotCreationLogGroup", creationFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(creationFunctionName)));
 
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
@@ -164,7 +163,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotDeletionTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
         IFunction snapshotDeletionLambda = statestoreJar.buildFunction(this, "TransactionLogSnapshotDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
@@ -174,7 +173,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
-                .logGroup(createLambdaLogGroup(this, "TransactionLogSnapshotDeletionLogGroup", deletionFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(deletionFunctionName)));
 
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotDeletionSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION.buildRuleName(instanceProperties))

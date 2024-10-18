@@ -15,8 +15,6 @@
  */
 package sleeper.environment.cdk.networking;
 
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpointAwsService;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -25,19 +23,29 @@ import software.amazon.awscdk.services.ec2.SubnetConfiguration;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
+
+import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
-public class NetworkingStack extends Stack {
+import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
-    private final Vpc vpc;
+public class NetworkingDeployment {
 
-    public NetworkingStack(Construct scope, StackProps props) {
-        super(scope, props.getStackName(), props);
+    private final IVpc vpc;
 
-        vpc = Vpc.Builder.create(this, "Vpc")
+    public NetworkingDeployment(Construct scope) {
+        AppContext context = AppContext.of(scope);
+        Optional<String> vpcId = context.get(VPC_ID);
+        if (vpcId.isPresent()) {
+            vpc = Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId.get()).build());
+            return;
+        }
+        vpc = Vpc.Builder.create(scope, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(3)
                 .natGateways(1)
@@ -50,13 +58,13 @@ public class NetworkingStack extends Stack {
                                 .cidrMask(19).build()))
                 .build();
 
-        GatewayVpcEndpoint.Builder.create(this, "S3").vpc(vpc)
+        GatewayVpcEndpoint.Builder.create(scope, "S3Endpoint").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.S3)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
                 .build();
 
-        GatewayVpcEndpoint.Builder.create(this, "DynamoDB").vpc(vpc)
+        GatewayVpcEndpoint.Builder.create(scope, "DynamoDBEndpoint").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.DYNAMODB)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))

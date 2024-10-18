@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.clients.docker.TearDownDockerInstance;
@@ -51,7 +50,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
@@ -63,7 +62,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
-@Testcontainers
 public class DockerInstanceIT extends DockerInstanceTestBase {
     @Nested
     @DisplayName("Using DynamoDB state store")
@@ -79,7 +77,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
-            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME)))
+            assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLENAME)))
                     .doesNotThrowAnyException();
             assertThatCode(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .doesNotThrowAnyException();
@@ -100,7 +98,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME)))
+            assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(ACTIVE_FILES_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
             assertThatThrownBy(() -> dynamoDB.describeTable(instanceProperties.get(PARTITION_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);

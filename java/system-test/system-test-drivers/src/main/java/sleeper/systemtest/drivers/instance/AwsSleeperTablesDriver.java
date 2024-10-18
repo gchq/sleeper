@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
@@ -100,7 +100,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     public void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE.equals(key));
-        clearTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
+        clearTable(instanceProperties.get(ACTIVE_FILES_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
         clearTable(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.FILE_NAME);
         clearTable(instanceProperties.get(PARTITION_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID);
         clearTable(instanceProperties.get(REVISION_TABLENAME), S3StateStore.TABLE_ID, S3StateStore.REVISION_ID_KEY);

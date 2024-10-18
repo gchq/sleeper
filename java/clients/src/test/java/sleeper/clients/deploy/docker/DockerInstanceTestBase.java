@@ -24,9 +24,13 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
@@ -37,6 +41,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.query.model.Query;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
@@ -49,17 +55,20 @@ import java.util.function.Consumer;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-@Testcontainers
 public class DockerInstanceTestBase {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
     protected final AmazonS3 s3Client = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final AmazonSQS sqsClient = buildAwsV1Client(
+    protected final SqsClient sqsClient = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.SQS, SqsClient.builder());
+    protected final AmazonSQS sqsClientV1 = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+
+    static {
+        localStackContainer.start();
+    }
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -83,6 +92,24 @@ public class DockerInstanceTestBase {
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 
+    protected IngestJob receiveIngestJob(String queueUrl) {
+        List<Message> messages = sqsClient.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
+        if (messages.size() != 1) {
+            throw new IllegalStateException("Expected to receive one message, found: " + messages);
+        }
+        String json = messages.get(0).body();
+        return new IngestJobSerDe().fromJson(json);
+    }
+
+    protected IngestJob receiveIngestJobV1(String queueUrl) {
+        List<com.amazonaws.services.sqs.model.Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
+        if (messages.size() != 1) {
+            throw new IllegalStateException("Expected to receive one message, found: " + messages);
+        }
+        String json = messages.get(0).getBody();
+        return new IngestJobSerDe().fromJson(json);
+    }
+
     private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
         return Query.builder()
                 .tableName(tableName)
@@ -100,5 +127,14 @@ public class DockerInstanceTestBase {
         configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
         configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
         return configuration;
+    }
+
+    private static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
+        return builder
+                .endpointOverride(localStackContainer.getEndpointOverride(service))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
+                .region(Region.of(localStackContainer.getRegion()))
+                .build();
     }
 }

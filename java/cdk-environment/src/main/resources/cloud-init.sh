@@ -63,6 +63,13 @@ if [ ! -d "$REPOSITORY_DIR" ]; then
   runuser --login "$LOGIN_USER" -c "sleeper builder git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git"
 fi
 
+CRONTAB_FILE="/sleeper-init/crontab"
+if [ -f "$CRONTAB_FILE" ]; then
+  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $LOGIN_HOME/.sleeper/builder/"
+  chown "$LOGIN_USER:$LOGIN_USER" "$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
+  runuser --login "$LOGIN_USER" -c "crontab $CRONTAB_FILE"
+fi
+
 if [ -f /var/run/reboot-required ]; then
   /sbin/shutdown -r now && exit
 fi

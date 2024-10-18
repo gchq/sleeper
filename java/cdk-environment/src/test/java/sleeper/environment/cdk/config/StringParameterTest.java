@@ -19,27 +19,27 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
+import static sleeper.environment.cdk.config.AppParameters.BUILD_REPOSITORY;
 
 public class StringParameterTest {
 
     @Test
     public void refuseEmptyString() {
-        AppContext context = AppContext.of(INSTANCE_ID.value(""));
-        assertThatThrownBy(() -> context.get(INSTANCE_ID))
+        AppContext context = AppContext.of(BUILD_REPOSITORY.value(""));
+        assertThatThrownBy(() -> context.get(BUILD_REPOSITORY))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("instanceId");
+                .hasMessageContaining("repository");
     }
 
     @Test
     public void useDefaultValueWhenUnset() {
         AppContext context = AppContext.empty();
-        assertThat(context.get(INSTANCE_ID)).isEqualTo("SleeperEnvironment");
+        assertThat(context.get(BUILD_REPOSITORY)).isEqualTo("sleeper");
     }
 
     @Test
     public void canSetValue() {
-        AppContext context = AppContext.of(INSTANCE_ID.value("some-test-id"));
-        assertThat(context.get(INSTANCE_ID)).isEqualTo("some-test-id");
+        AppContext context = AppContext.of(BUILD_REPOSITORY.value("some-repository"));
+        assertThat(context.get(BUILD_REPOSITORY)).isEqualTo("some-repository");
     }
 }

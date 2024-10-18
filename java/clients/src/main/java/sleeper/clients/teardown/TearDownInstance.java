@@ -126,7 +126,8 @@ public class TearDownInstance {
 
     private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId, Path scriptsDir) {
         if (instanceId == null) {
-            InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(scriptsDir.resolve("generated"));
+            InstanceProperties instanceProperties = LoadLocalProperties
+                    .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
             instanceId = instanceProperties.get(ID);
         }
         return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
@@ -135,7 +136,7 @@ public class TearDownInstance {
     public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId) {
         LOGGER.info("Loading configuration for instance {}", instanceId);
         try {
-            return S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
+            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
             return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);

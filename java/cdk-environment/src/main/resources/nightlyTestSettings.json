@@ -1,0 +1,15 @@
+{
+  "vpc": "${vpc}",
+  "subnets": "${subnets}",
+  "resultsBucket": "${testBucket}",
+  "repoPath": "${fork}/${repository}",
+  "mergeToMainOnTestType": {
+    "performance": false,
+    "functional": false
+  },
+  "gitHubApp": {
+    "privateKeyFile": "/sleeper-builder/<my GitHub App private key uploaded to Sleeper builder>.pem",
+    "appId": "my GitHub App ID",
+    "installationId": "my GitHub App installation ID"
+  }
+}

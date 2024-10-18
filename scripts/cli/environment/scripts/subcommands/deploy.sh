@@ -25,31 +25,28 @@ ENVIRONMENT_ID=$1
 shift
 
 if [ "$#" -lt 1 ]; then
-  CDK_PARAMS=("--all")
+  CDK_PARAMS=()
 else
   CDK_PARAMS=("$@")
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-UTIL_SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../util && pwd)
 CDK_ROOT_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
-"$UTIL_SCRIPTS_DIR/configure-aws.sh"
-
 pushd "$CDK_ROOT_DIR" > /dev/null
-cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" --all "${CDK_PARAMS[@]}"
 popd > /dev/null
 
-USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+USERNAME=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2LoginUser" "$OUTPUTS_FILE" --raw-output)
 
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 
 # If an EC2 was created, wait for deployment, make a test connection to remember SSH certificate
-INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
 if [ "$INSTANCE_ID" != "null" ]; then
   "$THIS_DIR/test-connection.sh"
 fi

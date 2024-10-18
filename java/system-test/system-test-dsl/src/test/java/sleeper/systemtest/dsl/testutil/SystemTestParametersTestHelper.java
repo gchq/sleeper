@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -34,6 +35,7 @@ public class SystemTestParametersTestHelper {
                 .vpcId("test-vpc")
                 .subnetIds("test-subnet")
                 .systemTestStandalonePropertiesTemplate(new SystemTestStandaloneProperties())
+                .instancePropertiesOverrides(new InstanceProperties())
                 .findDirectories();
     }
 }

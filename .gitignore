@@ -28,4 +28,5 @@ python/env/
 target/coverage/*
 cmake-build-*/
 conan-cache/
-test_data/
+scripts/test/deployAll/system-test-instance.properties
+scripts/test/maven/system-test-instance.properties

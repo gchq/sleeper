@@ -16,11 +16,12 @@
 package sleeper.systemtest.drivers.statestore;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -52,14 +53,14 @@ import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
 @LocalStackDslTest
 public class AwsStateStoreCommitterDriverIT {
 
-    private AmazonSQS sqs;
+    private SqsClient sqs;
     private AmazonS3 s3;
     private SystemTestInstanceContext instance;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstance(MAIN);
-        sqs = drivers.clients().getSqs();
+        sqs = drivers.clients().getSqsV2();
         s3 = drivers.clients().getS3();
         instance = context.instance();
     }
@@ -107,13 +108,23 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     private List<Message> receiveCommitRequests(SleeperSystemTest sleeper) {
-        return sqs.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(sleeper.instanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withAttributeNames("MessageGroupId")
-                .withWaitTimeSeconds(2)
-                .withVisibilityTimeout(60)
-                .withMaxNumberOfMessages(10))
-                .getMessages();
+        String queueUrl = sleeper.instanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL);
+        List<Message> messages = sqs.receiveMessage(request -> request
+                .queueUrl(queueUrl)
+                .messageSystemAttributeNames(MessageSystemAttributeName.MESSAGE_GROUP_ID)
+                .waitTimeSeconds(2)
+                .visibilityTimeout(60)
+                .maxNumberOfMessages(10))
+                .messages();
+        sqs.deleteMessageBatch(request -> request
+                .queueUrl(queueUrl)
+                .entries(messages.stream()
+                        .map(message -> DeleteMessageBatchRequestEntry.builder()
+                                .id(message.messageId())
+                                .receiptHandle(message.receiptHandle())
+                                .build())
+                        .collect(toUnmodifiableList())));
+        return messages;
     }
 
     private List<Message> receiveCommitRequestsForBatches(SleeperSystemTest sleeper, int batches) {
@@ -121,7 +132,7 @@ public class AwsStateStoreCommitterDriverIT {
         for (int i = 0; i < batches; i++) {
             List<Message> messages = receiveCommitRequests(sleeper);
             if (messages.isEmpty()) {
-                break;
+                throw new IllegalStateException("Found no messages in expected batch " + (i + 1) + " of " + batches);
             } else {
                 allMessages.addAll(messages);
             }
@@ -130,13 +141,13 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     private String getMessageGroupId(Message message) {
-        return message.getAttributes().get("MessageGroupId");
+        return message.attributes().get(MessageSystemAttributeName.MESSAGE_GROUP_ID);
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
         return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider(),
                 key -> s3.getObjectAsString(instance.getInstanceProperties().get(DATA_BUCKET), key))
-                .fromJson(message.getBody());
+                .fromJson(message.body());
     }
 
 }

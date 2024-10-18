@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.util;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
@@ -34,12 +32,17 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awscdk.services.stepfunctions.LogLevel;
+import software.amazon.awscdk.services.stepfunctions.LogOptions;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -58,11 +61,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
 import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
@@ -124,55 +125,31 @@ public class Utils {
      * @return            the cleaned up instance ID
      */
     public static String cleanInstanceId(InstanceProperties properties) {
-        return properties.get(ID)
-                .toLowerCase(Locale.ROOT)
+        return cleanInstanceId(properties.get(ID));
+    }
+
+    public static String cleanInstanceId(String instanceId) {
+        return instanceId.toLowerCase(Locale.ROOT)
                 .replace(".", "-");
     }
 
-    /**
-     * Configures a log group with the specified number of days. Valid values are taken from
-     * <a href=
-     * "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>.
-     * A value of -1 represents an infinite number of days.
-     *
-     * @param  numberOfDays number of days you want to retain the logs
-     * @return              The RetentionDays equivalent
-     */
-    public static LogGroup createLogGroupWithRetentionDays(Construct scope, String id, int numberOfDays) {
-        return LogGroup.Builder.create(scope, id)
-                .retention(getRetentionDays(numberOfDays))
+    public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
+        ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
+        return LogDriver.awsLogs(AwsLogDriverProps.builder()
+                .streamPrefix(logGroup.getLogGroupName())
+                .logGroup(logGroup)
+                .build());
+    }
+
+    public static LogOptions createStateMachineLogOptions(CoreStacks coreStacks, String id) {
+        return LogOptions.builder()
+                .destination(coreStacks.getLogGroupByStateMachineId(id))
+                .level(LogLevel.ALL)
+                .includeExecutionData(true)
                 .build();
     }
 
-    public static LogGroup createLambdaLogGroup(
-            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(functionName)
-                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-    }
-
-    public static LogGroup createCustomResourceProviderLogGroup(
-            Construct scope, String id, String functionName, InstanceProperties instanceProperties) {
-        return LogGroup.Builder.create(scope, id)
-                .logGroupName(functionName + "-provider")
-                .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-    }
-
-    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
-        String logGroupName = String.join("-", "sleeper", cleanInstanceId(instanceProperties), id);
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(logGroupName)
-                .logGroup(LogGroup.Builder.create(scope, id)
-                        .logGroupName(logGroupName)
-                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build())
-                .build();
-        return LogDriver.awsLogs(logDriverProps);
-    }
-
-    private static RetentionDays getRetentionDays(int numberOfDays) {
+    public static RetentionDays getRetentionDays(int numberOfDays) {
         switch (numberOfDays) {
             case -1:
                 return RetentionDays.INFINITE;
@@ -232,8 +209,9 @@ public class Utils {
             }
         }
         if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
-            new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
+            try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+                new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
+            }
         }
         String deployedVersion = properties.get(VERSION);
         String localVersion = SleeperVersion.getVersion();
@@ -242,7 +220,7 @@ public class Utils {
         if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
-            throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+            throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
                     "Please upgrade/downgrade to make these match",
                     localVersion, deployedVersion));
         }

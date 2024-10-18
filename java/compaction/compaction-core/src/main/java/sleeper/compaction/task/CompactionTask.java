@@ -152,11 +152,10 @@ public class CompactionTask {
             try (MessageHandle message = messageOpt.get()) {
                 CompactionJob job = message.getJob();
                 String jobRunId = jobRunIdSupplier.get();
-                Instant jobStartTime = timeSupplier.get();
                 try {
                     propertiesReloader.reloadIfNeeded();
-                    waitForFiles.wait(job);
-                    RecordsProcessedSummary summary = compact(job, jobRunId, jobStartTime);
+                    waitForFiles.wait(job, taskId, jobRunId);
+                    RecordsProcessedSummary summary = compact(job, jobRunId);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();
                     numConsecutiveFailures = 0;
@@ -178,7 +177,8 @@ public class CompactionTask {
         return timeSupplier.get();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
+    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId) throws Exception {
+        Instant jobStartTime = timeSupplier.get();
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         try {

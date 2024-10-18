@@ -19,7 +19,10 @@ package sleeper.core;
  * Fixes versions of images for TestContainers.
  */
 public final class CommonTestConstants {
+    // Temporarily using a different version of LocalStack for tests with SQS SDK v2, see issue:
+    // https://github.com/gchq/sleeper/issues/3449
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:1.4.0";
+    public static final String LOCALSTACK_DOCKER_IMAGE_V2 = "localstack/localstack:3.8.1";
 
     private CommonTestConstants() {
         // Empty

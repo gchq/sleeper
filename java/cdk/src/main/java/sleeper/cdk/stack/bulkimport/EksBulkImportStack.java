@@ -77,7 +77,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
+import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -145,7 +145,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logGroup(createLambdaLogGroup(this, "BulkImportEKSJobStarterLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
@@ -197,7 +197,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks, errorsTopic);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -222,7 +222,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, Topic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, CoreStacks coreStacks, Topic errorsTopic) {
         String imageName = instanceProperties.get(ACCOUNT) +
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +
@@ -267,6 +267,7 @@ public final class EksBulkImportStack extends NestedStack {
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build())))))
+                .logs(createStateMachineLogOptions(coreStacks, "EksBulkImportStateMachine"))
                 .build();
     }
 

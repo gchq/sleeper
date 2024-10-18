@@ -19,8 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -50,13 +49,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  * execute the query.
  */
 public class QueryLambdaClient extends QueryCommandLineClient {
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final DynamoDBQueryTracker queryTracker;
     private Map<String, String> resultsPublisherConfig;
     private final String queryQueueUrl;
     private final QuerySerDe querySerDe;
 
-    public QueryLambdaClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+    public QueryLambdaClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, SqsClient sqsClient, InstanceProperties instanceProperties) {
         super(s3Client, dynamoDBClient, instanceProperties);
         this.sqsClient = sqsClient;
         this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
@@ -129,8 +128,9 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     public void submitQuery(Query query) {
-        sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(
-                query.withResultsPublisherConfig(resultsPublisherConfig)));
+        sqsClient.sendMessage(request -> request.queueUrl(queryQueueUrl)
+                .messageBody(querySerDe.toJson(
+                        query.withResultsPublisherConfig(resultsPublisherConfig))));
     }
 
     public static void main(String[] args) throws StateStoreException, InterruptedException {
@@ -139,16 +139,14 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         }
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
-        try {
+        try (SqsClient sqsClient = SqsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoDBClient, sqsClient, instanceProperties);
             queryLambdaClient.run();
         } finally {
             s3Client.shutdown();
-            sqsClient.shutdown();
             dynamoDBClient.shutdown();
         }
     }

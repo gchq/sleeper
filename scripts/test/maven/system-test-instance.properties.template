@@ -2,15 +2,9 @@
 #                              System Test Properties                                  #
 ########################################################################################
 
-# The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.
-# Used when deploying resources and Sleeper instances against a standalone system test deployment.
-# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
-# Use -1 to indicate infinite retention.
-# sleeper.systemtest.standalone.log.retention.days=30
-
-# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks,
-# for Sleeper instances deployed against a standalone system test deployment.
-# sleeper.systemtest.standalone.ecs.security.groups=
+# Set any instance or system test properties that you wish to override for all deployments here.
+# Test runs will use a copy of this file with the same name but without `.template` on the end.
+# Please do not edit the template. If you do not create the copy it will be created automatically.
 
 # The minimum value of integers generated randomly during random record generation
 sleeper.systemtest.random.int.min=0

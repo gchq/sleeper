@@ -24,6 +24,7 @@ import software.amazon.awscdk.services.athena.CfnDataCatalog;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.kms.IKey;
 import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -45,10 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.AthenaProperty.ATHENA_SPILL_MASTER_KEY_ARN;
 import static sleeper.core.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -76,15 +77,9 @@ public class AthenaStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        AutoDeleteS3Objects.autoDeleteForBucket(this, customResourcesJar, instanceProperties, spillBucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, customResourcesJar, spillBucket, bucketName);
 
-        Key spillMasterKey = Key.Builder.create(this, "SpillMasterKey")
-                .description("Master key used by Sleeper to generate data keys. The data keys created are used to " +
-                        "encrypt spilled data to S3 when communicating with Amazon Athena.")
-                .enableKeyRotation(true)
-                .removalPolicy(RemovalPolicy.DESTROY)
-                .pendingWindow(Duration.days(7))
-                .build();
+        IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("spill_bucket", spillBucket.getBucketName());
@@ -117,7 +112,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceProperties, jarCode, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceProperties, coreStacks, jarCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -141,7 +136,23 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction createConnector(String className, InstanceProperties instanceProperties, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
+        String spillKeyArn = instanceProperties.get(ATHENA_SPILL_MASTER_KEY_ARN);
+        if (spillKeyArn == null) {
+            return Key.Builder.create(scope, "SpillMasterKey")
+                    .description("Key used to encrypt data in the Athena spill bucket for Sleeper.")
+                    .enableKeyRotation(true)
+                    .removalPolicy(RemovalPolicy.DESTROY)
+                    .pendingWindow(Duration.days(7))
+                    .build();
+        } else {
+            return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
+        }
+    }
+
+    private IFunction createConnector(
+            String className, InstanceProperties instanceProperties, CoreStacks coreStacks,
+            LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String simpleClassName = getSimpleClassName(className);
 
@@ -152,7 +163,7 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_11)
-                .logGroup(createLambdaLogGroup(this, simpleClassName + "AthenaCompositeHandlerLogGroup", functionName, instanceProperties))
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .handler(className)
                 .environment(env));
 

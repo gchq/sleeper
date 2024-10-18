@@ -18,8 +18,15 @@ package sleeper.compaction.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.core.record.process.ProcessRunTime;
+
+import java.time.Instant;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
@@ -34,8 +41,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // When
         runTaskCheckingFiles(
-                waitForFileAssignmentWithAttempts(2),
-                jobsSucceed(1));
+                waitForFileAssignment().withAttempts(2),
+                processJobs(jobSucceeds()));
 
         // Then
         assertThat(successfulJobs).containsExactly(job);
@@ -51,8 +58,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // When
         runTaskCheckingFiles(
-                waitForFileAssignmentWithAttempts(1),
-                jobsSucceed(1));
+                waitForFileAssignment().withAttempts(1),
+                processNoJobs());
 
         // Then
         assertThat(successfulJobs).isEmpty();
@@ -64,15 +71,44 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
     @Test
     void shouldNotUpdateStatusStoreWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
         // Given
+        Instant waitForFilesTime = Instant.parse("2024-02-22T13:50:01Z");
+        Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+        Queue<Instant> times = new LinkedList<>(List.of(waitForFilesTime, failTime));
         CompactionJob job = createJobOnQueueNotAssignedToFiles("job1");
 
         // When
         runTaskCheckingFiles(
-                waitForFileAssignmentWithAttempts(1),
-                jobsSucceed(1));
+                waitForFileAssignment(times::poll).withAttempts(1),
+                processNoJobs());
 
         // Then
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME));
+                jobCreated(job, DEFAULT_CREATED_TIME,
+                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
+                                "Too many retries waiting for input files to be assigned to job in state store"))));
+    }
+
+    @Test
+    void shouldFailWhenFileDeletedBeforeJob() throws Exception {
+        // Given
+        Instant waitForFilesTime = Instant.parse("2024-02-22T13:50:01Z");
+        Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+        Queue<Instant> times = new LinkedList<>(List.of(waitForFilesTime, failTime));
+        CompactionJob job = createJob("test-job");
+        send(job);
+        stateStore.clearFileData();
+
+        // When
+        runTaskCheckingFiles(
+                waitForFileAssignment(times::poll).withAttempts(1),
+                processJobs(jobSucceeds()));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                jobCreated(job, DEFAULT_CREATED_TIME,
+                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
+                                "File reference not found in partition root, filename " + job.getInputFiles().get(0)))));
     }
 }

@@ -29,7 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
@@ -65,7 +65,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .sortKey(sortKeyActiveFileReferenceTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(ACTIVE_FILES_TABLELENAME, activeFilesTable.getTableName());
+        instanceProperties.set(ACTIVE_FILES_TABLENAME, activeFilesTable.getTableName());
 
         // DynamoDB table for file reference counts
         Attribute partitionKeyFileReferenceCountTable = Attribute.builder()

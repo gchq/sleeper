@@ -46,7 +46,7 @@ public interface EMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory.overhead")
             .description("The memory overhead for an executor. Used to set spark.executor.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("2g")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.memory.overhead")
@@ -194,6 +194,11 @@ public interface EMRProperty {
             .description("(Non-persistent or persistent EMR mode only) The number of EBS volumes per instance.\n" +
                     "This can be a number from 1 to 25.")
             .defaultValue("4").validationPredicate(s -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(s, 25))
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.encryption.key.arn")
+            .description("ARN of the KMS Key used to encrypt data at rest on the local file system in AWS EMR.\n" +
+                    "See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-encryption-enable.html#emr-encryption-create-keys.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 

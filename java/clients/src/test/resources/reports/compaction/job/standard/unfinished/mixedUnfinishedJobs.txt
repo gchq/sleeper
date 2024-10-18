@@ -9,7 +9,7 @@ Failed jobs (may be retried): 1
 Runs in progress: 1
 Runs awaiting commit: 1
 Statistics for delay between creation and input files assignment time:
-  avg: 1s, min: 1s, max: 1s, std dev: 0s
+  avg: 1s, min: 1s, 99%: 1s, 99.9%: 1s, max: 1s, std dev: 0s
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE          | CREATE_TIME              | FILES_ASSIGNED_TIME      | JOB_ID                               | INPUT_FILES | PARTITION_ID                         | TASK_ID                              | START_TIME               |
 | UNCOMMITTED    | 2022-09-20T13:33:12.001Z | 2022-09-20T13:33:13.001Z | job55555-5555-5555-5555-555555555555 |           1 | partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD | task1111-1111-1111-1111-111111111111 | 2022-09-20T13:34:12.001Z |

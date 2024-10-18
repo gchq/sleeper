@@ -27,7 +27,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
@@ -63,7 +63,7 @@ public class DynamoDBStateStoreCreator {
         List<KeySchemaElement> activeFilesKeySchemaElements = List.of(
                 new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID_AND_FILENAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
+        initialiseTable(instanceProperties.get(ACTIVE_FILES_TABLENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
         List<AttributeDefinition> fileReferenceCountAttributeDefinitions = List.of(
                 new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));

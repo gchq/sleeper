@@ -51,7 +51,7 @@ public class CompactionJobStatusStatisticsTest {
 
         // When / Then
         assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status1, status2)))
-                .get().hasToString("avg: 1.5s, min: 1s, max: 2s, std dev: 0.5s");
+                .get().hasToString("avg: 1.5s, min: 1s, 99%: 2s, 99.9%: 2s, max: 2s, std dev: 0.5s");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class CompactionJobStatusStatisticsTest {
 
         // When / Then
         assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status1, status2)))
-                .get().hasToString("avg: 2.5s, min: 2s, max: 3s, std dev: 0.5s");
+                .get().hasToString("avg: 2.5s, min: 2s, 99%: 3s, 99.9%: 3s, max: 3s, std dev: 0.5s");
     }
 
     @Test

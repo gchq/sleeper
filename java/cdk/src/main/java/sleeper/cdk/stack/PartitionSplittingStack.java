@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.createLambdaLogGroup;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_URL;
@@ -195,7 +194,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitTriggerLogGroup", triggerFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "FindPartitionsToSplitPeriodicTrigger")
@@ -225,7 +224,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(createLambdaLogGroup(this, "FindPartitionsToSplitLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
@@ -251,7 +250,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .reservedConcurrentExecutions(concurrency)
                 .handler("sleeper.splitter.lambda.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logGroup(createLambdaLogGroup(this, "SplitPartitionLogGroup", splitFunctionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(splitFunctionName)));
 
         coreStacks.grantSplitPartitions(splitPartitionLambda);
         splitPartitionLambda.addEventSource(SqsEventSource.Builder.create(partitionSplittingJobQueue)

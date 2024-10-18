@@ -21,6 +21,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 BASE_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 MAVEN_DIR="$BASE_DIR/java"
 ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/cdk-environment"
+BUILD_UPTIME_MAVEN_DIR="$MAVEN_DIR/build-uptime-lambda"
 SCRIPTS_DIR="$BASE_DIR/scripts"
 VERSION_FILE="$THIS_DIR/version.txt"
 JARS_DIR="$THIS_DIR/jars"
@@ -35,19 +36,20 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Building cdk-environment module"
+echo "Building Java code"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 
-pushd "$ENVIRONMENT_MAVEN_DIR"
+pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn "${MAVEN_PARAMS[@]}"
+mvn -pl core,build-uptime-lambda,cdk-environment "${MAVEN_PARAMS[@]}"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"
 mkdir -p "$JARS_DIR"
 rm -rf "${JARS_DIR:?}"/*
 cp "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$JARS_DIR/cdk-environment.jar"
+cp "$BUILD_UPTIME_MAVEN_DIR/target/build-uptime-lambda-$VERSION-utility.jar" "$JARS_DIR/build-uptime-lambda.jar"
 
 END_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
