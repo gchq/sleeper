@@ -169,6 +169,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
+        addLoggingManifests(bulkImportCluster, instanceProperties);
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
@@ -206,7 +207,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
-        createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
+        addRoleManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
@@ -272,9 +273,15 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
     }
 
-    private KubernetesManifest createNamespace(Cluster bulkImportCluster, String bulkImportNamespace) {
-        return createManifestFromResource(bulkImportCluster, "EksBulkImportNamespace", bulkImportNamespace,
-                "/k8s/namespace.json");
+    @SuppressWarnings("unchecked")
+    private void addLoggingManifests(Cluster cluster, InstanceProperties instanceProperties) {
+        KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", parseJson("k8s/logging-namespace.json"));
+        withDependencyOn(namespace);
+    }
+
+    @SuppressWarnings("unchecked")
+    private KubernetesManifest createNamespace(Cluster cluster, String namespaceName) {
+        return cluster.addManifest("EksBulkImportNamespace", parseJson("/k8s/namespace.json", namespaceReplacement(namespaceName)));
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
@@ -287,28 +294,23 @@ public final class EksBulkImportStack extends NestedStack {
         }
     }
 
-    private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
+    @SuppressWarnings("unchecked")
+    private void addRoleManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
             IRole stateMachineRole) {
-        Lists.newArrayList(
-                createManifestFromResource(cluster, "SparkSubmitRole", namespaceName, "/k8s/spark-submit-role.json"),
-                createManifestFromResource(cluster, "SparkSubmitRoleBinding", namespaceName,
-                        "/k8s/spark-submit-role-binding.json"),
-                createManifestFromResource(cluster, "SparkRole", namespaceName, "/k8s/spark-role.json"),
-                createManifestFromResource(cluster, "SparkRoleBinding", namespaceName, "/k8s/spark-role-binding.json"),
-                createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
-                createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
-                        "/k8s/step-function-role-binding.json",
-                        replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
-                .forEach(manifest -> manifest.getNode().addDependency(namespace));
+        withDependencyOn(namespace,
+                cluster.addManifest("SparkSubmitRole", parseJson("/k8s/spark-submit-role.json", namespaceReplacement(namespaceName))),
+                cluster.addManifest("SparkSubmitRoleBinding", parseJson("/k8s/spark-submit-role-binding.json", namespaceReplacement(namespaceName))),
+                cluster.addManifest("SparkRole", parseJson("/k8s/spark-role.json", namespaceReplacement(namespaceName))),
+                cluster.addManifest("SparkRoleBinding", parseJson("/k8s/spark-role-binding.json", namespaceReplacement(namespaceName))),
+                cluster.addManifest("StepFunctionRole", parseJson("/k8s/step-function-role.json", namespaceReplacement(namespaceName))),
+                cluster.addManifest("StepFunctionRoleBinding", parseJson("/k8s/step-function-role-binding.json",
+                        namespaceReplacement(namespaceName).andThen(replacement("user-placeholder", stateMachineRole.getRoleArn())))));
     }
 
-    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource) {
-        return createManifestFromResource(cluster, id, namespace, resource, json -> json);
-    }
-
-    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-            Function<String, String> replacements) {
-        return cluster.addManifest(id, parseJsonWithNamespace(resource, namespace, replacements));
+    private void withDependencyOn(KubernetesManifest namespace, KubernetesManifest... manifests) {
+        for (KubernetesManifest manifest : manifests) {
+            manifest.getNode().addDependency(namespace);
+        }
     }
 
     private static Map<String, Object> parseEksStepDefinition(String resource, InstanceProperties instanceProperties, Cluster cluster) {
@@ -328,7 +330,15 @@ public final class EksBulkImportStack extends NestedStack {
 
     private static Map<String, Object> parseJsonWithNamespace(
             String resource, String namespace, Function<String, String> replacements) {
-        return parseJson(resource, replacement("namespace-placeholder", namespace).andThen(replacements));
+        return parseJson(resource, namespaceReplacement(namespace).andThen(replacements));
+    }
+
+    private static Map<String, Object> parseJson(String resource) {
+        return parseJson(resource, json -> json);
+    }
+
+    private static Function<String, String> namespaceReplacement(String namespace) {
+        return replacement("namespace-placeholder", namespace);
     }
 
     private static Map<String, Object> parseJson(
