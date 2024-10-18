@@ -573,7 +573,7 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-6.13.0
+sleeper.bulk.import.emr.serverless.release=emr-7.2.0
 
 # Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
 sleeper.bulk.import.emr.serverless.autostart.enabled=true
@@ -709,7 +709,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-6.13.0
+sleeper.default.bulk.import.emr.release.label=emr-7.2.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
@@ -762,7 +762,7 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-6.13.0
+sleeper.bulk.import.persistent.emr.release.label=emr-7.2.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
