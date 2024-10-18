@@ -62,6 +62,7 @@ public class LoggingStack extends NestedStack {
         createLogGroup("bulk-import-NonPersistentEMR-start");
         createLogGroup("bulk-import-PersistentEMR-start");
         createLogGroup("bulk-import-eks-starter");
+        createLogGroup("bulk-import-eks");
         createStateMachineLogGroup("EksBulkImportStateMachine");
         createLogGroup("bulk-import-autodelete");
         createLogGroup("bulk-import-autodelete-provider");
@@ -106,6 +107,10 @@ public class LoggingStack extends NestedStack {
 
     public ILogGroup getLogGroupByStateMachineId(String id) {
         return getLogGroupByNameWithPrefixes(addStateMachineNamePrefixes(id));
+    }
+
+    public ILogGroup getLogGroupByEksClusterName(String clusterName) {
+        return getLogGroupByNameWithPrefixes(clusterName);
     }
 
     private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {

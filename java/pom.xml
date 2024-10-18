@@ -53,7 +53,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <!-- Scala is just used for Spark -->
         <scala.version>2.12</scala.version>
         <scala.minor.version>2.12.20</scala.minor.version>

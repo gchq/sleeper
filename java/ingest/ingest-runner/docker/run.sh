@@ -13,4 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-java -cp /ingest.jar sleeper.ingest.job.ECSIngestTaskRunner "$@"
+java --add-opens java.base/java.nio=ALL-UNNAMED \
+    --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+    --add-opens java.base/java.util=ALL-UNNAMED \
+    --add-opens java.base/java.lang.invoke=ALL-UNNAMED \
+    -cp /ingest.jar sleeper.ingest.job.ECSIngestTaskRunner "$@"

@@ -69,7 +69,7 @@ public class KeepLambdaWarmStack extends NestedStack {
         IFunction handler = queryJar.buildFunction(this, "WarmQueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Sends a message to query-executor lambda in order for it to stay warm")
-                .runtime(Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")

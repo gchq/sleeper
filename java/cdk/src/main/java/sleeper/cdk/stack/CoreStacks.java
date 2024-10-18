@@ -72,6 +72,10 @@ public class CoreStacks {
         return loggingStack.getLogGroupByStateMachineId(id);
     }
 
+    public ILogGroup getLogGroupByEksClusterName(String clusterName) {
+        return loggingStack.getLogGroupByEksClusterName(clusterName);
+    }
+
     public void grantReadInstanceConfig(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
     }

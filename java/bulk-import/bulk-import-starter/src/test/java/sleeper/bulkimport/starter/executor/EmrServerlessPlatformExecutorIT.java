@@ -101,7 +101,7 @@ public class EmrServerlessPlatformExecutorIT {
                     assertThatJson(body)
                             .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
                             .startsWith("--class BulkImportClass ")
-                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64 ");
+                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ");
                 });
     }
 
