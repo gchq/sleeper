@@ -15,6 +15,8 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
+#include "s3/s3_utils.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <limits>
@@ -37,12 +39,12 @@ int main(int argc, char **argv) {
     app.add_option("-c,--chunk-read-limit", chunkReadLimit, "cuDF Parquet reader chunk read limit in MiB");
     std::size_t passReadLimit{ 1000 };
     app.add_option("-p,--pass-read-limit", passReadLimit, "cuDF Parquet reader pass read limit in MiB");
-    std::size_t writeRepeats{ 1 };
-    app.add_option("-w,--write-repeats", writeRepeats, "Number of times to repeat chunk");
     CLI11_PARSE(app, argc, argv);// NOLINT
 
     // force gpu initialization so it's not included in the time
     rmm::cuda_stream_default.synchronize();
+    gpu_compact::cudf_compact::s3::initialiseAWS();
+    auto s3client = gpu_compact::cudf_compact::s3::makeClient();
 
     auto cuda_mr = std::make_shared<rmm::mr::cuda_memory_resource>();
     auto mr =
@@ -107,6 +109,7 @@ int main(int argc, char **argv) {
     }
 
     writer.close();
+    gpu_compact::cudf_compact::s3::shutdownAWS();
 
     // Grab total row count from each reader
     auto const totalRows = std::accumulate(
