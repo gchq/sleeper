@@ -1,4 +1,4 @@
-#include "cudf_compact/s3/s3_utils.hpp"
+#include "s3/s3_utils.hpp"
 
 #include <fmt/core.h>
 

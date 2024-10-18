@@ -5,21 +5,19 @@ add_library(
   cudf_compact.cpp
   cudf_utils.cpp
   filters.cpp
-  format_helper.cpp
   parquet_types.cpp
   ranges.cu
   ../../include/cudf_compact/common_types.hpp
   ../../include/cudf_compact/cudf_compact.hpp
   ../../include/cudf_compact/cudf_utils.hpp
   ../../include/cudf_compact/filters.hpp
-  ../../include/cudf_compact/format_helper.hpp
   ../../include/cudf_compact/metadata.hpp
   ../../include/cudf_compact/parquet_types.h
   ../../include/cudf_compact/ranges.hpp
 )
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
-target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog gpu_compact::s3)
+target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog gpu_compact::s3 gpu_compact::format_helper)
 target_link_libraries(cudf_compact PUBLIC cudf::cudf thrift::thrift)
 target_link_libraries(cudf_compact PRIVATE gpu_compact_options gpu_compact_warnings)
 target_include_directories(cudf_compact ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

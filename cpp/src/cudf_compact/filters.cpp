@@ -7,7 +7,7 @@
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <spdlog/spdlog.h>
 
-#include "cudf_compact/format_helper.hpp"
+#include "format_helper/format_helper.hpp"
 
 #include <exception>
 

@@ -17,7 +17,7 @@
 
 #include "cudf_compact/common_types.hpp"
 #include "cudf_compact/cudf_utils.hpp"
-#include "cudf_compact/format_helper.hpp"
+#include "format_helper/format_helper.hpp"
 #include "cudf_compact/parquet_types.h"
 
 #include <algorithm>// std::ranges::equal

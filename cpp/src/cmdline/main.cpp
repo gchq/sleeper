@@ -1,6 +1,6 @@
 #include "configure_logging.hpp"
 #include "cudf_compact/cudf_compact.hpp"
-#include "cudf_compact/format_helper.hpp"
+#include "format_helper/format_helper.hpp"
 
 #ifdef SPDLOG_ACTIVE_LEVEL
 #undef SPDLOG_ACTIVE_LEVEL

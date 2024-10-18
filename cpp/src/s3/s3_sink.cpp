@@ -5,9 +5,9 @@
 #include <aws/s3/model/UploadPartRequest.h>
 #include <spdlog/spdlog.h>
 
-#include "cudf_compact/format_helper.hpp"
-#include "cudf_compact/s3/s3_sink.hpp"
-#include "cudf_compact/s3/s3_utils.hpp"
+#include "format_helper/format_helper.hpp"
+#include "s3/s3_sink.hpp"
+#include "s3/s3_utils.hpp"
 
 #include <algorithm>
 #include <exception>

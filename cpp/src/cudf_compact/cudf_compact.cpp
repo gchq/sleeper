@@ -15,11 +15,11 @@
 
 #include "cudf_compact/common_types.hpp"
 #include "cudf_compact/filters.hpp"
-#include "cudf_compact/format_helper.hpp"
 #include "cudf_compact/metadata.hpp"
 #include "cudf_compact/parquet_types.h"
 #include "cudf_compact/ranges.hpp"
-#include "cudf_compact/s3/s3_utils.hpp"
+#include "format_helper/format_helper.hpp"
+#include "s3/s3_utils.hpp"
 
 #include <algorithm>// std::reduce
 #include <cstddef>
@@ -244,7 +244,6 @@ std::optional<size_t> page_size(col_schema const &schema,
 }
 
 CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t gpuChunk) {
-    imbueCout();
     auto s3client = gpu_compact::cudf_compact::s3::makeClient();
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges

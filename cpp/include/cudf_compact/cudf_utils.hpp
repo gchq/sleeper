@@ -7,7 +7,7 @@
 #include <fmt/core.h>
 #include <spdlog/spdlog.h>
 
-#include "cudf_compact/s3/s3_sink.hpp"
+#include "s3/s3_sink.hpp"
 
 #include <concepts>
 #include <exception>

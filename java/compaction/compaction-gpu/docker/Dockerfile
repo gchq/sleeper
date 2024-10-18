@@ -60,7 +60,7 @@ RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.
 
 # Install include-what-you-use
 RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -b clang_17 \
-    && /opt/cmake/bin/cmake -DCMAKE_PREFIX_PATH=/usr/lib/llvm-18 -S include-what-you-use/ -B build \
+    && /opt/cmake/bin/cmake -DCMAKE_PREFIX_PATH=/usr/lib/llvm-17 -S include-what-you-use/ -B build \
     && cd build \
     && make -j $(nproc) \
     && make install \
