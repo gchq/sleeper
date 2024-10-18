@@ -32,6 +32,7 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
 import software.amazon.awscdk.services.eks.FargateCluster;
+import software.amazon.awscdk.services.eks.FargateProfile;
 import software.amazon.awscdk.services.eks.FargateProfileOptions;
 import software.amazon.awscdk.services.eks.KubernetesManifest;
 import software.amazon.awscdk.services.eks.KubernetesVersion;
@@ -83,6 +84,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -169,12 +171,11 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
-        addLoggingManifests(bulkImportCluster, instanceProperties);
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
         ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
-        bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
+        FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
                 .vpc(vpc)
                 .subnetSelection(SubnetSelection.builder()
@@ -184,6 +185,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
+        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, uniqueBulkImportId);
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -274,9 +276,39 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private void addLoggingManifests(Cluster cluster, InstanceProperties instanceProperties) {
-        KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", parseJson("k8s/logging-namespace.json"));
-        withDependencyOn(namespace);
+    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, InstanceProperties instanceProperties, String uniqueBulkImportId) {
+        KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
+                "apiVersion", "v1",
+                "kind", "Namespace",
+                "metadata", Map.of(
+                        "name", "aws-observability",
+                        "labels", Map.of("aws-observability", "enabled"))));
+
+        // Fluent Bit configuration
+        Function<String, String> outputReplacements = replacements(Map.of(
+                "region-placeholder", instanceProperties.get(REGION),
+                "log-group-placeholder", uniqueBulkImportId,
+                "log-retention-days-placeholder", instanceProperties.get(LOG_RETENTION_IN_DAYS)));
+        withDependencyOn(namespace, cluster.addManifest("LoggingConfig", Map.of(
+                "apiVersion", "v1",
+                "kind", "ConfigMap",
+                "metadata", Map.of("name", "aws-logging", "namespace", "aws-observability"),
+                "data", Map.of(
+                        "flb_log_cw", "false",
+                        "filters.conf", loadResource("/fluentbit/filters.conf"),
+                        "output.conf", outputReplacements.apply(loadResource("/fluentbit/output.conf")),
+                        "parsers.conf", loadResource("/fluentbit/parsers.conf")))));
+
+        fargateProfile.getPodExecutionRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of(
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:DescribeLogStreams",
+                        "logs:PutLogEvents",
+                        "logs:PutRetentionPolicy"))
+                .resources(List.of("*"))
+                .build());
     }
 
     @SuppressWarnings("unchecked")
@@ -319,51 +351,44 @@ public final class EksBulkImportStack extends NestedStack {
 
     private static Map<String, Object> parseEksStepDefinition(
             String resource, InstanceProperties instanceProperties, Cluster cluster, Function<String, String> replacements) {
-        return parseJsonWithNamespace(resource,
-                instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE),
-                replacements(Map.of(
-                        "endpoint-placeholder", instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT),
-                        "cluster-placeholder", cluster.getClusterName(),
-                        "ca-placeholder", cluster.getClusterCertificateAuthorityData()))
+        return parseJson(resource,
+                namespaceReplacement(instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE))
+                        .andThen(replacements(Map.of(
+                                "endpoint-placeholder", instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT),
+                                "cluster-placeholder", cluster.getClusterName(),
+                                "ca-placeholder", cluster.getClusterCertificateAuthorityData())))
                         .andThen(replacements));
     }
 
-    private static Map<String, Object> parseJsonWithNamespace(
-            String resource, String namespace, Function<String, String> replacements) {
-        return parseJson(resource, namespaceReplacement(namespace).andThen(replacements));
+    private static Map<String, Object> parseJson(
+            String resource, Function<String, String> replacements) {
+        String json = loadResource(resource);
+        String jsonWithReplacements = replacements.apply(json);
+        return new Gson().fromJson(jsonWithReplacements, new JsonTypeToken());
     }
 
-    private static Map<String, Object> parseJson(String resource) {
-        return parseJson(resource, json -> json);
+    private static String loadResource(String resource) {
+        try {
+            return IOUtils.toString(Objects.requireNonNull(EksBulkImportStack.class.getResourceAsStream(resource)), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static Function<String, String> namespaceReplacement(String namespace) {
         return replacement("namespace-placeholder", namespace);
     }
 
-    private static Map<String, Object> parseJson(
-            String resource, Function<String, String> replacements) {
-        String json;
-        try {
-            json = IOUtils.toString(Objects.requireNonNull(EksBulkImportStack.class.getResourceAsStream(resource)), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        String jsonWithReplacements = replacements.apply(json);
-        return new Gson().fromJson(jsonWithReplacements, new JsonTypeToken());
-    }
-
     private static Function<String, String> replacement(String key, String value) {
-        return json -> json.replace(key, value);
+        return str -> str.replace(key, value);
     }
 
     private static Function<String, String> replacements(Map<String, String> replacements) {
-        return json -> {
+        return str -> {
             for (Map.Entry<String, String> replacement : replacements.entrySet()) {
-                json = json.replace(replacement.getKey(), replacement.getValue());
+                str = str.replace(replacement.getKey(), replacement.getValue());
             }
-            return json;
+            return str;
         };
     }
 
