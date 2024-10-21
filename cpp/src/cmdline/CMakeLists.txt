@@ -1,4 +1,4 @@
-add_executable(main main.cpp configure_logging.cpp ../../include/cmdline/configure_logging.hpp)
+add_executable(main main.cpp configure_logging.cpp ../../include/cmdline/configure_logging.hpp ../format_helper/format_helper.cpp)
 target_link_system_libraries(
   main
   PRIVATE

@@ -4,6 +4,7 @@ add_library(
   s3utils
   s3_sink.cpp
   s3_utils.cpp
+  ../format_helper/format_helper.cpp
   ../../include/s3/s3_sink.hpp
   ../../include/s3/s3_utils.hpp)
 
