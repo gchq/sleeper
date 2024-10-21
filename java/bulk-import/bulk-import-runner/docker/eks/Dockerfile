@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM public.ecr.aws/emr-on-eks/spark/emr-7.2.0:latest
+FROM apache/spark:3.5.1-scala2.12-java17-ubuntu
 
-COPY ./bulk-import-runner.jar /usr/lib/spark/work
+ENV PATH="$PATH:/opt/spark/bin"
+USER root
+RUN mkdir /opt/spark/workdir
+USER spark
+COPY ./bulk-import-runner.jar /opt/spark/workdir

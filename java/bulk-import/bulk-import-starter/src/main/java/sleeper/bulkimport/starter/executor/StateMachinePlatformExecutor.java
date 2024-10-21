@@ -44,11 +44,11 @@ import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IM
  * submits them to a pre-deployed state machine linked to EKS.
  */
 public class StateMachinePlatformExecutor implements PlatformExecutor {
-    private static final String EMR_IMAGE_JAR_LOCATION = "local:///usr/lib/spark/work/bulk-import-runner.jar";
-    private static final String EMR_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto";
+    private static final String SPARK_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
+    private static final String SPARK_IMAGE_JAVA_HOME = "/opt/java/openjdk";
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
-    private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto";
+    private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
     private static final Map<String, String> DEFAULT_CONFIG;
 
     private final AWSStepFunctions stepFunctions;
@@ -126,8 +126,8 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
             baseSparkConfig.put("spark.executor.extraJavaOptions", "-Dlog4j.configuration=" + NATIVE_IMAGE_LOG4J_LOCATION);
             jarLocation = NATIVE_IMAGE_JAR_LOCATION;
         } else {
-            baseSparkConfig.put("spark.executorEnv.JAVA_HOME", EMR_IMAGE_JAVA_HOME);
-            jarLocation = EMR_IMAGE_JAR_LOCATION;
+            baseSparkConfig.put("spark.executorEnv.JAVA_HOME", SPARK_IMAGE_JAVA_HOME);
+            jarLocation = SPARK_IMAGE_JAR_LOCATION;
         }
 
         return arguments.sparkSubmitCommandForEKSCluster(taskId, jarLocation, baseSparkConfig);
