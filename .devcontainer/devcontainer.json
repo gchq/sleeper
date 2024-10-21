@@ -10,8 +10,14 @@
         "vscjava.vscode-java-pack",
         "shengchen.vscode-checkstyle",
         "eamodio.gitlens",
-        "1yib.rust-bundle",
-        "mhutchie.git-graph"
+        "rust-lang.rust-analyzer",
+        "nemurubaka.cratesx",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "donjayamanne.python-environment-manager",
+        "njpwerner.autodocstring",
+        "mhutchie.git-graph",
+        "scala-lang.scala"
       ]
     }
   },

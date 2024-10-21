@@ -20,12 +20,12 @@ import org.apache.arrow.algorithm.sort.DefaultVectorComparators;
 import org.apache.arrow.algorithm.sort.IndexSorter;
 import org.apache.arrow.algorithm.sort.VectorValueComparator;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.BaseVariableWidthVector;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
-import org.apache.arrow.vector.VariableWidthVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import sleeper.core.schema.type.ByteArrayType;
@@ -82,11 +82,11 @@ class ArrowIngestSupport {
                         vectorValueComparator.attachVector((BigIntVector) vectorSchemaRoot.getVector(indexOfField));
                         return vectorValueComparator;
                     } else if (fieldType instanceof StringType) {
-                        VectorValueComparator<VariableWidthVector> vectorValueComparator = new DefaultVectorComparators.VariableWidthComparator();
+                        VectorValueComparator<BaseVariableWidthVector> vectorValueComparator = new DefaultVectorComparators.VariableWidthComparator();
                         vectorValueComparator.attachVector((VarCharVector) vectorSchemaRoot.getVector(indexOfField));
                         return vectorValueComparator;
                     } else if (fieldType instanceof ByteArrayType) {
-                        VectorValueComparator<VariableWidthVector> vectorValueComparator = new DefaultVectorComparators.VariableWidthComparator();
+                        VectorValueComparator<BaseVariableWidthVector> vectorValueComparator = new DefaultVectorComparators.VariableWidthComparator();
                         vectorValueComparator.attachVector((VarBinaryVector) vectorSchemaRoot.getVector(indexOfField));
                         return vectorValueComparator;
                     } else {
