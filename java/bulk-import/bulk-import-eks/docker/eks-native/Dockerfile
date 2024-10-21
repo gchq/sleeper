@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ARG BUILDER_IMAGE_NAME=maven
-ARG BUILDER_IMAGE_TAG=3.8-openjdk-8-slim
+ARG BUILDER_IMAGE_TAG=3.9-amazoncorretto-17-al2023
 
 ARG BASE_IMAGE_NAME=amazoncorretto
-ARG BASE_IMAGE_TAG=11-al2023-headless
+ARG BASE_IMAGE_TAG=17-al2023-headless
 
 ARG SPARK_VERSION=3.5.1
 ARG HADOOP_VERSION=3.3.6

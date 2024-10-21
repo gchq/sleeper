@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -139,7 +140,7 @@ public class IngestBatcherStack extends NestedStack {
         IFunction submitterLambda = submitterJar.buildFunction(this, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
@@ -156,7 +157,7 @@ public class IngestBatcherStack extends NestedStack {
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")

@@ -77,7 +77,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         IFunction transactionDeletionTrigger = statestoreJar.buildFunction(this, "TransactionLogTransactionDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log transactions for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
@@ -87,7 +87,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         IFunction transactionDeletionLambda = statestoreJar.buildFunction(this, "TransactionLogTransactionDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
-                .runtime(Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))

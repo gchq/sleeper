@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -250,7 +251,7 @@ public class IngestStack extends NestedStack {
         IFunction handler = taskCreatorJar.buildFunction(this, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.starter.RunIngestTasksLambda::eventHandler")

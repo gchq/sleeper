@@ -89,7 +89,7 @@ public class AutoDeleteS3Objects {
                 .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(getLogGroupByFunctionName.apply(functionName))
-                .runtime(Runtime.JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .timeout(Duration.minutes(10)));
 
         bucket.grantRead(lambda);

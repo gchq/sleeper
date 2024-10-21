@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -54,7 +55,6 @@ import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITT
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -135,7 +135,7 @@ public class StateStoreCommitterStack extends NestedStack {
         IFunction handlerFunction = committerJar.buildFunction(this, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
-                .runtime(JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
