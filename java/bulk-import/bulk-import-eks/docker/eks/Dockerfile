@@ -19,5 +19,7 @@ USER root
 RUN rm /opt/spark/jars/*
 RUN mkdir /opt/spark/workdir
 USER spark
+
+# Replace Spark jars with versions managed by Sleeper (the version of Spark must match)
 COPY ./spark/* /opt/spark/jars
 COPY ./bulk-import-runner.jar /opt/spark/workdir

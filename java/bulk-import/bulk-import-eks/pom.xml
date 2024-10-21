@@ -46,6 +46,11 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- The Spark Docker image uses an old version of Hadoop, which is not compatible with the -->
+                        <!-- version used in EMR. -->
+                        <!-- This outputs the jars required to run Spark in EKS, to completely replace the jars -->
+                        <!-- in the Spark Docker image with versions managed by Sleeper. -->
+                        <!-- The version of Spark must match between the base image and Sleeper. -->
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
