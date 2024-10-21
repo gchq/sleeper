@@ -15,7 +15,7 @@
 #include <string_view>
 #include <typeinfo>
 
-namespace gpu_compact::cudf_compact::s3
+namespace gpu_compact::s3
 {
 
 inline const std::regex S3_CHECK(R"((s3):///?[-.]?([^\s?#]+?)/([^\s]+))");
@@ -36,7 +36,6 @@ inline Aws::String getKey(std::convertible_to<std::string_view> auto const &path
     return get_part(path, 3);
 }
 
-
 template<typename T, typename E> inline T const &unwrap(Aws::Utils::Outcome<T, E> const &outcome) noexcept(false) {
     if (outcome.IsSuccess()) {
         return outcome.GetResult();
@@ -48,4 +47,4 @@ template<typename T, typename E> inline T const &unwrap(Aws::Utils::Outcome<T, E
     }
 }
 
-}// namespace gpu_compact::cudf_compact::s3
+}// namespace gpu_compact::s3

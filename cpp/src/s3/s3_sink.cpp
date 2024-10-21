@@ -1,3 +1,5 @@
+#include "s3/s3_sink.hpp"
+
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/CompletedMultipartUpload.h>
 #include <aws/s3/model/CompletedPart.h>
@@ -6,15 +8,15 @@
 #include <spdlog/spdlog.h>
 
 #include "format_helper/format_helper.hpp"
-#include "s3/s3_sink.hpp"
 #include "s3/s3_utils.hpp"
 
 #include <algorithm>
 #include <exception>
 #include <functional>
 #include <ios>
+#include <iostream>
 
-namespace gpu_compact::cudf_compact::s3
+namespace gpu_compact::s3
 {
 
 Aws::String createUploadRequest(Aws::S3::S3Client &client, Aws::String const &bucket, Aws::String const &key) {
@@ -65,6 +67,7 @@ S3Sink::~S3Sink() noexcept {
     try {
         finish();
     } catch (std::exception const &e) { SPDLOG_ERROR(ff("Completing upload failed due to {}", e.what())); }
+    std::cout << "S3Sink going away now.\n";
     SPDLOG_DEBUG(ff("Destroying an S3Sink to {}/{}", bucket, key));
 }
 
@@ -119,4 +122,4 @@ std::size_t S3Sink::bytes_written() noexcept {
     return bytesWritten;
 }
 
-}// namespace gpu_compact::cudf_compact::s3
+}// namespace gpu_compact::s3

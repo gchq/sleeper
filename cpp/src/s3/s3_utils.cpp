@@ -4,7 +4,7 @@
 
 #include <exception>
 
-namespace gpu_compact::cudf_compact::s3
+namespace gpu_compact::s3
 {
 
 Aws::SDKOptions const &getOptions() noexcept {
@@ -40,4 +40,4 @@ Aws::String get_part(std::string_view s, std::smatch::size_type const group) {
     }
 }
 
-}// namespace gpu_compact::cudf_compact::s3
+}// namespace gpu_compact::s3

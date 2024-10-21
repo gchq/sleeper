@@ -244,7 +244,7 @@ std::optional<size_t> page_size(col_schema const &schema,
 }
 
 CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t gpuChunk) {
-    auto s3client = gpu_compact::cudf_compact::s3::makeClient();
+    auto s3client = gpu_compact::s3::makeClient();
     // TODO this should be read from compaction input details, will consist of row keys and sort keys
     // get the column to use for ranges
     cudf::size_type const range_col = { 0 };
@@ -384,9 +384,9 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
 }
 
 CompactionResult merge_sorted_files(CompactionInput const &details, std::size_t gpuChunk) {
-    gpu_compact::cudf_compact::s3::initialiseAWS();
+    gpu_compact::s3::initialiseAWS();
     auto result = mergeSortedS3Files(details, gpuChunk);
-    gpu_compact::cudf_compact::s3::shutdownAWS();
+    gpu_compact::s3::shutdownAWS();
     return result;
 }
 

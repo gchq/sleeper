@@ -13,7 +13,7 @@
 #include <mutex>
 #include <string_view>
 
-namespace gpu_compact::cudf_compact::s3
+namespace gpu_compact::s3
 {
 
 inline constexpr std::size_t DEFAULT_UPLOAD_SIZE = 50 * 1'048'576;
