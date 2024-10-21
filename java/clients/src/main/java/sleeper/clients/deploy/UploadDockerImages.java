@@ -24,6 +24,8 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,11 +37,15 @@ import static sleeper.clients.util.CommandPipeline.pipeline;
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final Path baseDockerDirectory;
+    private final Path jarsDirectory;
+    private final CopyFile copyFile;
     private final EcrRepositoryCreator.Client ecrClient;
     private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
+        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
         dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
@@ -79,11 +85,14 @@ public class UploadDockerImages {
         }
 
         for (StackDockerImage stackImage : stacksToBuild) {
-            String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
+            Path directory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
+            String directoryStr = directory.toString();
             String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
+            stackImage.getLambdaJar().ifPresent(lambdaJar -> copyFile.copyWrappingExceptions(
+                    jarsDirectory.resolve(lambdaJar.getFileName()), directory.resolve("lambda.jar")));
 
             String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
             try {
@@ -93,9 +102,9 @@ public class UploadDockerImages {
                 if (stackImage.isBuildx()) {
                     runCommand.runOrThrow("docker", "buildx", "build",
                             "--platform", "linux/amd64,linux/arm64",
-                            "-t", tag, "--push", directory);
+                            "-t", tag, "--push", directoryStr);
                 } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, directory);
+                    runCommand.runOrThrow("docker", "build", "-t", tag, directoryStr);
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
@@ -120,6 +129,8 @@ public class UploadDockerImages {
 
     public static final class Builder {
         private Path baseDockerDirectory;
+        private Path jarsDirectory;
+        private CopyFile copyFile = Files::copy;
         private EcrRepositoryCreator.Client ecrClient;
         private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
@@ -128,6 +139,16 @@ public class UploadDockerImages {
 
         public Builder baseDockerDirectory(Path baseDockerDirectory) {
             this.baseDockerDirectory = baseDockerDirectory;
+            return this;
+        }
+
+        public Builder jarsDirectory(Path jarsDirectory) {
+            this.jarsDirectory = jarsDirectory;
+            return this;
+        }
+
+        public Builder copyFile(CopyFile copyFile) {
+            this.copyFile = copyFile;
             return this;
         }
 
@@ -143,6 +164,19 @@ public class UploadDockerImages {
 
         public UploadDockerImages build() {
             return new UploadDockerImages(this);
+        }
+    }
+
+    public interface CopyFile {
+
+        void copy(Path source, Path target) throws IOException;
+
+        default void copyWrappingExceptions(Path source, Path target) {
+            try {
+                copy(source, target);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

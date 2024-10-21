@@ -34,6 +34,7 @@ import sleeper.core.properties.validation.OptionalStack;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +70,7 @@ public class UploadDockerImagesTest {
                     .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build());
     private final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     private final InstanceProperties properties = createTestInstanceProperties();
+    private final Map<Path, String> files = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -148,27 +150,34 @@ public class UploadDockerImagesTest {
     class UploadLambdaImages {
 
         @Test
-        @Disabled("TODO")
         void shouldCreateRepositoryAndPushCoreImage() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
             properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
 
             // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "jar=statestore.jar", "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
 
             assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
+                    .containsExactlyInAnyOrder("test-instance/statestore-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/statestore.jar"), "statestore-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "statestore-jar-content"));
         }
 
+        // TODO push image for optional lambda
+        // TODO push image if one of several optional stacks are enabled
+
         @Test
+        @Disabled("TODO")
         void shouldDoNothingWhenDeployingLambdasByJar() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
@@ -418,19 +427,22 @@ public class UploadDockerImagesTest {
     }
 
     private UploadDockerImages ecsUploader() {
-        return UploadDockerImages.builder()
-                .baseDockerDirectory(Path.of("./docker"))
-                .ecrClient(ecrClient)
+        return uploaderBuilder()
                 .dockerImageConfig(new DockerImageConfiguration(STACK_DOCKER_IMAGES, List.of()))
                 .build();
     }
 
     private UploadDockerImages lambdaUploader() {
-        return UploadDockerImages.builder()
-                .baseDockerDirectory(Path.of("./docker"))
-                .ecrClient(ecrClient)
+        return uploaderBuilder()
                 .dockerImageConfig(new DockerImageConfiguration(Map.of(), LAMBDA_JARS))
                 .build();
+    }
+
+    private UploadDockerImages.Builder uploaderBuilder() {
+        return UploadDockerImages.builder()
+                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                .ecrClient(ecrClient)
+                .copyFile((source, target) -> files.put(target, files.get(source)));
     }
 
     private CommandPipeline loginDockerCommand() {

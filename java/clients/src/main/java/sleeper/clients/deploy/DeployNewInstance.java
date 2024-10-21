@@ -146,7 +146,7 @@ public class DeployNewInstance {
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(runCommand,
                         StacksForDockerUpload.from(instanceProperties, sleeperVersion),

@@ -16,17 +16,23 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.core.deploy.LambdaJar;
+
+import java.util.Optional;
+
 public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
     private final boolean isBuildx;
     private final boolean createEmrServerlessPolicy;
+    private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
         isBuildx = builder.isBuildx;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        lambdaJar = builder.lambdaJar;
     }
 
     public static StackDockerImage dockerBuildImage(String imageName) {
@@ -42,6 +48,14 @@ public class StackDockerImage {
     public static StackDockerImage emrServerlessImage(String imageName) {
         return builder().imageName(imageName)
                 .directoryName(imageName).createEmrServerlessPolicy(true).build();
+    }
+
+    public static StackDockerImage lambdaImage(LambdaJar lambdaJar) {
+        return builder()
+                .imageName(lambdaJar.getImageName())
+                .directoryName("lambda")
+                .lambdaJar(lambdaJar)
+                .build();
     }
 
     public static Builder builder() {
@@ -64,11 +78,16 @@ public class StackDockerImage {
         return createEmrServerlessPolicy;
     }
 
+    public Optional<LambdaJar> getLambdaJar() {
+        return Optional.ofNullable(lambdaJar);
+    }
+
     public static final class Builder {
         private String imageName;
         private String directoryName;
         private boolean isBuildx;
         private boolean createEmrServerlessPolicy;
+        private LambdaJar lambdaJar;
 
         private Builder() {
         }
@@ -90,6 +109,11 @@ public class StackDockerImage {
 
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        public Builder lambdaJar(LambdaJar lambdaJar) {
+            this.lambdaJar = lambdaJar;
             return this;
         }
 

@@ -119,6 +119,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
+                .jarsDirectory(parameters.getJarsDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(ClientUtils::runCommandLogOutput,
                         StacksForDockerUpload.builder()

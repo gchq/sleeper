@@ -13,11 +13,10 @@
 # limitations under the License.
 
 FROM alpine:3 AS builder
-ARG jar
 
 RUN apk add --no-cache unzip
 RUN mkdir -p /lambda
-COPY ${jar} /lambda/lambda.jar
+COPY lambda.jar /lambda
 RUN unzip /lambda/lambda.jar -d /lambda/uncompressed
 
 FROM public.ecr.aws/lambda/java:17

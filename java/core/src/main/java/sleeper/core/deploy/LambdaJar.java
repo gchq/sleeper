@@ -20,6 +20,7 @@ import sleeper.core.properties.validation.OptionalStack;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -116,6 +117,16 @@ public class LambdaJar {
 
     public List<OptionalStack> getOptionalStacks() {
         return optionalStacks;
+    }
+
+    /**
+     * Checks if this lambda is deployed given the enabled optional stacks.
+     *
+     * @param  stacks the enabled optional stacks
+     * @return        true if this lambda will be deployed
+     */
+    public boolean isDeployed(Collection<OptionalStack> stacks) {
+        return optionalStacks.isEmpty();
     }
 
     /**

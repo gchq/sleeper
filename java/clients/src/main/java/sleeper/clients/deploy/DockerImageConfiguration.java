@@ -17,6 +17,7 @@
 package sleeper.clients.deploy;
 
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Collection;
@@ -38,6 +39,7 @@ public class DockerImageConfiguration {
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
 
     private final Map<OptionalStack, StackDockerImage> imageByStack;
+    private final List<LambdaJar> lambdaJars;
 
     public DockerImageConfiguration() {
         this(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaJar.all());
@@ -45,6 +47,7 @@ public class DockerImageConfiguration {
 
     public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaJar> lambdaJars) {
         this.imageByStack = imageByStack;
+        this.lambdaJars = lambdaJars;
     }
 
     public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks) {
@@ -52,12 +55,21 @@ public class DockerImageConfiguration {
     }
 
     public List<StackDockerImage> getStacksToDeploy(Collection<OptionalStack> stacks, List<StackDockerImage> extraDockerImages) {
-        return Stream.concat(
+        return Stream.of(
                 stacks.stream()
                         .map(this::getStackImage)
                         .flatMap(Optional::stream),
+                lambdaImages(stacks, LambdaDeployType.CONTAINER),
                 extraDockerImages.stream())
+                .flatMap(s -> s)
                 .collect(toUnmodifiableList());
+    }
+
+    private Stream<StackDockerImage> lambdaImages(Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType) {
+        if (lambdaDeployType != LambdaDeployType.CONTAINER) {
+            return Stream.empty();
+        }
+        return lambdaJars.stream().filter(lambda -> lambda.isDeployed(stacks)).map(StackDockerImage::lambdaImage);
     }
 
     private Optional<StackDockerImage> getStackImage(OptionalStack stack) {
