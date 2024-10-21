@@ -66,11 +66,15 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/eks</directory>
+            <directory>${project.basedir}/../bulk-import/bulk-import-eks/docker/eks</directory>
             <outputDirectory>scripts/docker/bulk-import-runner</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../bulk-import/bulk-import-eks/target/spark</directory>
+            <outputDirectory>scripts/docker/bulk-import-runner/spark</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emr-serverless</directory>

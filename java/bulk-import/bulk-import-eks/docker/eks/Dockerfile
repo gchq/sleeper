@@ -16,6 +16,8 @@ FROM apache/spark:3.5.1-scala2.12-java17-ubuntu
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root
+RUN rm /opt/spark/jars/*
 RUN mkdir /opt/spark/workdir
 USER spark
+COPY ./spark/* /opt/spark/jars
 COPY ./bulk-import-runner.jar /opt/spark/workdir
