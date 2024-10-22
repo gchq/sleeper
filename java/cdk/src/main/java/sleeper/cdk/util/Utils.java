@@ -112,7 +112,11 @@ public class Utils {
                 .filter(instanceProperties::isSet)
                 .forEach(s -> sb.append("-D").append(s.getPropertyName())
                         .append("=").append(instanceProperties.get(s)).append(" "));
-
+        Stream.of("java.base/java.nio=ALL-UNNAMED",
+                "java.base/sun.nio.ch=ALL-UNNAMED",
+                "java.base/java.util=ALL-UNNAMED",
+                "java.base/java.lang.invoke=ALL-UNNAMED")
+                .forEach(s -> sb.append("--add-opens ").append(s).append(" "));
         return sb.toString();
     }
 
