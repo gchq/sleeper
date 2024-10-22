@@ -63,7 +63,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.5.1</spark.version>
+        <spark.version>3.5.3</spark.version>
         <hadoop.version>3.3.6</hadoop.version>
         <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
         <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
