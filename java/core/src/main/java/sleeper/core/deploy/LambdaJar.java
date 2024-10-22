@@ -32,64 +32,64 @@ public class LambdaJar {
 
     private static final List<LambdaJar> ALL = new ArrayList<>();
     public static final LambdaJar ATHENA = builder()
-            .fileNameFormat("athena-%s.jar")
+            .filenameFormat("athena-%s.jar")
             .imageName("athena-lambda")
             .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaJar BULK_IMPORT_STARTER = builder()
-            .fileNameFormat("bulk-import-starter-%s.jar")
+            .filenameFormat("bulk-import-starter-%s.jar")
             .imageName("bulk-import-starter-lambda")
             .optionalStacks(OptionalStack.BULK_IMPORT_STACKS).add();
     public static final LambdaJar INGEST_TASK_CREATOR = builder()
-            .fileNameFormat("ingest-starter-%s.jar")
+            .filenameFormat("ingest-starter-%s.jar")
             .imageName("ingest-task-creator-lambda")
             .optionalStack(OptionalStack.IngestStack).add();
     public static final LambdaJar INGEST_BATCHER_SUBMITTER = builder()
-            .fileNameFormat("ingest-batcher-submitter-%s.jar")
+            .filenameFormat("ingest-batcher-submitter-%s.jar")
             .imageName("ingest-batcher-submitter-lambda")
             .optionalStack(OptionalStack.IngestBatcherStack).add();
     public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = builder()
-            .fileNameFormat("ingest-batcher-job-creator-%s.jar")
+            .filenameFormat("ingest-batcher-job-creator-%s.jar")
             .imageName("ingest-batcher-job-creator-lambda")
             .optionalStack(OptionalStack.IngestBatcherStack).add();
     public static final LambdaJar GARBAGE_COLLECTOR = builder()
-            .fileNameFormat("lambda-garbagecollector-%s.jar")
+            .filenameFormat("lambda-garbagecollector-%s.jar")
             .imageName("garbage-collector-lambda")
             .optionalStack(OptionalStack.GarbageCollectorStack).add();
     public static final LambdaJar COMPACTION_JOB_CREATOR = builder()
-            .fileNameFormat("lambda-jobSpecCreationLambda-%s.jar")
+            .filenameFormat("lambda-jobSpecCreationLambda-%s.jar")
             .imageName("compaction-job-creator-lambda")
             .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaJar COMPACTION_TASK_CREATOR = builder()
-            .fileNameFormat("runningjobs-%s.jar")
+            .filenameFormat("runningjobs-%s.jar")
             .imageName("compaction-task-creator-lambda")
             .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaJar PARTITION_SPLITTER = builder()
-            .fileNameFormat("lambda-splitter-%s.jar")
+            .filenameFormat("lambda-splitter-%s.jar")
             .imageName("partition-splitter-lambda")
             .optionalStack(OptionalStack.PartitionSplittingStack).add();
     public static final LambdaJar QUERY = builder()
-            .fileNameFormat("query-%s.jar")
+            .filenameFormat("query-%s.jar")
             .imageName("query-lambda")
             .optionalStacks(OptionalStack.QUERY_STACKS).add();
     public static final LambdaJar CUSTOM_RESOURCES = builder()
-            .fileNameFormat("cdk-custom-resources-%s.jar")
+            .filenameFormat("cdk-custom-resources-%s.jar")
             .imageName("cdk-custom-resources")
             .core().add();
     public static final LambdaJar METRICS = builder()
-            .fileNameFormat("metrics-%s.jar")
+            .filenameFormat("metrics-%s.jar")
             .imageName("metrics-lambda")
             .optionalStack(OptionalStack.TableMetricsStack).add();
     public static final LambdaJar STATESTORE = builder()
-            .fileNameFormat("statestore-lambda-%s.jar")
+            .filenameFormat("statestore-lambda-%s.jar")
             .imageName("statestore-lambda")
             .core().add();
 
-    private final String fileName;
+    private final String filename;
     private final String imageName;
     private final List<OptionalStack> optionalStacks;
 
     private LambdaJar(Builder builder) {
-        fileName = builder.fileName;
+        filename = builder.filename;
         imageName = builder.imageName;
         optionalStacks = builder.optionalStacks;
     }
@@ -107,8 +107,8 @@ public class LambdaJar {
         return new Builder();
     }
 
-    public String getFileName() {
-        return fileName;
+    public String getFilename() {
+        return filename;
     }
 
     public String getImageName() {
@@ -152,7 +152,7 @@ public class LambdaJar {
 
     private static boolean isFilenameOfJar(String fileName, LambdaJar... jars) {
         return Stream.of(jars)
-                .map(LambdaJar::getFileName)
+                .map(LambdaJar::getFilename)
                 .anyMatch(fileName::equals);
     }
 
@@ -160,7 +160,7 @@ public class LambdaJar {
      * Builder to create a lambda jar definition.
      */
     public static class Builder {
-        private String fileName;
+        private String filename;
         private String imageName;
         private List<OptionalStack> optionalStacks;
 
@@ -173,8 +173,8 @@ public class LambdaJar {
          * @param  format the format string
          * @return        this builder
          */
-        public Builder fileNameFormat(String format) {
-            this.fileName = String.format(format, SleeperVersion.getVersion());
+        public Builder filenameFormat(String format) {
+            this.filename = String.format(format, SleeperVersion.getVersion());
             return this;
         }
 

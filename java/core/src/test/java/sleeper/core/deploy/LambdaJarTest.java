@@ -32,7 +32,7 @@ class LambdaJarTest {
     @Test
     void shouldIncludeVersionInJarNames() {
         assertThat(LambdaJar.all())
-                .extracting(LambdaJar::getFileName)
+                .extracting(LambdaJar::getFilename)
                 .allSatisfy(fileName -> assertThat(fileName)
                         .contains(SleeperVersion.getVersion()));
     }

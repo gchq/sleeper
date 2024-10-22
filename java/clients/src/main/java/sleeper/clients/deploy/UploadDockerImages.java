@@ -87,7 +87,7 @@ public class UploadDockerImages {
                 ecrClient.createRepository(repositoryName);
             }
             stackImage.getLambdaJar().ifPresent(lambdaJar -> copyFile.copyWrappingExceptions(
-                    jarsDirectory.resolve(lambdaJar.getFileName()),
+                    jarsDirectory.resolve(lambdaJar.getFilename()),
                     dockerfileDirectory.resolve("lambda.jar")));
 
             String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();

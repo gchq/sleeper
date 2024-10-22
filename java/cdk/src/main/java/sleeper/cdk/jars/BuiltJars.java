@@ -43,14 +43,14 @@ public class BuiltJars {
     }
 
     public LambdaCode lambdaCode(LambdaJar jar, IBucket bucketConstruct) {
-        return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
+        return new LambdaCode(bucketConstruct, jar.getFilename(), getLatestVersionId(jar));
     }
 
     public String getLatestVersionId(LambdaJar jar) {
         return latestVersionIdByJar.computeIfAbsent(jar,
                 missingJar -> {
-                    String versionId = s3.headObject(builder -> builder.bucket(bucketName).key(missingJar.getFileName())).versionId();
-                    LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFileName(), versionId);
+                    String versionId = s3.headObject(builder -> builder.bucket(bucketName).key(missingJar.getFilename())).versionId();
+                    LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFilename(), versionId);
                     return versionId;
                 });
     }
