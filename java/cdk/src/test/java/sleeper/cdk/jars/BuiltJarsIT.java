@@ -20,16 +20,19 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.testutils.LocalStackTestBase;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
-    private final BuiltJars builtJars = new BuiltJars(s3Client, bucketName, LambdaDeployType.JAR);
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
@@ -41,5 +44,11 @@ public class BuiltJarsIT extends LocalStackTestBase {
         assertThat(builtJars.getLatestVersionId(LambdaJar.builder().filenameFormat("test.jar").imageName("test-image").core().build()))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(JARS_BUCKET, bucketName);
+        return properties;
     }
 }

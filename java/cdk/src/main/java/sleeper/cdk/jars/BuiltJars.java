@@ -21,10 +21,15 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 public class BuiltJars {
 
@@ -33,12 +38,21 @@ public class BuiltJars {
     private final S3Client s3;
     private final String bucketName;
     private final LambdaDeployType deployType;
+    private final String ecrRepositoryPrefix;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    public BuiltJars(S3Client s3, String bucketName, LambdaDeployType deployType) {
+    private BuiltJars(S3Client s3, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
         this.s3 = s3;
         this.bucketName = bucketName;
         this.deployType = deployType;
+        this.ecrRepositoryPrefix = ecrRepositoryPrefix;
+    }
+
+    public static BuiltJars from(S3Client s3, InstanceProperties instanceProperties) {
+        return new BuiltJars(s3,
+                instanceProperties.get(JARS_BUCKET),
+                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
+                instanceProperties.get(ECR_REPOSITORY_PREFIX));
     }
 
     public String bucketName() {
@@ -56,5 +70,9 @@ public class BuiltJars {
                     LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFilename(), versionId);
                     return versionId;
                 });
+    }
+
+    public String getRepositoryName(LambdaJar jar) {
+        return ecrRepositoryPrefix + "/" + jar.getImageName();
     }
 }

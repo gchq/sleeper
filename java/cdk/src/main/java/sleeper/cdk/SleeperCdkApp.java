@@ -69,7 +69,6 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
@@ -79,8 +78,6 @@ import java.util.Set;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
@@ -358,9 +355,7 @@ public class SleeperCdkApp extends Stack {
                 .region(instanceProperties.get(REGION))
                 .build();
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = new BuiltJars(s3Client,
-                    instanceProperties.get(JARS_BUCKET),
-                    instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class));
+            BuiltJars jars = BuiltJars.from(s3Client, instanceProperties);
 
             new SleeperCdkApp(app, id, StackProps.builder()
                     .stackName(id)

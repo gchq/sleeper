@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.jars;
 
+import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
@@ -42,7 +43,7 @@ public class LambdaCode {
 
     public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id).code(code());
+        Function.Builder builder = Function.Builder.create(scope, id).code(code(scope, id));
         config.accept(builder);
         Function function = builder.build();
 
@@ -54,9 +55,11 @@ public class LambdaCode {
         return function.getCurrentVersion();
     }
 
-    private Code code() {
+    private Code code(Construct scope, String id) {
         if (deployType == LambdaDeployType.JAR) {
             return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
+        } else if (deployType == LambdaDeployType.CONTAINER) {
+            return Code.fromEcrImage(Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(jar)));
         } else {
             throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
         }

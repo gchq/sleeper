@@ -207,6 +207,7 @@ public interface CommonProperty {
                     "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
                     "We may add the ability to use this in the CDK in the future.")
             .propertyGroup(InstancePropertyGroup.COMMON)
+            .defaultProperty(ID)
             .editable(false).build();
     UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.statestore.provider.cache.size")
             .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")

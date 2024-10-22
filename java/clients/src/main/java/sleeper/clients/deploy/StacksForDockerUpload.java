@@ -28,7 +28,6 @@ import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class StacksForDockerUpload {
@@ -145,7 +144,7 @@ public class StacksForDockerUpload {
         }
 
         public Builder properties(InstanceProperties properties) {
-            return ecrPrefix(Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(properties.get(ID)))
+            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX))
                     .account(properties.get(ACCOUNT))
                     .region(properties.get(REGION))
                     .version(properties.get(VERSION));
