@@ -16,7 +16,7 @@ The transaction log state store stores each change to the state store as a new
 item in DynamoDB, with optimistic concurrency control used to add new transactions. To avoid reading the entire
 history of transactions when querying or updating the state store, we periodically create snapshots of the state.
 To get an up-to-date view of the state store, the latest snapshot is queried and then updated by reading all subsequent
-transactions from the DyanmoDB transaction log. This state store enforces a sequential ordering to all the updates to
+transactions from the DynamoDB transaction log. This state store enforces a sequential ordering to all the updates to
 the state store. Due to challenges performing lots of concurrent updates, there is an option to apply updates to the
 state store via an SQS FIFO queue which triggers a committer lambda. The table id is used to ensure that only one
 lambda can be processing an update for a table at a time. This works well for a single table, but the update rate
@@ -70,8 +70,15 @@ with only the dummy reference and for which the update time is more than N secon
 that the deletion of files will take at least two calls to the garbage collector, but we do not need to prioritise
 deleting files as quickly as possible.
 
-Experiments showed that both of these options may be viable, but it is recommended that option 2 is pursued as that
-reduces the contention the most.
+- Option 3: This is similar to option 2 - for each Sleeper table there is a table of file references but instead of
+adding a dummy reference we add an entry for the file to a separate table. This entry simply records the filename
+along with an update time which is initially Long.MAX_VALUE. Normal updates to the file references happen on the
+main table. As in option 2, garbage collection needs to be a two state process. The first stage will have to find
+all files in the second table for which there are zero corresponding entries in the file references table. The rest
+of the garbage collection process will behave as in option 2.
+
+Experiments showed that these options may be viable, but it is recommended that option 2 or 3 is pursued as
+they reduce the contention the most.
 
 ## Implementation
 
@@ -93,18 +100,23 @@ Each connection to the Aurora instance consumes a small amount of resource on th
 tasks running at the same time and they all have a connection to the instance, that will put the instance under load
 even if those connections are idle. Each execution of a compaction job should create a PostgreSQLStateStore, do the
 checks it needs and then close the connection. We could add a method to the state store implementation that closes
-any internal connections or we could create the state store with a connection supplier than provides a connection
+any internal connections or we could create the state store with a connection supplier that provides a connection
 when needed but then shuts that connection down when it has not been used for a while.
 
 When we need to make updates to the state store, we can avoid needing to create a connection every time by reusing
 the idea of asynchronous commits from the transaction log state store, i.e. an SQS queue that triggers a lambda to
 perform the updates. However, in this case we do not want it to be a FIFO queue as we want to be able to make
 concurrent updates. We can set the maximum concurrency of the lambda to control the number of simultaneous updates to
-the state store.
+the state store. If multiple Sleeper tables are being updated then the maximum concurrency would need to be set high
+enough to support updates to all of the tables, but when only one table is active this would mean that there could be
+a large number of updates to one table. This may not be a problem in practice.
 
 ### Transactions
 
-We can use the serializable transaction level. Different operations on the state store will require different types
-of implementation - some can use prepared statements, some will use PLPGSQL.
+See the PostgreSQL manual on transaction isolation levels: https://www.postgresql.org/docs/current/transaction-iso.html.
+We can use the serializable transaction level. Even if the design means there should be no conflicts at the row level,
+it is possible that multiple simultaneous updates may lead to SQLExceptions due to it being unable to serialise the
+transactions. We will need to retry the update in these scenarios.
 
-See the PostgreSQL manual on transaction isolation levels: https://www.postgresql.org/docs/current/transaction-iso.html
+Different operations on the state store will require different types of implementation - some can use prepared
+statements, some will use PLPGSQL.
