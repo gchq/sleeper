@@ -42,14 +42,7 @@ public class LambdaCode {
 
     public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id);
-
-        if (deployType == LambdaDeployType.JAR) {
-            builder.code(Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar)));
-        } else {
-            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
-        }
-
+        Function.Builder builder = Function.Builder.create(scope, id).code(code());
         config.accept(builder);
         Function function = builder.build();
 
@@ -59,5 +52,13 @@ public class LambdaCode {
         // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
         // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
         return function.getCurrentVersion();
+    }
+
+    private Code code() {
+        if (deployType == LambdaDeployType.JAR) {
+            return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
+        } else {
+            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
+        }
     }
 }
