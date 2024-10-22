@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.testutils.LocalStackTestBase;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
-    private final BuiltJars builtJars = new BuiltJars(s3Client, bucketName);
+    private final BuiltJars builtJars = new BuiltJars(s3Client, bucketName, LambdaDeployType.JAR);
 
     @Test
     void shouldGetLatestVersionOfAJar() {

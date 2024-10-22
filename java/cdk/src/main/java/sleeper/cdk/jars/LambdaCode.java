@@ -21,24 +21,35 @@ import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.validation.LambdaDeployType;
+
 import java.util.function.Consumer;
 
 public class LambdaCode {
 
+    private final BuiltJars builtJars;
+    private final LambdaJar jar;
+    private final LambdaDeployType deployType;
     private final IBucket bucket;
-    private final String filename;
-    private final String versionId;
 
-    public LambdaCode(IBucket bucket, String filename, String versionId) {
+    LambdaCode(BuiltJars builtJars, LambdaJar jar, LambdaDeployType deployType, IBucket bucket) {
+        this.builtJars = builtJars;
+        this.jar = jar;
+        this.deployType = deployType;
         this.bucket = bucket;
-        this.filename = filename;
-        this.versionId = versionId;
     }
 
     public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id)
-                .code(Code.fromBucket(bucket, filename, versionId));
+        Function.Builder builder = Function.Builder.create(scope, id);
+
+        if (deployType == LambdaDeployType.JAR) {
+            builder.code(Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar)));
+        } else {
+            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
+        }
+
         config.accept(builder);
         Function function = builder.build();
 

@@ -24,6 +24,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -57,7 +58,8 @@ public class SystemTestStandaloneApp extends Stack {
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
+            BuiltJars jars = new BuiltJars(s3Client,
+                    systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET), LambdaDeployType.JAR);
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
             Environment environment = Environment.builder()

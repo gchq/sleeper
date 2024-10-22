@@ -25,11 +25,13 @@ import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
@@ -90,7 +92,9 @@ public class SystemTestApp extends SleeperCdkApp {
                 .build();
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(JARS_BUCKET));
+            BuiltJars jars = new BuiltJars(s3Client,
+                    systemTestProperties.get(JARS_BUCKET),
+                    systemTestProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class));
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)

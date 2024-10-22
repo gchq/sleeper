@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +32,13 @@ public class BuiltJars {
 
     private final S3Client s3;
     private final String bucketName;
+    private final LambdaDeployType deployType;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    public BuiltJars(S3Client s3, String bucketName) {
+    public BuiltJars(S3Client s3, String bucketName, LambdaDeployType deployType) {
         this.s3 = s3;
         this.bucketName = bucketName;
+        this.deployType = deployType;
     }
 
     public String bucketName() {
@@ -43,7 +46,7 @@ public class BuiltJars {
     }
 
     public LambdaCode lambdaCode(LambdaJar jar, IBucket bucketConstruct) {
-        return new LambdaCode(bucketConstruct, jar.getFilename(), getLatestVersionId(jar));
+        return new LambdaCode(this, jar, deployType, bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {
