@@ -18,10 +18,14 @@ package sleeper.systemtest.dsl.statestore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 
 import java.time.Instant;
 import java.util.Map;
@@ -36,12 +40,14 @@ public class SystemTestStateStore {
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
     private final StateStoreCommitterLogsDriver logsDriver;
+    private final SnapshotsDriver snapshotsDriver;
 
     public SystemTestStateStore(SystemTestContext context) {
         this.context = context;
         SystemTestDrivers adminDrivers = context.instance().adminDrivers();
         driver = adminDrivers.stateStoreCommitter(context);
         logsDriver = adminDrivers.stateStoreCommitterLogs(context);
+        snapshotsDriver = adminDrivers.snapshots();
     }
 
     public SystemTestStateStoreFakeCommits fakeCommits() {
@@ -75,6 +81,16 @@ public class SystemTestStateStore {
                         context.instance().streamTableProperties()
                                 .map(table -> table.get(TABLE_ID))
                                 .collect(toSet()));
+    }
+
+    public TransactionLogSnapshot waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout) throws InterruptedException {
+        return new WaitForSnapshot(context.instance(), snapshotsDriver)
+                .waitForFilesSnapshot(intervalAndPollingTimeout);
+    }
+
+    public TransactionLogSnapshot waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout) throws InterruptedException {
+        return new WaitForSnapshot(context.instance(), snapshotsDriver)
+                .waitForPartitionsSnapshot(intervalAndPollingTimeout);
     }
 
 }

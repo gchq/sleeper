@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
+import static java.util.stream.Collectors.toMap;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
@@ -51,6 +53,13 @@ public class SystemTestTableFiles {
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Map<String, Long> recordsByFilename() {
+        return all().getFilesWithReferences().stream()
+                .collect(toMap(
+                        AllReferencesToAFile::getFilename,
+                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
     }
 
     public Map<String, AllReferencesToAllFiles> filesByTable() {
