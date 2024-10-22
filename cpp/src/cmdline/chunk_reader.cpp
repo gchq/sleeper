@@ -1,6 +1,7 @@
 #include "configure_logging.hpp"
 
 #include <CLI/CLI.hpp>// NOLINT
+#include <cudf/io/datasource.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/merge.hpp>
@@ -16,7 +17,8 @@
 #include <spdlog/spdlog.h>
 
 #include "data_sink.hpp"
-#include "s3/s3_utils.hpp"
+#include "io/prefetch_source.hpp"
+#include "io/s3_utils.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -54,13 +56,20 @@ int main(int argc, char **argv) {
         rmm::mr::set_current_device_resource(mr.get());
 
         // Make readers
-        std::vector<std::tuple<std::unique_ptr<cudf::io::chunked_parquet_reader>, ::size_t, ::size_t>> readers;
+        std::vector<std::tuple<std::unique_ptr<cudf::io::datasource>,
+          std::unique_ptr<cudf::io::chunked_parquet_reader>,
+          ::size_t,
+          ::size_t>>
+          readers;
         readers.reserve(inputFiles.size());
 
         for (auto const &f : inputFiles) {
-            auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(f));
-            readers.emplace_back(std::make_unique<cudf::io::chunked_parquet_reader>(
-                                   chunkReadLimit * 1'048'576, passReadLimit * 1'048'576, reader_builder.build()),
+            // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
+            auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(cudf::io::datasource::create(f));
+            auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
+            readers.emplace_back(std::move(source),
+              std::make_unique<cudf::io::chunked_parquet_reader>(
+                chunkReadLimit * 1'048'576, passReadLimit * 1'048'576, reader_builder.build()),
               0,
               0);
         }
@@ -76,7 +85,7 @@ int main(int argc, char **argv) {
             // Loop through each reader
             std::vector<cudf::io::table_with_metadata> tables;
 
-            for (::size_t rc = 0; auto &[reader, chunkNo, rowCount] : readers) {
+            for (::size_t rc = 0; auto &[src, reader, chunkNo, rowCount] : readers) {
                 // If reader has data, read a chunk and write, otherwise flag and ignore
                 SPDLOG_INFO("Reader {:d}", rc);
                 if (reader->has_next()) {
@@ -116,7 +125,7 @@ int main(int argc, char **argv) {
         // Grab total row count from each reader
         auto const totalRows = std::accumulate(
           readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) constexpr noexcept {
-              return acc + std::get<2>(item);
+              return acc + std::get<3>(item);
           });
 
         SPDLOG_INFO("Finished, read/wrote {:d} rows from {:d} readers", totalRows, inputFiles.size());

@@ -1,4 +1,4 @@
-#include "s3/s3_sink.hpp"
+#include "io/s3_sink.hpp"
 
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/CompletedMultipartUpload.h>
@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 
 #include "format_helper/format_helper.hpp"
-#include "s3/s3_utils.hpp"
+#include "io/s3_utils.hpp"
 
 #include <algorithm>
 #include <exception>

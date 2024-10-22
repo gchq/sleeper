@@ -1,6 +1,6 @@
 #include "data_sink.hpp"
 
-#include "s3/s3_sink.hpp"
+#include "io/s3_sink.hpp"
 
 #include <utility>
 
@@ -26,10 +26,8 @@ cudf::io::chunked_parquet_writer_options_builder write_opts(cudf::io::sink_info 
 }
 
 [[no_discard]] SinkInfoDetails make_writer(std::string const &path, std::shared_ptr<Aws::S3::S3Client> &s3client) {
-    auto &&data_sink = make_data_sink(path, s3client);
+    auto data_sink = make_data_sink(path, s3client);
     cudf::io::sink_info sink{ &*data_sink };
     auto wopts = write_opts(sink);
-    return { sink,
-        std::forward<decltype(data_sink)>(data_sink),
-        std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build()) };
+    return { sink, std::move(data_sink), std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build()) };
 }

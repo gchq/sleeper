@@ -7,7 +7,7 @@
 #include <fmt/core.h>
 #include <spdlog/spdlog.h>
 
-#include "s3/s3_sink.hpp"
+#include "io/s3_sink.hpp"
 
 #include <concepts>
 #include <exception>

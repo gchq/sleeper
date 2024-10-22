@@ -19,7 +19,7 @@
 #include "cudf_compact/parquet_types.h"
 #include "cudf_compact/ranges.hpp"
 #include "format_helper/format_helper.hpp"
-#include "s3/s3_utils.hpp"
+#include "io/s3_utils.hpp"
 
 #include <algorithm>// std::reduce
 #include <cstddef>
@@ -287,7 +287,7 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
 
                 size_t const num_pages = offsets.page_locations.size();
                 for (unsigned int pg_idx = 0; pg_idx < num_pages; pg_idx++) {
-                    bool const print = (rg_idx == 0 && col_idx < 2 && pg_idx < 5);
+                    bool const print = (rg_idx == 0 && col_idx == 0 && pg_idx < 2);
                     auto const &page_loc = offsets.page_locations[pg_idx];
                     if (print) {
                         std::cout << "Row group " << rg_idx << " num rows " << row_grp.num_rows << std::endl;

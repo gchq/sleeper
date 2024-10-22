@@ -17,8 +17,8 @@
 
 #include "cudf_compact/common_types.hpp"
 #include "cudf_compact/cudf_utils.hpp"
-#include "format_helper/format_helper.hpp"
 #include "cudf_compact/parquet_types.h"
+#include "format_helper/format_helper.hpp"
 
 #include <algorithm>// std::ranges::equal
 #include <chrono>
@@ -75,7 +75,9 @@ inline cudf::io::chunked_parquet_writer_options_builder write_opts(CompactionInp
       .metadata(std::move(tim))
       .compression(toCudfCompression(details.compression))
       .row_group_size_rows(static_cast<cudf::size_type>(details.maxRowGroupSize))
+      //   .row_group_size_bytes(65 * 1'048'576)
       .max_page_size_bytes(details.maxPageSize)
+      //   .max_page_size_rows(1000)
       .column_index_truncate_length(static_cast<int32_t>(details.columnTruncateLength))
       .stats_level(cudf::io::statistics_freq::STATISTICS_COLUMN)
       .write_v2_headers(iequals(static_cast<std::string_view>(details.writerVersion), "v2"sv))

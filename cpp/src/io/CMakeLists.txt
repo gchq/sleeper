@@ -4,9 +4,11 @@ add_library(
   s3utils
   s3_sink.cpp
   s3_utils.cpp
+  prefetch_source.cpp
   ../format_helper/format_helper.cpp
-  ../../include/s3/s3_sink.hpp
-  ../../include/s3/s3_utils.hpp)
+  ../../include/io/s3_sink.hpp
+  ../../include/io/s3_utils.hpp
+  ../../include/io/prefetch_source.hpp)
 
 add_library(gpu_compact::s3 ALIAS s3utils)
 target_link_libraries(s3utils PRIVATE fmt::fmt spdlog::spdlog aws-cpp-sdk-s3)
