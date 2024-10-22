@@ -51,19 +51,19 @@ public class StacksForDockerUpload {
     }
 
     public static StacksForDockerUpload forNewDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
-        return builder().properties(properties).images(configuration.getImagesToDeploy(properties)).build();
+        return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
     }
 
     public static StacksForDockerUpload forNewDeployment(InstanceProperties properties, String version) {
-        return builder().properties(properties).version(version).images(DockerImageConfiguration.getDefault().getImagesToDeploy(properties)).build();
+        return builder().properties(properties).version(version).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
     }
 
     public static StacksForDockerUpload forExistingInstance(InstanceProperties properties) {
-        return builder().properties(properties).images(DockerImageConfiguration.getDefault().getImagesToDeploy(properties)).build();
+        return builder().properties(properties).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
     }
 
     public static Optional<StacksForDockerUpload> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
-        List<StackDockerImage> images = configuration.getImagesToDeploy(properties, diff);
+        List<StackDockerImage> images = configuration.getImagesToUploadOnUpdate(properties, diff);
         if (images.isEmpty()) {
             return Optional.empty();
         } else {

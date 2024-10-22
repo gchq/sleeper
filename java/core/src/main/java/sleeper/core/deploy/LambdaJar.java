@@ -126,7 +126,17 @@ public class LambdaJar {
      * @return        true if this lambda will be deployed
      */
     public boolean isDeployed(Collection<OptionalStack> stacks) {
-        return optionalStacks.isEmpty();
+        return optionalStacks.isEmpty() || isDeployedOptional(stacks);
+    }
+
+    /**
+     * Checks if this lambda is deployed in an optional stack, given the enabled optional stacks.
+     *
+     * @param  stacks the enabled optional stacks
+     * @return        true if this lambda will be deployed in an optional stack
+     */
+    public boolean isDeployedOptional(Collection<OptionalStack> stacks) {
+        return optionalStacks.stream().anyMatch(stacks::contains);
     }
 
     /**

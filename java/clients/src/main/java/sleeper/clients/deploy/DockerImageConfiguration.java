@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
@@ -59,40 +60,38 @@ public class DockerImageConfiguration {
         this.lambdaJars = lambdaJars;
     }
 
-    public List<StackDockerImage> getImagesToDeploy(InstanceProperties properties, PropertiesDiff diff) {
-        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+    public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
         Set<OptionalStack> stacksBefore = diff.getValuesBefore(properties)
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
         List<OptionalStack> stacksAdded = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .filter(not(stacksBefore::contains))
                 .collect(toUnmodifiableList());
-        if (stacksAdded.isEmpty() && lambdaDeployType != LambdaDeployType.CONTAINER) {
-            return List.of();
-        }
-        return getImagesToDeploy(stacksAdded, lambdaDeployType);
-    }
-
-    public List<StackDockerImage> getImagesToDeploy(InstanceProperties properties) {
         LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        List<OptionalStack> optionalStacks = properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class);
-        return getImagesToDeploy(optionalStacks, lambdaDeployType);
+        return getImagesToUpload(stacksAdded, lambdaDeployType, lambda -> lambda.isDeployedOptional(stacksAdded));
     }
 
-    private List<StackDockerImage> getImagesToDeploy(Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType) {
+    public List<StackDockerImage> getImagesToUpload(InstanceProperties properties) {
+        List<OptionalStack> optionalStacks = properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class);
+        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+        return getImagesToUpload(optionalStacks, lambdaDeployType, lambda -> lambda.isDeployed(optionalStacks));
+    }
+
+    private List<StackDockerImage> getImagesToUpload(
+            Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaJar> checkUploadLambda) {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
                         .flatMap(Optional::stream),
-                lambdaImages(stacks, lambdaDeployType))
+                lambdaImages(lambdaDeployType, checkUploadLambda))
                 .collect(toUnmodifiableList());
     }
 
-    private Stream<StackDockerImage> lambdaImages(Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType) {
+    private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaJar> checkUploadLambda) {
         if (lambdaDeployType != LambdaDeployType.CONTAINER) {
             return Stream.empty();
         }
-        return lambdaJars.stream().filter(lambda -> lambda.isDeployed(stacks)).map(StackDockerImage::lambdaImage);
+        return lambdaJars.stream().filter(checkUploadLambda).map(StackDockerImage::lambdaImage);
     }
 
     private Optional<StackDockerImage> getStackImage(OptionalStack stack) {

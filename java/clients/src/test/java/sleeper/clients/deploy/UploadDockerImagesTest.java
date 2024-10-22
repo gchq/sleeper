@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
@@ -172,8 +173,114 @@ public class UploadDockerImagesTest {
                     Path.of("./docker/lambda/lambda.jar"), "statestore-jar-content"));
         }
 
-        // TODO push image for optional lambda
-        // TODO push image if one of several optional stacks are enabled
+        @Test
+        void shouldPushImageForCoreAndOptionalLambdaInNewInstance() throws Exception {
+            // Given
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack));
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
+            files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
+
+            // Then
+            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag1, "./docker/lambda"),
+                    pushImageCommand(expectedTag1),
+                    buildImageCommandWithArgs("-t", expectedTag2, "./docker/lambda"),
+                    pushImageCommand(expectedTag2));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder(
+                            "test-instance/statestore-lambda",
+                            "test-instance/ingest-task-creator-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/statestore.jar"), "statestore-jar-content",
+                    Path.of("./jars/ingest.jar"), "ingest-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "ingest-jar-content"));
+        }
+
+        @Test
+        void shouldPushImageForOptionalLambdaWhenAdded() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack));
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdasForUpdate(propertiesBefore, properties));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest-task-creator-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/ingest.jar"), "ingest-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "ingest-jar-content"));
+        }
+
+        @Test
+        void shouldPushImageForOptionalLambdaWhenOneOfItsStacksIsAdded() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack));
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdasForUpdate(propertiesBefore, properties));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/bulk-import-starter-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "bulk-import-starter-jar-content"));
+        }
+
+        @Test
+        void shouldPushImageForOptionalLambdaWhenSeveralOfItsStacksAreAdded() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack, OptionalStack.EksBulkImportStack));
+            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdasForUpdate(propertiesBefore, properties));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/bulk-import-starter-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "bulk-import-starter-jar-content"));
+        }
 
         @Test
         void shouldDoNothingWhenDeployingLambdasByJar() throws Exception {
@@ -423,6 +530,11 @@ public class UploadDockerImagesTest {
 
     private RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
         return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.forNewDeployment(properties, lambdaImageConfig()));
+    }
+
+    private RunCommandTestHelper.PipelineInvoker uploadLambdasForUpdate(InstanceProperties before, InstanceProperties after) {
+        return runCommand -> uploader().upload(runCommand,
+                StacksForDockerUpload.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
     private DockerImageConfiguration ecsImageConfig() {
