@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
         for (auto const &f : inputFiles) {
             // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
-            auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(cudf::io::datasource::create(f));
+            auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
             auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
             readers.emplace_back(std::move(source),
               std::make_unique<cudf::io::chunked_parquet_reader>(

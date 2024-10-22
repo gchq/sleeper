@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <future>
 #include <memory>
+#include <string>
+#include <string_view>
 
 using std::uint8_t;
 
@@ -17,9 +19,10 @@ struct PrefetchingSource final : public cudf::io::datasource
 {
   private:
     std::unique_ptr<cudf::io::datasource> src;
+    std::string file;
 
   public:
-    PrefetchingSource(std::unique_ptr<cudf::io::datasource> &&source) noexcept;
+    PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept;
 
     // virtual ~PrefetchingSource() noexcept override;
 
