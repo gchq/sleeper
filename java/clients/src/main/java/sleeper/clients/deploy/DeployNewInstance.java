@@ -149,7 +149,7 @@ public class DeployNewInstance {
                 .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(runCommand,
-                        StacksForDockerUpload.forNewDeployment(instanceProperties, sleeperVersion)
+                        UploadDockerImagesRequest.forNewDeployment(instanceProperties, sleeperVersion)
                                 .withExtraImages(extraDockerImages));
 
         Files.createDirectories(generatedDirectory);

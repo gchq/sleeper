@@ -418,7 +418,7 @@ public class UploadDockerImagesTest {
 
             // When / Then
             assertThatThrownBy(() -> uploader().upload(returningExitCode(123),
-                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -455,7 +455,7 @@ public class UploadDockerImagesTest {
             // When / Then
             assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -474,7 +474,7 @@ public class UploadDockerImagesTest {
                     "./docker/ingest");
             assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(42, buildImageCommand),
-                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                         assertThat(e.getExitCode()).isEqualTo(42);
@@ -525,16 +525,16 @@ public class UploadDockerImagesTest {
     }
 
     private RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig()));
+        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig()));
     }
 
     private RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.forNewDeployment(properties, lambdaImageConfig()));
+        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, lambdaImageConfig()));
     }
 
     private RunCommandTestHelper.PipelineInvoker uploadLambdasForUpdate(InstanceProperties before, InstanceProperties after) {
         return runCommand -> uploader().upload(runCommand,
-                StacksForDockerUpload.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
+                UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
     private DockerImageConfiguration ecsImageConfig() {

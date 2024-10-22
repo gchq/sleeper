@@ -52,11 +52,11 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
+    public void upload(UploadDockerImagesRequest data) throws IOException, InterruptedException {
         upload(ClientUtils::runCommandInheritIO, data);
     }
 
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data) throws IOException, InterruptedException {
+    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest data) throws IOException, InterruptedException {
         List<StackDockerImage> stacksToUpload = data.getImages();
         LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
@@ -110,7 +110,7 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, StacksForDockerUpload data) {
+    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, UploadDockerImagesRequest data) {
         String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
         if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",

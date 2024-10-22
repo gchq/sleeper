@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -100,7 +100,7 @@ public class AdminClientPropertiesStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
-                Optional<StacksForDockerUpload> dockerUploadOpt = StacksForDockerUpload.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
+                Optional<UploadDockerImagesRequest> dockerUploadOpt = UploadDockerImagesRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
                 if (dockerUploadOpt.isPresent()) {
                     uploadDockerImages.upload(dockerUploadOpt.get());
                 }
