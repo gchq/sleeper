@@ -18,6 +18,7 @@ package sleeper.clients.deploy;
 
 import sleeper.core.deploy.LambdaJar;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class StackDockerImage {
@@ -80,6 +81,31 @@ public class StackDockerImage {
 
     public Optional<LambdaJar> getLambdaJar() {
         return Optional.ofNullable(lambdaJar);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(imageName, directoryName, isBuildx, createEmrServerlessPolicy, lambdaJar);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StackDockerImage)) {
+            return false;
+        }
+        StackDockerImage other = (StackDockerImage) obj;
+        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && isBuildx == other.isBuildx
+                && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar);
+    }
+
+    @Override
+    public String toString() {
+        return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
+                ", isBuildx=" + isBuildx + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
+                ", lambdaJar=" + lambdaJar + "}";
     }
 
     public static final class Builder {

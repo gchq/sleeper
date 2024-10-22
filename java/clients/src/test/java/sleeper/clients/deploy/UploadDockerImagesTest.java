@@ -17,7 +17,6 @@
 package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -177,7 +176,6 @@ public class UploadDockerImagesTest {
         // TODO push image if one of several optional stacks are enabled
 
         @Test
-        @Disabled("TODO")
         void shouldDoNothingWhenDeployingLambdasByJar() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
@@ -312,7 +310,8 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When / Then
-            assertThatThrownBy(() -> ecsUploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties)))
+            assertThatThrownBy(() -> uploader().upload(returningExitCode(123),
+                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -347,9 +346,9 @@ public class UploadDockerImagesTest {
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When / Then
-            assertThatThrownBy(() -> ecsUploader().upload(
+            assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                    StacksForDockerUpload.from(properties)))
+                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -366,9 +365,9 @@ public class UploadDockerImagesTest {
             CommandPipeline buildImageCommand = buildImageCommand(
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
-            assertThatThrownBy(() -> ecsUploader().upload(
+            assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(42, buildImageCommand),
-                    StacksForDockerUpload.from(properties)))
+                    StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                         assertThat(e.getExitCode()).isEqualTo(42);
@@ -419,30 +418,27 @@ public class UploadDockerImagesTest {
     }
 
     private RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> ecsUploader().upload(runCommand, StacksForDockerUpload.from(properties));
+        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.forNewDeployment(properties, ecsImageConfig()));
     }
 
     private RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
-        return runCommand -> lambdaUploader().upload(runCommand, StacksForDockerUpload.from(properties));
+        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.forNewDeployment(properties, lambdaImageConfig()));
     }
 
-    private UploadDockerImages ecsUploader() {
-        return uploaderBuilder()
-                .dockerImageConfig(new DockerImageConfiguration(STACK_DOCKER_IMAGES, List.of()))
-                .build();
+    private DockerImageConfiguration ecsImageConfig() {
+        return new DockerImageConfiguration(STACK_DOCKER_IMAGES, List.of());
     }
 
-    private UploadDockerImages lambdaUploader() {
-        return uploaderBuilder()
-                .dockerImageConfig(new DockerImageConfiguration(Map.of(), LAMBDA_JARS))
-                .build();
+    private DockerImageConfiguration lambdaImageConfig() {
+        return new DockerImageConfiguration(Map.of(), LAMBDA_JARS);
     }
 
-    private UploadDockerImages.Builder uploaderBuilder() {
+    private UploadDockerImages uploader() {
         return UploadDockerImages.builder()
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .ecrClient(ecrClient)
-                .copyFile((source, target) -> files.put(target, files.get(source)));
+                .copyFile((source, target) -> files.put(target, files.get(source)))
+                .build();
     }
 
     private CommandPipeline loginDockerCommand() {

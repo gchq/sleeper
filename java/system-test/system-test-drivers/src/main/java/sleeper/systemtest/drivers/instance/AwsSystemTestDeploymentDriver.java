@@ -127,8 +127,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                                 .account(parameters.getAccount())
                                 .region(parameters.getRegion())
                                 .version(SleeperVersion.getVersion())
-                                .stacks(List.of())
-                                .build(),
-                        List.of(SYSTEM_TEST_IMAGE));
+                                .images(List.of(SYSTEM_TEST_IMAGE))
+                                .build());
     }
 }

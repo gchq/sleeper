@@ -40,7 +40,7 @@ public class CleanUpDeletedSleeperInstances {
 
     private final TearDownClients clients;
     private final TearDownInstance.Builder tearDownBuilder;
-    private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration();
+    private final DockerImageConfiguration dockerImageConfiguration = DockerImageConfiguration.getDefault();
 
     public CleanUpDeletedSleeperInstances(TearDownClients clients, TearDownInstance.Builder tearDownBuilder) {
         this.clients = clients;

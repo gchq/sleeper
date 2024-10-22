@@ -40,14 +40,12 @@ public class UploadDockerImages {
     private final Path jarsDirectory;
     private final CopyFile copyFile;
     private final EcrRepositoryCreator.Client ecrClient;
-    private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
-        dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
 
     public static Builder builder() {
@@ -55,25 +53,22 @@ public class UploadDockerImages {
     }
 
     public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
-        upload(ClientUtils::runCommandInheritIO, data, List.of());
+        upload(ClientUtils::runCommandInheritIO, data);
     }
 
     public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data) throws IOException, InterruptedException {
-        upload(runCommand, data, List.of());
-    }
-
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages) throws IOException, InterruptedException {
-        LOGGER.info("Optional stacks enabled: {}", data.getStacks());
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
-        List<StackDockerImage> stacksToUpload = dockerImageConfig.getStacksToDeploy(data.getStacks(), extraDockerImages);
+        List<StackDockerImage> stacksToUpload = data.getImages();
+        LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
                 .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
                 .collect(Collectors.toUnmodifiableList());
+        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
 
         if (stacksToBuild.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
         } else {
+            LOGGER.info("Building and uploading images: {}", stacksToBuild);
             runCommand.runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", data.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
@@ -85,14 +80,15 @@ public class UploadDockerImages {
         }
 
         for (StackDockerImage stackImage : stacksToBuild) {
-            Path directory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
-            String directoryStr = directory.toString();
+            Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
+            String directoryStr = dockerfileDirectory.toString();
             String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
             stackImage.getLambdaJar().ifPresent(lambdaJar -> copyFile.copyWrappingExceptions(
-                    jarsDirectory.resolve(lambdaJar.getFileName()), directory.resolve("lambda.jar")));
+                    jarsDirectory.resolve(lambdaJar.getFileName()),
+                    dockerfileDirectory.resolve("lambda.jar")));
 
             String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
             try {
@@ -132,7 +128,6 @@ public class UploadDockerImages {
         private Path jarsDirectory;
         private CopyFile copyFile = Files::copy;
         private EcrRepositoryCreator.Client ecrClient;
-        private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -154,11 +149,6 @@ public class UploadDockerImages {
 
         public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
             this.ecrClient = ecrClient;
-            return this;
-        }
-
-        public Builder dockerImageConfig(DockerImageConfiguration dockerImageConfig) {
-            this.dockerImageConfig = dockerImageConfig;
             return this;
         }
 
