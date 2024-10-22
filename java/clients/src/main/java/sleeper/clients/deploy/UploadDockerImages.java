@@ -52,17 +52,17 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public void upload(UploadDockerImagesRequest data) throws IOException, InterruptedException {
-        upload(ClientUtils::runCommandInheritIO, data);
+    public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
+        upload(ClientUtils::runCommandInheritIO, request);
     }
 
-    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest data) throws IOException, InterruptedException {
-        List<StackDockerImage> stacksToUpload = data.getImages();
+    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest request) throws IOException, InterruptedException {
+        List<StackDockerImage> stacksToUpload = request.getImages();
         LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
+                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, request))
                 .collect(Collectors.toUnmodifiableList());
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
+        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
 
         if (stacksToBuild.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
@@ -70,7 +70,7 @@ public class UploadDockerImages {
         } else {
             LOGGER.info("Building and uploading images: {}", stacksToBuild);
             runCommand.runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", data.getRegion()),
+                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
@@ -82,7 +82,7 @@ public class UploadDockerImages {
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
             String directoryStr = dockerfileDirectory.toString();
-            String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
+            String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
@@ -90,7 +90,7 @@ public class UploadDockerImages {
                     jarsDirectory.resolve(lambdaJar.getFilename()),
                     dockerfileDirectory.resolve("lambda.jar")));
 
-            String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
+            String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
             try {
                 if (stackImage.isCreateEmrServerlessPolicy()) {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
@@ -110,15 +110,16 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, UploadDockerImagesRequest data) {
-        String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
+    private boolean imageDoesNotExistInRepositoryWithVersion(
+            StackDockerImage stackDockerImage, UploadDockerImagesRequest request) {
+        String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",
-                    stackDockerImage.getImageName(), data.getVersion());
+                    stackDockerImage.getImageName(), request.getVersion());
             return false;
         } else {
             LOGGER.info("Stack image {} does not exist in ECR with version {}",
-                    stackDockerImage.getImageName(), data.getVersion());
+                    stackDockerImage.getImageName(), request.getVersion());
             return true;
         }
     }
