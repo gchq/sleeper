@@ -60,8 +60,7 @@ public class StateStoreSnapshotsST {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                        .map(StateStoreCommitMessage::addFile));
 
         // Then a snapshot will be created
         AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
