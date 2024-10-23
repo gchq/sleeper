@@ -20,16 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Optional;
 import java.util.function.Predicate;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class WaitForSnapshot {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForSnapshot.class);
@@ -55,33 +50,25 @@ public class WaitForSnapshot {
     }
 
     private Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot() {
-        Optional<TransactionLogSnapshot> snapshotOpt = driver.loadLatestFilesSnapshot(
+        Optional<AllReferencesToAllFiles> snapshotOpt = driver.loadLatestFilesSnapshot(
                 instance.getInstanceProperties(), instance.getTableProperties());
         if (!snapshotOpt.isPresent()) {
             LOGGER.info("Found no files snapshot");
+        } else {
+            LOGGER.info("Found {} files in snapshot", snapshotOpt.get().getFiles().size());
         }
-        return snapshotOpt.map(WaitForSnapshot::readFiles);
+        return snapshotOpt;
     }
 
     private Optional<PartitionTree> loadLatestPartitionsSnapshot() {
-        Optional<TransactionLogSnapshot> snapshotOpt = driver.loadLatestPartitionsSnapshot(
+        Optional<PartitionTree> snapshotOpt = driver.loadLatestPartitionsSnapshot(
                 instance.getInstanceProperties(), instance.getTableProperties());
         if (!snapshotOpt.isPresent()) {
             LOGGER.info("Found no partitions snapshot");
+        } else {
+            LOGGER.info("Found {} partitions in snapshot", snapshotOpt.get().getAllPartitions().size());
         }
-        return snapshotOpt.map(WaitForSnapshot::readPartitions);
-    }
-
-    private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
-        StateStoreFiles state = snapshot.getState();
-        LOGGER.info("Found {} files in snapshot", state.referencedAndUnreferenced().size());
-        return new AllReferencesToAllFiles(state.referencedAndUnreferenced(), false);
-    }
-
-    private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {
-        StateStorePartitions state = snapshot.getState();
-        LOGGER.info("Found {} partitions in snapshot", state.all().size());
-        return new PartitionTree(state.all().stream().collect(toUnmodifiableList()));
+        return snapshotOpt;
     }
 
     private static <T> Predicate<Optional<T>> matches(Predicate<T> condition) {

@@ -18,8 +18,12 @@ package sleeper.systemtest.drivers.statestore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -27,6 +31,7 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.Optional;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
@@ -52,17 +57,31 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
     }
 
     @Override
-    public Optional<TransactionLogSnapshot> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return snapshotStore(instanceProperties, tableProperties).loadLatestFilesSnapshotIfAtMinimumTransaction(0);
+    public Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return snapshotStore(instanceProperties, tableProperties)
+                .loadLatestFilesSnapshotIfAtMinimumTransaction(0)
+                .map(AwsSnapshotsDriver::readFiles);
     }
 
     @Override
-    public Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return snapshotStore(instanceProperties, tableProperties).loadLatestPartitionsSnapshotIfAtMinimumTransaction(0);
+    public Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return snapshotStore(instanceProperties, tableProperties)
+                .loadLatestPartitionsSnapshotIfAtMinimumTransaction(0)
+                .map(AwsSnapshotsDriver::readPartitions);
     }
 
     private DynamoDBTransactionLogSnapshotStore snapshotStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties,
                 clients.getDynamoDB(), clients.createHadoopConf(instanceProperties, tableProperties));
+    }
+
+    private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
+        StateStoreFiles state = snapshot.getState();
+        return new AllReferencesToAllFiles(state.referencedAndUnreferenced(), false);
+    }
+
+    private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {
+        StateStorePartitions state = snapshot.getState();
+        return new PartitionTree(state.all().stream().collect(toUnmodifiableList()));
     }
 }
