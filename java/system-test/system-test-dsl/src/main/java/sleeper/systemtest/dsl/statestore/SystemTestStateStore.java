@@ -18,7 +18,8 @@ package sleeper.systemtest.dsl.statestore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -29,6 +30,7 @@ import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -83,14 +85,14 @@ public class SystemTestStateStore {
                                 .collect(toSet()));
     }
 
-    public TransactionLogSnapshot waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout) throws InterruptedException {
+    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) throws InterruptedException {
         return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForFilesSnapshot(intervalAndPollingTimeout);
+                .waitForFilesSnapshot(intervalAndPollingTimeout, condition);
     }
 
-    public TransactionLogSnapshot waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout) throws InterruptedException {
+    public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) throws InterruptedException {
         return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForPartitionsSnapshot(intervalAndPollingTimeout);
+                .waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
     }
 
 }

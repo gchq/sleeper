@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -61,13 +62,18 @@ public class StateStoreSnapshotsST {
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
-        sleeper.stateStore()
-                .waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)));
 
-        // Then
-        assertThat(sleeper.tableFiles().recordsByFilename()).isEqualTo(
-                LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
-                        .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
+        // Then a snapshot will be created
+        AllReferencesToAllFiles snapshotFiles = sleeper.stateStore()
+                .waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
+                        files -> files.getFiles().size() == 1000);
+        Map<String, Long> expectedRecordsByFilename = LongStream
+                .rangeClosed(1, 1000).mapToObj(i -> i)
+                .collect(toMap(i -> "file-" + i + ".parquet", i -> i));
+        assertThat(snapshotFiles.recordsByFilename())
+                .isEqualTo(expectedRecordsByFilename);
+        assertThat(sleeper.tableFiles().recordsByFilename())
+                .isEqualTo(expectedRecordsByFilename);
     }
 
 }

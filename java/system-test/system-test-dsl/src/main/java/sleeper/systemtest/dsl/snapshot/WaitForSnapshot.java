@@ -15,13 +15,24 @@
  */
 package sleeper.systemtest.dsl.snapshot;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Optional;
+import java.util.function.Predicate;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class WaitForSnapshot {
+    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForSnapshot.class);
 
     private final SystemTestInstanceContext instance;
     private final SnapshotsDriver driver;
@@ -31,22 +42,49 @@ public class WaitForSnapshot {
         this.driver = driver;
     }
 
-    public TransactionLogSnapshot waitForFilesSnapshot(PollWithRetries poll) throws InterruptedException {
-        return poll.queryUntil("files snapshot is present", this::loadLatestFilesSnapshot, Optional::isPresent)
+    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries poll, Predicate<AllReferencesToAllFiles> condition) throws InterruptedException {
+        LOGGER.info("Waiting for files snapshot");
+        return poll.queryUntil("files snapshot is present", this::loadLatestFilesSnapshot, matches(condition))
                 .orElseThrow();
     }
 
-    public TransactionLogSnapshot waitForPartitionsSnapshot(PollWithRetries poll) throws InterruptedException {
-        return poll.queryUntil("partitions snapshot is present", this::loadLatestPartitionsSnapshot, Optional::isPresent)
+    public PartitionTree waitForPartitionsSnapshot(PollWithRetries poll, Predicate<PartitionTree> condition) throws InterruptedException {
+        LOGGER.info("Waiting for partitions snapshot");
+        return poll.queryUntil("partitions snapshot is present", this::loadLatestPartitionsSnapshot, matches(condition))
                 .orElseThrow();
     }
 
-    private Optional<TransactionLogSnapshot> loadLatestFilesSnapshot() {
-        return driver.loadLatestFilesSnapshot(instance.getInstanceProperties(), instance.getTableProperties());
+    private Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot() {
+        Optional<TransactionLogSnapshot> snapshotOpt = driver.loadLatestFilesSnapshot(
+                instance.getInstanceProperties(), instance.getTableProperties());
+        if (!snapshotOpt.isPresent()) {
+            LOGGER.info("Found no files snapshot");
+        }
+        return snapshotOpt.map(WaitForSnapshot::readFiles);
     }
 
-    private Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshot() {
-        return driver.loadLatestPartitionsSnapshot(instance.getInstanceProperties(), instance.getTableProperties());
+    private Optional<PartitionTree> loadLatestPartitionsSnapshot() {
+        Optional<TransactionLogSnapshot> snapshotOpt = driver.loadLatestPartitionsSnapshot(
+                instance.getInstanceProperties(), instance.getTableProperties());
+        if (!snapshotOpt.isPresent()) {
+            LOGGER.info("Found no partitions snapshot");
+        }
+        return snapshotOpt.map(WaitForSnapshot::readPartitions);
     }
 
+    private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
+        StateStoreFiles state = snapshot.getState();
+        LOGGER.info("Found {} files in snapshot", state.referencedAndUnreferenced().size());
+        return new AllReferencesToAllFiles(state.referencedAndUnreferenced(), false);
+    }
+
+    private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {
+        StateStorePartitions state = snapshot.getState();
+        LOGGER.info("Found {} partitions in snapshot", state.all().size());
+        return new PartitionTree(state.all().stream().collect(toUnmodifiableList()));
+    }
+
+    private static <T> Predicate<Optional<T>> matches(Predicate<T> condition) {
+        return opt -> opt.isPresent() && condition.test(opt.get());
+    }
 }
