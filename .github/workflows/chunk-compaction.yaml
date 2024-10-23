@@ -33,7 +33,10 @@ on:
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
       - 'java/common/dynamodb-test/**'
-      - 'java/bulk-export/**'
+      - 'java/bulk-export/pom.xml'
+      - 'java/bulk-export/bulk-export-core/**'
+      - 'java/bulk-export/bulk-export-runner/**'
+      - 'java/bulk-export/bulk-export-starter/**'
 
 jobs:
   chunk-workflow:
