@@ -116,7 +116,7 @@ public class Utils {
                 "java.base/sun.nio.ch=ALL-UNNAMED",
                 "java.base/java.util=ALL-UNNAMED",
                 "java.base/java.lang.invoke=ALL-UNNAMED")
-                .forEach(s -> sb.append("--add-opens ").append(s).append(" "));
+                .forEach(s -> sb.append("--add-opens=").append(s).append(" "));
         return sb.toString();
     }
 
