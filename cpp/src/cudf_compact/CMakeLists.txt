@@ -18,7 +18,7 @@ add_library(
 )
 
 add_library(gpu_compact::cudf_compact ALIAS cudf_compact)
-target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog gpu_compact::s3)
+target_link_libraries(cudf_compact PRIVATE fmt::fmt spdlog::spdlog gpu_compact::io)
 target_link_libraries(cudf_compact PUBLIC cudf::cudf thrift::thrift)
 target_link_libraries(cudf_compact PRIVATE gpu_compact_options gpu_compact_warnings)
 target_include_directories(cudf_compact ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

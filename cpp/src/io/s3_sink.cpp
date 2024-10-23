@@ -14,7 +14,6 @@
 #include <exception>
 #include <functional>
 #include <ios>
-#include <iostream>
 
 namespace gpu_compact::s3
 {
@@ -67,7 +66,6 @@ S3Sink::~S3Sink() noexcept {
     try {
         finish();
     } catch (std::exception const &e) { SPDLOG_ERROR(ff("Completing upload failed due to {}", e.what())); }
-    std::cout << "S3Sink going away now.\n";
     SPDLOG_DEBUG(ff("Destroying an S3Sink to {}/{}", bucket, key));
 }
 

@@ -28,6 +28,20 @@
 #include <tuple>
 #include <vector>
 
+::size_t calcRowsWritten(auto const &readers) noexcept {
+    return std::accumulate(
+      readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) constexpr noexcept {
+          return acc + std::get<3>(item);
+      });
+}
+
+::size_t calcTotalRows(auto const &readers) noexcept {
+    return std::accumulate(readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) {
+        auto const rows = cudf::io::read_parquet_metadata(cudf::io::source_info(&*std::get<0>(item))).num_rows();
+        return acc + rows;
+    });
+}
+
 int main(int argc, char **argv) {
     configure_logging();
     // NOLINTNEXTLINE
@@ -74,6 +88,8 @@ int main(int argc, char **argv) {
               0);
         }
 
+        auto const totalRows = calcTotalRows(readers);
+
         // Make writer
         SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
         auto &writer = *sinkDetails.writer;
@@ -115,7 +131,10 @@ int main(int argc, char **argv) {
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
                 views.clear();
                 tables.clear();
-                SPDLOG_INFO("Writing rows");
+                auto const rowsWritten = calcRowsWritten(readers);
+                SPDLOG_INFO("Written {:d} rows, {:.2f}% complete",
+                  rowsWritten,
+                  (static_cast<double>(rowsWritten) / totalRows) * 100);
                 writer.write(*merged);
             }
         }
@@ -123,12 +142,9 @@ int main(int argc, char **argv) {
         writer.close();
 
         // Grab total row count from each reader
-        auto const totalRows = std::accumulate(
-          readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) constexpr noexcept {
-              return acc + std::get<3>(item);
-          });
+        auto const rowsWritten = calcRowsWritten(readers);
 
-        SPDLOG_INFO("Finished, read/wrote {:d} rows from {:d} readers", totalRows, inputFiles.size());
+        SPDLOG_INFO("Finished, read/wrote {:d} rows from {:d} readers", rowsWritten, inputFiles.size());
     }
     gpu_compact::s3::shutdownAWS();
 }
