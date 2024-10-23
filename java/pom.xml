@@ -181,7 +181,7 @@
         <junit.version>5.11.3</junit.version>
         <junit.platform.version>1.11.3</junit.platform.version>
         <mockito.version>5.14.2</mockito.version>
-        <testcontainers.version>1.20.2</testcontainers.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.8.0</approvaltests.version>
