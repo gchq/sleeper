@@ -104,10 +104,9 @@ public class SystemTestInstanceContext {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
         tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
         setProperties.forEach(tableProperties::set);
-        currentTables().addTables(tablesDriver(), List.of(tableProperties));
+        currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);
-        currentTables().setCurrent(tableProperties);
     }
 
     public void setCurrentTable(String name) {
