@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -127,7 +128,7 @@ public class UploadDockerImages {
     public static final class Builder {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
-        private CopyFile copyFile = Files::copy;
+        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private EcrRepositoryCreator.Client ecrClient;
 
         private Builder() {
