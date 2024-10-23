@@ -107,6 +107,7 @@ public class SystemTestInstanceContext {
         currentTables().addTables(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);
+        currentTables().setCurrent(tableProperties);
     }
 
     public void setCurrentTable(String name) {
