@@ -64,9 +64,9 @@ public class StateStoreSnapshotsST {
                 .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
 
         // Then a snapshot will be created
-        AllReferencesToAllFiles snapshotFiles = sleeper.stateStore()
-                .waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
-                        files -> files.getFiles().size() == 1000);
+        AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
+                files -> files.getFiles().size() == 1000);
         Map<String, Long> expectedRecordsByFilename = LongStream
                 .rangeClosed(1, 1000).mapToObj(i -> i)
                 .collect(toMap(i -> "file-" + i + ".parquet", i -> i));
