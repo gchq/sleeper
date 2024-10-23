@@ -27,7 +27,7 @@
     <artifactId>bulk-export</artifactId>
 
     <modules>
-        <module>bulk-export-common</module>
+        <module>bulk-export-core</module>
         <module>bulk-export-runner</module>
         <module>bulk-export-starter</module>
     </modules>
