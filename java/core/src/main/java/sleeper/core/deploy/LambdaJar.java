@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -89,9 +90,9 @@ public class LambdaJar {
     private final List<OptionalStack> optionalStacks;
 
     private LambdaJar(Builder builder) {
-        filename = builder.filename;
-        imageName = builder.imageName;
-        optionalStacks = builder.optionalStacks;
+        filename = Objects.requireNonNull(builder.filename, "filename must not be null");
+        imageName = Objects.requireNonNull(builder.imageName, "imageName must not be null");
+        optionalStacks = Objects.requireNonNull(builder.optionalStacks, "optionalStacks must not be null");
     }
 
     /**
