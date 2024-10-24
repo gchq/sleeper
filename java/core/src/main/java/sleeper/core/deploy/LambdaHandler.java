@@ -19,6 +19,7 @@ import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Objects;
  */
 public class LambdaHandler {
 
+    private static final List<LambdaHandler> ALL = new ArrayList<>();
     private static final Map<String, List<LambdaHandler>> HANDLERS_BY_JAR_FILENAME = new HashMap<>();
     public static final LambdaHandler ATHENA_SIMPLE_COMPOSITE = builder()
             .jar(LambdaJar.ATHENA)
@@ -199,13 +201,23 @@ public class LambdaHandler {
     }
 
     /**
+     * Returns all lambda handler definitions.
+     *
+     * @return the definitions
+     */
+    public static List<LambdaHandler> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    /**
      * Returns all lambda handler definitions that are deployed with a given jar.
      *
      * @param  jar the jar
      * @return     the definitions
      */
     public static List<LambdaHandler> getHandlers(LambdaJar jar) {
-        return HANDLERS_BY_JAR_FILENAME.getOrDefault(jar.getFilename(), List.of());
+        return Collections.unmodifiableList(
+                HANDLERS_BY_JAR_FILENAME.getOrDefault(jar.getFilename(), List.of()));
     }
 
     public static Builder builder() {
@@ -329,6 +341,7 @@ public class LambdaHandler {
 
         private LambdaHandler add() {
             LambdaHandler handler = build();
+            ALL.add(handler);
             HANDLERS_BY_JAR_FILENAME.computeIfAbsent(jar.getFilename(), f -> new ArrayList<>()).add(handler);
             return handler;
         }
