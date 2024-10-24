@@ -128,7 +128,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "handler=StateStoreCommitterLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag));
 
             assertThat(ecrClient.getRepositories())
@@ -154,9 +154,9 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag1, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag1, "--build-arg", "handler=StateStoreCommitterLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag1),
-                    buildImageCommandWithArgs("-t", expectedTag2, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag2, "--build-arg", "handler=IngestTaskCreatorLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag2));
 
             assertThat(ecrClient.getRepositories())
@@ -185,7 +185,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "handler=IngestTaskCreatorLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag));
 
             assertThat(ecrClient.getRepositories())
@@ -211,7 +211,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "handler=BulkImportStarterLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag));
 
             assertThat(ecrClient.getRepositories())
@@ -237,7 +237,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildImageCommandWithArgs("-t", expectedTag, "--build-arg", "handler=BulkImportStarterLambda", "./docker/lambda"),
                     pushImageCommand(expectedTag));
 
             assertThat(ecrClient.getRepositories())

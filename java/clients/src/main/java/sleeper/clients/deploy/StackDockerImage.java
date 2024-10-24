@@ -17,7 +17,6 @@
 package sleeper.clients.deploy;
 
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.deploy.LambdaJar;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -80,9 +79,8 @@ public class StackDockerImage {
         return createEmrServerlessPolicy;
     }
 
-    public Optional<LambdaJar> getLambdaJar() {
-        return Optional.ofNullable(lambdaHandler)
-                .map(LambdaHandler::getJar);
+    public Optional<LambdaHandler> getLambdaHandler() {
+        return Optional.ofNullable(lambdaHandler);
     }
 
     @Override
