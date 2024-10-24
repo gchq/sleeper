@@ -283,7 +283,6 @@ public class CompactionStack extends NestedStack {
                 .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
@@ -589,7 +588,6 @@ public class CompactionStack extends NestedStack {
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
-                .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .memorySize(512)
                 .runtime(Runtime.JAVA_17)
@@ -620,7 +618,6 @@ public class CompactionStack extends NestedStack {
                 .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));

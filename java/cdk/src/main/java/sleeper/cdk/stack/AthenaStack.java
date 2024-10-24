@@ -164,7 +164,6 @@ public class AthenaStack extends NestedStack {
                 .timeout(Duration.seconds(timeout))
                 .runtime(Runtime.JAVA_17)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .handler(className)
                 .environment(env));
 
         CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
