@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -87,7 +86,6 @@ public class TransactionLogSnapshotStack extends NestedStack {
         IFunction snapshotCreationTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -96,7 +94,6 @@ public class TransactionLogSnapshotStack extends NestedStack {
         IFunction snapshotCreationLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
@@ -155,7 +152,6 @@ public class TransactionLogSnapshotStack extends NestedStack {
         IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -164,7 +160,6 @@ public class TransactionLogSnapshotStack extends NestedStack {
         IFunction snapshotDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)

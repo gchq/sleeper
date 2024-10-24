@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -68,8 +67,7 @@ public class VpcStack extends NestedStack {
                 .functionName(functionName)
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logGroup(logging.getLogGroupByFunctionName(functionName))
-                .runtime(Runtime.JAVA_17));
+                .logGroup(logging.getLogGroupByFunctionName(functionName)));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
                 .actions(Lists.newArrayList("ec2:DescribeVpcEndpoints"))

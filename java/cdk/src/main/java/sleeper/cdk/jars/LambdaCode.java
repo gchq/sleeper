@@ -17,9 +17,11 @@ package sleeper.cdk.jars;
 
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.DockerImageCode;
+import software.amazon.awscdk.services.lambda.DockerImageFunction;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.Handler;
 import software.amazon.awscdk.services.lambda.IVersion;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -41,19 +43,21 @@ public class LambdaCode {
         this.bucket = bucket;
     }
 
-    public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<Function.Builder> config) {
+    public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id);
-        config.accept(builder);
+        LambdaBuilder builder;
         if (deployType == LambdaDeployType.JAR) {
-            builder.code(jarCode(handler.getJar()))
-                    .handler(handler.getHandler());
+            builder = new FunctionBuilder(Function.Builder.create(scope, id)
+                    .code(jarCode(handler.getJar()))
+                    .handler(handler.getHandler())
+                    .runtime(Runtime.JAVA_17));
         } else if (deployType == LambdaDeployType.CONTAINER) {
-            builder.code(containerCode(scope, handler, id))
-                    .handler(Handler.FROM_IMAGE);
+            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
+                    .code(containerCode(scope, handler, id)));
         } else {
             throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
         }
+        config.accept(builder);
         Function function = builder.build();
 
         // This is needed to tell the CDK to update the functions with new code when it changes in the jars bucket.
@@ -68,7 +72,8 @@ public class LambdaCode {
         return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
     }
 
-    private Code containerCode(Construct scope, LambdaHandler handler, String id) {
-        return Code.fromEcrImage(Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)));
+    private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
+        return DockerImageCode.fromEcr(
+                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)));
     }
 }

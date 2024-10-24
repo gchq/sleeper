@@ -21,7 +21,6 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -65,8 +64,7 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .logGroup(LogGroup.Builder.create(this, "PropertiesWriterLambdaLogGroup")
                         .logGroupName(functionName)
                         .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
-                        .build())
-                .runtime(Runtime.JAVA_17));
+                        .build()));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 

@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -135,7 +134,6 @@ public class StateStoreCommitterStack extends NestedStack {
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
-                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)

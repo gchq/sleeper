@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -77,7 +76,6 @@ public class TransactionLogTransactionStack extends NestedStack {
         IFunction transactionDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log transactions for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -86,7 +84,6 @@ public class TransactionLogTransactionStack extends NestedStack {
         IFunction transactionDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)

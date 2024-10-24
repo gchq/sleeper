@@ -19,7 +19,6 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -88,7 +87,6 @@ public class AutoDeleteS3Objects {
                 .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(getLogGroupByFunctionName.apply(functionName))
-                .runtime(Runtime.JAVA_17)
                 .timeout(Duration.minutes(10)));
 
         bucket.grantRead(lambda);

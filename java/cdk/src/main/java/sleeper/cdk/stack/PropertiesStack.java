@@ -19,7 +19,6 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -58,8 +57,7 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .runtime(Runtime.JAVA_17));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 

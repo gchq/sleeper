@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -85,7 +84,6 @@ public class GarbageCollectorStack extends NestedStack {
         IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR_TRIGGER, "GarbageCollectorTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -94,7 +92,6 @@ public class GarbageCollectorStack extends NestedStack {
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state store looking for files that need deleting and delete them")
-                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(handlerTimeout)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))

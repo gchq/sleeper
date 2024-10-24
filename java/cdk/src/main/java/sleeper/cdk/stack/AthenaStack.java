@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.IKey;
 import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -162,7 +161,6 @@ public class AthenaStack extends NestedStack {
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
-                .runtime(Runtime.JAVA_17)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .environment(env));
 
