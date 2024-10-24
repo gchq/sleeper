@@ -31,7 +31,6 @@ import java.util.Objects;
 public class LambdaHandler {
 
     private static final List<LambdaHandler> ALL = new ArrayList<>();
-    private static final Map<String, List<LambdaHandler>> HANDLERS_BY_JAR_FILENAME = new HashMap<>();
     private static final Map<String, LambdaHandler> ATHENA_HANDLER_BY_CLASSNAME = new HashMap<>();
     public static final LambdaHandler ATHENA_SIMPLE_COMPOSITE = builder()
             .jar(LambdaJar.ATHENA)
@@ -178,17 +177,6 @@ public class LambdaHandler {
     }
 
     /**
-     * Returns all lambda handler definitions that are deployed with a given jar.
-     *
-     * @param  jar the jar
-     * @return     the definitions
-     */
-    public static List<LambdaHandler> getHandlers(LambdaJar jar) {
-        return Collections.unmodifiableList(
-                HANDLERS_BY_JAR_FILENAME.getOrDefault(jar.getFilename(), List.of()));
-    }
-
-    /**
      * Returns the Athena lambda handler with the given class name.
      *
      * @param  className the class name
@@ -328,7 +316,6 @@ public class LambdaHandler {
             LambdaHandler handler = build();
             LambdaJar jar = handler.getJar();
             ALL.add(handler);
-            HANDLERS_BY_JAR_FILENAME.computeIfAbsent(jar.getFilename(), f -> new ArrayList<>()).add(handler);
             if (jar == LambdaJar.ATHENA) {
                 ATHENA_HANDLER_BY_CLASSNAME.put(handler.getHandler(), handler);
             }

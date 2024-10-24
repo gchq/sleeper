@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.SleeperVersion;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.deploy.LambdaJar.STATESTORE;
 
 public class LambdaHandlerTest {
 
@@ -35,12 +34,6 @@ public class LambdaHandlerTest {
     void shouldBuildOptionalStackHandlers() {
         assertThat(LambdaHandler.all())
                 .filteredOn(handler -> !handler.getOptionalStacks().isEmpty())
-                .hasSizeGreaterThan(1);
-    }
-
-    @Test
-    void shouldLookupHandlersByJar() {
-        assertThat(LambdaHandler.getHandlers(STATESTORE))
                 .hasSizeGreaterThan(1);
     }
 
