@@ -20,7 +20,5 @@ COPY lambda.jar /lambda
 RUN unzip /lambda/lambda.jar -d /lambda/uncompressed
 
 FROM public.ecr.aws/lambda/java:17
-ARG handler
 
 COPY --from=builder /lambda/uncompressed ${LAMBDA_TASK_ROOT}
-CMD [ "$handler" ]
