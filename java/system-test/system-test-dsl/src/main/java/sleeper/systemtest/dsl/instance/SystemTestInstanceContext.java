@@ -100,10 +100,11 @@ public class SystemTestInstanceContext {
                 .collect(toUnmodifiableList()));
     }
 
-    public void createTable(String name, Schema schema) {
+    public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
         tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
-        currentTables().addTables(tablesDriver(), List.of(tableProperties));
+        setProperties.forEach(tableProperties::set);
+        currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);
     }
