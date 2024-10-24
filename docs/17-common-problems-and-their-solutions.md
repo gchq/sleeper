@@ -2,7 +2,7 @@ Common problems and their solutions
 ===================================
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](11-dev-guide.md) for how to set that up).
+(see [the developer guide](12-dev-guide.md) for how to set that up).
 
 ## EOFException when using client classes
 

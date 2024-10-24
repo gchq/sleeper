@@ -42,6 +42,7 @@
         <module>athena</module>
         <module>common</module>
         <module>bulk-import</module>
+        <module>bulk-export</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
         <module>metrics</module>

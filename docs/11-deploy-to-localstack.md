@@ -6,7 +6,7 @@ functionality and will only work with small volumes of data, but will allow you 
 ingest, and run reports and scripts against the instance.
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](11-dev-guide.md) for how to set that up).
+(see [the developer guide](12-dev-guide.md) for how to set that up).
 
 ## Launch LocalStack container
 

@@ -5,7 +5,7 @@ The following steps explain how to prepare and publish a release for Sleeper, by
 
 1. Update CHANGELOG.md with a summary of the issues fixed and improvements made in this version.
 
-2. Update the [roadmap](16-roadmap.md) and remove any planned features that have been implemented in this release.
+2. Update the [roadmap](18-roadmap.md) and remove any planned features that have been implemented in this release.
 
 3. Make sure the [NOTICES](../NOTICES) file is up to date, particularly from any version changes made by Dependabot.
 
@@ -23,9 +23,9 @@ VERSION=0.12.0
 7. Get the performance figures from the nightly system tests.
 
 There should be a cron job configured to run these nightly. Running it manually and retrieving the results is documented
-in the [system tests guide](13-system-tests.md#nightly-test-scripts).
+in the [system tests guide](15-system-tests.md#nightly-test-scripts).
 
-Update the performance figures in the [system tests guide](13-system-tests.md#performance-benchmarks).
+Update the performance figures in the [system tests guide](15-system-tests.md#performance-benchmarks).
 
 8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:
