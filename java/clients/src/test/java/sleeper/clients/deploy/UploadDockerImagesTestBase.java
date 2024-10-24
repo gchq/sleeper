@@ -48,15 +48,13 @@ public abstract class UploadDockerImagesTestBase {
             OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
-            LambdaHandler.builder().jar(LambdaJar.fromFormat("statestore.jar"))
-                    .handler("StateStoreCommitterLambda")
-                    .imageName("statestore-lambda").core().build(),
-            LambdaHandler.builder().jar(LambdaJar.fromFormat("ingest.jar"))
+            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("statestore.jar", "statestore-lambda"))
+                    .handler("StateStoreCommitterLambda").core().build(),
+            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("ingest.jar", "ingest-task-creator-lambda"))
                     .handler("IngestTaskCreatorLambda")
-                    .imageName("ingest-task-creator-lambda")
                     .optionalStack(OptionalStack.IngestStack).build(),
-            LambdaHandler.builder().jar(LambdaJar.fromFormat("bulk-import-starter.jar"))
-                    .handler("BulkImportStarterLambda").imageName("bulk-import-starter-lambda")
+            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("bulk-import-starter.jar", "bulk-import-starter-lambda"))
+                    .handler("BulkImportStarterLambda")
                     .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build());
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();

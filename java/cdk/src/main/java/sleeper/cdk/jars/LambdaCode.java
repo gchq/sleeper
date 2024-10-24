@@ -76,7 +76,7 @@ public class LambdaCode {
 
     private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
         return DockerImageCode.fromEcr(
-                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)),
+                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
                         .build());

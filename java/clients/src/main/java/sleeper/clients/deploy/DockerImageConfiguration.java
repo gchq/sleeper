@@ -91,7 +91,9 @@ public class DockerImageConfiguration {
         if (lambdaDeployType != LambdaDeployType.CONTAINER) {
             return Stream.empty();
         }
-        return lambdaHandlers.stream().filter(checkUploadLambda).map(StackDockerImage::lambdaImage);
+        return lambdaHandlers.stream().filter(checkUploadLambda)
+                .map(LambdaHandler::getJar).distinct()
+                .map(StackDockerImage::lambdaImage);
     }
 
     private Optional<StackDockerImage> getStackImage(OptionalStack stack) {

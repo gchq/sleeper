@@ -41,7 +41,7 @@ public class BuiltJarsIT extends LocalStackTestBase {
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         String versionId = putObject(bucketName, "test.jar", "data").versionId();
 
-        assertThat(builtJars.getLatestVersionId(LambdaJar.fromFormat("test.jar")))
+        assertThat(builtJars.getLatestVersionId(LambdaJar.withFormatAndImage("test.jar", "test-lambda")))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
     }

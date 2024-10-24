@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -76,7 +75,7 @@ public class BuiltJars {
                 });
     }
 
-    public String getRepositoryName(LambdaHandler handler) {
-        return ecrRepositoryPrefix + "/" + handler.getImageName();
+    public String getRepositoryName(LambdaJar jar) {
+        return ecrRepositoryPrefix + "/" + jar.getImageName();
     }
 }

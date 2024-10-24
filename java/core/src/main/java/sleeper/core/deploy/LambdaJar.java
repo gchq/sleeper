@@ -26,24 +26,26 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    public static final LambdaJar ATHENA = fromFormat("athena-%s.jar");
-    public static final LambdaJar BULK_IMPORT_STARTER = fromFormat("bulk-import-starter-%s.jar");
-    public static final LambdaJar INGEST_TASK_CREATOR = fromFormat("ingest-starter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_SUBMITTER = fromFormat("ingest-batcher-submitter-%s.jar");
-    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = fromFormat("ingest-batcher-job-creator-%s.jar");
-    public static final LambdaJar GARBAGE_COLLECTOR = fromFormat("lambda-garbagecollector-%s.jar");
-    public static final LambdaJar COMPACTION_JOB_CREATOR = fromFormat("lambda-jobSpecCreationLambda-%s.jar");
-    public static final LambdaJar COMPACTION_TASK_CREATOR = fromFormat("runningjobs-%s.jar");
-    public static final LambdaJar PARTITION_SPLITTER = fromFormat("lambda-splitter-%s.jar");
-    public static final LambdaJar QUERY = fromFormat("query-%s.jar");
-    public static final LambdaJar CUSTOM_RESOURCES = fromFormat("cdk-custom-resources-%s.jar");
-    public static final LambdaJar METRICS = fromFormat("metrics-%s.jar");
-    public static final LambdaJar STATESTORE = fromFormat("statestore-lambda-%s.jar");
+    public static final LambdaJar ATHENA = withFormatAndImage("athena-%s.jar", "athena-lambda");
+    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
+    public static final LambdaJar INGEST_TASK_CREATOR = withFormatAndImage("ingest-starter-%s.jar", "ingest-task-creator-lambda");
+    public static final LambdaJar INGEST_BATCHER_SUBMITTER = withFormatAndImage("ingest-batcher-submitter-%s.jar", "ingest-batcher-submitter-lambda");
+    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = withFormatAndImage("ingest-batcher-job-creator-%s.jar", "ingest-batcher-job-creator-lambda");
+    public static final LambdaJar GARBAGE_COLLECTOR = withFormatAndImage("lambda-garbagecollector-%s.jar", "garbage-collector-lambda");
+    public static final LambdaJar COMPACTION_JOB_CREATOR = withFormatAndImage("lambda-jobSpecCreationLambda-%s.jar", "compaction-job-creator-lambda");
+    public static final LambdaJar COMPACTION_TASK_CREATOR = withFormatAndImage("runningjobs-%s.jar", "compaction-task-creator-lambda");
+    public static final LambdaJar PARTITION_SPLITTER = withFormatAndImage("lambda-splitter-%s.jar", "partition-splitter-lambda");
+    public static final LambdaJar QUERY = withFormatAndImage("query-%s.jar", "query-lambda");
+    public static final LambdaJar CUSTOM_RESOURCES = withFormatAndImage("cdk-custom-resources-%s.jar", "custom-resources-lambda");
+    public static final LambdaJar METRICS = withFormatAndImage("metrics-%s.jar", "metrics-lambda");
+    public static final LambdaJar STATESTORE = withFormatAndImage("statestore-lambda-%s.jar", "statestore-lambda");
 
     private final String filename;
+    private final String imageName;
 
-    private LambdaJar(String filename) {
+    private LambdaJar(String filename, String imageName) {
         this.filename = Objects.requireNonNull(filename, "filename must not be null");
+        this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
     }
 
     /**
@@ -52,12 +54,16 @@ public class LambdaJar {
      * @param  format the format string
      * @return        the jar definition
      */
-    public static LambdaJar fromFormat(String format) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()));
+    public static LambdaJar withFormatAndImage(String format, String imageName) {
+        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName);
     }
 
     public String getFilename() {
         return filename;
+    }
+
+    public String getImageName() {
+        return imageName;
     }
 
     /**
@@ -78,24 +84,7 @@ public class LambdaJar {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(filename);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof LambdaJar)) {
-            return false;
-        }
-        LambdaJar other = (LambdaJar) obj;
-        return Objects.equals(filename, other.filename);
-    }
-
-    @Override
     public String toString() {
-        return "LambdaJar{filename=" + filename + "}";
+        return "LambdaJar{filename=" + filename + ", imageName=" + imageName + "}";
     }
 }

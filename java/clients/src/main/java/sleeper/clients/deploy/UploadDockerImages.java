@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 
@@ -29,10 +28,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -92,11 +88,9 @@ public class UploadDockerImages {
             }
             String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
 
-            Map<String, String> buildArgs = new LinkedHashMap<>();
-            stackImage.getLambdaHandler().ifPresent(handler -> {
-                buildArgs.put("handler", handler.getHandler());
+            stackImage.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
-                        jarsDirectory.resolve(handler.getJar().getFilename()),
+                        jarsDirectory.resolve(jar.getFilename()),
                         dockerfileDirectory.resolve("lambda.jar"));
             });
 
@@ -105,9 +99,9 @@ public class UploadDockerImages {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
                 }
                 if (stackImage.isBuildx()) {
-                    runCommand.runOrThrow(getBuildxCommand(dockerfileDirectory, tag, buildArgs));
+                    runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
-                    runCommand.runOrThrow(getBuildCommand(dockerfileDirectory, tag, buildArgs));
+                    runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
@@ -115,21 +109,6 @@ public class UploadDockerImages {
                 throw e;
             }
         }
-    }
-
-    private CommandPipeline getBuildxCommand(Path dockerfileDirectory, String tag, Map<String, String> buildArgs) {
-        return getBuildCommand(dockerfileDirectory, List.of("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push"), buildArgs);
-    }
-
-    private CommandPipeline getBuildCommand(Path dockerfileDirectory, String tag, Map<String, String> buildArgs) {
-        return getBuildCommand(dockerfileDirectory, List.of("docker", "build", "-t", tag), buildArgs);
-    }
-
-    private CommandPipeline getBuildCommand(Path dockerfileDirectory, List<String> buildCommand, Map<String, String> buildArgs) {
-        List<String> command = new ArrayList<>(buildCommand);
-        buildArgs.forEach((arg, value) -> command.addAll(List.of("--build-arg", arg + "=" + value)));
-        command.add(dockerfileDirectory.toString());
-        return pipeline(command(command.toArray(String[]::new)));
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(

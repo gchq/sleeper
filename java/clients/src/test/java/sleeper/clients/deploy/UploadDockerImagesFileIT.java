@@ -69,9 +69,9 @@ public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 loginDockerCommand(),
-                buildImageCommandWithArgs("-t", expectedTag1, "--build-arg", "handler=StateStoreCommitterLambda", lambdaImageDir.toString()),
+                buildImageCommandWithArgs("-t", expectedTag1, lambdaImageDir.toString()),
                 pushImageCommand(expectedTag1),
-                buildImageCommandWithArgs("-t", expectedTag2, "--build-arg", "handler=IngestTaskCreatorLambda", lambdaImageDir.toString()),
+                buildImageCommandWithArgs("-t", expectedTag2, lambdaImageDir.toString()),
                 pushImageCommand(expectedTag2));
 
         assertThat(ecrClient.getRepositories())
