@@ -375,6 +375,7 @@ public class LambdaHandler {
 
         private LambdaHandler add() {
             LambdaHandler handler = build();
+            LambdaJar jar = handler.getJar();
             ALL.add(handler);
             HANDLERS_BY_JAR_FILENAME.computeIfAbsent(jar.getFilename(), f -> new ArrayList<>()).add(handler);
             if (jar == LambdaJar.ATHENA) {
