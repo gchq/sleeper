@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -79,6 +80,7 @@ public class LambdaCode {
                 Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
+                        .tagOrDigest(SleeperVersion.getVersion())
                         .build());
     }
 }
