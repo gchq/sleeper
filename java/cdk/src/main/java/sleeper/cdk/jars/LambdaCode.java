@@ -19,6 +19,7 @@ import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.DockerImageFunction;
+import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -29,6 +30,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.validation.LambdaDeployType;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public class LambdaCode {
@@ -74,6 +76,9 @@ public class LambdaCode {
 
     private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
         return DockerImageCode.fromEcr(
-                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)));
+                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)),
+                EcrImageCodeProps.builder()
+                        .cmd(List.of(handler.getHandler()))
+                        .build());
     }
 }
