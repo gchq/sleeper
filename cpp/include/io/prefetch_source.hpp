@@ -18,13 +18,12 @@ namespace gpu_compact::io
 struct PrefetchingSource final : public cudf::io::datasource
 {
   private:
+    bool enablePrefetch;
     std::unique_ptr<cudf::io::datasource> src;
     std::string file;
 
   public:
     PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept;
-
-    // virtual ~PrefetchingSource() noexcept override;
 
     std::unique_ptr<cudf::io::datasource::buffer> host_read(::size_t offset, ::size_t size) override;
 
@@ -45,6 +44,10 @@ struct PrefetchingSource final : public cudf::io::datasource
     [[nodiscard]] ::size_t size() const noexcept override;
 
     [[nodiscard]] bool is_empty() const noexcept override;
+
+    bool prefetch() noexcept;
+
+    void prefetch(bool enable) noexcept;
 };
 
 }// namespace gpu_compact::io

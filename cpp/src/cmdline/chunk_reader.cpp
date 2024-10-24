@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
         for (auto const &f : inputFiles) {
             // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
             auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
+            source->prefetch(true);
             auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
             readers.emplace_back(std::move(source),
               std::make_unique<cudf::io::chunked_parquet_reader>(
@@ -94,9 +95,11 @@ int main(int argc, char **argv) {
         SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
         auto &writer = *sinkDetails.writer;
 
+        SPDLOG_INFO("Start reading files");
         // Loop doing reads
         ::size_t lastTotalRowCount = std::numeric_limits<::size_t>::max();
-        while (lastTotalRowCount) {
+        ::size_t loops = 0;
+        while (lastTotalRowCount && loops++ < 15) {
             lastTotalRowCount = 0;
             // Loop through each reader
             std::vector<cudf::io::table_with_metadata> tables;

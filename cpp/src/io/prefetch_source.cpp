@@ -8,17 +8,19 @@ namespace gpu_compact::io
 {
 
 PrefetchingSource::PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept
-  : src(std::move(source)), file(path) {}
-
-// virtual ~PrefetchingSource::PrefetchingSource() noexcept override;
+  : enablePrefetch(true), src(std::move(source)), file(path) {}
 
 std::unique_ptr<cudf::io::datasource::buffer> PrefetchingSource::host_read(::size_t offset, ::size_t size) {
-    prefetch_async(file, offset, size);
+    if (enablePrefetch) {
+        prefetch_async(file, offset + size, size * 4);
+    }
     return src->host_read(offset, size);
 }
 
 ::size_t PrefetchingSource::host_read(::size_t offset, ::size_t size, uint8_t *dst) {
-    prefetch_async(file, offset, size);
+    if (enablePrefetch) {
+        prefetch_async(file, offset + size, size * 4);
+    }
     return src->host_read(offset, size, dst);
 }
 
@@ -32,18 +34,24 @@ std::unique_ptr<cudf::io::datasource::buffer> PrefetchingSource::host_read(::siz
 
 std::unique_ptr<cudf::io::datasource::buffer>
   PrefetchingSource::device_read(::size_t offset, ::size_t size, rmm::cuda_stream_view stream) {
-    prefetch_async(file, offset, size);
+    if (enablePrefetch) {
+        prefetch_async(file, offset + size, size * 4);
+    }
     return src->device_read(offset, size, stream);
 }
 
 ::size_t PrefetchingSource::device_read(::size_t offset, ::size_t size, uint8_t *dst, rmm::cuda_stream_view stream) {
-    prefetch_async(file, offset, size);
+    if (enablePrefetch) {
+        prefetch_async(file, offset + size, size * 4);
+    }
     return src->device_read(offset, size, dst, stream);
 }
 
 std::future<::size_t>
   PrefetchingSource::device_read_async(::size_t offset, ::size_t size, uint8_t *dst, rmm::cuda_stream_view stream) {
-    prefetch_async(file, offset, size);
+    if (enablePrefetch) {
+        prefetch_async(file, offset + size, size * 4);
+    }
     return src->device_read_async(offset, size, dst, stream);
 }
 
@@ -53,6 +61,14 @@ std::future<::size_t>
 
 [[nodiscard]] bool PrefetchingSource::is_empty() const noexcept {
     return src->is_empty();
+}
+
+bool PrefetchingSource::prefetch() noexcept {
+    return enablePrefetch;
+}
+
+void PrefetchingSource::prefetch(bool enable) noexcept {
+    enablePrefetch = enable;
 }
 
 }// namespace gpu_compact::io

@@ -22,8 +22,3 @@ target_link_system_libraries(chunk_reader
 target_link_libraries(chunk_reader PRIVATE gpu_compact::io)
 target_include_directories(chunk_reader PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
 target_include_directories(chunk_reader PRIVATE "${CMAKE_SOURCE_DIR}/include/cmdline")
-
-add_executable(check check.cpp)
-target_link_libraries(check PRIVATE gpu_compact::io)
-target_include_directories(check PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
-target_include_directories(check PRIVATE "${CMAKE_SOURCE_DIR}/include/cmdline")
