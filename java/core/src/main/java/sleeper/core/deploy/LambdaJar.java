@@ -51,8 +51,9 @@ public class LambdaJar {
     /**
      * Creates a jar definition with a filename computed by adding the Sleeper version to the given format string.
      *
-     * @param  format the format string
-     * @return        the jar definition
+     * @param  format    the format string
+     * @param  imageName the name of the Docker image built from this jar
+     * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
         return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName);
