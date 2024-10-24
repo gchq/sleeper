@@ -27,7 +27,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.LambdaJar;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -45,7 +45,7 @@ public class PropertiesStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode jar = jars.lambdaCode(LambdaJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", instanceProperties.saveAsString());
@@ -53,9 +53,8 @@ public class PropertiesStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "properties-writer");
 
-        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
+        IFunction propertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
-                .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")

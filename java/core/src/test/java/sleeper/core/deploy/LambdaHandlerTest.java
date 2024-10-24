@@ -17,6 +17,8 @@ package sleeper.core.deploy;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.SleeperVersion;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.deploy.LambdaJar.STATESTORE;
 
@@ -40,5 +42,13 @@ public class LambdaHandlerTest {
     void shouldLookupHandlersByJar() {
         assertThat(LambdaHandler.getHandlers(STATESTORE))
                 .hasSizeGreaterThan(1);
+    }
+
+    @Test
+    void shouldIncludeVersionInJarNames() {
+        assertThat(LambdaHandler.all())
+                .extracting(handler -> handler.getJar().getFilename())
+                .allSatisfy(fileName -> assertThat(fileName)
+                        .contains(SleeperVersion.getVersion()));
     }
 }

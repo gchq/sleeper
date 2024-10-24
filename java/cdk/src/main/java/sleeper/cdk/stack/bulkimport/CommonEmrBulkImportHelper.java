@@ -35,7 +35,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.LambdaJar;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -114,19 +114,18 @@ public class CommonEmrBulkImportHelper {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
-        LambdaCode bulkImportStarterJar = jars.lambdaCode(LambdaJar.BULK_IMPORT_STARTER, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-import", platform, "start");
 
-        IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + platform + "JobStarter", builder -> builder
+        IFunction function = lambdaCode.buildFunction(scope, LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + platform + " bulk import jobs")
                 .memorySize(1024)
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(Runtime.JAVA_17)
-                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 

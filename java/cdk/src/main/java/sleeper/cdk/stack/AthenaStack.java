@@ -39,7 +39,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.LambdaJar;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -61,8 +61,7 @@ public class AthenaStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode jarCode = jars.lambdaCode(LambdaJar.ATHENA, jarsBucket);
-        LambdaCode customResourcesJar = jars.lambdaCode(LambdaJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "spill-bucket");
@@ -77,7 +76,7 @@ public class AthenaStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, customResourcesJar, spillBucket, bucketName);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, lambdaCode, spillBucket, bucketName);
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
 
@@ -112,7 +111,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceProperties, coreStacks, jarCode, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceProperties, coreStacks, lambdaCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -152,13 +151,14 @@ public class AthenaStack extends NestedStack {
 
     private IFunction createConnector(
             String className, InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+            LambdaCode lambdaCode, Map<String, String> env, Integer memory, Integer timeout) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String simpleClassName = getSimpleClassName(className);
 
         String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
+        LambdaHandler handler = LambdaHandler.athenaHandlerForClass(className);
 
-        IFunction athenaCompositeHandler = jar.buildFunction(this, simpleClassName + "AthenaCompositeHandler", builder -> builder
+        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))

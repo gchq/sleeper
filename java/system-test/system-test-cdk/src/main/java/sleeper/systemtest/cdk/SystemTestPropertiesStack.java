@@ -30,7 +30,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.LambdaJar;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.HashMap;
@@ -50,16 +50,15 @@ public class SystemTestPropertiesStack extends NestedStack {
 
         String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        LambdaCode jar = jars.lambdaCode(LambdaJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
 
         String functionName = String.join("-", "sleeper", Utils.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
 
-        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
+        IFunction propertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
-                .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")

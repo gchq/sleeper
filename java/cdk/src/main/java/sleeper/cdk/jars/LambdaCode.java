@@ -18,10 +18,12 @@ package sleeper.cdk.jars;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.Handler;
 import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.validation.LambdaDeployType;
 
@@ -30,21 +32,28 @@ import java.util.function.Consumer;
 public class LambdaCode {
 
     private final BuiltJars builtJars;
-    private final LambdaJar jar;
     private final LambdaDeployType deployType;
     private final IBucket bucket;
 
-    LambdaCode(BuiltJars builtJars, LambdaJar jar, LambdaDeployType deployType, IBucket bucket) {
+    LambdaCode(BuiltJars builtJars, LambdaDeployType deployType, IBucket bucket) {
         this.builtJars = builtJars;
-        this.jar = jar;
         this.deployType = deployType;
         this.bucket = bucket;
     }
 
-    public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
+    public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<Function.Builder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id).code(code(scope, id));
+        Function.Builder builder = Function.Builder.create(scope, id);
         config.accept(builder);
+        if (deployType == LambdaDeployType.JAR) {
+            builder.code(jarCode(handler.getJar()))
+                    .handler(handler.getHandler());
+        } else if (deployType == LambdaDeployType.CONTAINER) {
+            builder.code(containerCode(scope, handler, id))
+                    .handler(Handler.FROM_IMAGE);
+        } else {
+            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
+        }
         Function function = builder.build();
 
         // This is needed to tell the CDK to update the functions with new code when it changes in the jars bucket.
@@ -55,13 +64,11 @@ public class LambdaCode {
         return function.getCurrentVersion();
     }
 
-    private Code code(Construct scope, String id) {
-        if (deployType == LambdaDeployType.JAR) {
-            return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
-        } else if (deployType == LambdaDeployType.CONTAINER) {
-            return Code.fromEcrImage(Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(jar)));
-        } else {
-            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
-        }
+    private Code jarCode(LambdaJar jar) {
+        return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
+    }
+
+    private Code containerCode(Construct scope, LambdaHandler handler, String id) {
+        return Code.fromEcrImage(Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler)));
     }
 }

@@ -32,6 +32,7 @@ public class LambdaHandler {
 
     private static final List<LambdaHandler> ALL = new ArrayList<>();
     private static final Map<String, List<LambdaHandler>> HANDLERS_BY_JAR_FILENAME = new HashMap<>();
+    private static final Map<String, LambdaHandler> ATHENA_HANDLER_BY_CLASSNAME = new HashMap<>();
     public static final LambdaHandler ATHENA_SIMPLE_COMPOSITE = builder()
             .jar(LambdaJar.ATHENA)
             .handler("sleeper.athena.composite.SimpleCompositeHandler")
@@ -92,7 +93,7 @@ public class LambdaHandler {
             .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
             .imageName("compaction-task-terminator-lambda")
             .optionalStack(OptionalStack.CompactionStack).add();
-    public static final LambdaHandler PARTITION_SPLITTER_TRIGGER = builder()
+    public static final LambdaHandler FIND_PARTITIONS_TO_SPLIT_TRIGGER = builder()
             .jar(LambdaJar.PARTITION_SPLITTER)
             .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::handleRequest")
             .imageName("find-partitions-to-split-trigger-lambda")
@@ -220,6 +221,17 @@ public class LambdaHandler {
                 HANDLERS_BY_JAR_FILENAME.getOrDefault(jar.getFilename(), List.of()));
     }
 
+    /**
+     * Returns the Athena lambda handler with the given class name.
+     *
+     * @param  className the class name
+     * @return           the definition
+     */
+    public static LambdaHandler athenaHandlerForClass(String className) {
+        return Objects.requireNonNull(ATHENA_HANDLER_BY_CLASSNAME.get(className),
+                "No lambda handler found for Athena with the given class name");
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -258,6 +270,28 @@ public class LambdaHandler {
      */
     public boolean isDeployedOptional(Collection<OptionalStack> stacks) {
         return optionalStacks.stream().anyMatch(stacks::contains);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jar, handler, imageName, optionalStacks);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof LambdaHandler)) {
+            return false;
+        }
+        LambdaHandler other = (LambdaHandler) obj;
+        return Objects.equals(jar, other.jar) && Objects.equals(handler, other.handler) && Objects.equals(imageName, other.imageName) && Objects.equals(optionalStacks, other.optionalStacks);
+    }
+
+    @Override
+    public String toString() {
+        return "LambdaHandler{jar=" + jar + ", handler=" + handler + ", imageName=" + imageName + ", optionalStacks=" + optionalStacks + "}";
     }
 
     /**
@@ -343,6 +377,9 @@ public class LambdaHandler {
             LambdaHandler handler = build();
             ALL.add(handler);
             HANDLERS_BY_JAR_FILENAME.computeIfAbsent(jar.getFilename(), f -> new ArrayList<>()).add(handler);
+            if (jar == LambdaJar.ATHENA) {
+                ATHENA_HANDLER_BY_CLASSNAME.put(handler.getHandler(), handler);
+            }
             return handler;
         }
     }

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -62,8 +63,8 @@ public class BuiltJars {
         return bucketName;
     }
 
-    public LambdaCode lambdaCode(LambdaJar jar, IBucket bucketConstruct) {
-        return new LambdaCode(this, jar, deployType, bucketConstruct);
+    public LambdaCode lambdaCode(IBucket bucketConstruct) {
+        return new LambdaCode(this, deployType, bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {
@@ -75,7 +76,7 @@ public class BuiltJars {
                 });
     }
 
-    public String getRepositoryName(LambdaJar jar) {
-        return ecrRepositoryPrefix + "/" + jar.getImageName();
+    public String getRepositoryName(LambdaHandler handler) {
+        return ecrRepositoryPrefix + "/" + handler.getImageName();
     }
 }

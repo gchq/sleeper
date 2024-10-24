@@ -17,7 +17,7 @@
 package sleeper.clients.deploy;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.core.deploy.LambdaJar;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
@@ -46,18 +46,18 @@ public class DockerImageConfiguration {
             OptionalStack.CompactionStack, dockerBuildxImage("compaction-job-execution"),
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
 
-    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaJar.all());
+    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaHandler.all());
 
     private final Map<OptionalStack, StackDockerImage> imageByStack;
-    private final List<LambdaJar> lambdaJars;
+    private final List<LambdaHandler> lambdaHandlers;
 
     public static DockerImageConfiguration getDefault() {
         return DEFAULT;
     }
 
-    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaJar> lambdaJars) {
+    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaHandler> lambdaHandlers) {
         this.imageByStack = imageByStack;
-        this.lambdaJars = lambdaJars;
+        this.lambdaHandlers = lambdaHandlers;
     }
 
     public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
@@ -78,7 +78,7 @@ public class DockerImageConfiguration {
     }
 
     private List<StackDockerImage> getImagesToUpload(
-            Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaJar> checkUploadLambda) {
+            Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
         return Stream.concat(
                 stacks.stream()
                         .map(this::getStackImage)
@@ -87,11 +87,11 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaJar> checkUploadLambda) {
+    private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
         if (lambdaDeployType != LambdaDeployType.CONTAINER) {
             return Stream.empty();
         }
-        return lambdaJars.stream().filter(checkUploadLambda).map(StackDockerImage::lambdaImage);
+        return lambdaHandlers.stream().filter(checkUploadLambda).map(StackDockerImage::lambdaImage);
     }
 
     private Optional<StackDockerImage> getStackImage(OptionalStack stack) {

@@ -21,6 +21,7 @@ import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
@@ -46,10 +47,16 @@ public abstract class UploadDockerImagesTestBase {
             OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
             OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
             OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
-    private static final List<LambdaJar> LAMBDA_JARS = List.of(
-            LambdaJar.builder().filenameFormat("statestore.jar").imageName("statestore-lambda").core().build(),
-            LambdaJar.builder().filenameFormat("ingest.jar").imageName("ingest-task-creator-lambda").optionalStack(OptionalStack.IngestStack).build(),
-            LambdaJar.builder().filenameFormat("bulk-import-starter.jar").imageName("bulk-import-starter-lambda")
+    private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
+            LambdaHandler.builder().jar(LambdaJar.fromFormat("statestore.jar"))
+                    .handler("StateStoreCommitterLambda")
+                    .imageName("statestore-lambda").core().build(),
+            LambdaHandler.builder().jar(LambdaJar.fromFormat("ingest.jar"))
+                    .handler("IngestTaskCreatorLambda")
+                    .imageName("ingest-task-creator-lambda")
+                    .optionalStack(OptionalStack.IngestStack).build(),
+            LambdaHandler.builder().jar(LambdaJar.fromFormat("bulk-import-starter.jar"))
+                    .handler("BulkImportStarterLambda").imageName("bulk-import-starter-lambda")
                     .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build());
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();
@@ -80,7 +87,7 @@ public abstract class UploadDockerImagesTestBase {
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(Map.of(), LAMBDA_JARS);
+        return new DockerImageConfiguration(Map.of(), LAMBDA_HANDLERS);
     }
 
     protected abstract UploadDockerImages uploader();
