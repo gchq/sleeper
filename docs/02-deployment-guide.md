@@ -23,7 +23,7 @@ cd sleeper                  # Change directory to the root of the Git repository
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
 To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
-the [developer guide](11-dev-guide.md#install-prerequisite-software).
+the [developer guide](12-dev-guide.md#install-prerequisite-software).
 
 ### Configure AWS
 

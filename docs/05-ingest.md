@@ -83,7 +83,7 @@ with columns matching the fields in your schema (note that the fields in the sch
 all need to be non-optional).
 
 Note that the descriptions below describe how data in Parquet files can be ingested by sending ingest job
-definitions in JSON form to SQS queues. In practice it may be easier to use the [Python API](08-python-api.md).
+definitions in JSON form to SQS queues. In practice it may be easier to use the [Python API](09-python-api.md).
 
 When you have the data you want to ingest stored in Parquet files, a message should be sent
 to Sleeper's ingest queue telling it that the data should be ingested. This message should have the following form:
