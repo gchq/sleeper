@@ -38,7 +38,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -46,11 +45,11 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
@@ -109,11 +108,8 @@ public class IngestStack extends NestedStack {
         //      and if there are not enough (i.e. there is a backlog on the queue
         //      then it creates more tasks).
 
-        // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-
-        // Job creation code
-        LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
@@ -122,7 +118,7 @@ public class IngestStack extends NestedStack {
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
+        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -242,19 +238,17 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
+    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode lambdaCode) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "ingest-create-tasks");
 
-        IFunction handler = taskCreatorJar.buildFunction(this, "IngestTasksCreator", builder -> builder
+        IFunction handler = lambdaCode.buildFunction(this, LambdaHandler.INGEST_TASK_CREATOR, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
-                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.ingest.starter.RunIngestTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.core.deploy;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,23 +21,27 @@ import sleeper.core.SleeperVersion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BuiltJarTest {
+public class LambdaHandlerTest {
 
     @Test
-    void shouldBuildJarNameWithoutVersion() {
-        // When
-        BuiltJar jar = BuiltJar.fromFormat("test.jar");
-
-        // Then
-        assertThat(jar.getFileName()).isEqualTo("test.jar");
+    void shouldBuildCoreHandlers() {
+        assertThat(LambdaHandler.all())
+                .filteredOn(handler -> handler.getOptionalStacks().isEmpty())
+                .hasSizeGreaterThan(1);
     }
 
     @Test
-    void shouldBuildJarNameWithVersion() {
-        // When
-        BuiltJar jar = BuiltJar.fromFormat("test-%s.jar");
+    void shouldBuildOptionalStackHandlers() {
+        assertThat(LambdaHandler.all())
+                .filteredOn(handler -> !handler.getOptionalStacks().isEmpty())
+                .hasSizeGreaterThan(1);
+    }
 
-        // Then
-        assertThat(jar.getFileName()).contains(SleeperVersion.getVersion());
+    @Test
+    void shouldIncludeVersionInJarNames() {
+        assertThat(LambdaHandler.all())
+                .extracting(handler -> handler.getJar().getFilename())
+                .allSatisfy(fileName -> assertThat(fileName)
+                        .contains(SleeperVersion.getVersion()));
     }
 }

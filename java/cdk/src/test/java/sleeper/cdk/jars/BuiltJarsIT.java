@@ -19,15 +19,20 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.testutils.LocalStackTestBase;
+import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
-    private final BuiltJars builtJars = new BuiltJars(s3Client, bucketName);
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
@@ -36,8 +41,14 @@ public class BuiltJarsIT extends LocalStackTestBase {
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         String versionId = putObject(bucketName, "test.jar", "data").versionId();
 
-        assertThat(builtJars.getLatestVersionId(BuiltJar.fromFormat("test.jar")))
+        assertThat(builtJars.getLatestVersionId(LambdaJar.withFormatAndImage("test.jar", "test-lambda")))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(JARS_BUCKET, bucketName);
+        return properties;
     }
 }

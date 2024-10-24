@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -31,11 +30,11 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -63,32 +62,28 @@ public class TransactionLogTransactionStack extends NestedStack {
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
-        createTransactionDeletionLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        createTransactionDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void createTransactionDeletionLambda(InstanceProperties instanceProperties, LambdaCode statestoreJar,
+    private void createTransactionDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode,
             CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion");
-        IFunction transactionDeletionTrigger = statestoreJar.buildFunction(this, "TransactionLogTransactionDeletionTrigger", builder -> builder
+        IFunction transactionDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log transactions for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
-        IFunction transactionDeletionLambda = statestoreJar.buildFunction(this, "TransactionLogTransactionDeletion", builder -> builder
+        IFunction transactionDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)

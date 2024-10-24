@@ -84,6 +84,10 @@ sleeper.retain.infra.after.destroy=true
 # DashboardStack, TableMetricsStack]
 sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
+# The deployment type for AWS Lambda. Not case sensitive.
+# Valid values: [jar, container]
+sleeper.lambda.deploy.type=jar
+
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
 sleeper.vpc.endpoint.check=true

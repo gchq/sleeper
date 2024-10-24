@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -31,11 +30,11 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -73,32 +72,28 @@ public class TransactionLogSnapshotStack extends NestedStack {
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode statestoreJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
-        createSnapshotCreationLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
-        createSnapshotDeletionLambda(instanceProperties, statestoreJar, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        createSnapshotCreationLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
+        createSnapshotDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void createSnapshotCreationLambda(InstanceProperties instanceProperties, LambdaCode statestoreJar, CoreStacks coreStacks,
+    private void createSnapshotCreationLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
         String creationFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation");
-        IFunction snapshotCreationTrigger = statestoreJar.buildFunction(this, "TransactionLogSnapshotCreationTrigger", builder -> builder
+        IFunction snapshotCreationTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
-        IFunction snapshotCreationLambda = statestoreJar.buildFunction(this, "TransactionLogSnapshotCreation", builder -> builder
+        IFunction snapshotCreationLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
@@ -149,26 +144,22 @@ public class TransactionLogSnapshotStack extends NestedStack {
         transactionLogStateStoreStack.grantCreateSnapshots(snapshotCreationLambda);
     }
 
-    private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, LambdaCode statestoreJar, CoreStacks coreStacks,
+    private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion");
-        IFunction snapshotDeletionTrigger = statestoreJar.buildFunction(this, "TransactionLogSnapshotDeletionTrigger", builder -> builder
+        IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
-        IFunction snapshotDeletionLambda = statestoreJar.buildFunction(this, "TransactionLogSnapshotDeletion", builder -> builder
+        IFunction snapshotDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
-                .runtime(Runtime.JAVA_17)
-                .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
