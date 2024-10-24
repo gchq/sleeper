@@ -94,7 +94,7 @@
         <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
         <aircompressor.version>0.27</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
-        <protobuf.version>4.28.2</protobuf.version>
+        <protobuf.version>4.28.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
