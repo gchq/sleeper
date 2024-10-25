@@ -73,7 +73,7 @@ deleting files as quickly as possible.
 - Option 3: This is similar to option 2 - for each Sleeper table there is a table of file references but instead of
 adding a dummy reference we add an entry for the file to a separate table. This entry simply records the filename
 along with an update time which is initially Long.MAX_VALUE. Normal updates to the file references happen on the
-main table. As in option 2, garbage collection needs to be a two state process. The first stage will have to find
+main table. As in option 2, garbage collection needs to be a two stage process. The first stage will have to find
 all files in the second table for which there are zero corresponding entries in the file references table. The rest
 of the garbage collection process will behave as in option 2.
 
