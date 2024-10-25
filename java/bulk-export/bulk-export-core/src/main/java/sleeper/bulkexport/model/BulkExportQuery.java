@@ -15,9 +15,10 @@
  */
 package sleeper.bulkexport.model;
 
+import sleeper.core.range.Region;
+
 import java.util.List;
 
-import javax.swing.plaf.synth.Region;
 
 /**
  * Model.
