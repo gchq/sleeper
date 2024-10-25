@@ -18,10 +18,10 @@ package sleeper.bulkexport.model;
 import sleeper.core.range.Region;
 
 import java.util.List;
-
+import java.util.Objects;
 
 /**
- * Model.
+ * Model for a BulkExportQuery.
  */
 public class BulkExportQuery {
     private final String tableName;
@@ -35,13 +35,47 @@ public class BulkExportQuery {
 
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public String getExportId() {
+        return exportId;
+    }
+
+    public List<Region> getRegions() {
+        return regions;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        BulkExportQuery bulkExportQuery = (BulkExportQuery) object;
+        return Objects.equals(tableName, bulkExportQuery.tableName) && Objects.equals(exportId, bulkExportQuery.exportId)
+                && Objects.equals(regions, bulkExportQuery.regions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableName, exportId, regions);
+    }
+
     @Override
     public String toString() {
         return "BulkExportQuery{}";
     }
 
     /**
-     * Builder.
+     * Builder for the BulkExportQuery model.
      */
     public static final class Builder {
         private String tableName;
@@ -70,5 +104,4 @@ public class BulkExportQuery {
             return new BulkExportQuery(this);
         }
     }
-
 }
