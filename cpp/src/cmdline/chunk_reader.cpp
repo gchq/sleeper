@@ -21,6 +21,7 @@
 #include "io/s3_utils.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <limits>
 #include <memory>
@@ -40,6 +41,10 @@
         auto const rows = cudf::io::read_parquet_metadata(cudf::io::source_info(&*std::get<0>(item))).num_rows();
         return acc + rows;
     });
+}
+
+[[nodiscard]] inline std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept {
+    return std::chrono::steady_clock::now();
 }
 
 int main(int argc, char **argv) {
@@ -80,7 +85,7 @@ int main(int argc, char **argv) {
         for (auto const &f : inputFiles) {
             // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
             auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
-            source->prefetch(true);
+            source->prefetch(false);
             auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
             readers.emplace_back(std::move(source),
               std::make_unique<cudf::io::chunked_parquet_reader>(
@@ -91,6 +96,17 @@ int main(int argc, char **argv) {
 
         auto const totalRows = calcTotalRows(readers);
 
+        // Enable prefetching
+        for (auto const &r : readers) {
+            auto const s = dynamic_cast<gpu_compact::io::PrefetchingSource *>(std::get<0>(r).get());
+            if (s) {
+                SPDLOG_INFO("Prefetching enabled");
+                s->prefetch(true);
+            } else {
+                SPDLOG_WARN("Can't enable prefetching!");
+            }
+        }
+
         // Make writer
         SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
         auto &writer = *sinkDetails.writer;
@@ -98,8 +114,8 @@ int main(int argc, char **argv) {
         SPDLOG_INFO("Start reading files");
         // Loop doing reads
         ::size_t lastTotalRowCount = std::numeric_limits<::size_t>::max();
-        ::size_t loops = 0;
-        while (lastTotalRowCount && loops++ < 15) {
+        auto const startTime = timestamp();
+        while (lastTotalRowCount) {
             lastTotalRowCount = 0;
             // Loop through each reader
             std::vector<cudf::io::table_with_metadata> tables;
@@ -134,10 +150,18 @@ int main(int argc, char **argv) {
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
                 views.clear();
                 tables.clear();
+                auto const elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(timestamp() - startTime);
                 auto const rowsWritten = calcRowsWritten(readers);
-                SPDLOG_INFO("Written {:d} rows, {:.2f}% complete",
+                auto const fracRowsWritten = (static_cast<double>(rowsWritten) / totalRows);
+                auto const predictedTime =
+                  std::chrono::duration_cast<std::chrono::seconds>(elapsedTime * (1 / fracRowsWritten));
+                SPDLOG_INFO("Written {:d} rows, {:.2f}% complete, est. time (total) {:02d}:{:02d} ({:02d}:{:02d})",
                   rowsWritten,
-                  (static_cast<double>(rowsWritten) / totalRows) * 100);
+                  fracRowsWritten * 100,
+                  elapsedTime.count() / 60,
+                  elapsedTime.count() % 60,
+                  predictedTime.count() / 60,
+                  predictedTime.count() % 60);
                 writer.write(*merged);
             }
         }

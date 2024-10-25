@@ -7,20 +7,23 @@
 namespace gpu_compact::io
 {
 
+void PrefetchingSource::prefetch(::size_t const offset, ::size_t const len) {
+    std::cout << "Read request " << file << " offset " << offset << " to " << (offset + len) << " len " << len << "\n";
+    if (enablePrefetch) {
+        prefetch_read_async(file, offset + len, len + 200 * 1'024ul * 1'024ul);
+    }
+}
+
 PrefetchingSource::PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept
   : enablePrefetch(true), src(std::move(source)), file(path) {}
 
 std::unique_ptr<cudf::io::datasource::buffer> PrefetchingSource::host_read(::size_t offset, ::size_t size) {
-    if (enablePrefetch) {
-        prefetch_async(file, offset + size, size * 4);
-    }
+    prefetch(offset, size);
     return src->host_read(offset, size);
 }
 
 ::size_t PrefetchingSource::host_read(::size_t offset, ::size_t size, uint8_t *dst) {
-    if (enablePrefetch) {
-        prefetch_async(file, offset + size, size * 4);
-    }
+    prefetch(offset, size);
     return src->host_read(offset, size, dst);
 }
 
@@ -34,24 +37,18 @@ std::unique_ptr<cudf::io::datasource::buffer> PrefetchingSource::host_read(::siz
 
 std::unique_ptr<cudf::io::datasource::buffer>
   PrefetchingSource::device_read(::size_t offset, ::size_t size, rmm::cuda_stream_view stream) {
-    if (enablePrefetch) {
-        prefetch_async(file, offset + size, size * 4);
-    }
+    prefetch(offset, size);
     return src->device_read(offset, size, stream);
 }
 
 ::size_t PrefetchingSource::device_read(::size_t offset, ::size_t size, uint8_t *dst, rmm::cuda_stream_view stream) {
-    if (enablePrefetch) {
-        prefetch_async(file, offset + size, size * 4);
-    }
+    prefetch(offset, size);
     return src->device_read(offset, size, dst, stream);
 }
 
 std::future<::size_t>
   PrefetchingSource::device_read_async(::size_t offset, ::size_t size, uint8_t *dst, rmm::cuda_stream_view stream) {
-    if (enablePrefetch) {
-        prefetch_async(file, offset + size, size * 4);
-    }
+    prefetch(offset, size);
     return src->device_read_async(offset, size, dst, stream);
 }
 
