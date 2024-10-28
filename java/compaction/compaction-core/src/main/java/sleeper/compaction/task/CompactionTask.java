@@ -51,6 +51,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 
 /**
  * Runs a compaction task. Executes jobs from a queue, updating the status stores with progress of the task.
@@ -129,6 +130,7 @@ public class CompactionTask {
         Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
         int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         Duration delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+        boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
         int numConsecutiveFailures = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -154,7 +156,9 @@ public class CompactionTask {
                 String jobRunId = jobRunIdSupplier.get();
                 try {
                     propertiesReloader.reloadIfNeeded();
-                    waitForFiles.wait(job, taskId, jobRunId);
+                    if (waitForFileAssignment) {
+                        waitForFiles.wait(job, taskId, jobRunId);
+                    }
                     RecordsProcessedSummary summary = compact(job, jobRunId);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.completed();

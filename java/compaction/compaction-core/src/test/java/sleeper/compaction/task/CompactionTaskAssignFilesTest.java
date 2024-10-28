@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.task;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -28,8 +29,15 @@ import java.util.Queue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT, "true");
+    }
 
     @Test
     void shouldRetryOnceWaitingForFilesToBeAssignedToJob() throws Exception {
@@ -110,5 +118,34 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 jobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "File reference not found in partition root, filename " + job.getInputFiles().get(0)))));
+    }
+
+    @Test
+    void shouldFailAtEndWhenFileAssignmentCheckDisabledWithDirectCommit() throws Exception {
+        // Given
+        instanceProperties.set(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT, "false");
+        tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
+        CompactionJob job = createJob("test-job");
+        send(job);
+        stateStore.clearFileData();
+
+        // When
+        runTaskCheckingFiles(
+                waitForFileAssignment(timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:45:00Z"))).withAttempts(10),
+                processJobs(jobSucceeds()),
+                timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:50:00Z")));
+
+        // Then
+        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsOnQueue).isEmpty();
+        assertThat(foundWaitsForFileAssignment).isEmpty();
+        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                jobCreated(job, DEFAULT_CREATED_TIME,
+                        failedCompactionRun(DEFAULT_TASK_ID,
+                                Instant.parse("2024-10-28T11:51:00Z"),
+                                Instant.parse("2024-10-28T11:52:00Z"),
+                                Instant.parse("2024-10-28T11:53:00Z"),
+                                List.of("1 replace file reference requests failed to update the state store",
+                                        "File not found: " + job.getInputFiles().get(0)))));
     }
 }
