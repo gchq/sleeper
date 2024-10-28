@@ -126,7 +126,7 @@ public class BuildEC2ParametersTest {
 
         assertThatThrownBy(() -> BuildEC2Parameters.from(context))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Nightly test deploy ID must be at most 2 characters long");
+                .hasMessage("nightlyTestDeployId must be at most 2 characters long");
     }
 
     @Test
@@ -140,6 +140,6 @@ public class BuildEC2ParametersTest {
 
         assertThatThrownBy(() -> BuildEC2Parameters.from(context))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Nightly test deploy ID must be set (up to 2 characters)");
+                .hasMessage("nightlyTestDeployId must be set (up to 2 characters)");
     }
 }

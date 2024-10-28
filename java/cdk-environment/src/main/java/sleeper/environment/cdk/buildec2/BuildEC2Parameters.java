@@ -59,9 +59,9 @@ public class BuildEC2Parameters {
         nightlyTestEnabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
         if (nightlyTestEnabled) {
             nightlyTestDeployId = context.get(NIGHTLY_TEST_DEPLOY_ID)
-                    .orElseThrow(() -> new IllegalArgumentException("Nightly test deploy ID must be set (up to 2 characters)"));
+                    .orElseThrow(() -> new IllegalArgumentException("nightlyTestDeployId must be set (up to 2 characters)"));
             if (nightlyTestDeployId.length() > 2) {
-                throw new IllegalArgumentException("Nightly test deploy ID must be at most 2 characters long");
+                throw new IllegalArgumentException("nightlyTestDeployId must be at most 2 characters long");
             }
             testHour = "" + context.get(NIGHTLY_TEST_RUN_HOUR_UTC);
             testBucket = context.get(NIGHTLY_TEST_BUCKET)
