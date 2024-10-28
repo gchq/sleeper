@@ -34,6 +34,7 @@ public class SystemTestInstanceConfiguration {
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
         disableTransactionLogSnapshots = builder.disableTransactionLogSnapshots;
+        // Combines with SystemTestParameters.shortTestId to create an instance ID within maximum length
         if (shortName.length() > 7) {
             throw new IllegalArgumentException("Instance shortName must not be longer than 7 characters");
         }
