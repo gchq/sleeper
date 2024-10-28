@@ -83,8 +83,8 @@ public interface CompactionProperty {
                     "This prevents invalid compaction jobs from being run, particularly in the case where the " +
                     "compaction job creator runs again before the input files are assigned. This causes compaction " +
                     "tasks to wait idle while input files are assigned, and puts extra load on the state store.\n" +
-                    "If this is false, any created job will be executed, and will only be validated when committed to" +
-                    "the state store.")
+                    "If this is false, any created job will be executed, and will only be validated when committed " +
+                    "to the state store.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
