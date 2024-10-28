@@ -62,7 +62,7 @@ START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_DAY=$(recorded_time_str "$START_TIMESTAMP" "%m%d")
 # Use randomness to avoid naming conflicts between test runs
 DAY_RUN_ID=$(uuidgen -r | head -c 4)
-TEST_RUN_ID="$START_DAY$DAY_RUN_ID"
+TEST_RUN_ID="$START_DAY-$DAY_RUN_ID"
 OUTPUT_DIR="/tmp/sleeper/${MAIN_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
