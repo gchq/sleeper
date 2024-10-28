@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_DEPLOY_ID;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_SUBNETS;
@@ -43,6 +44,7 @@ public class BuildEC2Parameters {
     private final String branch;
     private final BuildEC2Image image;
     private final boolean nightlyTestEnabled;
+    private final String nightlyTestDeployId;
     private final String testHour;
     private final String testBucket;
     private final String vpc;
@@ -56,6 +58,11 @@ public class BuildEC2Parameters {
         image = BuildEC2Image.from(context);
         nightlyTestEnabled = context.get(NIGHTLY_TEST_RUN_ENABLED);
         if (nightlyTestEnabled) {
+            nightlyTestDeployId = context.get(NIGHTLY_TEST_DEPLOY_ID)
+                    .orElseThrow(() -> new IllegalArgumentException("Nightly test deploy ID must be set (up to 2 characters)"));
+            if (nightlyTestDeployId.length() > 2) {
+                throw new IllegalArgumentException("Nightly test deploy ID must be at most 2 characters long");
+            }
             testHour = "" + context.get(NIGHTLY_TEST_RUN_HOUR_UTC);
             testBucket = context.get(NIGHTLY_TEST_BUCKET)
                     .orElseGet(() -> Objects.requireNonNull(builder.testBucket, "testBucket must not be null"));
@@ -66,6 +73,7 @@ public class BuildEC2Parameters {
             }
             subnets = String.join(",", subnetsList);
         } else {
+            nightlyTestDeployId = null;
             testHour = null;
             testBucket = null;
             vpc = null;
@@ -95,6 +103,7 @@ public class BuildEC2Parameters {
             return noNightlyTests;
         }
         return noNightlyTests
+                .replace("${deployId}", nightlyTestDeployId)
                 .replace("${testHour}", testHour)
                 .replace("${testBucket}", testBucket)
                 .replace("${vpc}", vpc)
