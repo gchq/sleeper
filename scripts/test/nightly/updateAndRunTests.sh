@@ -28,6 +28,7 @@ fi
 SETTINGS_FILE=$1
 TEST_TYPE=$2
 
+DEPLOY_ID=$(jq ".deployId" "$SETTINGS_FILE" --raw-output)
 VPC=$(jq ".vpc" "$SETTINGS_FILE" --raw-output)
 SUBNETS=$(jq ".subnets" "$SETTINGS_FILE" --raw-output)
 RESULTS_BUCKET=$(jq ".resultsBucket" "$SETTINGS_FILE" --raw-output)
@@ -41,7 +42,7 @@ git fetch
 git switch --discard-changes -C develop origin/develop
 
 set +e
-./runTests.sh "$VPC" "$SUBNETS" "$RESULTS_BUCKET" "$TEST_TYPE"
+./runTests.sh "$DEPLOY_ID" "$VPC" "$SUBNETS" "$RESULTS_BUCKET" "$TEST_TYPE"
 EXIT_CODE=$?
 set -e
 

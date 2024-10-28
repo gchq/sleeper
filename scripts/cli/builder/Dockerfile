@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     zip \
     jq \
+    uuid-runtime \
     sudo \
     gcc g++ cmake make \
     pkg-config libssl-dev \
