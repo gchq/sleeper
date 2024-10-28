@@ -59,7 +59,10 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
+START_DAY=$(recorded_time_str "$START_TIMESTAMP" "%m%d")
+# Use randomness to avoid naming conflicts between test runs
+DAY_RUN_ID=$(uuidgen -r | head -c 4)
+TEST_RUN_ID="$START_DAY$DAY_RUN_ID"
 OUTPUT_DIR="/tmp/sleeper/${MAIN_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
@@ -109,8 +112,8 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "mvn-$START_TIME_SHORT" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
-runMavenSystemTests "dyn-$START_TIME_SHORT" $SECONDARY_SUITE_NAME "${SECONDARY_SUITE_PARAMS[@]}"
+runMavenSystemTests "mvn-$TEST_RUN_ID" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+runMavenSystemTests "dyn-$TEST_RUN_ID" $SECONDARY_SUITE_NAME "${SECONDARY_SUITE_PARAMS[@]}"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
