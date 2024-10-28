@@ -78,6 +78,9 @@ public class SystemTestParameters {
         forceStateStoreClassname = builder.forceStateStoreClassname;
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
         instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
+        if (shortTestId.length() > 13) {
+            throw new IllegalArgumentException("shortTestId is too long, must be at most 13 characters: " + shortTestId);
+        }
     }
 
     public static Builder builder() {
