@@ -241,6 +241,12 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds")
+            .description("The timeout in seconds after which to terminate the transaction log snapshot creation lambda.")
+            .defaultValue("180")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the snapshot creation lambda.\n" +

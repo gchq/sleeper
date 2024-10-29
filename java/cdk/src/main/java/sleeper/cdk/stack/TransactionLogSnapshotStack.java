@@ -58,6 +58,7 @@ import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SN
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CommonProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED;
@@ -97,7 +98,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
-                .timeout(Duration.minutes(1))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroupByFunctionName(creationFunctionName)));
 
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
