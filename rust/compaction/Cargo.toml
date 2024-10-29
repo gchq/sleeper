@@ -53,3 +53,6 @@ tokio-test = { version = "0.4.2" } # Doc tests
 env_logger = { version = "0.11.5" }
 chrono = { version = "0.4.26" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
+
+[dev-dependencies]
+tempfile = "3.13.0"
