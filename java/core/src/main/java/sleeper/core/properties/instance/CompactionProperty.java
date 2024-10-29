@@ -76,6 +76,19 @@ public interface CompactionProperty {
             .defaultValue("20")
             .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 20))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT = Index.propertyBuilder("sleeper.compaction.task.wait.for.input.file.assignment")
+            .description("Set to true if compaction tasks should wait for input files to be assigned to a compaction " +
+                    "job before starting it. The compaction task will poll the state store for whether the input " +
+                    "files have been assigned to the job, and will only start once this has occurred.\n" +
+                    "This prevents invalid compaction jobs from being run, particularly in the case where the " +
+                    "compaction job creator runs again before the input files are assigned.\n" +
+                    "This also causes compaction tasks to wait idle while input files are assigned, and puts extra " +
+                    "load on the state store when there are many compaction tasks.\n" +
+                    "If this is false, any created job will be executed, and will only be validated when committed " +
+                    "to the state store.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.delay.before.retry.seconds")
             .description("The time in seconds for a compaction task to wait after receiving no compaction jobs " +
                     "before attempting to receive a message again.\n" +
