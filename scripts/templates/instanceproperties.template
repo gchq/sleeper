@@ -177,8 +177,8 @@ sleeper.statestore.s3.dynamo.pointintimerecovery=false
 # the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.snapshot.creation.batch.size=1
 
-# The frequency in minutes with which the transaction log snapshot creation lambda is run.
-sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes=5
+# The frequency in seconds with which the transaction log snapshot creation lambda is run.
+sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds=60
 
 # The timeout in seconds after which to terminate the transaction log snapshot creation lambda.
 sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds=180
