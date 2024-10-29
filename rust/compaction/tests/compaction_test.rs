@@ -1,10 +1,10 @@
-use std::{fs::File, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, fs::File, path::PathBuf, sync::Arc};
 
 use arrow::{
     array::{Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
-use compaction::{merge_sorted_files, CompactionInput};
+use compaction::{merge_sorted_files, ColRange, CompactionInput, PartitionBound};
 use datafusion::parquet::{
     arrow::{arrow_reader::ArrowReaderBuilder, ArrowWriter},
     basic::Compression,
@@ -30,6 +30,15 @@ async fn should_merge_two_files() {
         ]),
         output_file: Url::from_file_path(&output).unwrap(),
         row_key_cols: Vec::from(["key".to_string()]),
+        region: HashMap::from([(
+            "key".to_string(),
+            ColRange {
+                lower: PartitionBound::Int32(0),
+                lower_inclusive: true,
+                upper: PartitionBound::Int32(5),
+                upper_inclusive: false,
+            },
+        )]),
         ..Default::default()
     };
 
@@ -41,7 +50,7 @@ async fn should_merge_two_files() {
         read_file_of_ints(&output),
         Int32Array::from(vec![1, 2, 3, 4])
     );
-    assert_eq!([result.rows_read, result.rows_written], [0, 4]);
+    assert_eq!([result.rows_read, result.rows_written], [4, 4]);
 }
 
 fn write_file_of_ints(file: &PathBuf, field_name: impl Into<String>, data: Int32Array) {
