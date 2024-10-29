@@ -27,15 +27,7 @@ async fn should_merge_two_files() {
         input_files: Vec::from([file_1, file_2]),
         output_file: output.clone(),
         row_key_cols: Vec::from(["key".to_string()]),
-        region: HashMap::from([(
-            "key".to_string(),
-            ColRange {
-                lower: PartitionBound::Int32(0),
-                lower_inclusive: true,
-                upper: PartitionBound::Int32(5),
-                upper_inclusive: false,
-            },
-        )]),
+        region: single_int_range("key", 0, 5),
         ..Default::default()
     };
 
@@ -86,4 +78,16 @@ fn read_file_of_ints(path: &Url, field_name: &str) -> Int32Array {
         .downcast_ref::<Int32Array>()
         .unwrap()
         .to_owned()
+}
+
+fn single_int_range(field_name: &str, min: i32, max: i32) -> HashMap<String, ColRange<'_>> {
+    return HashMap::from([(
+        field_name.to_string(),
+        ColRange {
+            lower: PartitionBound::Int32(min),
+            lower_inclusive: true,
+            upper: PartitionBound::Int32(max),
+            upper_inclusive: false,
+        },
+    )]);
 }
