@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File, sync::Arc};
 
 use arrow::{
-    array::{Int32Array, RecordBatch},
+    array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
 use color_eyre::eyre::Error;
@@ -21,8 +21,8 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
-    write_file_of_ints(&file_1, "key", Int32Array::from(vec![1, 3]))?;
-    write_file_of_ints(&file_2, "key", Int32Array::from(vec![2, 4]))?;
+    write_file_of_ints(&file_1, "key", vec![1, 3])?;
+    write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
@@ -48,8 +48,8 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
-    write_file_of_ints(&file_1, "key", Int32Array::from(vec![1, 2]))?;
-    write_file_of_ints(&file_2, "key", Int32Array::from(vec![2, 3]))?;
+    write_file_of_ints(&file_1, "key", vec![1, 2])?;
+    write_file_of_ints(&file_2, "key", vec![2, 3])?;
 
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
@@ -75,8 +75,8 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
-    write_file_of_ints(&file_1, "key", Int32Array::from(vec![1, 2]))?;
-    write_file_of_ints(&file_2, "key", Int32Array::from(vec![3, 4]))?;
+    write_file_of_ints(&file_1, "key", vec![1, 2])?;
+    write_file_of_ints(&file_2, "key", vec![3, 4])?;
 
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
@@ -106,20 +106,8 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         Field::new("key1", DataType::Int32, false),
         Field::new("key2", DataType::Int32, false),
     ]));
-    let data_1 = RecordBatch::try_new(
-        schema.clone(),
-        vec![
-            Arc::new(Int32Array::from(vec![1, 2, 3])),
-            Arc::new(Int32Array::from(vec![11, 12, 13])),
-        ],
-    )?;
-    let data_2 = RecordBatch::try_new(
-        schema,
-        vec![
-            Arc::new(Int32Array::from(vec![2, 3, 4])),
-            Arc::new(Int32Array::from(vec![22, 23, 24])),
-        ],
-    )?;
+    let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 2, 3], vec![11, 12, 13]])?;
+    let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 3, 4], vec![22, 23, 24]])?;
     write_file(&file_1, data_1)?;
     write_file(&file_2, data_2)?;
 
@@ -154,9 +142,9 @@ fn row_key_cols<const N: usize>(names: [&str; N]) -> Vec<String> {
     names.into_iter().map(String::from).collect()
 }
 
-fn write_file_of_ints(path: &Url, field_name: &str, data: Int32Array) -> Result<(), Error> {
+fn write_file_of_ints(path: &Url, field_name: &str, data: Vec<i32>) -> Result<(), Error> {
     let schema = Schema::new(vec![Field::new(field_name, DataType::Int32, false)]);
-    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(data)])?;
+    let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(Int32Array::from(data))])?;
     write_file(path, batch)
 }
 
@@ -178,6 +166,17 @@ fn writer_props() -> Option<WriterProperties> {
             .set_dictionary_enabled(true)
             .build(),
     )
+}
+
+fn batch_of_int_fields<const N: usize>(
+    schema: Arc<Schema>,
+    fields_data: [Vec<i32>; N],
+) -> Result<RecordBatch, Error> {
+    let columns: Vec<ArrayRef> = fields_data
+        .into_iter()
+        .map(|field_data| Arc::new(Int32Array::from(field_data)) as ArrayRef)
+        .collect();
+    Ok(RecordBatch::try_new(schema, columns)?)
 }
 
 fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
