@@ -15,30 +15,51 @@
  */
 package sleeper.cdk.jars;
 
+import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.DockerImageCode;
+import software.amazon.awscdk.services.lambda.DockerImageFunction;
+import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.validation.LambdaDeployType;
+
+import java.util.List;
 import java.util.function.Consumer;
 
 public class LambdaCode {
 
+    private final BuiltJars builtJars;
+    private final LambdaDeployType deployType;
     private final IBucket bucket;
-    private final String filename;
-    private final String versionId;
 
-    public LambdaCode(IBucket bucket, String filename, String versionId) {
+    LambdaCode(BuiltJars builtJars, LambdaDeployType deployType, IBucket bucket) {
+        this.builtJars = builtJars;
+        this.deployType = deployType;
         this.bucket = bucket;
-        this.filename = filename;
-        this.versionId = versionId;
     }
 
-    public IVersion buildFunction(Construct scope, String id, Consumer<Function.Builder> config) {
+    public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
-        Function.Builder builder = Function.Builder.create(scope, id)
-                .code(Code.fromBucket(bucket, filename, versionId));
+        LambdaBuilder builder;
+        if (deployType == LambdaDeployType.JAR) {
+            builder = new FunctionBuilder(Function.Builder.create(scope, id)
+                    .code(jarCode(handler.getJar()))
+                    .handler(handler.getHandler())
+                    .runtime(Runtime.JAVA_17));
+        } else if (deployType == LambdaDeployType.CONTAINER) {
+            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
+                    .code(containerCode(scope, handler, id)));
+        } else {
+            throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
+        }
         config.accept(builder);
         Function function = builder.build();
 
@@ -48,5 +69,18 @@ public class LambdaCode {
         // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
         // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
         return function.getCurrentVersion();
+    }
+
+    private Code jarCode(LambdaJar jar) {
+        return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
+    }
+
+    private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
+        return DockerImageCode.fromEcr(
+                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler.getJar())),
+                EcrImageCodeProps.builder()
+                        .cmd(List.of(handler.getHandler()))
+                        .tagOrDigest(SleeperVersion.getVersion())
+                        .build());
     }
 }

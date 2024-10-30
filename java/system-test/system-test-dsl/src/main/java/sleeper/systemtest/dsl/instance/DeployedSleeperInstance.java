@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;

@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -37,11 +36,11 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
@@ -129,21 +128,18 @@ public class IngestBatcherStack extends NestedStack {
 
         // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
-        LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
-        IFunction submitterLambda = submitterJar.buildFunction(this, "SubmitToIngestBatcherLambda", builder -> builder
+        IFunction submitterLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
-                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
                 .logGroup(coreStacks.getLogGroupByFunctionName(submitterName))
                 .events(List.of(new SqsEventSource(submitQueue))));
@@ -154,13 +150,11 @@ public class IngestBatcherStack extends NestedStack {
         coreStacks.grantReadTablesConfig(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
-        IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
+        IFunction jobCreatorLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_JOB_CREATOR, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
-                .runtime(Runtime.JAVA_17)
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroupByFunctionName(jobCreatorName)));

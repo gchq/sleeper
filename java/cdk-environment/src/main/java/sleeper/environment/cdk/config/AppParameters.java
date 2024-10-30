@@ -39,6 +39,7 @@ public class AppParameters {
     public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = StringListParameter.key("autoShutdownExistingEc2Ids");
     public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = IntParameter.keyAndDefault("autoShutdownHourUtc", 19);
     public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = BooleanParameter.keyAndDefault("nightlyTestsEnabled", false);
+    public static final OptionalStringParameter NIGHTLY_TEST_DEPLOY_ID = OptionalStringParameter.key("nightlyTestDeployId");
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = IntParameter.keyAndDefault("nightlyTestHourUtc", 3);
     public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = OptionalStringParameter.key("nightlyTestBucket");
     public static final StringListParameter NIGHTLY_TEST_SUBNETS = StringListParameter.key("subnetIds");

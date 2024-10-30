@@ -20,9 +20,10 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -82,6 +84,7 @@ public class PopulateInstanceProperties {
 
     public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
         InstanceProperties instanceProperties = populateDefaultsFromInstanceId(new InstanceProperties(), instanceId);
+        instanceProperties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
@@ -90,9 +93,9 @@ public class PopulateInstanceProperties {
     }
 
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
-        String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ID, instanceId);
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
+        String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
         properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
         properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");

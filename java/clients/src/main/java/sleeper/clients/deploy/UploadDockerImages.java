@@ -24,7 +24,10 @@ import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,41 +38,40 @@ import static sleeper.clients.util.CommandPipeline.pipeline;
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final Path baseDockerDirectory;
+    private final Path jarsDirectory;
+    private final CopyFile copyFile;
     private final EcrRepositoryCreator.Client ecrClient;
-    private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
+        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
-        dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
-        upload(ClientUtils::runCommandInheritIO, data, List.of());
+    public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
+        upload(ClientUtils::runCommandInheritIO, request);
     }
 
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data) throws IOException, InterruptedException {
-        upload(runCommand, data, List.of());
-    }
-
-    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> extraDockerImages) throws IOException, InterruptedException {
-        LOGGER.info("Optional stacks enabled: {}", data.getStacks());
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
-        List<StackDockerImage> stacksToUpload = dockerImageConfig.getStacksToDeploy(data.getStacks(), extraDockerImages);
+    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest request) throws IOException, InterruptedException {
+        List<StackDockerImage> stacksToUpload = request.getImages();
+        LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
+                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, request))
                 .collect(Collectors.toUnmodifiableList());
+        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
 
         if (stacksToBuild.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
         } else {
+            LOGGER.info("Building and uploading images: {}", stacksToBuild);
             runCommand.runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", data.getRegion()),
+                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
@@ -79,23 +81,27 @@ public class UploadDockerImages {
         }
 
         for (StackDockerImage stackImage : stacksToBuild) {
-            String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
-            String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
+            Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
+            String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
+            String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
 
-            String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
+            stackImage.getLambdaJar().ifPresent(jar -> {
+                copyFile.copyWrappingExceptions(
+                        jarsDirectory.resolve(jar.getFilename()),
+                        dockerfileDirectory.resolve("lambda.jar"));
+            });
+
             try {
                 if (stackImage.isCreateEmrServerlessPolicy()) {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
                 }
                 if (stackImage.isBuildx()) {
-                    runCommand.runOrThrow("docker", "buildx", "build",
-                            "--platform", "linux/amd64,linux/arm64",
-                            "-t", tag, "--push", directory);
+                    runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, directory);
+                    runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
@@ -105,23 +111,25 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, StacksForDockerUpload data) {
-        String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
+    private boolean imageDoesNotExistInRepositoryWithVersion(
+            StackDockerImage stackDockerImage, UploadDockerImagesRequest request) {
+        String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",
-                    stackDockerImage.getImageName(), data.getVersion());
+                    stackDockerImage.getImageName(), request.getVersion());
             return false;
         } else {
             LOGGER.info("Stack image {} does not exist in ECR with version {}",
-                    stackDockerImage.getImageName(), data.getVersion());
+                    stackDockerImage.getImageName(), request.getVersion());
             return true;
         }
     }
 
     public static final class Builder {
         private Path baseDockerDirectory;
+        private Path jarsDirectory;
+        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private EcrRepositoryCreator.Client ecrClient;
-        private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -131,18 +139,36 @@ public class UploadDockerImages {
             return this;
         }
 
+        public Builder jarsDirectory(Path jarsDirectory) {
+            this.jarsDirectory = jarsDirectory;
+            return this;
+        }
+
+        public Builder copyFile(CopyFile copyFile) {
+            this.copyFile = copyFile;
+            return this;
+        }
+
         public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
             this.ecrClient = ecrClient;
             return this;
         }
 
-        public Builder dockerImageConfig(DockerImageConfiguration dockerImageConfig) {
-            this.dockerImageConfig = dockerImageConfig;
-            return this;
-        }
-
         public UploadDockerImages build() {
             return new UploadDockerImages(this);
+        }
+    }
+
+    public interface CopyFile {
+
+        void copy(Path source, Path target) throws IOException;
+
+        default void copyWrappingExceptions(Path source, Path target) {
+            try {
+                copy(source, target);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

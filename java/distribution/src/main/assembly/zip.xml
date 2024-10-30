@@ -52,6 +52,13 @@
         </fileSet>
         <!-- Docker files -->
         <fileSet>
+            <directory>${project.basedir}/docker/lambda</directory>
+            <outputDirectory>scripts/docker/lambda</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../compaction/compaction-job-execution/docker</directory>
             <outputDirectory>scripts/docker/compaction-job-execution</outputDirectory>
             <excludes>

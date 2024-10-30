@@ -16,9 +16,10 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.OptionalStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,41 +29,57 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
-public class StacksForDockerUpload {
+public class UploadDockerImagesRequest {
     private final String ecrPrefix;
     private final String account;
     private final String region;
     private final String version;
-    private final List<OptionalStack> stacks;
+    private final List<StackDockerImage> images;
 
-    private StacksForDockerUpload(Builder builder) {
+    private UploadDockerImagesRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
         version = requireNonNull(builder.version, "version must not be null");
-        stacks = requireNonNull(builder.stacks, "stacks must not be null");
+        images = requireNonNull(builder.images, "images must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static StacksForDockerUpload from(InstanceProperties properties) {
-        return from(properties, properties.get(VERSION));
+    public static UploadDockerImagesRequest forNewDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
+        return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
     }
 
-    public static StacksForDockerUpload from(InstanceProperties properties, String version) {
-        return builder()
-                .ecrPrefix(Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX))
-                        .orElse(properties.get(ID)))
-                .account(properties.get(ACCOUNT))
-                .region(properties.get(REGION))
-                .version(version)
-                .stacks(properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class))
-                .build();
+    public static UploadDockerImagesRequest forNewDeployment(InstanceProperties properties, String version) {
+        return builder().properties(properties).version(version).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
+    }
+
+    public static UploadDockerImagesRequest forExistingInstance(InstanceProperties properties) {
+        return builder().properties(properties).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
+    }
+
+    public static Optional<UploadDockerImagesRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
+        List<StackDockerImage> images = configuration.getImagesToUploadOnUpdate(properties, diff);
+        if (images.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(builder().properties(properties).images(images).build());
+        }
+    }
+
+    public Builder toBuilder() {
+        return builder().ecrPrefix(ecrPrefix).account(account).region(region).version(version).images(images);
+    }
+
+    public UploadDockerImagesRequest withExtraImages(List<StackDockerImage> extraImages) {
+        List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
+        newImages.addAll(images);
+        newImages.addAll(extraImages);
+        return toBuilder().images(newImages).build();
     }
 
     public String getEcrPrefix() {
@@ -81,8 +98,8 @@ public class StacksForDockerUpload {
         return version;
     }
 
-    public List<OptionalStack> getStacks() {
-        return stacks;
+    public List<StackDockerImage> getImages() {
+        return images;
     }
 
     @Override
@@ -93,17 +110,17 @@ public class StacksForDockerUpload {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        StacksForDockerUpload that = (StacksForDockerUpload) o;
+        UploadDockerImagesRequest that = (UploadDockerImagesRequest) o;
         return Objects.equals(ecrPrefix, that.ecrPrefix)
                 && Objects.equals(account, that.account)
                 && Objects.equals(region, that.region)
                 && Objects.equals(version, that.version)
-                && Objects.equals(stacks, that.stacks);
+                && Objects.equals(images, that.images);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, version, stacks);
+        return Objects.hash(ecrPrefix, account, region, version, images);
     }
 
     @Override
@@ -113,7 +130,7 @@ public class StacksForDockerUpload {
                 ", account='" + account + '\'' +
                 ", region='" + region + '\'' +
                 ", version='" + version + '\'' +
-                ", stacks=" + stacks +
+                ", images=" + images +
                 '}';
     }
 
@@ -122,9 +139,16 @@ public class StacksForDockerUpload {
         private String account;
         private String region;
         private String version;
-        private List<OptionalStack> stacks;
+        private List<StackDockerImage> images;
 
         private Builder() {
+        }
+
+        public Builder properties(InstanceProperties properties) {
+            return ecrPrefix(Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID)))
+                    .account(properties.get(ACCOUNT))
+                    .region(properties.get(REGION))
+                    .version(properties.get(VERSION));
         }
 
         public Builder ecrPrefix(String ecrPrefix) {
@@ -147,13 +171,13 @@ public class StacksForDockerUpload {
             return this;
         }
 
-        public Builder stacks(List<OptionalStack> stacks) {
-            this.stacks = stacks;
+        public Builder images(List<StackDockerImage> images) {
+            this.images = images;
             return this;
         }
 
-        public StacksForDockerUpload build() {
-            return new StacksForDockerUpload(this);
+        public UploadDockerImagesRequest build() {
+            return new UploadDockerImagesRequest(this);
         }
     }
 }

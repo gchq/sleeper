@@ -1,4 +1,5 @@
 {
+  "deployId": "my deployment ID (up to 2 characters to distinguish these tests from others running simultaneously)",
   "vpc": "my VPC ID",
   "subnets": "comma separated list of my subnet IDs",
   "resultsBucket": "S3 bucket name",

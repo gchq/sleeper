@@ -115,10 +115,10 @@ public interface DefaultProperty {
             .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getMaxWaitCeiling().toMillis())
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.time.between.snapshot.checks.secs")
+    UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.time.between.snapshot.checks.seconds")
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
-                    "instance property `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes`. " +
+                    "instance property `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds`. " +
                     "This default can be overridden by a table property.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS.toSeconds())
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)

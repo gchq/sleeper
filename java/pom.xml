@@ -64,7 +64,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.5.3</spark.version>
+        <spark.version>3.5.1</spark.version>
         <hadoop.version>3.3.6</hadoop.version>
         <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
         <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
@@ -97,7 +97,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
         <protobuf.version>4.28.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>9.42</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -122,10 +122,10 @@
         <okio.version>3.9.1</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.11</logback.version>
+        <logback.version>1.5.12</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.28.29</aws-java-sdk-v2.version>
-        <aws-crt.version>0.31.3</aws-crt.version>
+        <aws-java-sdk-v2.version>2.29.3</aws-java-sdk-v2.version>
+        <aws-crt.version>0.33.0</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -139,20 +139,20 @@
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <jackson.version>2.18.0</jackson.version>
+        <jackson.version>2.18.1</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.3.1-jre</guava.version>
-        <cdk.version>2.163.1</cdk.version>
+        <cdk.version>2.164.1</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.11.0</gson.version>
         <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.7</java-websocket.version>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -187,7 +187,7 @@
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.8.0</approvaltests.version>
         <jsonunit.version>3.4.1</jsonunit.version>
-        <checkstyle.version>10.18.2</checkstyle.version>
+        <checkstyle.version>10.19.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -199,7 +199,7 @@
         <sleeper.system.test.standalone.properties.template/>
         <sleeper.system.test.instance.properties.overrides/>
         <!-- Maven plugins -->
-        <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
         <surefire.plugin.version>3.5.1</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
@@ -212,7 +212,7 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.8.6</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
-        <dependency.plugin.version>3.8.0</dependency.plugin.version>
+        <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>11.0.0</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
