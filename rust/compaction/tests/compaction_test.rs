@@ -41,8 +41,62 @@ async fn should_merge_two_files() -> Result<(), Error> {
     Ok(())
 }
 
-fn file(dir: &TempDir, name: impl Into<String>) -> Url {
-    Url::from_file_path(dir.path().join(name.into())).unwrap()
+#[tokio::test]
+async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    write_file_of_ints(&file_1, "key", Int32Array::from(vec![1, 2]))?;
+    write_file_of_ints(&file_2, "key", Int32Array::from(vec![2, 3]))?;
+
+    let input = CompactionInput {
+        input_files: Vec::from([file_1, file_2]),
+        output_file: output.clone(),
+        row_key_cols: Vec::from(["key".to_string()]),
+        region: single_int_range("key", 0, 5),
+        ..Default::default()
+    };
+
+    // When
+    let result = merge_sorted_files(&input).await?;
+
+    // Then
+    assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
+    assert_eq!([result.rows_read, result.rows_written], [4, 4]);
+    Ok(())
+}
+
+#[tokio::test]
+async fn should_exclude_data_not_in_region() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    write_file_of_ints(&file_1, "key", Int32Array::from(vec![1, 2]))?;
+    write_file_of_ints(&file_2, "key", Int32Array::from(vec![3, 4]))?;
+
+    let input = CompactionInput {
+        input_files: Vec::from([file_1, file_2]),
+        output_file: output.clone(),
+        row_key_cols: Vec::from(["key".to_string()]),
+        region: single_int_range("key", 2, 4),
+        ..Default::default()
+    };
+
+    // When
+    let result = merge_sorted_files(&input).await?;
+
+    // Then
+    assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
+    assert_eq!([result.rows_read, result.rows_written], [2, 2]);
+    Ok(())
+}
+
+fn file(dir: &TempDir, name: &str) -> Url {
+    Url::from_file_path(dir.path().join(name)).unwrap()
 }
 
 fn write_file_of_ints(path: &Url, field_name: &str, data: Int32Array) -> Result<(), Error> {
