@@ -36,10 +36,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let result = merge_sorted_files(&input).await?;
 
     // Then
-    assert_eq!(
-        read_file_of_ints(&output, "key")?,
-        Int32Array::from(vec![1, 2, 3, 4])
-    );
+    assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
     Ok(())
 }
@@ -65,19 +62,20 @@ fn write_file_of_ints(path: &Url, field_name: &str, data: Int32Array) -> Result<
     Ok(())
 }
 
-fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Int32Array, Error> {
+fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
     let file = File::open(path.path())?;
-    let batch = ArrowReaderBuilder::try_new(file)?
-        .build()?
-        .next()
-        .ok_or_else(|| Error::msg("no record batch found"))??;
-    Ok(batch
-        .column_by_name(field_name)
-        .ok_or_else(|| Error::msg("field not found"))?
-        .as_any()
-        .downcast_ref::<Int32Array>()
-        .ok_or_else(|| Error::msg("could not read field as an integer"))?
-        .to_owned())
+    let mut data: Vec<i32> = Vec::new();
+    for result in ArrowReaderBuilder::try_new(file)?.build()? {
+        let batch = result?;
+        let batch_data = batch
+            .column_by_name(field_name)
+            .ok_or_else(|| Error::msg("field not found"))?
+            .as_any()
+            .downcast_ref::<Int32Array>()
+            .ok_or_else(|| Error::msg("could not read field as an integer"))?;
+        data.extend(batch_data.values());
+    }
+    Ok(data)
 }
 
 fn single_int_range(field_name: &str, min: i32, max: i32) -> HashMap<String, ColRange<'_>> {
