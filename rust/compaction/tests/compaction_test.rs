@@ -142,13 +142,14 @@ fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
 }
 
 fn single_int_range(field_name: &str, min: i32, max: i32) -> HashMap<String, ColRange<'_>> {
-    return HashMap::from([(
-        field_name.to_string(),
-        ColRange {
-            lower: PartitionBound::Int32(min),
-            lower_inclusive: true,
-            upper: PartitionBound::Int32(max),
-            upper_inclusive: false,
-        },
-    )]);
+    return HashMap::from([(field_name.to_string(), int_range(min, max))]);
+}
+
+fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
+    ColRange {
+        lower: PartitionBound::Int32(min),
+        lower_inclusive: true,
+        upper: PartitionBound::Int32(max),
+        upper_inclusive: false,
+    }
 }
