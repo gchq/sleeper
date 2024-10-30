@@ -19,6 +19,7 @@
 #include "cudf_compact/parquet_types.h"
 #include "cudf_compact/ranges.hpp"
 #include "format_helper/format_helper.hpp"
+#include "io/prefetch_source.hpp"
 #include "io/s3_utils.hpp"
 
 #include <algorithm>// std::reduce
@@ -48,7 +49,19 @@ cudf::io::table_with_metadata
     auto expr_1 = cudf::ast::operation(cudf::ast::ast_operator::GREATER_EQUAL, filter_col, lo_lit);
     auto expr_2 = cudf::ast::operation(cudf::ast::ast_operator::LESS, filter_col, hi_lit);
     auto expr_3 = cudf::ast::operation(cudf::ast::ast_operator::LOGICAL_AND, expr_1, expr_2);
-    auto si = cudf::io::source_info(details.inputFiles);
+
+    std::vector<std::unique_ptr<cudf::io::datasource>> datasources{};
+    std::vector<cudf::io::datasource *> source_pointers{};
+    for (auto const &f : details.inputFiles) {
+        std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
+        // auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
+        // source->prefetch(true);
+        source_pointers.push_back(source.get());
+        datasources.push_back(std::move(source));
+    }
+
+    auto si = cudf::io::source_info(source_pointers);
+    // auto si = cudf::io::source_info(details.inputFiles);
 
     try {
         std::cout << ff("read table...\n");
