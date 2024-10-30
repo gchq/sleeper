@@ -352,11 +352,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.time.between.snapshot.checks.secs")
+    TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.time.between.snapshot.checks.seconds")
             .defaultProperty(DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +
-                    "instance property `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes`.")
+                    "instance property `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds`.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TIME_BETWEEN_TRANSACTION_CHECKS_MS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.time.between.transaction.checks.ms")
