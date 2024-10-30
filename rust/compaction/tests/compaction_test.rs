@@ -27,7 +27,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
         output_file: output.clone(),
-        row_key_cols: Vec::from(["key".to_string()]),
+        row_key_cols: Vec::from([String::from("key")]),
         region: single_int_range("key", 0, 5),
         ..Default::default()
     };
@@ -54,7 +54,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
         output_file: output.clone(),
-        row_key_cols: Vec::from(["key".to_string()]),
+        row_key_cols: Vec::from([String::from("key")]),
         region: single_int_range("key", 0, 5),
         ..Default::default()
     };
@@ -81,7 +81,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
         output_file: output.clone(),
-        row_key_cols: Vec::from(["key".to_string()]),
+        row_key_cols: Vec::from([String::from("key")]),
         region: single_int_range("key", 2, 4),
         ..Default::default()
     };
@@ -142,7 +142,7 @@ fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
 }
 
 fn single_int_range(field_name: &str, min: i32, max: i32) -> HashMap<String, ColRange<'_>> {
-    return HashMap::from([(field_name.to_string(), int_range(min, max))]);
+    return HashMap::from([(String::from(field_name), int_range(min, max))]);
 }
 
 fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
