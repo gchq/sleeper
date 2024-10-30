@@ -102,18 +102,27 @@ fn file(dir: &TempDir, name: &str) -> Url {
 fn write_file_of_ints(path: &Url, field_name: &str, data: Int32Array) -> Result<(), Error> {
     let schema = Schema::new(vec![Field::new(field_name, DataType::Int32, false)]);
     let batch = RecordBatch::try_new(Arc::new(schema), vec![Arc::new(data)])?;
-    let props = WriterProperties::builder()
-        .set_writer_version(datafusion::parquet::file::properties::WriterVersion::PARQUET_2_0)
-        .set_compression(Compression::ZSTD(Default::default()))
-        .set_column_index_truncate_length(Some(128))
-        .set_statistics_truncate_length(Some(2147483647))
-        .set_dictionary_enabled(true)
-        .build();
+    write_file(path, batch)
+}
+
+fn write_file(path: &Url, batch: RecordBatch) -> Result<(), Error> {
     let file = File::create_new(path.path())?;
-    let mut writer = ArrowWriter::try_new(file, batch.schema(), Some(props))?;
+    let mut writer = ArrowWriter::try_new(file, batch.schema(), writer_props())?;
     writer.write(&batch)?;
     writer.close()?;
     Ok(())
+}
+
+fn writer_props() -> Option<WriterProperties> {
+    Some(
+        WriterProperties::builder()
+            .set_writer_version(datafusion::parquet::file::properties::WriterVersion::PARQUET_2_0)
+            .set_compression(Compression::ZSTD(Default::default()))
+            .set_column_index_truncate_length(Some(128))
+            .set_statistics_truncate_length(Some(2147483647))
+            .set_dictionary_enabled(true)
+            .build(),
+    )
 }
 
 fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
