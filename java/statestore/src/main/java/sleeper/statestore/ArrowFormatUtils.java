@@ -106,6 +106,34 @@ public class ArrowFormatUtils {
     }
 
     /**
+     * Write a string value to an Arrow VarChar field.
+     *
+     * @param writer the writer
+     * @param buffer the Arrow buffer to hold the data temporarily
+     * @param value  the value
+     */
+    public static void writeVarChar(VarCharWriter writer, ArrowBuf buffer, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        buffer.setBytes(0, bytes);
+        writer.writeVarChar(0, bytes.length, buffer);
+    }
+
+    /**
+     * Write a string value to an Arrow VarChar field.
+     *
+     * @param writer the writer
+     * @param buffer the Arrow buffer to hold the data temporarily
+     * @param value  the value
+     */
+    public static void writeNullableVarChar(VarCharWriter writer, ArrowBuf buffer, String value) {
+        if (value == null) {
+            writer.writeNull();
+            return;
+        }
+        writeVarChar(writer, buffer, value);
+    }
+
+    /**
      * Write a nullable byte array value to a VarBinary field.
      *
      * @param writer the writer

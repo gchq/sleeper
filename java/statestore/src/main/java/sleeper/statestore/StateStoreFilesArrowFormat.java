@@ -15,6 +15,7 @@
  */
 package sleeper.statestore;
 
+import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
@@ -57,10 +58,10 @@ import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.ArrowFormatUtils.writeBit;
+import static sleeper.statestore.ArrowFormatUtils.writeNullableVarChar;
 import static sleeper.statestore.ArrowFormatUtils.writeTimeStampMilli;
 import static sleeper.statestore.ArrowFormatUtils.writeUInt8;
 import static sleeper.statestore.ArrowFormatUtils.writeVarChar;
-import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
 
 /**
  * Reads and writes the state of files in a state store to an Arrow file.
@@ -87,66 +88,6 @@ public class StateStoreFilesArrowFormat {
     private StateStoreFilesArrowFormat() {
     }
 
-    public static void main(String[] args) throws IOException {
-        testWrite();
-    }
-
-    private static void testWrite() throws IOException {
-        Instant startTime = Instant.now();
-        List<AllReferencesToAFile> files = genManyFiles();
-        Instant generatedTime = Instant.now();
-        byte[] bytes = write(files);
-        Instant endTime = Instant.now();
-        LOGGER.info("Started at {}", startTime);
-        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
-        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.length, endTime, LoggedDuration.withFullOutput(generatedTime, endTime));
-    }
-
-    private static void testWriteRead() throws IOException {
-        Instant startTime = Instant.now();
-        List<AllReferencesToAFile> files = genManyFiles();
-        Instant generatedTime = Instant.now();
-        byte[] bytes = write(files);
-        Instant writtenTime = Instant.now();
-        List<AllReferencesToAFile> found = read(bytes);
-        Instant endTime = Instant.now();
-        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
-        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.length, writtenTime, LoggedDuration.withFullOutput(generatedTime, writtenTime));
-        LOGGER.info("Read {} files at {}, took {}", found.size(), endTime, LoggedDuration.withFullOutput(writtenTime, endTime));
-    }
-
-    private static List<AllReferencesToAFile> genManyFiles() {
-        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        return IntStream.rangeClosed(1, 100_000)
-                .mapToObj(partitionNumber -> partitionNumber)
-                .flatMap(partitionNumber -> IntStream.rangeClosed(1, 30)
-                        .mapToObj(fileNumber -> FileReference.builder()
-                                .filename("partition-" + partitionNumber + "/file-" + fileNumber + ".parquet")
-                                .partitionId("partition-" + partitionNumber)
-                                .numberOfRecords((long) fileNumber)
-                                .countApproximate(false)
-                                .onlyContainsDataForThisPartition(true)
-                                .build()))
-                .map(reference -> AllReferencesToAFile.fileWithOneReference(reference, updateTime))
-                .collect(toUnmodifiableList());
-    }
-
-    private static byte[] write(List<AllReferencesToAFile> files) throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
-        try (BufferAllocator allocator = new RootAllocator()) {
-            LOGGER.info("Opened allocator");
-            StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(bytes));
-        }
-        return bytes.toByteArray();
-    }
-
-    private static List<AllReferencesToAFile> read(byte[] bytes) throws IOException {
-        try (BufferAllocator allocator = new RootAllocator()) {
-            return StateStoreFilesArrowFormat.read(allocator,
-                    Channels.newChannel(new ByteArrayInputStream(bytes)));
-        }
-    }
-
     /**
      * Writes the state of files in Arrow format.
      *
@@ -157,7 +98,8 @@ public class StateStoreFilesArrowFormat {
      */
     public static void write(Collection<AllReferencesToAFile> files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
-                ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
+                ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel);
+                ArrowBuf fieldBuffer = allocator.buffer(1024)) {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.size()));
             vectorSchemaRoot.allocateNew();
             writer.start();
@@ -168,7 +110,7 @@ public class StateStoreFilesArrowFormat {
             for (AllReferencesToAFile file : files) {
                 filenameVector.setSafe(rowNumber, file.getFilename().getBytes(StandardCharsets.UTF_8));
                 updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
-                writeReferences(file, rowNumber, allocator, referencesVector.getWriter());
+                writeReferences(file, rowNumber, fieldBuffer, referencesVector.getWriter());
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
             }
@@ -204,15 +146,15 @@ public class StateStoreFilesArrowFormat {
         return files;
     }
 
-    private static void writeReferences(AllReferencesToAFile file, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
+    private static void writeReferences(AllReferencesToAFile file, int fileNumber, ArrowBuf fieldBuffer, UnionListWriter writer) {
         writer.setPosition(fileNumber);
         writer.startList();
         for (FileReference reference : file.getReferences()) {
             StructWriter struct = writer.struct();
             struct.start();
-            writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());
+            writeVarChar(struct.varChar(PARTITION_ID.getName()), fieldBuffer, reference.getPartitionId());
             writeTimeStampMilli(struct, REFERENCE_UPDATE_TIME, reference.getLastStateStoreUpdateTime());
-            writeVarCharNullable(struct, allocator, JOB_ID, reference.getJobId());
+            writeNullableVarChar(struct.varChar(JOB_ID.getName()), fieldBuffer, reference.getJobId());
             writeUInt8(struct, NUMBER_OF_RECORDS, reference.getNumberOfRecords());
             writeBit(struct, COUNT_APPROXIMATE, reference.isCountApproximate());
             writeBit(struct, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, reference.onlyContainsDataForThisPartition());
@@ -238,5 +180,54 @@ public class StateStoreFilesArrowFormat {
                     .build());
         }
         return references;
+    }
+
+    public static void main(String[] args) throws IOException {
+        test();
+    }
+
+    private static void test() throws IOException {
+        Instant startTime = Instant.now();
+        List<AllReferencesToAFile> files = genManyFiles();
+        Instant generatedTime = Instant.now();
+        byte[] bytes = testWrite(files);
+        Instant writtenTime = Instant.now();
+        List<AllReferencesToAFile> found = testRead(bytes);
+        Instant endTime = Instant.now();
+        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
+        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.length, writtenTime, LoggedDuration.withFullOutput(generatedTime, writtenTime));
+        LOGGER.info("Read {} files at {}, took {}", found.size(), endTime, LoggedDuration.withFullOutput(writtenTime, endTime));
+    }
+
+    private static List<AllReferencesToAFile> genManyFiles() {
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        return IntStream.rangeClosed(1, 100_000)
+                .mapToObj(partitionNumber -> partitionNumber)
+                .flatMap(partitionNumber -> IntStream.rangeClosed(1, 30)
+                        .mapToObj(fileNumber -> FileReference.builder()
+                                .filename("partition-" + partitionNumber + "/file-" + fileNumber + ".parquet")
+                                .partitionId("partition-" + partitionNumber)
+                                .numberOfRecords((long) fileNumber)
+                                .countApproximate(false)
+                                .onlyContainsDataForThisPartition(true)
+                                .build()))
+                .map(reference -> AllReferencesToAFile.fileWithOneReference(reference, updateTime))
+                .collect(toUnmodifiableList());
+    }
+
+    private static byte[] testWrite(List<AllReferencesToAFile> files) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
+        try (BufferAllocator allocator = new RootAllocator()) {
+            LOGGER.info("Opened allocator");
+            StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(bytes));
+        }
+        return bytes.toByteArray();
+    }
+
+    private static List<AllReferencesToAFile> testRead(byte[] bytes) throws IOException {
+        try (BufferAllocator allocator = new RootAllocator()) {
+            return StateStoreFilesArrowFormat.read(allocator,
+                    Channels.newChannel(new ByteArrayInputStream(bytes)));
+        }
     }
 }
