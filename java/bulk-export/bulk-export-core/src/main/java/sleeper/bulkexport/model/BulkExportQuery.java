@@ -15,28 +15,26 @@
  */
 package sleeper.bulkexport.model;
 
-import sleeper.core.range.Region;
-
-import java.util.List;
 import java.util.Objects;
 
 /**
  * Model for a BulkExportQuery.
  */
 public class BulkExportQuery {
-    private final String tableName;
     private final String exportId;
-    private final List<Region> regions;
+    private final String tableName;
 
     private BulkExportQuery(Builder builder) {
-        tableName = builder.tableName;
-        exportId = builder.exportId;
-        regions = builder.regions;
-
+        tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
+        exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public String getTableName() {
@@ -45,10 +43,6 @@ public class BulkExportQuery {
 
     public String getExportId() {
         return exportId;
-    }
-
-    public List<Region> getRegions() {
-        return regions;
     }
 
     @Override
@@ -60,29 +54,45 @@ public class BulkExportQuery {
             return false;
         }
         BulkExportQuery bulkExportQuery = (BulkExportQuery) object;
-        return Objects.equals(tableName, bulkExportQuery.tableName) && Objects.equals(exportId, bulkExportQuery.exportId)
-                && Objects.equals(regions, bulkExportQuery.regions);
+        return Objects.equals(tableId, bulkExportQuery.tableId) && Objects.equals(tableName, bulkExportQuery.tableName)
+                && Objects.equals(exportId, bulkExportQuery.exportId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, exportId, regions);
+        return Objects.hash(tableId, tableName, exportId);
     }
 
     @Override
     public String toString() {
-        return "BulkExportQuery{}";
+        return "BulkExportQuery{" +
+                "tableId='" + tableId + '\'' +
+                ", tableName='" + tableName + '\'' +
+                ", exportId='" + exportId +
+                '}';
+    }
+
+    private static <T> T requireNonNull(T obj, Builder builder, String message) {
+        if (obj == null) {
+            throw new BulkExportQueryValidationException(builder.exportId, message);
+        }
+        return obj;
     }
 
     /**
      * Builder for the BulkExportQuery model.
      */
     public static final class Builder {
+        private String tableId;
         private String tableName;
         private String exportId;
-        private List<Region> regions;
 
         private Builder() {
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
         }
 
         public Builder tableName(String tableName) {
@@ -92,11 +102,6 @@ public class BulkExportQuery {
 
         public Builder exportId(String exportId) {
             this.exportId = exportId;
-            return this;
-        }
-
-        public Builder regions(List<Region> regions) {
-            this.regions = regions;
             return this;
         }
 
