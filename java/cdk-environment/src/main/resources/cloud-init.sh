@@ -66,9 +66,10 @@ if [ ! -d "$REPOSITORY_DIR" ]; then
 fi
 
 CRONTAB_FILE="/sleeper-init/crontab"
-if [ -f "$CRONTAB_FILE" ]; then
-  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $LOGIN_HOME/.sleeper/builder/"
-  chown "$LOGIN_USER:$LOGIN_USER" "$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
+NIGHTLY_TEST_SETTINGS_FILE="$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
+if [ -f "$CRONTAB_FILE" ] && [ ! -f "$NIGHTLY_TEST_SETTINGS_FILE" ]; then
+  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $NIGHTLY_TEST_SETTINGS_FILE"
+  chown "$LOGIN_USER:$LOGIN_USER" "$NIGHTLY_TEST_SETTINGS_FILE"
   runuser --login "$LOGIN_USER" -c "crontab $CRONTAB_FILE"
 fi
 
