@@ -53,7 +53,7 @@ if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
 fi
 
 # Install Sleeper CLI
-if [ ! -f "$LOGIN_HOME/.local/bin/sleeper"]; then
+if [ ! -f "$LOGIN_HOME/.local/bin/sleeper" ]; then
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
   chmod +x "$LOGIN_HOME/sleeper-install.sh"
   runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh"
