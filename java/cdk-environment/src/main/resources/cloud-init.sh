@@ -36,21 +36,21 @@ if [ ! -d /nix ]; then
 fi
 
 # Install latest Docker
-sudo apt remove -y docker.io containerd runc
-sudo apt install -y ca-certificates curl gnupg lsb-release
-sudo mkdir -p /etc/apt/keyrings
 if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+  sudo apt remove -y docker.io containerd runc
+  sudo apt install -y ca-certificates curl gnupg lsb-release
+  sudo mkdir -p /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --batch -o /etc/apt/keyrings/docker.gpg
-fi
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-export DEBIAN_FRONTEND=noninteractive
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-user-static
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  export DEBIAN_FRONTEND=noninteractive
+  sudo apt update
+  sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-user-static
 
-# Allow user to access docker socket
-usermod -aG docker "$LOGIN_USER"
+  # Allow user to access docker socket
+  usermod -aG docker "$LOGIN_USER"
+fi
 
 # Install Sleeper CLI
 if [ ! -f "$LOGIN_HOME/.local/bin/sleeper"]; then
