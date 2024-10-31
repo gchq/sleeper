@@ -16,6 +16,7 @@
 package sleeper.statestore;
 
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -32,11 +33,17 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.util.LoggedDuration;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +53,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.ArrowFormatUtils.writeBit;
 import static sleeper.statestore.ArrowFormatUtils.writeTimeStampMilli;
 import static sleeper.statestore.ArrowFormatUtils.writeUInt8;
@@ -57,6 +66,7 @@ import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
  * Reads and writes the state of files in a state store to an Arrow file.
  */
 public class StateStoreFilesArrowFormat {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreFilesArrowFormat.class);
 
     private static final Field FILENAME = Field.notNullable("filename", Utf8.INSTANCE);
     private static final Field UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
@@ -75,6 +85,66 @@ public class StateStoreFilesArrowFormat {
     private static final Schema SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME, REFERENCES));
 
     private StateStoreFilesArrowFormat() {
+    }
+
+    public static void main(String[] args) throws IOException {
+        testWrite();
+    }
+
+    private static void testWrite() throws IOException {
+        Instant startTime = Instant.now();
+        List<AllReferencesToAFile> files = genManyFiles();
+        Instant generatedTime = Instant.now();
+        byte[] bytes = write(files);
+        Instant endTime = Instant.now();
+        LOGGER.info("Started at {}", startTime);
+        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
+        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.length, endTime, LoggedDuration.withFullOutput(generatedTime, endTime));
+    }
+
+    private static void testWriteRead() throws IOException {
+        Instant startTime = Instant.now();
+        List<AllReferencesToAFile> files = genManyFiles();
+        Instant generatedTime = Instant.now();
+        byte[] bytes = write(files);
+        Instant writtenTime = Instant.now();
+        List<AllReferencesToAFile> found = read(bytes);
+        Instant endTime = Instant.now();
+        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
+        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.length, writtenTime, LoggedDuration.withFullOutput(generatedTime, writtenTime));
+        LOGGER.info("Read {} files at {}, took {}", found.size(), endTime, LoggedDuration.withFullOutput(writtenTime, endTime));
+    }
+
+    private static List<AllReferencesToAFile> genManyFiles() {
+        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
+        return IntStream.rangeClosed(1, 100_000)
+                .mapToObj(partitionNumber -> partitionNumber)
+                .flatMap(partitionNumber -> IntStream.rangeClosed(1, 30)
+                        .mapToObj(fileNumber -> FileReference.builder()
+                                .filename("partition-" + partitionNumber + "/file-" + fileNumber + ".parquet")
+                                .partitionId("partition-" + partitionNumber)
+                                .numberOfRecords((long) fileNumber)
+                                .countApproximate(false)
+                                .onlyContainsDataForThisPartition(true)
+                                .build()))
+                .map(reference -> AllReferencesToAFile.fileWithOneReference(reference, updateTime))
+                .collect(toUnmodifiableList());
+    }
+
+    private static byte[] write(List<AllReferencesToAFile> files) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
+        try (BufferAllocator allocator = new RootAllocator()) {
+            LOGGER.info("Opened allocator");
+            StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(bytes));
+        }
+        return bytes.toByteArray();
+    }
+
+    private static List<AllReferencesToAFile> read(byte[] bytes) throws IOException {
+        try (BufferAllocator allocator = new RootAllocator()) {
+            return StateStoreFilesArrowFormat.read(allocator,
+                    Channels.newChannel(new ByteArrayInputStream(bytes)));
+        }
     }
 
     /**

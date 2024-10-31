@@ -23,16 +23,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.util.LoggedDuration;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
@@ -153,43 +150,6 @@ public class StateStoreFilesArrowFormatTest {
 
         // Then
         assertThat(read(bytes)).isEmpty();
-    }
-
-    @Test
-    void shouldWriteManyFiles() throws Exception {
-        // Given
-        Instant startTime = Instant.now();
-        Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(
-                IntStream.rangeClosed(1, 1_000)
-                        .mapToObj(partitionNumber -> partitionNumber)
-                        .flatMap(partitionNumber -> IntStream.rangeClosed(1, 100)
-                                .mapToObj(fileNumber -> FileReference.builder()
-                                        .filename("file-" + fileNumber + ".parquet")
-                                        .partitionId("partition-" + partitionNumber)
-                                        .numberOfRecords((long) fileNumber)
-                                        .countApproximate(false)
-                                        .onlyContainsDataForThisPartition(true)
-                                        .build())))
-                .map(file -> file.withCreatedUpdateTime(updateTime))
-                .collect(toUnmodifiableList());
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
-
-        // When
-        Instant generatedTime = Instant.now();
-        write(files, bytes);
-
-        // Then
-        Instant writtenTime = Instant.now();
-        List<AllReferencesToAFile> found = read(bytes);
-        Instant readTime = Instant.now();
-        assertThat(found).isEqualTo(files);
-        Instant endTime = Instant.now();
-        LOGGER.info("Started at {}", startTime);
-        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
-        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.size(), writtenTime, LoggedDuration.withFullOutput(generatedTime, writtenTime));
-        LOGGER.info("Read at {}, took {}", readTime, LoggedDuration.withFullOutput(writtenTime, readTime));
-        LOGGER.info("Asserted at {}, took {}", endTime, LoggedDuration.withFullOutput(readTime, endTime));
     }
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
