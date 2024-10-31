@@ -25,7 +25,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 

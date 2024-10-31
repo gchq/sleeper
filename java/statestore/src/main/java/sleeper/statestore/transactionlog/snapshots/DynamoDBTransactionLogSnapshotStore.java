@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.statestore.transactionlog.snapshots;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
@@ -26,6 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
+import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

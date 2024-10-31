@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.statestore.transactionlog.snapshots;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.transactionlog.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

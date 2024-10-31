@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.statestore.transactionlog.snapshots;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +28,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class TransactionLogSnapshotStoreTest {
+public class DynamoDBTransactionLogSnapshotStoreBasePathTest {
 
     @Test
     void shouldCreateBasePathForTable() {
