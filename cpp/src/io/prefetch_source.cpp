@@ -10,7 +10,7 @@ namespace gpu_compact::io
 void PrefetchingSource::prefetch(::size_t const offset, ::size_t const len) {
     std::cout << "Read request " << file << " offset " << offset << " to " << (offset + len) << " len " << len << "\n";
     if (enablePrefetch) {
-        prefetch_read_async(file, offset + len, len + 200 * 1'024ul * 1'024ul);
+        prefetch_read_async(file, offset + len, len + 100 * 1'024ul * 1'024ul);
     }
 }
 

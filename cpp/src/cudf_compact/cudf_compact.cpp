@@ -50,18 +50,18 @@ cudf::io::table_with_metadata
     auto expr_2 = cudf::ast::operation(cudf::ast::ast_operator::LESS, filter_col, hi_lit);
     auto expr_3 = cudf::ast::operation(cudf::ast::ast_operator::LOGICAL_AND, expr_1, expr_2);
 
-    std::vector<std::unique_ptr<cudf::io::datasource>> datasources{};
-    std::vector<cudf::io::datasource *> source_pointers{};
-    for (auto const &f : details.inputFiles) {
-        std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
-        // auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
-        // source->prefetch(true);
-        source_pointers.push_back(source.get());
-        datasources.push_back(std::move(source));
-    }
+    // std::vector<std::unique_ptr<cudf::io::datasource>> datasources{};
+    // std::vector<cudf::io::datasource *> source_pointers{};
+    // for (auto const &f : details.inputFiles) {
+    //     // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
+    //     auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
+    //     source->prefetch(true);
+    //     source_pointers.push_back(source.get());
+    //     datasources.push_back(std::move(source));
+    // }
 
-    auto si = cudf::io::source_info(source_pointers);
-    // auto si = cudf::io::source_info(details.inputFiles);
+    // auto si = cudf::io::source_info(source_pointers);
+    auto si = cudf::io::source_info(details.inputFiles);
 
     try {
         std::cout << ff("read table...\n");
