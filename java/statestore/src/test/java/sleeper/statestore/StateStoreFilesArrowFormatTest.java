@@ -160,17 +160,18 @@ public class StateStoreFilesArrowFormatTest {
         // Given
         Instant startTime = Instant.now();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        List<AllReferencesToAFile> files = IntStream.rangeClosed(1, 1_000)
-                .mapToObj(partitionNumber -> partitionNumber)
-                .flatMap(partitionNumber -> IntStream.rangeClosed(1, 100)
-                        .mapToObj(fileNumber -> FileReference.builder()
-                                .filename("partition-" + partitionNumber + "/file-" + fileNumber + ".parquet")
-                                .partitionId("partition-" + partitionNumber)
-                                .numberOfRecords((long) fileNumber)
-                                .countApproximate(false)
-                                .onlyContainsDataForThisPartition(true)
-                                .build()))
-                .map(fileReference -> AllReferencesToAFile.fileWithOneReference(fileReference, updateTime))
+        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(
+                IntStream.rangeClosed(1, 1_000)
+                        .mapToObj(partitionNumber -> partitionNumber)
+                        .flatMap(partitionNumber -> IntStream.rangeClosed(1, 100)
+                                .mapToObj(fileNumber -> FileReference.builder()
+                                        .filename("file-" + fileNumber + ".parquet")
+                                        .partitionId("partition-" + partitionNumber)
+                                        .numberOfRecords((long) fileNumber)
+                                        .countApproximate(false)
+                                        .onlyContainsDataForThisPartition(true)
+                                        .build())))
+                .map(file -> file.withCreatedUpdateTime(updateTime))
                 .collect(toUnmodifiableList());
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
 
@@ -193,6 +194,7 @@ public class StateStoreFilesArrowFormatTest {
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
         try (BufferAllocator allocator = new RootAllocator()) {
+            LOGGER.info("Opened allocator");
             StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
         }
     }
