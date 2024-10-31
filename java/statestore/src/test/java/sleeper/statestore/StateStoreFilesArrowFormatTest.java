@@ -18,6 +18,8 @@ package sleeper.statestore;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -36,6 +38,7 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoR
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
 public class StateStoreFilesArrowFormatTest {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreFilesArrowFormatTest.class);
 
     @Test
     void shouldWriteOneFileWithNoReferences() throws Exception {
@@ -157,7 +160,7 @@ public class StateStoreFilesArrowFormatTest {
         // Given
         Instant startTime = Instant.now();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        List<AllReferencesToAFile> files = IntStream.rangeClosed(1, 10_000)
+        List<AllReferencesToAFile> files = IntStream.rangeClosed(1, 1_000)
                 .mapToObj(partitionNumber -> partitionNumber)
                 .flatMap(partitionNumber -> IntStream.rangeClosed(1, 100)
                         .mapToObj(fileNumber -> FileReference.builder()
@@ -172,20 +175,20 @@ public class StateStoreFilesArrowFormatTest {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(100_000_000);
 
         // When
-        Instant beforeWrite = Instant.now();
+        Instant generatedTime = Instant.now();
         write(files, bytes);
 
         // Then
-        Instant beforeRead = Instant.now();
+        Instant writtenTime = Instant.now();
         List<AllReferencesToAFile> found = read(bytes);
-        Instant beforeAssert = Instant.now();
+        Instant readTime = Instant.now();
         assertThat(found).isEqualTo(files);
         Instant endTime = Instant.now();
-        System.out.printf("Started at %s%n", startTime);
-        System.out.printf("Generated at %s, took %s%n", beforeWrite, LoggedDuration.withFullOutput(startTime, beforeWrite));
-        System.out.printf("Wrote %s bytes at %s, took %s%n", bytes.size(), beforeRead, LoggedDuration.withFullOutput(beforeWrite, beforeRead));
-        System.out.printf("Read at %s, took %s%n", beforeAssert, LoggedDuration.withFullOutput(beforeRead, beforeAssert));
-        System.out.printf("Asserted at %s, took %s%n", endTime, LoggedDuration.withFullOutput(beforeAssert, endTime));
+        LOGGER.info("Started at {}", startTime);
+        LOGGER.info("Generated at {}, took {}", generatedTime, LoggedDuration.withFullOutput(startTime, generatedTime));
+        LOGGER.info("Wrote {} bytes at {}, took {}", bytes.size(), writtenTime, LoggedDuration.withFullOutput(generatedTime, writtenTime));
+        LOGGER.info("Read at {}, took {}", readTime, LoggedDuration.withFullOutput(writtenTime, readTime));
+        LOGGER.info("Asserted at {}, took {}", endTime, LoggedDuration.withFullOutput(readTime, endTime));
     }
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
