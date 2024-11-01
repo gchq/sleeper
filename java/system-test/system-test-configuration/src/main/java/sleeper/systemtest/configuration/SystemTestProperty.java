@@ -33,7 +33,8 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
 public interface SystemTestProperty extends InstanceProperty {
     int SYSTEM_TEST_ID_MAX_LEN = 13;
     SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
-            .description("The id of the deployment, if deploying standalone.")
+            .description("The id of the deployment, if deploying standalone. This is also used as a base to generate " +
+                    "Sleeper instance IDs, so must be short enough to leave room to define multiple instances.")
             .validationPredicate(value -> value == null || value.length() <= SYSTEM_TEST_ID_MAX_LEN)
             .editable(false).build();
     SystemTestProperty SYSTEM_TEST_ACCOUNT = Index.propertyBuilder("sleeper.systemtest.standalone.account")
