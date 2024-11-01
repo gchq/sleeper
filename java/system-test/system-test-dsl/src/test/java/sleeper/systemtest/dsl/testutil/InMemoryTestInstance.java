@@ -56,7 +56,7 @@ public class InMemoryTestInstance {
         tableProperties.set(TABLE_NAME, "predefined-test-table");
         return new DeployInstanceConfiguration(instanceProperties, tableProperties);
     });
-    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("nontbl", () -> {
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", () -> {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
         tableProperties.unset(TABLE_NAME);
