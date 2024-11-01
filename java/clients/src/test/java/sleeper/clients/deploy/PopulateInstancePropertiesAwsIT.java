@@ -47,7 +47,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 @Testcontainers
-public class PopulatePropertiesIT {
+public class PopulateInstancePropertiesAwsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
