@@ -51,6 +51,7 @@ fi
 SECONDARY_SUITE_NAME=dynamo-state-store
 SECONDARY_SUITE_PARAMS=(-Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@")
 
+echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
 echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
 echo "SECONDARY_SUITE_NAME=$SECONDARY_SUITE_NAME"

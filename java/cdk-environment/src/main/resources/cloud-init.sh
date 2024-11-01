@@ -36,26 +36,28 @@ if [ ! -d /nix ]; then
 fi
 
 # Install latest Docker
-sudo apt remove -y docker.io containerd runc
-sudo apt install -y ca-certificates curl gnupg lsb-release
-sudo mkdir -p /etc/apt/keyrings
 if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+  sudo apt remove -y docker.io containerd runc
+  sudo apt install -y ca-certificates curl gnupg lsb-release
+  sudo mkdir -p /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --batch -o /etc/apt/keyrings/docker.gpg
-fi
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-export DEBIAN_FRONTEND=noninteractive
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-user-static
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  export DEBIAN_FRONTEND=noninteractive
+  sudo apt update
+  sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-user-static
 
-# Allow user to access docker socket
-usermod -aG docker "$LOGIN_USER"
+  # Allow user to access docker socket
+  usermod -aG docker "$LOGIN_USER"
+fi
 
 # Install Sleeper CLI
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
-chmod +x "$LOGIN_HOME/sleeper-install.sh"
-runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh"
+if [ ! -f "$LOGIN_HOME/.local/bin/sleeper" ]; then
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
+  chmod +x "$LOGIN_HOME/sleeper-install.sh"
+  runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh"
+fi
 
 # Check out code
 REPOSITORY_DIR="$LOGIN_HOME/.sleeper/builder/$REPOSITORY"
@@ -64,9 +66,10 @@ if [ ! -d "$REPOSITORY_DIR" ]; then
 fi
 
 CRONTAB_FILE="/sleeper-init/crontab"
-if [ -f "$CRONTAB_FILE" ]; then
-  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $LOGIN_HOME/.sleeper/builder/"
-  chown "$LOGIN_USER:$LOGIN_USER" "$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
+NIGHTLY_TEST_SETTINGS_FILE="$LOGIN_HOME/.sleeper/builder/nightlyTestSettings.json"
+if [ -f "$CRONTAB_FILE" ] && [ ! -f "$NIGHTLY_TEST_SETTINGS_FILE" ]; then
+  runuser --login "$LOGIN_USER" -c "cp /sleeper-init/nightlyTestSettings.json $NIGHTLY_TEST_SETTINGS_FILE"
+  chown "$LOGIN_USER:$LOGIN_USER" "$NIGHTLY_TEST_SETTINGS_FILE"
   runuser --login "$LOGIN_USER" -c "crontab $CRONTAB_FILE"
 fi
 

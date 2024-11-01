@@ -75,15 +75,15 @@ public class SystemTestInstance {
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::createCompactionPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
-    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emr-pst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
-    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cpt-pll", SystemTestInstance::createCompactionInParallelConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::createCompactionOnEC2Configuration);
-    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("commitr", SystemTestInstance::createStateStoreCommitterThroughputConfiguration);
-    public static final SystemTestInstanceConfiguration REENABLE_OPTIONAL_STACKS = usingSystemTestDefaults("optstck", SystemTestInstance::createReenableOptionalStacksConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
+    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cptec2", SystemTestInstance::createCompactionOnEC2Configuration);
+    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("cmmitr", SystemTestInstance::createStateStoreCommitterThroughputConfiguration);
+    public static final SystemTestInstanceConfiguration REENABLE_OPTIONAL_STACKS = usingSystemTestDefaults("opstck", SystemTestInstance::createReenableOptionalStacksConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::createNoSourceBucketConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";

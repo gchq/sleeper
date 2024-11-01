@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.statestore.transactionlog.snapshots;
 
 /**
  * The type of data held in a snapshot derived from a transaction log. Used when holding metadata about the snapshot in
