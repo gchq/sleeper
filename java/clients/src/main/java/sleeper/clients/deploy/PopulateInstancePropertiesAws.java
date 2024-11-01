@@ -21,6 +21,7 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -65,6 +66,12 @@ public class PopulateInstancePropertiesAws {
         subnetIds = requireNonEmpty(builder.subnetIds, "subnetIds must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(InstanceProperties::new);
         tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(properties::getTagsProperties);
+    }
+
+    public static PopulateInstanceProperties.Builder builder(AWSSecurityTokenService sts, AwsRegionProvider regionProvider) {
+        return PopulateInstanceProperties.builder()
+                .accountSupplier(sts.getCallerIdentity(new GetCallerIdentityRequest())::getAccount)
+                .regionIdSupplier(() -> regionProvider.getRegion().id());
     }
 
     public static Builder builder() {

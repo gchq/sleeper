@@ -29,6 +29,7 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.core.CommonTestConstants;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
@@ -63,8 +64,7 @@ public class PopulatePropertiesIT {
     void shouldPopulateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = populateInstancePropertiesBuilder()
-                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().populate();
+                .build().populate(new InstanceProperties());
 
         // Then
         InstanceProperties expected = new InstanceProperties();
@@ -83,8 +83,8 @@ public class PopulatePropertiesIT {
         assertThat(properties).isEqualTo(expected);
     }
 
-    private PopulateInstancePropertiesAws.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstancePropertiesAws.builder()
+    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstancePropertiesAws.builder(sts, () -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }
