@@ -48,7 +48,7 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
-public class PopulateInstanceProperties {
+public class PopulateInstancePropertiesAws {
     private final Supplier<String> accountSupplier;
     private final AwsRegionProvider regionProvider;
     private final String instanceId;
@@ -57,7 +57,7 @@ public class PopulateInstanceProperties {
     private final InstanceProperties properties;
     private final Properties tagsProperties;
 
-    private PopulateInstanceProperties(Builder builder) {
+    private PopulateInstancePropertiesAws(Builder builder) {
         accountSupplier = requireNonNull(builder.accountSupplier, "accountSupplier must not be null");
         regionProvider = requireNonNull(builder.regionProvider, "regionProvider must not be null");
         instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
@@ -164,8 +164,8 @@ public class PopulateInstanceProperties {
                     .tagsProperties(deployInstanceConfig.getInstanceProperties().getTagsProperties());
         }
 
-        public PopulateInstanceProperties build() {
-            return new PopulateInstanceProperties(this);
+        public PopulateInstancePropertiesAws build() {
+            return new PopulateInstancePropertiesAws(this);
         }
     }
 }

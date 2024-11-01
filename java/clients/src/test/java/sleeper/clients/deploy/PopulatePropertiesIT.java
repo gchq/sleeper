@@ -83,8 +83,8 @@ public class PopulatePropertiesIT {
         assertThat(properties).isEqualTo(expected);
     }
 
-    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstanceProperties.builder()
+    private PopulateInstancePropertiesAws.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstancePropertiesAws.builder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

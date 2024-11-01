@@ -134,7 +134,7 @@ public class DeployNewInstance {
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("deployPaused: {}", deployPaused);
-        InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
+        InstanceProperties instanceProperties = PopulateInstancePropertiesAws.builder()
                 .sts(sts).regionProvider(regionProvider)
                 .deployInstanceConfig(deployInstanceConfiguration)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)

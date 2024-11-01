@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
+import sleeper.clients.deploy.PopulateInstancePropertiesAws;
 import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
@@ -98,7 +98,7 @@ public class DeployDockerInstance {
     }
 
     public void deploy(String instanceId) {
-        InstanceProperties instanceProperties = PopulateInstanceProperties.populateDefaultsFromInstanceId(
+        InstanceProperties instanceProperties = PopulateInstancePropertiesAws.populateDefaultsFromInstanceId(
                 new InstanceProperties(), instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
         extraTableProperties.accept(tableProperties);

@@ -25,7 +25,7 @@ import sleeper.core.properties.validation.LambdaDeployType;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
+import static sleeper.clients.deploy.PopulateInstancePropertiesAws.generateTearDownDefaultsFromInstanceId;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -54,8 +54,8 @@ import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 class PopulatePropertiesTest {
 
-    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstanceProperties.builder()
+    private PopulateInstancePropertiesAws.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstancePropertiesAws.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }

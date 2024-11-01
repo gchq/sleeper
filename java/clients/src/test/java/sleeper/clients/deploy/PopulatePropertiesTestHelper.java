@@ -28,7 +28,7 @@ public class PopulatePropertiesTestHelper {
     }
 
     public static InstanceProperties generateTestInstanceProperties() {
-        return PopulateInstanceProperties.builder()
+        return PopulateInstancePropertiesAws.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet").build().populate();
     }

@@ -38,6 +38,10 @@ public class DeployInstanceConfiguration {
         this(builder().instanceProperties(instanceProperties).tableProperties(tableProperties));
     }
 
+    public DeployInstanceConfiguration(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
+        this(builder().instanceProperties(instanceProperties).tableProperties(tableProperties));
+    }
+
     public static Builder builder() {
         return new Builder();
     }

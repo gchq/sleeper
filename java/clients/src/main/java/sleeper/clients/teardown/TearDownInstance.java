@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
+import sleeper.clients.deploy.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -139,7 +139,7 @@ public class TearDownInstance {
             return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
-            return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
+            return PopulateInstancePropertiesAws.generateTearDownDefaultsFromInstanceId(instanceId);
         }
     }
 
