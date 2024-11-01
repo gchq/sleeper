@@ -80,7 +80,7 @@ public class SystemTestParameters {
         forceStateStoreClassname = builder.forceStateStoreClassname;
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
         instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
-        // Combines with SystemTestInstanceConfiguration.shortName to create an instance ID within maximum length
+        // Combines with SystemTestInstanceConfiguration.shortName and a hyphen to create an instance ID within maximum length
         if (!SystemTestProperty.SYSTEM_TEST_ID.getValidationPredicate().test(shortTestId)) {
             throw new IllegalArgumentException("shortTestId is not valid, must be at most " + SYSTEM_TEST_ID_MAX_LEN + " characters: " + shortTestId);
         }
