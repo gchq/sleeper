@@ -116,8 +116,8 @@ sleeper environment deploy VPCEnvironment -c deployEc2=false
 # Deploy EC2 in an existing VPC
 sleeper environment deploy EC2Environment -c vpcId=[vpc-id]
 
-# Deploy with nightly system test automation
-sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true
+# Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
+sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
 ```
 
 You can switch environments like this:
