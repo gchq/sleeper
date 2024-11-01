@@ -38,7 +38,7 @@ import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DeployInstanceConfigurationIT {
+public class DeployInstanceConfigurationFromTemplatesIT {
     @TempDir
     private Path templatesDir;
     @TempDir
