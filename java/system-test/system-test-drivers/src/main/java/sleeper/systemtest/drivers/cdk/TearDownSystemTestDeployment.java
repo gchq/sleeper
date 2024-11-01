@@ -19,12 +19,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.PopulateInstancePropertiesAws;
 import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.ShutdownSystemProcesses;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -73,7 +73,7 @@ public class TearDownSystemTestDeployment {
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(clients.getS3v2(), properties.get(SYSTEM_TEST_JARS_BUCKET));
         RemoveECRRepositories.remove(clients.getEcr(),
-                PopulateInstancePropertiesAws.generateTearDownDefaultsFromInstanceId(properties.get(SYSTEM_TEST_ID)),
+                PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(properties.get(SYSTEM_TEST_ID)),
                 List.of(properties.get(SYSTEM_TEST_REPO)));
     }
 
