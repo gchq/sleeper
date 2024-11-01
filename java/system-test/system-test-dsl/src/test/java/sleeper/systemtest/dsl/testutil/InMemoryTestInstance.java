@@ -51,6 +51,18 @@ public class InMemoryTestInstance {
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
     public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", () -> {
+        InstanceProperties instanceProperties = createDslInstanceProperties();
+        TableProperties tableProperties = createDslTableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "predefined-test-table");
+        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+    });
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("nontbl", () -> {
+        InstanceProperties instanceProperties = createDslInstanceProperties();
+        TableProperties tableProperties = createDslTableProperties(instanceProperties);
+        tableProperties.unset(TABLE_NAME);
+        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+    });
 
     public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
         return withInstanceProperties(identifier, properties -> {
