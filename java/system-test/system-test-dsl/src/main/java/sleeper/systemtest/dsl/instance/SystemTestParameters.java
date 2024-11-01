@@ -22,6 +22,7 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.configuration.SystemTestProperty;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -40,6 +41,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_AC
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
@@ -79,8 +81,8 @@ public class SystemTestParameters {
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
         instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
         // Combines with SystemTestInstanceConfiguration.shortName to create an instance ID within maximum length
-        if (shortTestId.length() > 13) {
-            throw new IllegalArgumentException("shortTestId is too long, must be at most 13 characters: " + shortTestId);
+        if (!SystemTestProperty.SYSTEM_TEST_ID.getValidationPredicate().test(shortTestId)) {
+            throw new IllegalArgumentException("shortTestId is not valid, must be at most " + SYSTEM_TEST_ID_MAX_LEN + " characters: " + shortTestId);
         }
     }
 
