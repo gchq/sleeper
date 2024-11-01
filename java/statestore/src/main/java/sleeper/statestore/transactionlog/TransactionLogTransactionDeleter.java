@@ -17,6 +17,8 @@ package sleeper.statestore.transactionlog;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.time.Duration;
 import java.time.Instant;

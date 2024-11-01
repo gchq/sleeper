@@ -25,8 +25,8 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
