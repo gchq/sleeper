@@ -110,7 +110,7 @@ public class DeployNewInstance {
                     .splitPointsFileForTemplate(splitPointsFileForTemplate)
                     .build();
             builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingAll(instancePropertiesFile, populateInstanceProperties, fromTemplates))
+                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstanceAndTables(instancePropertiesFile, populateInstanceProperties, fromTemplates))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .deployWithClients(s3, s3v2, dynamoDB, ecr);

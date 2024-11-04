@@ -67,19 +67,6 @@ public class DeployInstanceConfiguration {
     }
 
     /**
-     * Creates a configuration for a new instance.
-     *
-     * @param  instancePropertiesPath     the path to the local configuration instance properties file
-     * @param  populateInstanceProperties the settings to populate the instance properties
-     * @return                            the instance configuration
-     */
-    public static DeployInstanceConfiguration forNewInstance(Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties) {
-        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
-        populateInstanceProperties.populate(configuration.getInstanceProperties());
-        return configuration;
-    }
-
-    /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
      * @param  instancePropertiesPath     the path to the local configuration instance properties file
@@ -90,7 +77,8 @@ public class DeployInstanceConfiguration {
     public static DeployInstanceConfiguration forNewInstanceDefaultingTables(
             Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
             DeployInstanceConfigurationFromTemplates fromTemplates) {
-        DeployInstanceConfiguration configuration = forNewInstance(instancePropertiesPath, populateInstanceProperties);
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
+        populateInstanceProperties.populate(configuration.getInstanceProperties());
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -108,7 +96,7 @@ public class DeployInstanceConfiguration {
      * @param  fromTemplates              the settings to populate the table properties
      * @return                            the instance configuration
      */
-    public static DeployInstanceConfiguration forNewInstanceDefaultingAll(
+    public static DeployInstanceConfiguration forNewInstanceDefaultingInstanceAndTables(
             Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
             DeployInstanceConfigurationFromTemplates fromTemplates) {
         if (instancePropertiesPath != null) {
