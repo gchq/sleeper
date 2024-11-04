@@ -57,14 +57,23 @@ public class DeployInstanceConfigurationFromTemplates {
      */
     public DeployInstanceConfiguration load() {
         if (instancePropertiesPath == null) {
-            return fromTemplatesDir();
+            InstanceProperties instanceProperties = loadInstanceProperties(templatesDir);
+            return DeployInstanceConfiguration.builder()
+                    .instanceProperties(instanceProperties)
+                    .tableProperties(loadTableProperties(instanceProperties))
+                    .build();
         }
         return DeployInstanceConfiguration.fromLocalConfiguration(instancePropertiesPath);
     }
 
-    private DeployInstanceConfiguration fromTemplatesDir() {
-        DeployInstanceConfiguration configuration = fromTemplatesDir(templatesDir);
-        TableProperties tableProperties = configuration.singleTableProperties();
+    /**
+     * Loads the templates for the table properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the table properties
+     */
+    public TableProperties loadTableProperties(InstanceProperties instanceProperties) {
+        TableProperties tableProperties = loadTableProperties(templatesDir, instanceProperties);
         tableProperties.set(TABLE_NAME, tableNameForTemplate);
         if (splitPointsFileForTemplate != null) {
             if (!Files.exists(splitPointsFileForTemplate)) {
@@ -72,20 +81,17 @@ public class DeployInstanceConfigurationFromTemplates {
             }
             tableProperties.set(SPLIT_POINTS_FILE, splitPointsFileForTemplate.toString());
         }
-        return configuration;
+        return tableProperties;
     }
 
-    public static DeployInstanceConfiguration fromTemplatesDir(Path templatesDir) {
+    private static InstanceProperties loadInstanceProperties(Path templatesDir) {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
                 PropertiesUtils.loadProperties(templatesDir.resolve("instanceproperties.template")));
         instanceProperties.loadTags(PropertiesUtils.loadProperties(templatesDir.resolve("tags.template")));
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(loadTablePropertiesTemplate(templatesDir, instanceProperties))
-                .build();
+        return instanceProperties;
     }
 
-    private static TableProperties loadTablePropertiesTemplate(Path templatesDir, InstanceProperties instanceProperties) {
+    private static TableProperties loadTableProperties(Path templatesDir, InstanceProperties instanceProperties) {
         Properties properties = PropertiesUtils.loadProperties(templatesDir.resolve("tableproperties.template"));
         properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate(templatesDir));
         return new TableProperties(instanceProperties, properties);

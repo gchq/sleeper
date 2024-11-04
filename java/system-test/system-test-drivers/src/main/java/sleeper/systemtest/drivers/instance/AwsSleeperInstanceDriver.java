@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -88,17 +89,17 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
+        PopulateInstancePropertiesAws.builder(sts, regionProvider)
+                .instanceId(instanceId).vpcId(parameters.getVpcId()).subnetIds(parameters.getSubnetIds())
+                .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                .build().populate(deployConfig.getInstanceProperties());
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
-                    .instanceId(instanceId)
-                    .vpcId(parameters.getVpcId())
-                    .subnetIds(parameters.getSubnetIds())
                     .deployPaused(true)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
-                    .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3, s3v2, dynamoDB, ecr);
+                    .deployWithClients(s3, s3v2, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
