@@ -71,7 +71,7 @@ public class DeployInstanceConfiguration {
      *
      * @param  instancePropertiesPath     the path to the local configuration instance properties file
      * @param  populateInstanceProperties the settings to populate the instance properties
-     * @param  fromTemplates              the settings to populate the table properties
+     * @param  fromTemplates              the settings to load the templates
      * @return                            the instance configuration
      */
     public static DeployInstanceConfiguration forNewInstanceDefaultingTables(
@@ -93,7 +93,7 @@ public class DeployInstanceConfiguration {
      * @param  instancePropertiesPath     the path to the local configuration instance properties file, or null if not
      *                                    present
      * @param  populateInstanceProperties the settings to populate the instance properties
-     * @param  fromTemplates              the settings to populate the table properties
+     * @param  fromTemplates              the settings to load the templates
      * @return                            the instance configuration
      */
     public static DeployInstanceConfiguration forNewInstanceDefaultingInstanceAndTables(
