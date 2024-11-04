@@ -47,8 +47,8 @@ public class LocalStackTestInstance {
             .build();
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", LocalStackTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdftbl", LocalStackTestInstance::buildPredefinedTableConfiguration);
-    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdftnn", LocalStackTestInstance::buildPredefinedTableConfigurationNoName);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", LocalStackTestInstance::buildPredefinedTableConfiguration);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", LocalStackTestInstance::buildPredefinedTableConfigurationNoName);
 
     private static DeployInstanceConfiguration buildMainConfiguration() {
         return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "system-test"));
