@@ -28,6 +28,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,58 +40,44 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DeployInstanceConfigurationIT {
     @TempDir
-    private Path tempDir;
+    private Path templatesDir;
+    @TempDir
+    private Path propertiesDir;
 
     @Nested
     @DisplayName("Load from template directory")
     class LoadFromTemplateDirectory {
+
         @Test
-        void shouldLoadInstanceAndTableProperties() throws Exception {
+        void shouldLoadTemplatesWithTableName() throws Exception {
             // Given
-            createTemplatesInDirectory(tempDir);
+            writeTemplates();
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(tempDir).build().load();
+            DeployInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTable("set-table");
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "template-instance");
             expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "template-table");
+            expectedTableProperties.set(TABLE_NAME, "set-table");
             expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(expectedTableProperties)
+                            .tableProperties(List.of(expectedTableProperties))
                             .build());
-        }
-
-        @Test
-        void shouldSetTableNameInTemplate() throws Exception {
-            // Given
-            createTemplatesInDirectory(tempDir);
-
-            // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(tempDir).tableNameForTemplate("set-table").build().load();
-
-            // Then
-            assertThat(instanceConfiguration.getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("set-table");
         }
 
         @Test
         void shouldSetSplitPointsFileInTemplate() throws Exception {
             // Given
-            createTemplatesInDirectory(tempDir);
-            Path splitPointsFile = Files.writeString(tempDir.resolve("splits.txt"), "abc\ndef");
+            writeTemplates();
+            Path splitPointsFile = Files.writeString(propertiesDir.resolve("splits.txt"), "abc\ndef");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(tempDir).splitPointsFileForTemplate(splitPointsFile).build().load();
+            DeployInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile);
 
             // Then
             assertThat(instanceConfiguration.getTableProperties())
@@ -101,14 +88,11 @@ public class DeployInstanceConfigurationIT {
         @Test
         void shouldFailIfSplitPointsFileDoesNotExist() throws Exception {
             // Given
-            createTemplatesInDirectory(tempDir);
+            writeTemplates();
+            Path splitPointsFile = propertiesDir.resolve("splits.txt");
 
-            // When
-            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(tempDir).splitPointsFileForTemplate(tempDir.resolve("splits.txt")).build();
-
-            // Then
-            assertThatThrownBy(fromTemplates::load)
+            // When / Then
+            assertThatThrownBy(() -> fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageStartingWith("Split points file not found: ");
         }
@@ -120,15 +104,14 @@ public class DeployInstanceConfigurationIT {
         @Test
         void shouldLoadTablePropertiesAndSchemaIfFoundNearInstanceProperties() throws Exception {
             // Given
-            Path templateDir = createTemplatesInDirectory(tempDir.resolve("templates"));
-            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Files.writeString(tempDir.resolve("tags.properties"), "Project=TestProject");
-            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
-            Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
+            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
+            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
 
             // When
             DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
-                    tempDir.resolve("instance.properties"), templateDir);
+                    propertiesDir.resolve("instance.properties"));
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -145,75 +128,52 @@ public class DeployInstanceConfigurationIT {
         }
 
         @Test
-        void shouldLoadTableAndTagsFromTemplateDirectoryIfNotFoundNearInstanceProperties() throws Exception {
+        void shouldLoadNoTablesIfNotFoundNearInstanceProperties() throws Exception {
             // Given
-            Path templateDir = createTemplatesInDirectory(tempDir.resolve("templates"));
-            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Path splitPointsFile = Files.writeString(tempDir.resolve("splits.txt"), "abc\ndef");
-
-            // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfigurationFromTemplates.builder()
-                    .instancePropertiesPath(tempDir.resolve("instance.properties"))
-                    .templatesDir(templateDir)
-                    .tableNameForTemplate("test-table")
-                    .splitPointsFileForTemplate(splitPointsFile)
-                    .build().load();
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
-            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(schemaWithKey("template-key"));
-            expectedTableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
-            assertThat(instanceConfiguration)
-                    .isEqualTo(DeployInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(expectedTableProperties)
-                            .build());
-        }
-
-        @Test
-        void shouldLoadSchemaFromTemplateDirectoryIfNotSetInLocalProperties() throws Exception {
-            // Given
-            Path templateDir = createTemplatesInDirectory(tempDir.resolve("templates"));
-            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Files.writeString(tempDir.resolve("tags.properties"), "Project=TestProject");
-            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
             DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
-                    tempDir.resolve("instance.properties"), templateDir);
+                    propertiesDir.resolve("instance.properties"));
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "test-instance");
-            expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(expectedTableProperties)
+                            .tableProperties(List.of())
                             .build());
         }
     }
 
-    private static Path createTemplatesInDirectory(Path templatesDir) throws IOException {
+    private void writeTemplates() throws IOException {
         Files.createDirectories(templatesDir);
         Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.id=template-instance");
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
-        return templatesDir;
     }
 
-    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile, Path templateDir) {
+    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile) {
         return DeployInstanceConfigurationFromTemplates.builder()
                 .instancePropertiesPath(instancePropertiesFile)
-                .templatesDir(templateDir)
+                .templatesDir(templatesDir)
+                .build().load();
+    }
+
+    private DeployInstanceConfiguration fromTemplatesDirWithTable(String tableName) {
+        return DeployInstanceConfigurationFromTemplates.builder()
+                .templatesDir(templatesDir)
+                .tableNameForTemplate(tableName)
+                .build().load();
+    }
+
+    private DeployInstanceConfiguration fromTemplatesDirWithTableAndSplits(String tableName, Path splitPointsFile) {
+        return DeployInstanceConfigurationFromTemplates.builder()
+                .templatesDir(templatesDir)
+                .tableNameForTemplate(tableName)
+                .splitPointsFileForTemplate(splitPointsFile)
                 .build().load();
     }
 }

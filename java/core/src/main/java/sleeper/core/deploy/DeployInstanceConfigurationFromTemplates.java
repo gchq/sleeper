@@ -20,7 +20,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.schema.Schema;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -64,19 +63,9 @@ public class DeployInstanceConfigurationFromTemplates {
             return fromTemplatesDir();
         }
         InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
-        if (instanceProperties.getTags().isEmpty()) {
-            loadTagsTemplate(instanceProperties);
-        }
         List<TableProperties> tableProperties = LoadLocalProperties
                 .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
-                .map(properties -> {
-                    loadTemplateIfMissing(properties);
-                    return properties;
-                })
                 .collect(Collectors.toUnmodifiableList());
-        if (tableProperties.isEmpty()) {
-            tableProperties = List.of(loadTablePropertiesTemplate(instanceProperties));
-        }
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
@@ -85,16 +74,9 @@ public class DeployInstanceConfigurationFromTemplates {
     private DeployInstanceConfiguration fromTemplatesDir() {
         InstanceProperties instanceProperties = loadInstancePropertiesTemplate();
         loadTagsTemplate(instanceProperties);
-        TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
-    }
-
-    private void loadTemplateIfMissing(TableProperties tableProperties) {
-        if (tableProperties.getSchema() == null) {
-            tableProperties.setSchema(Schema.loadFromString(loadSchemaJsonTemplate()));
-        }
+                .tableProperties(loadTablePropertiesTemplate(instanceProperties)).build();
     }
 
     private InstanceProperties loadInstancePropertiesTemplate() {
@@ -106,7 +88,7 @@ public class DeployInstanceConfigurationFromTemplates {
         instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
     }
 
-    private TableProperties loadTablePropertiesTemplate(InstanceProperties instanceProperties) {
+    private List<TableProperties> loadTablePropertiesTemplate(InstanceProperties instanceProperties) {
         Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
         properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate());
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
@@ -117,7 +99,7 @@ public class DeployInstanceConfigurationFromTemplates {
             }
             tableProperties.set(SPLIT_POINTS_FILE, splitPointsFileForTemplate.toString());
         }
-        return tableProperties;
+        return List.of(tableProperties);
     }
 
     private String loadSchemaJsonTemplate() {
