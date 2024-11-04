@@ -148,6 +148,15 @@ class RunECSTasksIT {
                     .extracting(RunTaskResponse::tasks, RunTaskResponse::failures)
                     .containsExactly(tuple(List.of(), List.of()));
         }
+
+        @Test
+        void shouldRunNoTasks() {
+            runTasksOrThrow(runTasks -> runTasks
+                    .runTaskRequest(request -> request.cluster("test-cluster"))
+                    .numberOfTasksToCreate(0));
+
+            verify(0, anyRequest());
+        }
     }
 
     @Nested
