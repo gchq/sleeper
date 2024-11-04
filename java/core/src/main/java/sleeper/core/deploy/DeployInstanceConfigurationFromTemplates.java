@@ -34,13 +34,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * Settings to create a configuration for a Sleeper instance by combining templates with configuration files.
  */
 public class DeployInstanceConfigurationFromTemplates {
-    private final Path instancePropertiesPath;
     private final Path templatesDir;
     private final String tableNameForTemplate;
     private final Path splitPointsFileForTemplate;
 
     private DeployInstanceConfigurationFromTemplates(Builder builder) {
-        instancePropertiesPath = builder.instancePropertiesPath;
         templatesDir = builder.templatesDir;
         tableNameForTemplate = builder.tableNameForTemplate;
         splitPointsFileForTemplate = builder.splitPointsFileForTemplate;
@@ -56,14 +54,11 @@ public class DeployInstanceConfigurationFromTemplates {
      * @return the configuration
      */
     public DeployInstanceConfiguration load() {
-        if (instancePropertiesPath == null) {
-            InstanceProperties instanceProperties = loadInstanceProperties(templatesDir);
-            return DeployInstanceConfiguration.builder()
-                    .instanceProperties(instanceProperties)
-                    .tableProperties(loadTableProperties(instanceProperties))
-                    .build();
-        }
-        return DeployInstanceConfiguration.fromLocalConfiguration(instancePropertiesPath);
+        InstanceProperties instanceProperties = loadInstanceProperties(templatesDir);
+        return DeployInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(loadTableProperties(instanceProperties))
+                .build();
     }
 
     /**
@@ -109,25 +104,11 @@ public class DeployInstanceConfigurationFromTemplates {
      * A builder for instances of this class.
      */
     public static final class Builder {
-        private Path instancePropertiesPath;
         private Path templatesDir;
         private String tableNameForTemplate;
         private Path splitPointsFileForTemplate;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the path to load the Sleeper instance configuration from. This should point to the instance properties
-         * file. Any other configuration files will be found relative to this. If this is not set, the templates will
-         * be used directly.
-         *
-         * @param  instancePropertiesPath the path to the instance properties file
-         * @return                        this builder
-         */
-        public Builder instancePropertiesPath(Path instancePropertiesPath) {
-            this.instancePropertiesPath = instancePropertiesPath;
-            return this;
         }
 
         /**
