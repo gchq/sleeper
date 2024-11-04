@@ -93,7 +93,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Then
             assertThat(times).isExhausted();
             assertThat(consumedJobs).containsExactly(job);
-            assertThat(failedJobs).isEmpty();
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(sleeps).isEmpty();
         }
@@ -124,7 +124,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Then
             assertThat(times).isExhausted();
             assertThat(consumedJobs).containsExactly(job);
-            assertThat(failedJobs).isEmpty();
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
@@ -157,7 +157,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Then
             assertThat(times).isExhausted();
             assertThat(consumedJobs).containsExactly(job);
-            assertThat(failedJobs).isEmpty();
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(sleeps).containsExactly(Duration.ofSeconds(2), Duration.ofSeconds(2));
         }
@@ -197,7 +197,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
 
             // Then
             assertThat(consumedJobs).isEmpty();
-            assertThat(failedJobs).containsExactly(job1, job2);
+            assertThat(jobsReturnedToQueue).containsExactly(job1, job2);
             assertThat(jobsOnQueue).containsExactly(job3);
         }
 
@@ -215,7 +215,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
 
             // Then
             assertThat(consumedJobs).containsExactly(job2, job4);
-            assertThat(failedJobs).containsExactly(job1, job3);
+            assertThat(jobsReturnedToQueue).containsExactly(job1, job3);
             assertThat(jobsOnQueue).isEmpty();
         }
     }

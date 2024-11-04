@@ -60,7 +60,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         assertThat(consumedJobs).containsExactly(job);
-        assertThat(failedJobs).isEmpty();
+        assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).hasSize(1);
     }
@@ -77,7 +77,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         assertThat(consumedJobs).isEmpty();
-        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsReturnedToQueue).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
     }
@@ -119,7 +119,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         assertThat(stateStore.getFileReferences()).isEmpty();
-        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsReturnedToQueue).containsExactly(job);
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 jobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
@@ -142,7 +142,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:50:00Z")));
 
         // Then
-        assertThat(failedJobs).containsExactly(job);
+        assertThat(jobsReturnedToQueue).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
@@ -173,7 +173,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // Then
         RecordsProcessedSummary expectedSummary = summary(
                 Instant.parse("2024-10-28T11:51:00Z"), Duration.ofMinutes(1), 10, 5);
-        assertThat(failedJobs).isEmpty();
+        assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
