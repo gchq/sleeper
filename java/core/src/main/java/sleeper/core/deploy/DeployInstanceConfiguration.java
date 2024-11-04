@@ -87,22 +87,22 @@ public class DeployInstanceConfiguration {
     }
 
     /**
-     * Creates a configuration for a new instance, setting instance and table properties from templates if not
+     * Creates a configuration for a new instance, setting instance properties from templates if not
      * specified.
      *
      * @param  instancePropertiesPath     the path to the local configuration instance properties file, or null if not
      *                                    present
      * @param  populateInstanceProperties the settings to populate the instance properties
-     * @param  fromTemplates              the settings to load the templates
+     * @param  templatesDir               the directory to load the templates from
      * @return                            the instance configuration
      */
-    public static DeployInstanceConfiguration forNewInstanceDefaultingInstanceAndTables(
+    public static DeployInstanceConfiguration forNewInstanceDefaultingInstance(
             Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
-            DeployInstanceConfigurationFromTemplates fromTemplates) {
+            Path templatesDir) {
         if (instancePropertiesPath != null) {
-            return forNewInstanceDefaultingTables(instancePropertiesPath, populateInstanceProperties, fromTemplates);
+            return fromLocalConfiguration(instancePropertiesPath);
         } else {
-            return fromTemplates.load();
+            return new DeployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir), List.of());
         }
     }
 

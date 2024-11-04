@@ -79,7 +79,13 @@ public class DeployInstanceConfigurationFromTemplates {
         return tableProperties;
     }
 
-    private static InstanceProperties loadInstanceProperties(Path templatesDir) {
+    /**
+     * Loads the templates for the instance properties.
+     *
+     * @param  templatesDir the templates directory
+     * @return              the instance properties
+     */
+    public static InstanceProperties loadInstanceProperties(Path templatesDir) {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
                 PropertiesUtils.loadProperties(templatesDir.resolve("instanceproperties.template")));
         instanceProperties.loadTags(PropertiesUtils.loadProperties(templatesDir.resolve("tags.template")));
