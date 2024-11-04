@@ -103,7 +103,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
     }
 
     @Test
-    void shouldFailWhenFileDeletedBeforeJob() throws Exception {
+    void shouldFailWithNoRetryWhenFileDeletedBeforeJob() throws Exception {
         // Given
         Instant waitForFilesTime = Instant.parse("2024-02-22T13:50:01Z");
         Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
@@ -119,7 +119,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         assertThat(stateStore.getFileReferences()).isEmpty();
-        assertThat(jobsReturnedToQueue).containsExactly(job);
+        assertThat(consumedJobs).containsExactly(job);
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 jobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
