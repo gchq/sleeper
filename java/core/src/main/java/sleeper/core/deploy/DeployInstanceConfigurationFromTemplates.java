@@ -49,7 +49,7 @@ public class DeployInstanceConfigurationFromTemplates {
     }
 
     /**
-     * Load the configuration files, and use templates for any missing components of the configuration.
+     * Loads the templates for the instance and table properties.
      *
      * @return the configuration
      */
