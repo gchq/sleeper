@@ -128,29 +128,18 @@ public class CompactionTask {
     }
 
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
-        Instant lastActiveTime = startTime;
-        Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
+        IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
-        Duration delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
         boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
         int numConsecutiveFailures = 0;
         while (numConsecutiveFailures < maxConsecutiveFailures) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
                 Instant currentTime = timeSupplier.get();
-                Duration runTime = Duration.between(lastActiveTime, currentTime);
-                if (runTime.compareTo(maxIdleTime) >= 0) {
-                    LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
-                            LoggedDuration.withFullOutput(runTime),
-                            LoggedDuration.withFullOutput(maxIdleTime));
-                    return currentTime;
-                } else {
-                    if (!delayBeforeRetry.isZero()) {
-                        LOGGER.info("Received no messages, waiting {} before trying again",
-                                LoggedDuration.withFullOutput(delayBeforeRetry));
-                        sleepForTime.accept(delayBeforeRetry);
-                    }
+                if (idleTimeTracker.isLookForNextMessage(currentTime)) {
                     continue;
+                } else {
+                    return currentTime;
                 }
             }
             try (MessageHandle message = messageOpt.get()) {
@@ -171,7 +160,7 @@ public class CompactionTask {
                     taskFinishedBuilder.addJobSummary(summary);
                     message.deleteFromQueue();
                     numConsecutiveFailures = 0;
-                    lastActiveTime = summary.getFinishTime();
+                    idleTimeTracker.setLastActiveTime(summary.getFinishTime());
                 } catch (InterruptedException e) {
                     LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
                     throw e;
@@ -247,5 +236,40 @@ public class CompactionTask {
                 throw new RuntimeException(e);
             }
         };
+    }
+
+    private class IdleTimeTracker {
+
+        private final Duration maxIdleTime;
+        private final Duration delayBeforeRetry;
+        private Instant lastActiveTime;
+
+        public IdleTimeTracker(Instant startTime) {
+            this.maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
+            this.delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+            this.lastActiveTime = startTime;
+        }
+
+        boolean isLookForNextMessage(Instant currentTime) {
+            Duration runTime = Duration.between(lastActiveTime, currentTime);
+            if (runTime.compareTo(maxIdleTime) >= 0) {
+                LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
+                        LoggedDuration.withFullOutput(runTime),
+                        LoggedDuration.withFullOutput(maxIdleTime));
+                return true;
+            } else {
+                if (!delayBeforeRetry.isZero()) {
+                    LOGGER.info("Received no messages, waiting {} before trying again",
+                            LoggedDuration.withFullOutput(delayBeforeRetry));
+                    sleepForTime.accept(delayBeforeRetry);
+                }
+                return false;
+            }
+        }
+
+        void setLastActiveTime(Instant currentTime) {
+            lastActiveTime = currentTime;
+        }
+
     }
 }
