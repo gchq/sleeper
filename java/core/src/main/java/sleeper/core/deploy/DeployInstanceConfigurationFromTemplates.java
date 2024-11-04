@@ -31,7 +31,7 @@ import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Settings to create a configuration for a Sleeper instance by combining templates with configuration files.
+ * Settings to create a configuration for a Sleeper instance from templates.
  */
 public class DeployInstanceConfigurationFromTemplates {
     private final Path templatesDir;
