@@ -17,10 +17,13 @@
 package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The configuration to deploy a Sleeper instance and configure Sleeper tables.
@@ -44,6 +47,22 @@ public class DeployInstanceConfiguration {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates an instance configuration from local files.
+     *
+     * @param  instancePropertiesPath the path to the local configuration instance properties file
+     * @return                        the instance configuration
+     */
+    public static DeployInstanceConfiguration fromLocalConfiguration(Path instancePropertiesPath) {
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
+        List<TableProperties> tableProperties = LoadLocalProperties
+                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
+                .collect(Collectors.toUnmodifiableList());
+        return DeployInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties).build();
     }
 
     public InstanceProperties getInstanceProperties() {

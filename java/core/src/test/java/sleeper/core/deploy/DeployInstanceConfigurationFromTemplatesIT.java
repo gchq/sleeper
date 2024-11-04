@@ -110,7 +110,7 @@ public class DeployInstanceConfigurationFromTemplatesIT {
             Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
@@ -133,7 +133,7 @@ public class DeployInstanceConfigurationFromTemplatesIT {
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = fromInstancePropertiesOrTemplatesDir(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
@@ -153,13 +153,6 @@ public class DeployInstanceConfigurationFromTemplatesIT {
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
-    }
-
-    private DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesFile) {
-        return DeployInstanceConfigurationFromTemplates.builder()
-                .instancePropertiesPath(instancePropertiesFile)
-                .templatesDir(templatesDir)
-                .build().load();
     }
 
     private DeployInstanceConfiguration fromTemplatesDirWithTable(String tableName) {

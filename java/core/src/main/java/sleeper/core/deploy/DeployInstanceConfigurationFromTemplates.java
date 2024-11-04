@@ -18,7 +18,6 @@ package sleeper.core.deploy;
 
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
@@ -26,9 +25,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -62,13 +59,7 @@ public class DeployInstanceConfigurationFromTemplates {
         if (instancePropertiesPath == null) {
             return fromTemplatesDir();
         }
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
-        List<TableProperties> tableProperties = LoadLocalProperties
-                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
-                .collect(Collectors.toUnmodifiableList());
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
+        return DeployInstanceConfiguration.fromLocalConfiguration(instancePropertiesPath);
     }
 
     private DeployInstanceConfiguration fromTemplatesDir() {
