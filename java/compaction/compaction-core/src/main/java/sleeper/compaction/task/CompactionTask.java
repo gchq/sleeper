@@ -161,7 +161,7 @@ public class CompactionTask {
                     }
                     RecordsProcessedSummary summary = compact(job, jobRunId);
                     taskFinishedBuilder.addJobSummary(summary);
-                    message.completed();
+                    message.deleteFromQueue();
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
                 } catch (InterruptedException e) {
@@ -172,7 +172,7 @@ public class CompactionTask {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    message.failed();
+                    message.returnToQueue();
                 }
             }
         }
@@ -222,9 +222,9 @@ public class CompactionTask {
     public interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
-        void completed();
+        void deleteFromQueue();
 
-        void failed();
+        void returnToQueue();
 
         void close();
     }

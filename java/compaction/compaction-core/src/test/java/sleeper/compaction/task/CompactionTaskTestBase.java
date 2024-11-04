@@ -398,10 +398,10 @@ public class CompactionTaskTestBase {
         public void close() {
         }
 
-        public void completed() {
+        public void deleteFromQueue() {
         }
 
-        public void failed() {
+        public void returnToQueue() {
             failedJobs.add(job);
         }
     }
