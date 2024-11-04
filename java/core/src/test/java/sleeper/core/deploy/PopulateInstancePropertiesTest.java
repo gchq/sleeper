@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.clients.deploy;
+package sleeper.core.deploy;
 
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.regions.Region;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -25,7 +23,6 @@ import sleeper.core.properties.validation.LambdaDeployType;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -52,11 +49,11 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
-class PopulatePropertiesTest {
+public class PopulateInstancePropertiesTest {
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
         return PopulateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
+                .accountSupplier(() -> "test-account-id").regionIdSupplier(() -> "test-region")
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 
@@ -72,14 +69,14 @@ class PopulatePropertiesTest {
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, "test-account-id");
-        expected.set(REGION, "aws-global");
+        expected.set(REGION, "test-region");
         return expected;
     }
 
     @Test
     void shouldPopulateInstanceProperties() {
         // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate();
+        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate(new InstanceProperties());
 
         // Then
         assertThat(properties).isEqualTo(expectedInstanceProperties());
@@ -88,13 +85,12 @@ class PopulatePropertiesTest {
     @Test
     void shouldApplyECRRepositoryPrefixFromInstancePropertiesTemplate() {
         // Given
-        InstanceProperties template = new InstanceProperties();
-        template.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
 
         // When
-        InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceProperties(template)
-                .build().populate();
+        populateInstancePropertiesBuilder()
+                .build().populate(properties);
 
         // Then
         InstanceProperties expected = expectedInstanceProperties();
@@ -109,7 +105,7 @@ class PopulatePropertiesTest {
     @Test
     void shouldGetDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
         // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate();
+        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate(new InstanceProperties());
 
         // Then
         assertThat(properties.getTags())
@@ -119,14 +115,13 @@ class PopulatePropertiesTest {
     @Test
     void shouldAddToExistingTagsWhenSetInInstanceProperties() {
         // Given/When
-        InstanceProperties beforePopulate = new InstanceProperties();
-        beforePopulate.setTags(Map.of("TestTag", "TestValue"));
-        InstanceProperties afterPopulate = populateInstancePropertiesBuilder()
-                .instanceProperties(beforePopulate)
-                .build().populate();
+        InstanceProperties properties = new InstanceProperties();
+        properties.setTags(Map.of("TestTag", "TestValue"));
+        populateInstancePropertiesBuilder()
+                .build().populate(properties);
 
         // Then
-        assertThat(afterPopulate.getTags())
+        assertThat(properties.getTags())
                 .isEqualTo(Map.of("TestTag", "TestValue",
                         "InstanceID", "test-instance"));
     }
@@ -134,7 +129,7 @@ class PopulatePropertiesTest {
     @Test
     void shouldGenerateDefaultInstancePropertiesFromInstanceId() {
         // Given/When
-        InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
+        InstanceProperties properties = PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId("test-instance");
 
         // Then
         InstanceProperties expected = new InstanceProperties();
@@ -161,4 +156,5 @@ class PopulatePropertiesTest {
 
         assertThat(properties).isEqualTo(expected);
     }
+
 }

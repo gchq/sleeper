@@ -123,7 +123,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
-                .visibilityTimeout(Duration.seconds(70))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN, queue.getQueueArn());

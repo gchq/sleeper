@@ -96,7 +96,7 @@ public class RunECSTasks {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
         try {
             int remainingTasks = numberOfTasksToCreate;
-            while (true) {
+            while (remainingTasks > 0) {
 
                 try {
                     remainingTasks = retryTaskUntilCapacityAvailable(remainingTasks);

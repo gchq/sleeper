@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
-
-import software.amazon.awssdk.regions.Region;
+package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -23,16 +21,30 @@ import sleeper.core.properties.table.TableProperties;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
+/**
+ * Test helpers to generate properties using PopulateInstanceProperties.
+ */
 public class PopulatePropertiesTestHelper {
     private PopulatePropertiesTestHelper() {
     }
 
+    /**
+     * Generates test instance properties using PopulateInstanceProperties.
+     *
+     * @return the generated properties
+     */
     public static InstanceProperties generateTestInstanceProperties() {
         return PopulateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet").build().populate();
+                .accountSupplier(() -> "test-account-id").regionIdSupplier(() -> "test-region")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate(new InstanceProperties());
     }
 
+    /**
+     * Generates test table properties using PopulateInstanceProperties.
+     *
+     * @return the generated properties
+     */
     public static TableProperties generateTestTableProperties() {
         TableProperties tableProperties = new TableProperties(generateTestInstanceProperties());
         tableProperties.set(TABLE_NAME, "test-table");
