@@ -29,6 +29,7 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.core.CommonTestConstants;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
@@ -46,7 +47,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 @Testcontainers
-public class PopulatePropertiesIT {
+public class PopulateInstancePropertiesAwsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -63,8 +64,7 @@ public class PopulatePropertiesIT {
     void shouldPopulateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = populateInstancePropertiesBuilder()
-                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().populate();
+                .build().populate(new InstanceProperties());
 
         // Then
         InstanceProperties expected = new InstanceProperties();
@@ -84,7 +84,7 @@ public class PopulatePropertiesIT {
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstanceProperties.builder()
+        return PopulateInstancePropertiesAws.builder(sts, () -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }
