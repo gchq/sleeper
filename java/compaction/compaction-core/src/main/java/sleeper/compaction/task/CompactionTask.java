@@ -177,6 +177,7 @@ public class CompactionTask {
                     throw e;
                 } catch (TableNotFoundException e) {
                     LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
+                    message.deleteFromQueue();
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;

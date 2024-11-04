@@ -73,14 +73,16 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
     void shouldDiscardJobsForNonExistentTable() throws Exception {
         // Given
         TableProperties table = createTestTableProperties(instanceProperties, schema);
-        jobsOnQueue.add(createJobNotInStateStore("job1", table));
-        jobsOnQueue.add(createJobNotInStateStore("job2", table));
+        CompactionJob job1 = createJobNotInStateStore("job1", table);
+        CompactionJob job2 = createJobNotInStateStore("job2", table);
+        jobsOnQueue.add(job1);
+        jobsOnQueue.add(job2);
 
         // When
         runTask(processNoJobs());
 
         // Then
-        assertThat(consumedJobs).isEmpty();
+        assertThat(consumedJobs).containsExactly(job1, job2);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
     }
