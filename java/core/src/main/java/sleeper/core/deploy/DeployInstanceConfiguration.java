@@ -114,14 +114,8 @@ public class DeployInstanceConfiguration {
         if (instancePropertiesPath != null) {
             return forNewInstanceDefaultingTables(instancePropertiesPath, populateInstanceProperties, fromTemplates);
         } else {
-            DeployInstanceConfiguration configuration = fromTemplates.load();
+            return fromTemplates.load();
         }
-        DeployInstanceConfiguration configuration = forNewInstance(instancePropertiesPath, populateInstanceProperties);
-        if (configuration.getTableProperties().isEmpty()) {
-            configuration = configuration.withTableProperties(instanceProperties -> List.of(
-                    fromTemplates.loadTableProperties(instanceProperties)));
-        }
-        return configuration;
     }
 
     public InstanceProperties getInstanceProperties() {
