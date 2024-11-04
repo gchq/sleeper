@@ -186,7 +186,7 @@
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.9.0</approvaltests.version>
-        <jsonunit.version>3.4.1</jsonunit.version>
+        <jsonunit.version>3.5.0</jsonunit.version>
         <checkstyle.version>10.20.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
