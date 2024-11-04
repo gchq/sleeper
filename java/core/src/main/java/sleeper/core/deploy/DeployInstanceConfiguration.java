@@ -54,6 +54,18 @@ public class DeployInstanceConfiguration {
         return tableProperties;
     }
 
+    /**
+     * Gets the table properties. Fails if there is not exactly one table in the configuration.
+     *
+     * @return the table properties
+     */
+    public TableProperties singleTableProperties() {
+        if (tableProperties.size() != 1) {
+            throw new IllegalArgumentException("Expected exactly one table in configuration");
+        }
+        return tableProperties.get(0);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

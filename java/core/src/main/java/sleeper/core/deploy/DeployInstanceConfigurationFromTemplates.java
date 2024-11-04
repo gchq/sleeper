@@ -73,7 +73,7 @@ public class DeployInstanceConfigurationFromTemplates {
 
     private DeployInstanceConfiguration fromTemplatesDir() {
         DeployInstanceConfiguration configuration = fromTemplatesDir(templatesDir);
-        TableProperties tableProperties = configuration.getTableProperties().get(0);
+        TableProperties tableProperties = configuration.singleTableProperties();
         tableProperties.set(TABLE_NAME, tableNameForTemplate);
         if (splitPointsFileForTemplate != null) {
             if (!Files.exists(splitPointsFileForTemplate)) {
