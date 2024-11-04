@@ -46,6 +46,9 @@ chunks:
       - splitter/splitter-core
       - splitter/splitter-lambda
       - garbage-collector
+      - bulk-export/bulk-export-core
+      - bulk-export/bulk-export-runner
+      - bulk-export/bulk-export-starter
   rust:
     name: Rust
     workflow: chunk-rust.yaml
@@ -80,5 +83,3 @@ chunks:
       - query/query-lambda
       - athena
       - trino
-
-

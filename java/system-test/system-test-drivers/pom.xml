@@ -51,11 +51,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>cdk</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>clients</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

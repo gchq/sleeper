@@ -25,6 +25,7 @@ import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_BUCKET;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_DEPLOY_ID;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_HOUR_UTC;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_SUBNETS;
@@ -55,6 +56,7 @@ class LoadUserDataUtilTest {
                 FORK.value("a-fork"),
                 BRANCH.value("feature/something"),
                 NIGHTLY_TEST_RUN_ENABLED.value(true),
+                NIGHTLY_TEST_DEPLOY_ID.value("mt"),
                 VPC_ID.value("my-vpc"),
                 NIGHTLY_TEST_SUBNETS.value("subnet-1", "subnet-2"),
                 NIGHTLY_TEST_BUCKET.value("my-bucket")))))
@@ -70,11 +72,13 @@ class LoadUserDataUtilTest {
     void shouldLoadNightlyTestSettings() {
         assertThat(LoadUserDataUtil.nightlyTestSettingsJson(BuildEC2Parameters.from(AppContext.of(
                 NIGHTLY_TEST_RUN_ENABLED.value(true),
+                NIGHTLY_TEST_DEPLOY_ID.value("mt"),
                 VPC_ID.value("my-vpc"),
                 NIGHTLY_TEST_SUBNETS.value("subnet-1", "subnet-2"),
                 NIGHTLY_TEST_BUCKET.value("my-bucket"),
                 FORK.value("my-fork"),
                 REPOSITORY.value("my-repo")))))
+                .contains("\"deployId\": \"mt\"")
                 .contains("\"vpc\": \"my-vpc\"")
                 .contains("\"subnets\": \"subnet-1,subnet-2\"")
                 .contains("\"repoPath\": \"my-fork/my-repo\"")
@@ -85,6 +89,7 @@ class LoadUserDataUtilTest {
     void shouldLoadCrontab() {
         assertThat(LoadUserDataUtil.crontab(BuildEC2Parameters.from(AppContext.of(
                 NIGHTLY_TEST_RUN_ENABLED.value(true),
+                NIGHTLY_TEST_DEPLOY_ID.value("mt"),
                 NIGHTLY_TEST_RUN_HOUR_UTC.value(3),
                 LOGIN_USER.value("my-user"),
                 VPC_ID.value("my-vpc"),

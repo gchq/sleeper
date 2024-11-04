@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchevents.model.ResourceNotFoundException;
 
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.properties.deploy.SleeperScheduleRule;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;

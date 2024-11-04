@@ -42,6 +42,7 @@
         <module>athena</module>
         <module>common</module>
         <module>bulk-import</module>
+        <module>bulk-export</module>
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
         <module>metrics</module>
@@ -53,20 +54,22 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <!-- Scala is just used for Spark -->
         <scala.version>2.12</scala.version>
-        <scala.minor.version>2.12.17</scala.minor.version>
+        <scala.minor.version>2.12.20</scala.minor.version>
         <!--
         The Spark and Hadoop versions must match the EMR release we use for bulk import.
         See the versions listed in the documentation:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.4.1</spark.version>
-        <hadoop.version>3.3.3</hadoop.version>
+        <spark.version>3.5.1</spark.version>
+        <hadoop.version>3.3.6</hadoop.version>
         <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
-        <joom.spark.platform.version>0.3.8</joom.spark.platform.version>
+        <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
+        <!-- The version of Arrow should match the version used by Spark -->
+        <arrow.version>12.0.1</arrow.version>
         <!--
         Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as it is
         provided in EMR.
@@ -81,7 +84,7 @@
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
-        <woodstox.version>7.0.0</woodstox.version>
+        <woodstox.version>7.1.0</woodstox.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
         <ivy.version>2.5.2</ivy.version>
         <!--
@@ -91,23 +94,21 @@
         <snappy.version>1.1.10.7</snappy.version>
         <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
         <aircompressor.version>0.27</aircompressor.version>
-        <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
-        <protobuf.version>4.28.2</protobuf.version>
+        <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
+        <protobuf.version>4.28.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
-        <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
+        <nimbus-jose-jwt.version>9.45</nimbus-jose-jwt.version>
+        <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
-        <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
-        <json-smart.version>2.5.1</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.1.0</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
         <dnsjava.version>3.6.2</dnsjava.version>
-        <!-- Spark declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
+        <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
         <xz.version>1.10</xz.version>
-        <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
+        <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
         <okhttp3.version>4.12.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
@@ -121,10 +122,10 @@
         <okio.version>3.9.1</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.11</logback.version>
+        <logback.version>1.5.12</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.28.25</aws-java-sdk-v2.version>
-        <aws-crt.version>0.31.3</aws-crt.version>
+        <aws-java-sdk-v2.version>2.29.6</aws-java-sdk-v2.version>
+        <aws-crt.version>0.33.0</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -138,21 +139,20 @@
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <jackson.version>2.18.0</jackson.version>
+        <jackson.version>2.18.1</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.3.1-jre</guava.version>
-        <cdk.version>2.162.1</cdk.version>
+        <cdk.version>2.165.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.11.0</gson.version>
         <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.25</reload4j.version>
         <java-websocket.version>1.5.7</java-websocket.version>
-        <arrow.version>17.0.0</arrow.version>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -179,15 +179,15 @@
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.11.2</junit.version>
-        <junit.platform.version>1.11.2</junit.platform.version>
+        <junit.version>5.11.3</junit.version>
+        <junit.platform.version>1.11.3</junit.platform.version>
         <mockito.version>5.14.2</mockito.version>
-        <testcontainers.version>1.20.2</testcontainers.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.8.0</approvaltests.version>
-        <jsonunit.version>3.4.1</jsonunit.version>
-        <checkstyle.version>10.18.2</checkstyle.version>
+        <approvaltests.version>24.9.0</approvaltests.version>
+        <jsonunit.version>3.5.0</jsonunit.version>
+        <checkstyle.version>10.20.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -199,9 +199,9 @@
         <sleeper.system.test.standalone.properties.template/>
         <sleeper.system.test.instance.properties.overrides/>
         <!-- Maven plugins -->
-        <checkstyle.plugin.version>3.5.0</checkstyle.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
-        <surefire.plugin.version>3.5.1</surefire.plugin.version>
+        <surefire.plugin.version>3.5.2</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
@@ -212,11 +212,11 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.8.6</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
-        <dependency.plugin.version>3.8.0</dependency.plugin.version>
+        <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>10.0.4</dependency-check.plugin.version>
-        <site.plugin.version>3.20.0</site.plugin.version>
-        <exec.plugin.version>3.4.1</exec.plugin.version>
+        <dependency-check.plugin.version>11.1.0</dependency-check.plugin.version>
+        <site.plugin.version>3.21.0</site.plugin.version>
+        <exec.plugin.version>3.5.0</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
@@ -348,6 +348,16 @@
                 <version>${aws-crt.version}</version>
             </dependency>
             <!-- Shared dependencies -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.minor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-reflect</artifactId>
+                <version>${scala.minor.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
@@ -638,11 +648,6 @@
                 <version>${avro.version}</version>
             </dependency>
             <dependency>
-                <groupId>net.minidev</groupId>
-                <artifactId>json-smart</artifactId>
-                <version>${json-smart.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-core</artifactId>
                 <version>${kerby.version}</version>
@@ -670,6 +675,11 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
+                <version>${okhttp3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>logging-interceptor</artifactId>
                 <version>${okhttp3.version}</version>
             </dependency>
             <dependency>

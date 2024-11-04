@@ -103,7 +103,7 @@ public class AdminClient {
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                     .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
-                    .baseDockerDirectory(baseDockerDir).build();
+                    .baseDockerDirectory(baseDockerDir).jarsDirectory(jarsDir).build();
             errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),

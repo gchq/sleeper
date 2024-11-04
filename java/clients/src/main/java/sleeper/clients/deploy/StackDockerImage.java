@@ -16,6 +16,9 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.core.deploy.LambdaJar;
+
+import java.util.Objects;
 import java.util.Optional;
 
 public class StackDockerImage {
@@ -24,6 +27,7 @@ public class StackDockerImage {
     private final Optional<String> dockerTarget;
     private final boolean isBuildx;
     private final boolean createEmrServerlessPolicy;
+    private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
@@ -31,6 +35,7 @@ public class StackDockerImage {
         isBuildx = builder.isBuildx;
         dockerTarget = Optional.ofNullable(builder.dockerTarget);
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        lambdaJar = builder.lambdaJar;
     }
 
     public static StackDockerImage dockerBuildImage(String imageName) {
@@ -60,10 +65,12 @@ public class StackDockerImage {
                 .directoryName(imageName).createEmrServerlessPolicy(true).build();
     }
 
-    public static StackDockerImage emrServerlessImage(String imageName, String dockerTarget) {
-        return builder().imageName(imageName)
-                .directoryName(imageName).createEmrServerlessPolicy(true)
-                .target(dockerTarget).build();
+    public static StackDockerImage lambdaImage(LambdaJar lambdaJar) {
+        return builder()
+                .imageName(lambdaJar.getImageName())
+                .directoryName("lambda")
+                .lambdaJar(lambdaJar)
+                .build();
     }
 
     public static Builder builder() {
@@ -90,12 +97,42 @@ public class StackDockerImage {
         return createEmrServerlessPolicy;
     }
 
+    public Optional<LambdaJar> getLambdaJar() {
+        return Optional.ofNullable(lambdaJar);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(imageName, directoryName, isBuildx, createEmrServerlessPolicy, lambdaJar);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StackDockerImage)) {
+            return false;
+        }
+        StackDockerImage other = (StackDockerImage) obj;
+        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && isBuildx == other.isBuildx
+                && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar);
+    }
+
+    @Override
+    public String toString() {
+        return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
+                ", isBuildx=" + isBuildx + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
+                ", lambdaJar=" + lambdaJar + "}";
+    }
+
     public static final class Builder {
         private String imageName;
         private String directoryName;
         private String dockerTarget;
         private boolean isBuildx;
         private boolean createEmrServerlessPolicy;
+        private LambdaJar lambdaJar;
 
         private Builder() {
         }
@@ -120,8 +157,8 @@ public class StackDockerImage {
             return this;
         }
 
-        public Builder target(String dockerTarget) {
-            this.dockerTarget = dockerTarget;
+        public Builder lambdaJar(LambdaJar lambdaJar) {
+            this.lambdaJar = lambdaJar;
             return this;
         }
 

@@ -7,11 +7,11 @@ should either specify all of the row key fields, or the first one or more fields
 fields, key1, key2 and key3, then a query should specify either ranges for key1, key2 and key3, or ranges for key1 and
 key2, or ranges for key1.
 
-The methods below describe how queries can be executed using scripts. See the docs on the [Python API](08-python-api.md)
+The methods below describe how queries can be executed using scripts. See the docs on the [Python API](09-python-api.md)
 for details of how to execute them from Python.
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](11-dev-guide.md) for how to set that up).
+(see [the developer guide](12-dev-guide.md) for how to set that up).
 
 ## Running queries directly using the Java client
 

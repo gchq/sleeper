@@ -17,14 +17,13 @@ FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
     maven \
-    openjdk-17-jdk \
-    openjdk-17-source \
     git \
     python3 \
-    pip \
-    python3.10-venv \
+    python3-pip \
+    python3-venv \
     zip \
     jq \
+    uuid-runtime \
     sudo \
     gcc g++ cmake make \
     pkg-config libssl-dev \

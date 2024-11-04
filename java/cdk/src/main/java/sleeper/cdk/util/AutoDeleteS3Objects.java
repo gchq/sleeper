@@ -19,17 +19,16 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.LoggingStack;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
@@ -69,12 +68,12 @@ public class AutoDeleteS3Objects {
             Function<String, ILogGroup> getLogGroupByFunctionName,
             Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
-        autoDeleteForBucket(scope, instanceProperties, jar, bucket, bucketName, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
     }
 
     public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, LambdaCode customResourcesJar,
+            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
             IBucket bucket, String bucketName,
             Function<String, ILogGroup> getLogGroupByFunctionName,
             Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
@@ -82,14 +81,12 @@ public class AutoDeleteS3Objects {
         String id = bucket.getNode().getId() + "-AutoDelete";
         String functionName = bucketName + "-autodelete";
 
-        IFunction lambda = customResourcesJar.buildFunction(scope, id + "Lambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
-                .handler("sleeper.cdk.custom.AutoDeleteS3ObjectsLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(getLogGroupByFunctionName.apply(functionName))
-                .runtime(Runtime.JAVA_11)
                 .timeout(Duration.minutes(10)));
 
         bucket.grantRead(lambda);

@@ -33,10 +33,10 @@ import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -54,7 +54,6 @@ import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITT
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -78,11 +77,11 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode committerJar = jars.lambdaCode(BuiltJar.STATESTORE, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(
-                loggingStack, policiesStack, committerJar,
+                loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionStatusStore, ingestStatusStore);
     }
@@ -121,7 +120,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode committerJar,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionStatusStoreResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore) {
@@ -132,13 +131,11 @@ public class StateStoreCommitterStack extends NestedStack {
         ILogGroup logGroup = loggingStack.getLogGroupByFunctionName(functionName);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 
-        IFunction handlerFunction = committerJar.buildFunction(this, "StateStoreCommitter", builder -> builder
+        IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
-                .runtime(JAVA_11)
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));

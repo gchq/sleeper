@@ -30,5 +30,6 @@
         <module>bulk-import-common</module>
         <module>bulk-import-runner</module>
         <module>bulk-import-starter</module>
+        <module>bulk-import-eks</module>
     </modules>
 </project>

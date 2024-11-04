@@ -34,10 +34,12 @@ public class AppParameters {
     public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
     public static final IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
 
+    public static final OptionalStringParameter LOG_RETENTION_DAYS = OptionalStringParameter.key("logRetentionDays");
     public static final OptionalStringParameter BUILD_UPTIME_LAMBDA_JAR = OptionalStringParameter.key("buildUptimeLambdaJar");
     public static final StringListParameter AUTO_SHUTDOWN_EXISTING_EC2_IDS = StringListParameter.key("autoShutdownExistingEc2Ids");
     public static final IntParameter AUTO_SHUTDOWN_HOUR_UTC = IntParameter.keyAndDefault("autoShutdownHourUtc", 19);
     public static final BooleanParameter NIGHTLY_TEST_RUN_ENABLED = BooleanParameter.keyAndDefault("nightlyTestsEnabled", false);
+    public static final OptionalStringParameter NIGHTLY_TEST_DEPLOY_ID = OptionalStringParameter.key("nightlyTestDeployId");
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = IntParameter.keyAndDefault("nightlyTestHourUtc", 3);
     public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = OptionalStringParameter.key("nightlyTestBucket");
     public static final StringListParameter NIGHTLY_TEST_SUBNETS = StringListParameter.key("subnetIds");

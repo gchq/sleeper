@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.StacksForDockerUpload;
+import sleeper.clients.deploy.StackDockerImage;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -48,6 +49,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
@@ -346,7 +348,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.CompactionStack, OptionalStack.IngestStack));
+            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
         }
 
         @Test
@@ -373,7 +375,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.IngestStack));
+            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
         }
 
         @Test
@@ -390,13 +392,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         updateInstanceProperty(store(), instanceId, property, value);
     }
 
-    private StacksForDockerUpload withStacks(OptionalStack... stacks) {
-        return StacksForDockerUpload.builder()
+    private UploadDockerImagesRequest withImages(StackDockerImage... images) {
+        return UploadDockerImagesRequest.builder()
                 .ecrPrefix(instanceProperties.get(ID))
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .version(instanceProperties.get(VERSION))
-                .stacks(List.of(stacks))
+                .images(List.of(images))
                 .build();
     }
 

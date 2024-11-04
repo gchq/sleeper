@@ -38,10 +38,10 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -59,34 +59,23 @@ public final class WebSocketQueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        setupWebSocketApi(instanceProperties, queryJar, coreStacks, queryQueueStack, queryStack);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    /***
-     * Creates the web socket API.
-     *
-     * @param instanceProperties containing configuration details
-     * @param queryJar           the query jar lambda code
-     * @param coreStacks         the core stacks this belongs to
-     * @param queryQueueStack    the stack responsible for the query queue
-     * @param queryStack         the stack responsible for the query lambdas
-     */
-    protected void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode queryJar,
+    private void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode lambdaCode,
             CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
-        IFunction webSocketApiHandler = queryJar.buildFunction(this, "WebSocketApiHandler", builder -> builder
+        IFunction webSocketApiHandler = lambdaCode.buildFunction(this, LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
-                .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)
                 .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .timeout(Duration.seconds(29))
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
+                .timeout(Duration.seconds(29)));
 
         queryQueueStack.grantSendMessages(webSocketApiHandler);
         coreStacks.grantReadTablesConfig(webSocketApiHandler);

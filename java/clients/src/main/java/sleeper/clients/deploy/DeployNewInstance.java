@@ -35,9 +35,9 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
-import sleeper.core.properties.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -134,11 +134,9 @@ public class DeployNewInstance {
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("deployPaused: {}", deployPaused);
-        InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
-                .sts(sts).regionProvider(regionProvider)
-                .deployInstanceConfig(deployInstanceConfiguration)
+        InstanceProperties instanceProperties = PopulateInstancePropertiesAws.builder(sts, regionProvider)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
-                .build().populate();
+                .build().populate(deployInstanceConfiguration.getInstanceProperties());
         extraInstanceProperties.accept(instanceProperties);
         validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
 
@@ -146,11 +144,11 @@ public class DeployNewInstance {
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(runCommand,
-                        StacksForDockerUpload.from(instanceProperties, sleeperVersion),
-                        extraDockerImages);
+                        UploadDockerImagesRequest.forNewDeployment(instanceProperties, sleeperVersion)
+                                .withExtraImages(extraDockerImages));
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);

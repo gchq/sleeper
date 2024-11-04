@@ -125,7 +125,11 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTaskCheckingFiles(StateStoreWaitForFiles fileAssignmentCheck, CompactionRunner compactor) throws Exception {
-        runTask(pollQueue(), fileAssignmentCheck, compactor, timePassesAMinuteAtATime(), DEFAULT_TASK_ID, jobRunIdsInSequence());
+        runTaskCheckingFiles(fileAssignmentCheck, compactor, timePassesAMinuteAtATime());
+    }
+
+    protected void runTaskCheckingFiles(StateStoreWaitForFiles fileAssignmentCheck, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), fileAssignmentCheck, compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     protected void runTask(
@@ -327,7 +331,11 @@ public class CompactionTaskTestBase {
     }
 
     private Supplier<Instant> timePassesAMinuteAtATime() {
-        return Stream.iterate(Instant.parse("2024-09-04T09:50:00Z"),
+        return timePassesAMinuteAtATimeFrom(Instant.parse("2024-09-04T09:50:00Z"));
+    }
+
+    protected Supplier<Instant> timePassesAMinuteAtATimeFrom(Instant firstTime) {
+        return Stream.iterate(firstTime,
                 time -> time.plus(Duration.ofMinutes(1)))
                 .iterator()::next;
     }

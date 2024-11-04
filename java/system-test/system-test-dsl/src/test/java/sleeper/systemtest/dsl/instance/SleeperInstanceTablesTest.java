@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -45,11 +44,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.createDslInstanceProperties;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.createDslTableProperties;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE_NO_NAME;
 
 @InMemoryDslTest
 public class SleeperInstanceTablesTest {
@@ -59,7 +57,7 @@ public class SleeperInstanceTablesTest {
     class DefineNamedTables {
         @BeforeEach
         void setUp(SleeperSystemTest sleeper) {
-            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            sleeper.connectToInstanceNoTables(MAIN);
         }
 
         @Test
@@ -114,7 +112,7 @@ public class SleeperInstanceTablesTest {
     class InspectAllTables {
         @BeforeEach
         void setUp(SleeperSystemTest sleeper) {
-            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            sleeper.connectToInstanceNoTables(MAIN);
         }
 
         @Test
@@ -183,7 +181,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldGenerateNameForTableDefinedInTest(SleeperSystemTest sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            sleeper.connectToInstanceNoTables(MAIN);
 
             // When
             sleeper.tables().create("A", DEFAULT_SCHEMA);
@@ -197,12 +195,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
-            sleeper.connectToInstance(usingSystemTestDefaults("prdftbl", () -> {
-                InstanceProperties instanceProperties = createDslInstanceProperties();
-                TableProperties tableProperties = createDslTableProperties(instanceProperties);
-                tableProperties.set(TABLE_NAME, "predefined-test-table");
-                return new DeployInstanceConfiguration(instanceProperties, tableProperties);
-            }));
+            sleeper.connectToInstance(PREDEFINED_TABLE);
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
@@ -212,16 +205,8 @@ public class SleeperInstanceTablesTest {
 
         @Test
         void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
-            // Given
-            SystemTestInstanceConfiguration configuration = usingSystemTestDefaults("nonmtbl", () -> {
-                InstanceProperties instanceProperties = createDslInstanceProperties();
-                TableProperties tableProperties = createDslTableProperties(instanceProperties);
-                tableProperties.unset(TABLE_NAME);
-                return new DeployInstanceConfiguration(instanceProperties, tableProperties);
-            });
-
             // When / Then
-            assertThatThrownBy(() -> sleeper.connectToInstance(configuration))
+            assertThatThrownBy(() -> sleeper.connectToInstance(PREDEFINED_TABLE_NO_NAME))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
     }
@@ -240,7 +225,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldFailToIngestWhenNoTableChosen(SleeperSystemTest sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(withDefaultProperties("main"));
+            sleeper.connectToInstanceNoTables(MAIN);
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then

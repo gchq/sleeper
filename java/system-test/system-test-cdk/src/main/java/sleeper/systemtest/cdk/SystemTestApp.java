@@ -29,7 +29,6 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
@@ -90,7 +89,7 @@ public class SystemTestApp extends SleeperCdkApp {
                 .build();
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(JARS_BUCKET));
+            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties);
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
