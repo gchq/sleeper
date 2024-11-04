@@ -80,7 +80,7 @@ public class CompactionTaskTestBase {
     protected final StateStore stateStore = stateStore(tableProperties);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     protected final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
-    protected final List<CompactionJob> successfulJobs = new ArrayList<>();
+    protected final List<CompactionJob> consumedJobs = new ArrayList<>();
     protected final List<CompactionJob> failedJobs = new ArrayList<>();
     protected final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     protected final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
@@ -374,7 +374,6 @@ public class CompactionTaskTestBase {
             if (failure != null) {
                 throw failure;
             } else {
-                successfulJobs.add(job);
                 return recordsProcessed;
             }
         }
@@ -399,6 +398,7 @@ public class CompactionTaskTestBase {
         }
 
         public void deleteFromQueue() {
+            consumedJobs.add(job);
         }
 
         public void returnToQueue() {

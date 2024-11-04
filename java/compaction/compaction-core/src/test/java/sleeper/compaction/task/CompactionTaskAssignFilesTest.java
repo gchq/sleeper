@@ -59,7 +59,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 processJobs(jobSucceeds()));
 
         // Then
-        assertThat(successfulJobs).containsExactly(job);
+        assertThat(consumedJobs).containsExactly(job);
         assertThat(failedJobs).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).hasSize(1);
@@ -76,7 +76,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 processNoJobs());
 
         // Then
-        assertThat(successfulJobs).isEmpty();
+        assertThat(consumedJobs).isEmpty();
         assertThat(failedJobs).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();

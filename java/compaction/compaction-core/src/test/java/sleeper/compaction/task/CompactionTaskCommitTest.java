@@ -78,7 +78,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1);
+            assertThat(consumedJobs).containsExactly(job1);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
@@ -118,7 +118,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     times::poll);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1, job2);
+            assertThat(consumedJobs).containsExactly(job1, job2);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
@@ -168,7 +168,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     times::poll);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1, job2);
+            assertThat(consumedJobs).containsExactly(job1, job2);
             assertThat(failedJobs).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
