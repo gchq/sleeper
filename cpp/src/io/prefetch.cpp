@@ -16,7 +16,7 @@
 namespace gpu_compact::io
 {
 
-static constinit const ::size_t BUF_SIZE = 256 * 1'024;
+static constinit const ::size_t BUF_SIZE = 512 * 1'024;
 
 void prefetch_mmap(std::string const &file, ::size_t const offset, ::size_t const len) {
     // Ask OS for page size

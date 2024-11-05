@@ -1,9 +1,13 @@
 #include "cudf_compact/cudf_compact.hpp"
 
 #include <cudf/ast/expressions.hpp>
+#include <cudf/column/column.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/sorting.hpp>
+#include <cudf/stream_compaction.hpp>
+#include <cudf/strings/contains.hpp>
+#include <cudf/strings/regex/regex_program.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 #include <cudf/utilities/default_stream.hpp>
@@ -50,18 +54,18 @@ cudf::io::table_with_metadata
     auto expr_2 = cudf::ast::operation(cudf::ast::ast_operator::LESS, filter_col, hi_lit);
     auto expr_3 = cudf::ast::operation(cudf::ast::ast_operator::LOGICAL_AND, expr_1, expr_2);
 
-    // std::vector<std::unique_ptr<cudf::io::datasource>> datasources{};
-    // std::vector<cudf::io::datasource *> source_pointers{};
-    // for (auto const &f : details.inputFiles) {
-    //     // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
-    //     auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
-    //     source->prefetch(true);
-    //     source_pointers.push_back(source.get());
-    //     datasources.push_back(std::move(source));
-    // }
+    std::vector<std::unique_ptr<cudf::io::datasource>> datasources{};
+    std::vector<cudf::io::datasource *> source_pointers{};
+    for (auto const &f : details.inputFiles) {
+        // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
+        auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
+        source->prefetch(true);
+        source_pointers.push_back(source.get());
+        datasources.push_back(std::move(source));
+    }
 
-    // auto si = cudf::io::source_info(source_pointers);
-    auto si = cudf::io::source_info(details.inputFiles);
+    auto si = cudf::io::source_info(source_pointers);
+    // auto si = cudf::io::source_info(details.inputFiles);
 
     try {
         std::cout << ff("read table...\n");
@@ -74,6 +78,13 @@ cudf::io::table_with_metadata
         std::cout << ff("filter by range\n");
         if (result->num_rows() == 0)
             return { nullptr, {} };
+
+        // do a simple regex filter
+        // static std::unique_ptr<cudf::strings::regex_program> reg_filter = cudf::strings::regex_program::create(
+        //   "^.+(?:aa).*(?:bb).+$", cudf::strings::regex_flags::DEFAULT, cudf::strings::capture_groups::NON_CAPTURE);
+        // std::unique_ptr<cudf::column> match_bools =
+        //   cudf::strings::matches_re(result->get_column(0).view(), *reg_filter);
+        // result = cudf::apply_boolean_mask(*result, *match_bools);
 
         // sort by sort_cols. if a timestamp column was provided, then sort that column descending.
         std::vector<cudf::size_type> sort_cols{ 0 };
