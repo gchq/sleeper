@@ -51,22 +51,6 @@ public class DeployInstanceConfiguration {
     }
 
     /**
-     * Creates an instance configuration from local files.
-     *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file
-     * @return                        the instance configuration
-     */
-    public static DeployInstanceConfiguration fromLocalConfiguration(Path instancePropertiesPath) {
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
-        List<TableProperties> tableProperties = LoadLocalProperties
-                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
-                .collect(Collectors.toUnmodifiableList());
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
-    }
-
-    /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
      * @param  instancePropertiesPath     the path to the local configuration instance properties file
@@ -77,8 +61,7 @@ public class DeployInstanceConfiguration {
     public static DeployInstanceConfiguration forNewInstanceDefaultingTables(
             Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
             DeployInstanceConfigurationFromTemplates fromTemplates) {
-        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
-        populateInstanceProperties.populate(configuration.getInstanceProperties());
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -100,10 +83,35 @@ public class DeployInstanceConfiguration {
             Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
             Path templatesDir) {
         if (instancePropertiesPath != null) {
-            return fromLocalConfiguration(instancePropertiesPath);
+            return fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
         } else {
-            return new DeployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir), List.of());
+            InstanceProperties instanceProperties = DeployInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir);
+            populateInstanceProperties.populate(instanceProperties);
+            return new DeployInstanceConfiguration(instanceProperties, List.of());
         }
+    }
+
+    /**
+     * Creates an instance configuration from local files.
+     *
+     * @param  instancePropertiesPath the path to the local configuration instance properties file
+     * @return                        the instance configuration
+     */
+    public static DeployInstanceConfiguration fromLocalConfiguration(Path instancePropertiesPath) {
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
+        List<TableProperties> tableProperties = LoadLocalProperties
+                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
+                .collect(Collectors.toUnmodifiableList());
+        return DeployInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties).build();
+    }
+
+    private static DeployInstanceConfiguration fromLocalConfiguration(
+            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties) {
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
+        populateInstanceProperties.populate(configuration.getInstanceProperties());
+        return configuration;
     }
 
     public InstanceProperties getInstanceProperties() {
