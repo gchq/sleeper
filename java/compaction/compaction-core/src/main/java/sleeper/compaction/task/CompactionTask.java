@@ -169,8 +169,9 @@ public class CompactionTask {
         }
     }
 
-    private void processCompactionMessage(String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message, IdleTimeTracker idleTimeTracker,
-            ConsecutiveFailuresTracker failureTracker) {
+    private void processCompactionMessage(
+            String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
+            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
         try {
             RecordsProcessedSummary summary = compact(message.getJob(), jobRunId);
             builder.addJobSummary(summary);
