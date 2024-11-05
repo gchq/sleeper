@@ -39,10 +39,13 @@ pub enum PartitionBound<'a> {
 #[derive(Debug)]
 pub struct CompactionInput<'a> {
     pub aws_config: Option<AwsConfig>,
+    // File URLs
     pub input_files: Vec<Url>,
     pub output_file: Url,
+    // Names of row & sort key columns
     pub row_key_cols: Vec<String>,
     pub sort_key_cols: Vec<String>,
+    // Parquet options
     pub max_row_group_size: usize,
     pub max_page_size: usize,
     pub compression: String,
@@ -52,6 +55,7 @@ pub struct CompactionInput<'a> {
     pub dict_enc_row_keys: bool,
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
+    // Ranges for each column to filter input files
     pub region: HashMap<String, ColRange<'a>>,
 }
 
@@ -66,7 +70,7 @@ impl Default for CompactionInput<'_> {
             max_row_group_size: 1_000_000,
             max_page_size: 65535,
             compression: "zstd".into(),
-            writer_version: "2.0".into(),
+            writer_version: "v2".into(),
             column_truncate_length: usize::MAX,
             stats_truncate_length: usize::MAX,
             dict_enc_row_keys: true,

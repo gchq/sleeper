@@ -48,6 +48,7 @@ import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 
 public class PopulateInstancePropertiesTest {
 
@@ -124,6 +125,19 @@ public class PopulateInstancePropertiesTest {
         assertThat(properties.getTags())
                 .isEqualTo(Map.of("TestTag", "TestValue",
                         "InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldSetExtraProperties() {
+        // Given/When
+        InstanceProperties properties = new InstanceProperties();
+        populateInstancePropertiesBuilder()
+                .extraInstanceProperties(p -> p.setNumber(DEFAULT_PARTITION_SPLIT_THRESHOLD, 1000))
+                .build().populate(properties);
+
+        // Then
+        assertThat(properties.getInt(DEFAULT_PARTITION_SPLIT_THRESHOLD))
+                .isEqualTo(1000);
     }
 
     @Test

@@ -33,6 +33,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
@@ -111,7 +113,7 @@ public class CompactionTask {
         this.waitForFiles = waitForFiles;
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -125,60 +127,65 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
-        Instant lastActiveTime = startTime;
-        Duration maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
-        int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
-        Duration delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
-        boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
-        int numConsecutiveFailures = 0;
-        while (numConsecutiveFailures < maxConsecutiveFailures) {
+    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
+        IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
+        ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties);
+        while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
                 Instant currentTime = timeSupplier.get();
-                Duration runTime = Duration.between(lastActiveTime, currentTime);
-                if (runTime.compareTo(maxIdleTime) >= 0) {
-                    LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
-                            LoggedDuration.withFullOutput(runTime),
-                            LoggedDuration.withFullOutput(maxIdleTime));
-                    return currentTime;
-                } else {
-                    if (!delayBeforeRetry.isZero()) {
-                        LOGGER.info("Received no messages, waiting {} before trying again",
-                                LoggedDuration.withFullOutput(delayBeforeRetry));
-                        sleepForTime.accept(delayBeforeRetry);
-                    }
+                if (idleTimeTracker.isLookForNextMessage(currentTime)) {
                     continue;
+                } else {
+                    return currentTime;
                 }
             }
             try (MessageHandle message = messageOpt.get()) {
-                CompactionJob job = message.getJob();
                 String jobRunId = jobRunIdSupplier.get();
-                try {
-                    propertiesReloader.reloadIfNeeded();
-                    if (waitForFileAssignment) {
-                        waitForFiles.wait(job, taskId, jobRunId);
-                    }
-                    RecordsProcessedSummary summary = compact(job, jobRunId);
-                    taskFinishedBuilder.addJobSummary(summary);
-                    message.completed();
-                    numConsecutiveFailures = 0;
-                    lastActiveTime = summary.getFinishTime();
-                } catch (InterruptedException e) {
-                    LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
-                    throw e;
-                } catch (TableNotFoundException e) {
-                    LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
-                } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    numConsecutiveFailures++;
-                    message.failed();
+                if (prepareCompactionMessage(jobRunId, message, consecutiveFailuresTracker)) {
+                    processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
                 }
             }
         }
-        LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
-                numConsecutiveFailures, maxConsecutiveFailures);
         return timeSupplier.get();
+    }
+
+    private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
+        try {
+            propertiesReloader.reloadIfNeeded();
+            if (instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT)) {
+                waitForFiles.wait(message.getJob(), taskId, jobRunId);
+            }
+            return true;
+        } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
+            LOGGER.error("Found invalid job while waiting for input file assignment, deleting from queue", e);
+            message.deleteFromQueue();
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Failed preparing compaction job, putting job back on queue", e);
+            failureTracker.incrementConsecutiveFailures();
+            message.returnToQueue();
+            return false;
+        }
+    }
+
+    private void processCompactionMessage(
+            String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
+            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
+        try {
+            RecordsProcessedSummary summary = compact(message.getJob(), jobRunId);
+            builder.addJobSummary(summary);
+            message.deleteFromQueue();
+            failureTracker.resetConsecutiveFailures();
+            idleTimeTracker.setLastActiveTime(summary.getFinishTime());
+        } catch (TableNotFoundException e) {
+            LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
+            message.deleteFromQueue();
+        } catch (Exception e) {
+            LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+            failureTracker.incrementConsecutiveFailures();
+            message.returnToQueue();
+        }
     }
 
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId) throws Exception {
@@ -222,9 +229,9 @@ public class CompactionTask {
     public interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
-        void completed();
+        void deleteFromQueue();
 
-        void failed();
+        void returnToQueue();
 
         void close();
     }
@@ -238,5 +245,68 @@ public class CompactionTask {
                 throw new RuntimeException(e);
             }
         };
+    }
+
+    private class IdleTimeTracker {
+
+        private final Duration maxIdleTime;
+        private final Duration delayBeforeRetry;
+        private Instant lastActiveTime;
+
+        private IdleTimeTracker(Instant startTime) {
+            this.maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
+            this.delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+            this.lastActiveTime = startTime;
+        }
+
+        private boolean isLookForNextMessage(Instant currentTime) {
+            Duration runTime = Duration.between(lastActiveTime, currentTime);
+            if (runTime.compareTo(maxIdleTime) >= 0) {
+                LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
+                        LoggedDuration.withFullOutput(runTime),
+                        LoggedDuration.withFullOutput(maxIdleTime));
+                return false;
+            } else {
+                if (!delayBeforeRetry.isZero()) {
+                    LOGGER.info("Received no messages, waiting {} before trying again",
+                            LoggedDuration.withFullOutput(delayBeforeRetry));
+                    sleepForTime.accept(delayBeforeRetry);
+                }
+                return true;
+            }
+        }
+
+        private void setLastActiveTime(Instant currentTime) {
+            lastActiveTime = currentTime;
+        }
+
+    }
+
+    private static class ConsecutiveFailuresTracker {
+
+        private final int maxConsecutiveFailures;
+        private int numConsecutiveFailures;
+
+        private ConsecutiveFailuresTracker(InstanceProperties instanceProperties) {
+            this.maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        }
+
+        private void incrementConsecutiveFailures() {
+            numConsecutiveFailures++;
+        }
+
+        private void resetConsecutiveFailures() {
+            numConsecutiveFailures = 0;
+        }
+
+        private boolean hasNotMetMaximumFailures() {
+            if (numConsecutiveFailures < maxConsecutiveFailures) {
+                return true;
+            } else {
+                LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
+                        numConsecutiveFailures, maxConsecutiveFailures);
+                return false;
+            }
+        }
     }
 }
