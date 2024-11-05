@@ -141,29 +141,38 @@ public class CompactionTask {
                 }
             }
             try (MessageHandle message = messageOpt.get()) {
-                processCompactionMessage(taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
-            } catch (CompactionJobInvalidFileException ex) {
-                LOGGER.error(ex.getMessage());
-                continue;
+                String jobRunId = jobRunIdSupplier.get();
+                if (prepareCompactionMessage(jobRunId, message, consecutiveFailuresTracker)) {
+                    processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
+                }
             }
         }
         return timeSupplier.get();
     }
 
-    private void processCompactionMessage(CompactionTaskFinishedStatus.Builder builder, MessageHandle message, IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
-        CompactionJob job = message.getJob();
-        String jobRunId = jobRunIdSupplier.get();
+    private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
         try {
             propertiesReloader.reloadIfNeeded();
             if (instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT)) {
-                try {
-                    waitForFiles.wait(job, taskId, jobRunId);
-                } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
-                    message.deleteFromQueue();
-                    throw new CompactionJobInvalidFileException();
-                }
+                waitForFiles.wait(message.getJob(), taskId, jobRunId);
             }
-            RecordsProcessedSummary summary = compact(job, jobRunId);
+            return true;
+        } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
+            LOGGER.error("Found invalid job while waiting for input file assignment, deleting from queue", e);
+            message.deleteFromQueue();
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Failed preparing compaction job, putting job back on queue", e);
+            failureTracker.incrementConsecutiveFailures();
+            message.returnToQueue();
+            return false;
+        }
+    }
+
+    private void processCompactionMessage(String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message, IdleTimeTracker idleTimeTracker,
+            ConsecutiveFailuresTracker failureTracker) {
+        try {
+            RecordsProcessedSummary summary = compact(message.getJob(), jobRunId);
             builder.addJobSummary(summary);
             message.deleteFromQueue();
             failureTracker.resetConsecutiveFailures();
@@ -171,7 +180,7 @@ public class CompactionTask {
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
         } catch (TableNotFoundException e) {
-            LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
+            LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
             message.deleteFromQueue();
         } catch (Exception e) {
             LOGGER.error("Failed processing compaction job, putting job back on queue", e);
