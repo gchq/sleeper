@@ -37,7 +37,7 @@ libc = { version = "0.2.161" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.2.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-datafusion = { version = "42.1.0", features = ["backtrace"] }
+datafusion = { version = "42.2.0", features = ["backtrace"] }
 object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
