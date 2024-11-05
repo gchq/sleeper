@@ -120,6 +120,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // Then
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(consumedJobs).containsExactly(job);
+        assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 jobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
