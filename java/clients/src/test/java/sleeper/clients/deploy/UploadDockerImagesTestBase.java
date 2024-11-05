@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public abstract class UploadDockerImagesTestBase {
-    private static final Map<OptionalStack, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(
+    private static final Map<OptionalStack, List<StackDockerImage>> STACK_DOCKER_IMAGES = Map.of(
             OptionalStack.IngestStack, List.of(dockerBuildImage("ingest")),
             OptionalStack.EksBulkImportStack,List.of( dockerBuildImage("bulk-import-runner")),
             OptionalStack.CompactionStack, List.of(dockerBuildxImage("buildx")),

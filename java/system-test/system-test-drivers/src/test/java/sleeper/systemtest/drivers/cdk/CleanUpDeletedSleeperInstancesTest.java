@@ -49,8 +49,8 @@ public class CleanUpDeletedSleeperInstancesTest {
         assertThat(instanceIdsByEcrRepositories(
                 new DockerImageConfiguration(Map.of(
                         OptionalStack.IngestStack, List.of(dockerBuildImage("ingest")),
-                        OptionalStack.CompactionStack, List.of(dockerBuildxImage("compaction-job-execution")),
-                        List.of())),
+                        OptionalStack.CompactionStack, List.of(dockerBuildxImage("compaction-job-execution"))),
+                        List.of()),
                 Stream.of("an-instance/ingest",
                         "not-sleeper/something",
                         "not-an-instance",

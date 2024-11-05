@@ -409,7 +409,7 @@ public class CompactionStack extends NestedStack {
                 IRepository gpuRepo = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_GPU_REPO));
                 ContainerImage gpuImage = ContainerImage.fromEcrRepository(gpuRepo, instanceProperties.get(VERSION));
 
-                ContainerDefinitionOptions gpuContainerOptions = createEC2GPUContainerDefinition(gpuImage, environmentVariables, instanceProperties, logDriver);
+                ContainerDefinitionOptions gpuContainerOptions = createEC2GPUContainerDefinition(coreStacks, gpuImage, environmentVariables, instanceProperties);
                 ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_GPU_CONTAINER_NAME, gpuContainerOptions);
             }
 
@@ -586,7 +586,8 @@ public class CompactionStack extends NestedStack {
                 .build();
     }
 
-    private ContainerDefinitionOptions createEC2GPUContainerDefinition(ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties, LogDriver logDriver) {
+    private ContainerDefinitionOptions createEC2GPUContainerDefinition(
+            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         int cpu = requirements.getGpuCPU();
@@ -600,7 +601,7 @@ public class CompactionStack extends NestedStack {
                 // container allocation failing when we need almost entire resources
                 // of machine
                 .memoryLimitMiB((int) (memoryLimitMiB * 0.95))
-                .logging(Utils.createECSContainerLogDriver(this, instanceProperties, "EC2CompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks, "EC2CompactionTasks"))
                 .build();
     }
 

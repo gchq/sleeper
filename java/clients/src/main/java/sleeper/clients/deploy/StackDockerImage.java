@@ -147,6 +147,11 @@ public class StackDockerImage {
             return this;
         }
 
+        public Builder target(String dockerTarget) {
+            this.dockerTarget = dockerTarget;
+            return this;
+        }
+
         public Builder isBuildx(boolean isBuildx) {
             this.isBuildx = isBuildx;
             return this;

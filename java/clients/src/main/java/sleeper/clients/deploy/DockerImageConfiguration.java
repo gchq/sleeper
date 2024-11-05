@@ -79,11 +79,11 @@ public class DockerImageConfiguration {
 
     private List<StackDockerImage> getImagesToUpload(
             Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
-        return Stream.concat(
-                stacks.stream()
+        return Stream.concat(stacks.stream()
                         .map(this::getStackImage)
-                        .flatMap(Optional::stream),
-                lambdaImages(lambdaDeployType, checkUploadLambda))
+                        .flatMap(Optional::stream)
+                        .flatMap(List::stream),
+                    lambdaImages(lambdaDeployType, checkUploadLambda))
                 .collect(toUnmodifiableList());
     }
 
