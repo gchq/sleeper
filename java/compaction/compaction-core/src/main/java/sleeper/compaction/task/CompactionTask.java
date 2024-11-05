@@ -113,7 +113,7 @@ public class CompactionTask {
         this.waitForFiles = waitForFiles;
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
@@ -127,7 +127,7 @@ public class CompactionTask {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
+    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
         while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
@@ -178,8 +178,6 @@ public class CompactionTask {
             message.deleteFromQueue();
             failureTracker.resetConsecutiveFailures();
             idleTimeTracker.setLastActiveTime(summary.getFinishTime());
-        } catch (InterruptedException e) {
-            LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
         } catch (TableNotFoundException e) {
             LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
             message.deleteFromQueue();
