@@ -16,7 +16,6 @@
 package sleeper.compaction.task;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -313,7 +312,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             .rootFile(job2.getOutputFile(), 10));
         }
 
-        @Disabled
         @Test
         void shouldFailWhenFileDeletedDuringJob() throws Exception {
             // Given

@@ -168,7 +168,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:50:00Z")));
 
         // Then
-        assertThat(jobsReturnedToQueue).containsExactly(job);
+        assertThat(jobsReturnedToQueue).isEmpty();
+        assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(

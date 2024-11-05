@@ -33,6 +33,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
@@ -172,44 +173,65 @@ public class CompactionTask {
     private void processCompactionMessage(
             String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
             IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
+        Instant jobStartTime = timeSupplier.get();
         try {
-            RecordsProcessedSummary summary = compact(message.getJob(), jobRunId);
+            RecordsProcessedSummary summary;
+            try {
+                summary = compact(message.getJob(), jobRunId, jobStartTime);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
+                message.deleteFromQueue();
+                return;
+            } catch (Exception e) {
+                LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+                failureTracker.incrementConsecutiveFailures();
+                message.returnToQueue();
+                throw e;
+            }
+            commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
+        } catch (Exception e) {
+            Instant jobFinishTime = timeSupplier.get();
+            jobStatusStore.jobFailed(compactionJobFailed(message.getJob(),
+                    new ProcessRunTime(jobStartTime, jobFinishTime))
+                    .failure(e).taskId(taskId).jobRunId(jobRunId).build());
+        }
+    }
+
+    private void commitCompaction(
+            String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
+            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker, RecordsProcessedSummary summary) throws Exception {
+        CompactionJob job = message.getJob();
+        try {
+            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            logMetrics(job, summary);
             builder.addJobSummary(summary);
             message.deleteFromQueue();
             failureTracker.resetConsecutiveFailures();
             idleTimeTracker.setLastActiveTime(summary.getFinishTime());
-        } catch (TableNotFoundException e) {
-            LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
-            message.deleteFromQueue();
         } catch (Exception e) {
-            LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-            failureTracker.incrementConsecutiveFailures();
-            message.returnToQueue();
+            if (e.getCause() instanceof FileNotFoundException) {
+                LOGGER.error("Found invalid job while committing to state store, deleting from queue", e);
+                message.deleteFromQueue();
+            } else {
+                LOGGER.error("Failed committing compaction job, putting job back on queue", e);
+                failureTracker.incrementConsecutiveFailures();
+                message.returnToQueue();
+            }
+            throw e;
         }
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId) throws Exception {
-        Instant jobStartTime = timeSupplier.get();
+    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
-        try {
-            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-            CompactionRunner compactor = selector.createCompactor(job, tableProperties);
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Partition partition = stateStore.getPartition(job.getPartitionId());
-            RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
-            Instant jobFinishTime = timeSupplier.get();
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
-            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
-            logMetrics(job, summary);
-            return summary;
-        } catch (Exception e) {
-            Instant jobFinishTime = timeSupplier.get();
-            jobStatusStore.jobFailed(compactionJobFailed(job,
-                    new ProcessRunTime(jobStartTime, jobFinishTime))
-                    .failure(e).taskId(taskId).jobRunId(jobRunId).build());
-            throw e;
-        }
+        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+        CompactionRunner compactor = selector.createCompactor(job, tableProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        Partition partition = stateStore.getPartition(job.getPartitionId());
+        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        Instant jobFinishTime = timeSupplier.get();
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+        return summary;
     }
 
     private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {
