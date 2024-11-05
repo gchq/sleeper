@@ -33,6 +33,8 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 
@@ -157,11 +159,17 @@ public class CompactionTask {
                 try {
                     propertiesReloader.reloadIfNeeded();
                     if (waitForFileAssignment) {
-                        waitForFiles.wait(job, taskId, jobRunId);
+                        try {
+                            waitForFiles.wait(job, taskId, jobRunId);
+                        } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
+                            LOGGER.error("Found invalid job while waiting for input file assignment, deleting from queue", e);
+                            message.deleteFromQueue();
+                            continue;
+                        }
                     }
                     RecordsProcessedSummary summary = compact(job, jobRunId);
                     taskFinishedBuilder.addJobSummary(summary);
-                    message.completed();
+                    message.deleteFromQueue();
                     numConsecutiveFailures = 0;
                     lastActiveTime = summary.getFinishTime();
                 } catch (InterruptedException e) {
@@ -172,7 +180,7 @@ public class CompactionTask {
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                     numConsecutiveFailures++;
-                    message.failed();
+                    message.returnToQueue();
                 }
             }
         }
@@ -222,9 +230,9 @@ public class CompactionTask {
     public interface MessageHandle extends AutoCloseable {
         CompactionJob getJob();
 
-        void completed();
+        void deleteFromQueue();
 
-        void failed();
+        void returnToQueue();
 
         void close();
     }

@@ -78,8 +78,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1);
-            assertThat(failedJobs).isEmpty();
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1,
@@ -118,8 +118,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     times::poll);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1, job2);
-            assertThat(failedJobs).isEmpty();
+            assertThat(consumedJobs).containsExactly(job1, job2);
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1, "test-job-run-1",
@@ -168,8 +168,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     times::poll);
 
             // Then
-            assertThat(successfulJobs).containsExactly(job1, job2);
-            assertThat(failedJobs).isEmpty();
+            assertThat(consumedJobs).containsExactly(job1, job2);
+            assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1, new RecordsProcessedSummary(job1Records, startTime1, finishTime1)));
@@ -332,7 +332,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             // Then
             assertThat(stateStore.getFileReferences()).isEmpty();
-            assertThat(failedJobs).containsExactly(job);
+            assertThat(jobsReturnedToQueue).containsExactly(job);
             assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     jobCreated(job, DEFAULT_CREATED_TIME,
                             failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(

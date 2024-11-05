@@ -35,8 +35,8 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         runTask(jobsSucceed(1));
 
         // Then
-        assertThat(successfulJobs).containsExactly(job);
-        assertThat(failedJobs).isEmpty();
+        assertThat(consumedJobs).containsExactly(job);
+        assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
     }
 
@@ -49,8 +49,8 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         runTask(processJobs(jobFails()));
 
         // Then
-        assertThat(successfulJobs).isEmpty();
-        assertThat(failedJobs).containsExactly(job);
+        assertThat(consumedJobs).isEmpty();
+        assertThat(jobsReturnedToQueue).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
     }
 
@@ -64,8 +64,8 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         runTask(processJobs(jobSucceeds(), jobFails()));
 
         // Then
-        assertThat(successfulJobs).containsExactly(job1);
-        assertThat(failedJobs).containsExactly(job2);
+        assertThat(consumedJobs).containsExactly(job1);
+        assertThat(jobsReturnedToQueue).containsExactly(job2);
         assertThat(jobsOnQueue).isEmpty();
     }
 
@@ -80,8 +80,8 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         runTask(processNoJobs());
 
         // Then
-        assertThat(successfulJobs).isEmpty();
-        assertThat(failedJobs).isEmpty();
+        assertThat(consumedJobs).isEmpty();
+        assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
     }
 }
