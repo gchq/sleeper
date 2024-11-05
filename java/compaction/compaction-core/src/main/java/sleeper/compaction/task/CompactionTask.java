@@ -129,7 +129,6 @@ public class CompactionTask {
 
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
-        boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
         ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
         while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
@@ -142,38 +141,43 @@ public class CompactionTask {
                 }
             }
             try (MessageHandle message = messageOpt.get()) {
-                CompactionJob job = message.getJob();
-                String jobRunId = jobRunIdSupplier.get();
-                try {
-                    propertiesReloader.reloadIfNeeded();
-                    if (waitForFileAssignment) {
-                        try {
-                            waitForFiles.wait(job, taskId, jobRunId);
-                        } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
-                            LOGGER.error("Found invalid job while waiting for input file assignment, deleting from queue", e);
-                            message.deleteFromQueue();
-                            continue;
-                        }
-                    }
-                    RecordsProcessedSummary summary = compact(job, jobRunId);
-                    taskFinishedBuilder.addJobSummary(summary);
-                    message.deleteFromQueue();
-                    consecutiveFailuresTracker.resetConsecutiveFailures();
-                    idleTimeTracker.setLastActiveTime(summary.getFinishTime());
-                } catch (InterruptedException e) {
-                    LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
-                    throw e;
-                } catch (TableNotFoundException e) {
-                    LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
-                    message.deleteFromQueue();
-                } catch (Exception e) {
-                    LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    consecutiveFailuresTracker.incrementConsecutiveFailures();
-                    message.returnToQueue();
-                }
+                processCompactionMessage(taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
+            } catch (CompactionJobInvalidFileException ex) {
+                LOGGER.error(ex.getMessage());
+                continue;
             }
         }
         return timeSupplier.get();
+    }
+
+    private void processCompactionMessage(CompactionTaskFinishedStatus.Builder builder, MessageHandle message, IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
+        CompactionJob job = message.getJob();
+        String jobRunId = jobRunIdSupplier.get();
+        try {
+            propertiesReloader.reloadIfNeeded();
+            if (instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT)) {
+                try {
+                    waitForFiles.wait(job, taskId, jobRunId);
+                } catch (FileReferenceNotFoundException | FileReferenceAssignedToJobException e) {
+                    message.deleteFromQueue();
+                    throw new CompactionJobInvalidFileException();
+                }
+            }
+            RecordsProcessedSummary summary = compact(job, jobRunId);
+            builder.addJobSummary(summary);
+            message.deleteFromQueue();
+            failureTracker.resetConsecutiveFailures();
+            idleTimeTracker.setLastActiveTime(summary.getFinishTime());
+        } catch (InterruptedException e) {
+            LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
+        } catch (TableNotFoundException e) {
+            LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", job);
+            message.deleteFromQueue();
+        } catch (Exception e) {
+            LOGGER.error("Failed processing compaction job, putting job back on queue", e);
+            failureTracker.incrementConsecutiveFailures();
+            message.returnToQueue();
+        }
     }
 
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId) throws Exception {
