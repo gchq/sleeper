@@ -47,9 +47,11 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final TableProperties table1 = createTable("test-table-1-id", "test-table-1");
@@ -339,6 +341,33 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
                                     "1 replace file reference requests failed to update the state store",
                                     "File not found: " + job.getInputFiles().get(0)))));
+        }
+
+        @Test
+        void shouldFailWhenFileAssignedToAnotherJob() throws Exception {
+            // Given
+            instanceProperties.set(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT, "false");
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
+            Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime, finishTime, failTime,
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+            CompactionJob job = createJobOnQueueNotAssignedToFiles("test-job");
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
+
+            // When
+            runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);
+
+            // Then
+            assertThat(consumedJobs).containsExactly(job);
+            assertThat(jobsReturnedToQueue).isEmpty();
+            assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                    jobCreated(job, DEFAULT_CREATED_TIME,
+                            failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
+                                    "1 replace file reference requests failed to update the state store",
+                                    "Reference to file is not assigned to job test-job, in partition root, filename " + job.getInputFiles().get(0)))));
         }
     }
 

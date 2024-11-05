@@ -35,6 +35,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
@@ -209,7 +210,7 @@ public class CompactionTask {
             failureTracker.resetConsecutiveFailures();
             idleTimeTracker.setLastActiveTime(summary.getFinishTime());
         } catch (Exception e) {
-            if (e.getCause() instanceof FileNotFoundException) {
+            if (e.getCause() instanceof FileNotFoundException || e.getCause() instanceof FileReferenceNotAssignedToJobException) {
                 LOGGER.error("Found invalid job while committing to state store, deleting from queue", e);
                 message.deleteFromQueue();
             } else {
