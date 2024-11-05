@@ -241,13 +241,13 @@ public class CompactionTask {
         private final Duration delayBeforeRetry;
         private Instant lastActiveTime;
 
-        IdleTimeTracker(Instant startTime) {
+        private IdleTimeTracker(Instant startTime) {
             this.maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS));
             this.delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
             this.lastActiveTime = startTime;
         }
 
-        boolean isLookForNextMessage(Instant currentTime) {
+        private boolean isLookForNextMessage(Instant currentTime) {
             Duration runTime = Duration.between(lastActiveTime, currentTime);
             if (runTime.compareTo(maxIdleTime) >= 0) {
                 LOGGER.info("Terminating compaction task as it was idle for {}, exceeding maximum of {}",
@@ -264,7 +264,7 @@ public class CompactionTask {
             }
         }
 
-        void setLastActiveTime(Instant currentTime) {
+        private void setLastActiveTime(Instant currentTime) {
             lastActiveTime = currentTime;
         }
 
