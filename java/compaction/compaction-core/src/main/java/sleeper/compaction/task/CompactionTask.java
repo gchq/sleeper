@@ -129,10 +129,9 @@ public class CompactionTask {
 
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
-        int maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
         boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
-        int numConsecutiveFailures = 0;
-        while (numConsecutiveFailures < maxConsecutiveFailures) {
+        ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker();
+        while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
                 Instant currentTime = timeSupplier.get();
@@ -159,7 +158,7 @@ public class CompactionTask {
                     RecordsProcessedSummary summary = compact(job, jobRunId);
                     taskFinishedBuilder.addJobSummary(summary);
                     message.deleteFromQueue();
-                    numConsecutiveFailures = 0;
+                    consecutiveFailuresTracker.resetConsecutiveFailures();
                     idleTimeTracker.setLastActiveTime(summary.getFinishTime());
                 } catch (InterruptedException e) {
                     LOGGER.error("Interrupted, leaving job to time out and return to queue", e);
@@ -169,13 +168,11 @@ public class CompactionTask {
                     message.deleteFromQueue();
                 } catch (Exception e) {
                     LOGGER.error("Failed processing compaction job, putting job back on queue", e);
-                    numConsecutiveFailures++;
+                    consecutiveFailuresTracker.incrementConsecutiveFailures();
                     message.returnToQueue();
                 }
             }
         }
-        LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
-                numConsecutiveFailures, maxConsecutiveFailures);
         return timeSupplier.get();
     }
 
@@ -271,5 +268,33 @@ public class CompactionTask {
             lastActiveTime = currentTime;
         }
 
+    }
+
+    private class ConsecutiveFailuresTracker {
+
+        private final int maxConsecutiveFailures;
+        private int numConsecutiveFailures;
+
+        private ConsecutiveFailuresTracker() {
+            maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        }
+
+        private void incrementConsecutiveFailures() {
+            numConsecutiveFailures++;
+        }
+
+        private void resetConsecutiveFailures() {
+            numConsecutiveFailures = 0;
+        }
+
+        private boolean hasNotMetMaximumFailures() {
+            if (numConsecutiveFailures < maxConsecutiveFailures) {
+                return true;
+            } else {
+                LOGGER.info("Terminating compaction task as {} consecutive failures exceeds maximum of {}",
+                        numConsecutiveFailures, maxConsecutiveFailures);
+                return false;
+            }
+        }
     }
 }
