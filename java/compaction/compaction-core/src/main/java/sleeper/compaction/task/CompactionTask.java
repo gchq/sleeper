@@ -130,7 +130,7 @@ public class CompactionTask {
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException, InterruptedException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         boolean waitForFileAssignment = instanceProperties.getBoolean(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT);
-        ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker();
+        ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES));
         while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
@@ -270,13 +270,13 @@ public class CompactionTask {
 
     }
 
-    private class ConsecutiveFailuresTracker {
+    private static class ConsecutiveFailuresTracker {
 
         private final int maxConsecutiveFailures;
         private int numConsecutiveFailures;
 
-        private ConsecutiveFailuresTracker() {
-            maxConsecutiveFailures = instanceProperties.getInt(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES);
+        private ConsecutiveFailuresTracker(int maxConsecutiveFailures) {
+            this.maxConsecutiveFailures = maxConsecutiveFailures;
         }
 
         private void incrementConsecutiveFailures() {
