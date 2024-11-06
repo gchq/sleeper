@@ -55,7 +55,7 @@ public class BulkImportArgumentsTest {
                         "--deploy-mode",
                         "cluster",
                         "--class",
-                        "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
+                        "sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
                         "s3a://jarsBucket/bulk-import-runner-1.2.3.jar",
                         "configBucket",
                         "my-job",
