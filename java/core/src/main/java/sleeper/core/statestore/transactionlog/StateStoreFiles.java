@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
@@ -85,15 +84,6 @@ public class StateStoreFiles {
 
     public boolean isEmpty() {
         return filesByFilename.isEmpty();
-    }
-
-    /**
-     * Adds a file to the state. Should only be called by a transaction.
-     *
-     * @param file the file
-     */
-    public void add(AllReferencesToAFile file) {
-        add(StateStoreFile.from(file));
     }
 
     /**

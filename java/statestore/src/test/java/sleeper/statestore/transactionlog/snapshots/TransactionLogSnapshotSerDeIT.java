@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
@@ -62,7 +63,7 @@ public class TransactionLogSnapshotSerDeIT {
         // Given
         AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
         StateStoreFiles state = new StateStoreFiles();
-        state.add(file);
+        state.add(StateStoreFile.from(file));
 
         // When
         snapshotSerDe.saveFiles(filesSnapshot(1), state);

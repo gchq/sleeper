@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -74,7 +73,8 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             for (String filename : job.getInputFiles()) {
                 stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(job.getPartitionId(), updateTime));
             }
-            stateStoreFiles.add(AllReferencesToAFile.fileWithOneReference(job.getNewReference(), updateTime));
+            FileReference newReference = job.getNewReference();
+            stateStoreFiles.add(new StateStoreFile(newReference.getFilename(), updateTime, List.of(newReference)));
         }
     }
 

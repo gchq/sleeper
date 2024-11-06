@@ -55,6 +55,17 @@ public class StateStoreFile {
     }
 
     /**
+     * Creates an instance of this class for a new file with a given update time.
+     *
+     * @param  updateTime the time the file was added
+     * @param  model      the model of the file
+     * @return            the instance
+     */
+    public static StateStoreFile newFile(Instant updateTime, AllReferencesToAFile model) {
+        return new StateStoreFile(model.getFilename(), updateTime, model.getReferences());
+    }
+
+    /**
      * Converts this object to the immutable model.
      *
      * @return an instance of the immutable model

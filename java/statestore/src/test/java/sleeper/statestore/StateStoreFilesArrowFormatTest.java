@@ -156,7 +156,7 @@ public class StateStoreFilesArrowFormatTest {
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
         StateStoreFiles state = new StateStoreFiles();
-        files.forEach(state::add);
+        files.forEach(file -> state.add(StateStoreFile.from(file)));
         StateStoreFilesArrowFormat.write(state, allocator, Channels.newChannel(stream));
     }
 
