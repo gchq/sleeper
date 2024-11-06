@@ -174,14 +174,8 @@ class S3FileReferenceStore implements FileReferenceStore {
     /**
      * A conditional check for whether we can perform a given update to file references.
      */
-    interface FileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<StateStoreFiles> {
-    }
-
-    /**
-     * A conditional check for whether we can perform a given update to file references.
-     */
     @FunctionalInterface
-    interface ThrowingFileReferencesConditionCheck extends FileReferencesConditionCheck {
+    interface ThrowingFileReferencesConditionCheck extends S3StateStoreDataFile.ConditionCheck<StateStoreFiles> {
         default Optional<? extends StateStoreException> check(StateStoreFiles data) {
             try {
                 throwingCheck(data);
