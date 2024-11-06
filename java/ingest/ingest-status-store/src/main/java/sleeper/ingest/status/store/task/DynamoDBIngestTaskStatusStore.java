@@ -31,9 +31,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.core.task.IngestTaskStatus;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.status.store.IngestStatusStoreException;
 
 import java.time.Instant;
 import java.util.List;

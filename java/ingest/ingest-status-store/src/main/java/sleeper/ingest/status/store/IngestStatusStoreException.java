@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest;
+package sleeper.ingest.status.store;
 
 public class IngestStatusStoreException extends RuntimeException {
 

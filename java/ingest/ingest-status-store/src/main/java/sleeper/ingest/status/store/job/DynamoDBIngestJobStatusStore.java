@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.status.IngestJobFailedEvent;
 import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
@@ -39,6 +38,7 @@ import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
+import sleeper.ingest.status.store.IngestStatusStoreException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
