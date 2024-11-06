@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.splitter.status;
+package sleeper.splitter.core.status;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;

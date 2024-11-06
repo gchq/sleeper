@@ -31,7 +31,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;

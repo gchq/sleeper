@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.splitter.status;
+package sleeper.splitter.core.status;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;

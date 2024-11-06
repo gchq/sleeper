@@ -51,7 +51,7 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESH
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
