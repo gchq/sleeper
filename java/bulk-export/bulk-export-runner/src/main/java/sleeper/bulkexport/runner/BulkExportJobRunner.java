@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkexport;
+package sleeper.bulkexport.runner;
 
 /**
  * Bulk export job runner.
