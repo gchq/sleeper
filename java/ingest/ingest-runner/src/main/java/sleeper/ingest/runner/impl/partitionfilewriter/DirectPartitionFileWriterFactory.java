@@ -15,10 +15,10 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import sleeper.configuration.TableFilePaths;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 
 import java.io.IOException;

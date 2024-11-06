@@ -15,10 +15,10 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.configuration.TableFilePaths;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.table.TableFilePaths;
 
 import java.util.List;
 import java.util.UUID;

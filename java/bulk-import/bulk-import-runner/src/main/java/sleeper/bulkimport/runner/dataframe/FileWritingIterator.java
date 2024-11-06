@@ -23,7 +23,6 @@ import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.TableFilePaths;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -31,6 +30,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
+import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;

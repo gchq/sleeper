@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.core.table;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
