@@ -34,10 +34,27 @@ public class PopulatePropertiesTestHelper {
      * @return the generated properties
      */
     public static InstanceProperties generateTestInstanceProperties() {
+        return createTestPopulateInstanceProperties().populate(new InstanceProperties());
+    }
+
+    /**
+     * Creates a test instance of PopulateInstanceProperties with dummy values.
+     *
+     * @return the object
+     */
+    public static PopulateInstanceProperties createTestPopulateInstanceProperties() {
+        return testPopulateInstancePropertiesBuilder().build();
+    }
+
+    /**
+     * Creates a test builder for PopulateInstanceProperties with dummy values.
+     *
+     * @return the builder
+     */
+    public static PopulateInstanceProperties.Builder testPopulateInstancePropertiesBuilder() {
         return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionIdSupplier(() -> "test-region")
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
-                .build().populate(new InstanceProperties());
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 
     /**
