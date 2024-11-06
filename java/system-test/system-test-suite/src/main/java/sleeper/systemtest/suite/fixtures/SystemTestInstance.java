@@ -76,6 +76,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
@@ -151,6 +152,20 @@ public class SystemTestInstance {
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionPerformance", "Sleeper Maven system test compaction performance");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createCompactionOnDataFusionConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+        properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+        properties.set(COMPACTION_TASK_X86_CPU, "1024");
+        properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
+        properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
+        setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
         return createInstanceConfiguration(properties);
     }
 
