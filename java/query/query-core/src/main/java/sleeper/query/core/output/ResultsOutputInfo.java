@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.core.output;
 
 import java.util.List;
 

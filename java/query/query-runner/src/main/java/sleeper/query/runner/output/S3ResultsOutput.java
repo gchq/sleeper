@@ -26,10 +26,10 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.output.ResultsOutputLocation;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.io.IOException;
 import java.time.Instant;

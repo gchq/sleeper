@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.core.tracker;
 
-public class QueryTrackerException extends Exception {
-
-    public QueryTrackerException(String message) {
-        super(message);
-    }
+public enum QueryState {
+    COMPLETED,
+    FAILED,
+    QUEUED,
+    IN_PROGRESS,
+    PARTIALLY_FAILED
 }

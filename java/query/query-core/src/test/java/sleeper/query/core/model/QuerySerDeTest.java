@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.model;
+package sleeper.query.core.model;
 
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutputConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;

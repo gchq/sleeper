@@ -29,12 +29,12 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.dynamodb.test.DynamoDBTestBase;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Optional;

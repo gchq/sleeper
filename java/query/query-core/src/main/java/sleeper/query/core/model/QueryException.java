@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.core.model;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
+public class QueryException extends Exception {
 
-/**
- * An interface that classes for sending the results of queries somewhere must implement.
- */
-public interface ResultsOutput {
+    public QueryException(Throwable cause) {
+        super(cause);
+    }
 
-    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
+    public QueryException(String message, Throwable e) {
+        super(message, e);
+    }
+
+    public QueryException(String message) {
+        super(message);
+    }
 }

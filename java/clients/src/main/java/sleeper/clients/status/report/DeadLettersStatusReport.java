@@ -30,7 +30,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.QuerySerDe;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 

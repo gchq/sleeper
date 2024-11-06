@@ -13,19 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.model;
+package sleeper.query.core.output;
 
-public class QueryException extends Exception {
+public class ResultsOutputLocation {
+    private final String type;
+    private final String location;
 
-    public QueryException(Throwable cause) {
-        super(cause);
+    public ResultsOutputLocation(String type, String location) {
+        this.type = type;
+        this.location = location;
     }
 
-    public QueryException(String message, Throwable e) {
-        super(message, e);
+    public String getType() {
+        return this.type;
     }
 
-    public QueryException(String message) {
-        super(message);
+    public String getLocation() {
+        return this.location;
+    }
+
+    @Override
+    public String toString() {
+        return "ResultsOutputLocation{"
+                + "type=" + type
+                + ", location=" + location
+                + '}';
     }
 }

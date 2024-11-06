@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.core.tracker;
 
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.util.List;
 

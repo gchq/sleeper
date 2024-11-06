@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.core.tracker;
 
-public class ResultsOutputConstants {
+public class QueryTrackerException extends Exception {
 
-    private ResultsOutputConstants() {
+    public QueryTrackerException(String message) {
+        super(message);
     }
-
-    public static final String DESTINATION = "destination";
 }

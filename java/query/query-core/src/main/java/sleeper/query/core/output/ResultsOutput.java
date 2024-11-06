@@ -13,30 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.output;
+package sleeper.query.core.output;
 
-public class ResultsOutputLocation {
-    private final String type;
-    private final String location;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.record.Record;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
-    public ResultsOutputLocation(String type, String location) {
-        this.type = type;
-        this.location = location;
-    }
+/**
+ * An interface that classes for sending the results of queries somewhere must implement.
+ */
+public interface ResultsOutput {
 
-    public String getType() {
-        return this.type;
-    }
-
-    public String getLocation() {
-        return this.location;
-    }
-
-    @Override
-    public String toString() {
-        return "ResultsOutputLocation{"
-                + "type=" + type
-                + ", location=" + location
-                + '}';
-    }
+    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
 }

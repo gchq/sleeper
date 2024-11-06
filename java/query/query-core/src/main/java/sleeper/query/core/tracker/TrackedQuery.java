@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
+package sleeper.query.core.tracker;
 
 import java.time.Instant;
 import java.util.Objects;

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.query.model;
+package sleeper.query.core.model;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 
 import java.util.Objects;
 

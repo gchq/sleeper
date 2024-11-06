@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.tracker;
 
-public enum QueryState {
-    COMPLETED,
-    FAILED,
-    QUEUED,
-    IN_PROGRESS,
-    PARTIALLY_FAILED
+package sleeper.query.core.tracker;
+
+import java.util.List;
+
+public interface QueryTrackerStore {
+    TrackedQuery getStatus(String queryId) throws QueryTrackerException;
+
+    TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
+
+    List<TrackedQuery> getAllQueries();
+
+    List<TrackedQuery> getQueriesWithState(QueryState state);
+
+    List<TrackedQuery> getFailedQueries();
 }

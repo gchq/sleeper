@@ -22,7 +22,7 @@ import sleeper.clients.QueryWebSocketClient;
 import sleeper.core.record.Record;
 import sleeper.core.record.serialiser.RecordJSONSerDe;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;

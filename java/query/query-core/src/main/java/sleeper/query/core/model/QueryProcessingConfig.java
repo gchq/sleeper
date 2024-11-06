@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.query.model;
+package sleeper.query.core.model;
 
 import java.util.List;
 import java.util.Map;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.query.model;
+package sleeper.query.core.model;
 
 import com.google.gson.JsonElement;
 

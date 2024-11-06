@@ -69,19 +69,19 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
-import sleeper.query.tracker.QueryStatusReportListener;
-import sleeper.query.tracker.QueryTrackerStore;
-import sleeper.query.tracker.TrackedQuery;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -120,9 +120,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-import static sleeper.query.tracker.QueryState.COMPLETED;
-import static sleeper.query.tracker.QueryState.IN_PROGRESS;
-import static sleeper.query.tracker.QueryState.QUEUED;
+import static sleeper.query.core.tracker.QueryState.COMPLETED;
+import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
+import static sleeper.query.core.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {

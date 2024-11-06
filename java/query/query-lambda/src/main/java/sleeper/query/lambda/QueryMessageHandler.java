@@ -20,11 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.QueryValidationException;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.model.QueryValidationException;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
-import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.Optional;
 import java.util.UUID;

@@ -37,12 +37,12 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
-import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

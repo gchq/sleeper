@@ -40,10 +40,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.ArrayList;
