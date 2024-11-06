@@ -59,7 +59,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore-committer</artifactId>
+            <artifactId>statestore-committer-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

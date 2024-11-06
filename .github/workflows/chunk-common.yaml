@@ -14,7 +14,7 @@ on:
       - 'java/sketches/**'
       - 'java/parquet/**'
       - 'java/statestore/**'
-      - 'java/statestore-committer/**'
+      - 'java/statestore-committer-core/**'
       - 'java/statestore-lambda/**'
       - 'java/metrics/**'
       - 'java/compaction/compaction-status-store/**'
