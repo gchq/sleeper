@@ -28,11 +28,14 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -58,7 +61,7 @@ public class DeployInstanceConfigurationIT {
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "template-instance");
+            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
             expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "set-table");
@@ -147,9 +150,52 @@ public class DeployInstanceConfigurationIT {
         }
     }
 
+    @Nested
+    @DisplayName("Create for a new instance, defaulting instance properties to the template")
+    class CreateForNewInstanceDefaultingInstance {
+
+        @Test
+        void shouldPopulateInstancePropertiesFromLocalConfig() throws Exception {
+            // Given
+            writeTemplates();
+            Path instancePropertiesPath = Files.writeString(
+                    propertiesDir.resolve("instance.properties"),
+                    "sleeper.filesystem=test://");
+            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
+
+            // When
+            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                    instancePropertiesPath, populateProperties, templatesDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
+            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, List.of()));
+        }
+
+        @Test
+        void shouldPopulateInstancePropertiesFromTemplate() throws Exception {
+            // Given
+            writeTemplates();
+            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
+
+            // When
+            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                    null, populateProperties, templatesDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            Map<String, String> tags = new HashMap<>(expectedInstanceProperties.getTags());
+            tags.put("Project", "TemplateProject");
+            expectedInstanceProperties.setTags(tags);
+            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
+            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, List.of()));
+        }
+    }
+
     private void writeTemplates() throws IOException {
         Files.createDirectories(templatesDir);
-        Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.id=template-instance");
+        Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.filesystem=test://");
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
