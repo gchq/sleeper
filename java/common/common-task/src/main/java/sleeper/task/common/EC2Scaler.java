@@ -15,24 +15,26 @@
  */
 package sleeper.task.common;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.model.DescribeInstanceTypesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstanceTypesResult;
+import com.amazonaws.services.ec2.model.InstanceTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 
 /**
@@ -40,20 +42,21 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
  * amount of work there is to do.
  */
 public class EC2Scaler {
+
     private final AmazonAutoScaling asClient;
-    private final EcsClient ecsClient;
+    private final AmazonEC2 ec2Client;
     /**
      * The name of the EC2 Auto Scaling group instances belong to.
      */
     private final String asGroupName;
     /**
-     * The name of the ECS cluster the scaling group belongs to.
-     */
-    private final String ecsClusterName;
-    /**
      * The number of containers each EC2 instance can host. -1 means we haven't found out yet.
      */
-    private int cachedInstanceContainers = -1;
+    private int cachedContainersPerInstance = -1;
+    /**
+     * The EC2 instance type being used.
+     */
+    private final String ec2InstanceType;
     /**
      * The CPU reservation for tasks.
      */
@@ -61,12 +64,14 @@ public class EC2Scaler {
     /**
      * The memory reservation for tasks.
      */
-    private final int memoryReservation;
+    private final long memoryReservation;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
 
-    public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
+    public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        String asScalingGroup = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
+        String ec2InstanceType = instanceProperties.get(COMPACTION_EC2_TYPE).toLowerCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
@@ -74,36 +79,18 @@ public class EC2Scaler {
         // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
         int memoryLimitMiB = (int) (requirements.getMemoryLimitMiB() * 0.95);
 
-        return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
-                instanceProperties.get(COMPACTION_CLUSTER), requirements.getCpu(), memoryLimitMiB);
+        return new EC2Scaler(asClient, ec2Client, asScalingGroup, ec2InstanceType, requirements.getCpu(), memoryLimitMiB);
     }
 
-    public EC2Scaler(AmazonAutoScaling asClient, EcsClient ecsClient, String asGroupName,
-            String ecsClusterName, int cpuReservation, int memoryReservation) {
+    public EC2Scaler(AmazonAutoScaling asClient, AmazonEC2 ec2Client, String asGroupName, String ec2InstanceType, int cpuReservation, int memoryReservation) {
         this.asClient = asClient;
-        this.ecsClient = ecsClient;
+        this.ec2Client = ec2Client;
         this.asGroupName = asGroupName;
-        this.ecsClusterName = ecsClusterName;
+        this.ec2InstanceType = ec2InstanceType;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
         LOGGER.debug("Scaler constraints: CPU reservation {} Memory reservation {}",
                 this.cpuReservation, this.memoryReservation);
-    }
-
-    /**
-     * Find out how many containers of a specific CPU and RAM requirement can fit into the cluster
-     * at the moment.
-     *
-     * @param  instanceDetails cluster EC2 details
-     * @return                 the number of containers that can fit
-     */
-    public int calculateAvailableClusterContainerCapacity(Map<String, EC2InstanceDetails> instanceDetails) {
-        int total = 0;
-        for (EC2InstanceDetails d : instanceDetails.values()) {
-            total += Math.min(d.availableCPU / this.cpuReservation,
-                    d.availableRAM / this.memoryReservation);
-        }
-        return total;
     }
 
     /**
@@ -138,10 +125,9 @@ public class EC2Scaler {
 
     public void scaleTo(String asGroupName, int numberContainers) {
         // If we have any information set the number of containers per instance
-        checkContainersPerInstance(null);
+        checkContainersPerInstance();
 
-        // If we don't yet know how many can fit, then we assume only 1 will fit
-        int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedInstanceContainers : 1;
+        int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedContainersPerInstance : 1;
 
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
@@ -159,31 +145,41 @@ public class EC2Scaler {
     }
 
     /**
-     * Sets the number of containers that can run on each instance. This method queries the cluster
-     * to retrieve details of the machines in it if needed. This method makes the assumption that
-     * the machines in the cluster are all identical. If details are passed in then they are used
-     * otherwise a request is made to the ECS API.
+     * If the containers per EC2 instance has not been set, then make a request to AWS via EC2 service
+     * describeInstanceTypes to find the size of the EC2 instance used for scaling. The amount of CPU and memory is then
+     * used to work out how many containers per instance can fit.
      *
-     * @param passedDetails optional details of cluster container instances, maybe null
+     * @throws IllegalStateException if more than one result is returned from AWS for describeInstanceTypes
+     * @throws IllegalStateException if zero containers can fit on the EC2 instance type set
      */
-    private void checkContainersPerInstance(Map<String, EC2InstanceDetails> passedDetails) {
+    private void checkContainersPerInstance() {
         if (containerPerInstanceKnown()) {
             return;
         }
 
-        // If details were passed in, use them, otherwise find them ourselves
-        Map<String, EC2InstanceDetails> details;
-        if (passedDetails == null) {
-            // fetch details from ECS cluster
-            details = EC2InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
-        } else {
-            details = passedDetails;
-        }
+        try {
+            // Lookup instance type against AWS EC2
+            DescribeInstanceTypesRequest request = new DescribeInstanceTypesRequest().withInstanceTypes(ec2InstanceType);
+            DescribeInstanceTypesResult result = ec2Client.describeInstanceTypes(request);
+            if (result.getInstanceTypes().size() != 1) {
+                throw new IllegalStateException("got more than 1 result for DescribeInstanceTypes for type " + ec2InstanceType);
+            }
+            InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
+            // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
+            int vCPUCount = typeInfo.getVCpuInfo().getDefaultVCpus() * 1024;
+            long memoryMiB = typeInfo.getMemoryInfo().getSizeInMiB();
 
-        // Get the first one, we assume the containers are homogenous
-        Optional<EC2InstanceDetails> det = details.values().stream().findFirst();
-        det.ifPresent(d -> this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
-                d.totalRAM / this.memoryReservation));
+            this.cachedContainersPerInstance = Math.min(vCPUCount / this.cpuReservation,
+                    (int) (memoryMiB / this.memoryReservation));
+            if (cachedContainersPerInstance < 1) {
+                throw new IllegalStateException(
+                        "Can't fit any containers on to EC2 type " + this.ec2InstanceType + ". Container CPU reservation: " + this.cpuReservation + " memory: " + this.memoryReservation
+                                + ". EC2 CPU: " + vCPUCount + " memory: " + memoryMiB);
+            }
+
+        } catch (AmazonClientException e) {
+            LOGGER.error("couldn't lookup EC2 type information for type " + this.ec2InstanceType, e);
+        }
     }
 
     /**
@@ -192,7 +188,7 @@ public class EC2Scaler {
      * @return true if the value is known
      */
     private boolean containerPerInstanceKnown() {
-        return this.cachedInstanceContainers != -1;
+        return this.cachedContainersPerInstance != -1;
     }
 
     /**

@@ -17,6 +17,8 @@ package sleeper.task.common;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -65,10 +67,10 @@ public class RunCompactionTasks {
     private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, EcsClient ecsClient, AmazonAutoScaling asClient) {
+            InstanceProperties instanceProperties, EcsClient ecsClient, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
-                createEC2Scaler(instanceProperties, asClient, ecsClient),
+                createEC2Scaler(instanceProperties, asClient, ec2Client),
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
@@ -155,14 +157,14 @@ public class RunCompactionTasks {
         taskLauncher.launchTasks(createTasks, checkAbort);
     }
 
-    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
+    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         // Only need scaler for EC2
         if (!launchType.equalsIgnoreCase("EC2")) {
             return hostCount -> {
             };
         }
-        return EC2Scaler.create(instanceProperties, asClient, ecsClient)::scaleTo;
+        return EC2Scaler.create(instanceProperties, asClient, ec2Client)::scaleTo;
     }
 
     /**
@@ -258,14 +260,16 @@ public class RunCompactionTasks {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
+        AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
         try (EcsClient ecsClient = EcsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            new RunCompactionTasks(instanceProperties, ecsClient, asClient)
+            new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             s3Client.shutdown();
             asClient.shutdown();
+            ec2Client.shutdown();
         }
     }
 }
