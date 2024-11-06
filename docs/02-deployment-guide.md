@@ -468,6 +468,10 @@ that have changed, update all the docker images, and perform a `cdk deploy`.
 ./scripts/deploy/deployExisting.sh <instance-id>
 ```
 
+We are planning to add support to this script for declarative deployment, so that you can set your full instance and
+tables configuration in a folder structure and pass it to this script to apply any changes. Currently such changes must
+be done with the admin client.
+
 #### Add Table
 
 The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with
