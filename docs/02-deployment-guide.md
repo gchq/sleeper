@@ -478,7 +478,7 @@ The `addTable.sh` script can be used to add a new table to sleeper. This will cr
 properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
 
 ```bash
-./scripts/deploy/addTable.sh <instance-id> <new-table-id>
+./scripts/utility/addTable.sh <instance-id> <new-table-id>
 ```
 
 ## Tear Down
