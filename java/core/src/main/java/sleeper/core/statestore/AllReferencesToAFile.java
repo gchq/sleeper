@@ -106,7 +106,8 @@ public class AllReferencesToAFile {
     public AllReferencesToAFile withCreatedUpdateTime(Instant updateTime) {
         return toBuilder()
                 .references(references.stream()
-                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                        .toList())
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
@@ -193,16 +194,6 @@ public class AllReferencesToAFile {
         public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
             this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
-        }
-
-        /**
-         * Sets the references to the file on partitions.
-         *
-         * @param  references the references
-         * @return            the builder
-         */
-        public Builder references(Stream<FileReference> references) {
-            return references(references.toList());
         }
 
         /**
