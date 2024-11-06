@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -65,6 +66,7 @@ public class DeployInstanceConfigurationIT {
             expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "set-table");
+            expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
             expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
@@ -193,11 +195,69 @@ public class DeployInstanceConfigurationIT {
         }
     }
 
+    @Nested
+    @DisplayName("Create for a new instance, defaulting table properties to the template")
+    class CreateForNewInstanceDefaultingTables {
+
+        @Test
+        void shouldPopulateTablePropertiesFromLocalConfig() throws Exception {
+            // Given
+            writeTemplates();
+            Path instancePropertiesPath = Files.writeString(
+                    propertiesDir.resolve("instance.properties"),
+                    "sleeper.filesystem=test://");
+            Files.writeString(
+                    propertiesDir.resolve("table.properties"),
+                    "sleeper.table.name=some-table");
+            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
+            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(templatesDir)
+                    .tableNameForTemplate("template-table").build();
+
+            // When
+            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingTables(
+                    instancePropertiesPath, populateProperties, fromTemplates);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "some-table");
+            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
+        }
+
+        @Test
+        void shouldPopulateTablePropertiesFromTemplate() throws Exception {
+            // Given
+            writeTemplates();
+            Path instancePropertiesPath = Files.writeString(
+                    propertiesDir.resolve("instance.properties"),
+                    "sleeper.filesystem=test://");
+            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
+            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
+                    .templatesDir(templatesDir)
+                    .tableNameForTemplate("template-table").build();
+
+            // When
+            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingTables(
+                    instancePropertiesPath, populateProperties, fromTemplates);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "template-table");
+            expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            expectedTableProperties.setSchema(schemaWithKey("template-key"));
+            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
+        }
+    }
+
     private void writeTemplates() throws IOException {
         Files.createDirectories(templatesDir);
         Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.filesystem=test://");
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
-        Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
+        Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.rowgroup.size=123");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
     }
 
