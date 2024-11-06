@@ -20,6 +20,8 @@ import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -76,6 +78,7 @@ public class SystemTestClients {
     private final EcsClient ecs;
     private final AmazonAutoScaling autoScaling;
     private final EcrClient ecr;
+    private final AmazonEC2 ec2;
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
@@ -100,6 +103,7 @@ public class SystemTestClients {
         ecs = builder.ecs;
         autoScaling = builder.autoScaling;
         ecr = builder.ecr;
+        ec2 = builder.ec2;
         cloudWatch = builder.cloudWatch;
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
@@ -130,6 +134,7 @@ public class SystemTestClients {
                 .ecs(EcsClient.create())
                 .autoScaling(AmazonAutoScalingClientBuilder.defaultClient())
                 .ecr(EcrClient.create())
+                .ec2(AmazonEC2ClientBuilder.defaultClient())
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
@@ -160,6 +165,7 @@ public class SystemTestClients {
                 .ecs(v2.buildClient(EcsClient.builder()))
                 .autoScaling(v1.buildClient(AmazonAutoScalingClientBuilder.standard()))
                 .ecr(v2.buildClient(EcrClient.builder()))
+                .ec2(v1.buildClient(AmazonEC2ClientBuilder.standard()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
@@ -228,6 +234,10 @@ public class SystemTestClients {
         return ecr;
     }
 
+    public AmazonEC2 getEc2() {
+        return ec2;
+    }
+
     public CloudWatchClient getCloudWatch() {
         return cloudWatch;
     }
@@ -278,6 +288,7 @@ public class SystemTestClients {
         private EcsClient ecs;
         private AmazonAutoScaling autoScaling;
         private EcrClient ecr;
+        private AmazonEC2 ec2;
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
@@ -365,6 +376,11 @@ public class SystemTestClients {
 
         public Builder ecr(EcrClient ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder ec2(AmazonEC2 ec2) {
+            this.ec2 = ec2;
             return this;
         }
 

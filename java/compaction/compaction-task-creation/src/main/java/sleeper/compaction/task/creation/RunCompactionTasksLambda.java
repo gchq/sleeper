@@ -17,6 +17,8 @@ package sleeper.compaction.task.creation;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
@@ -45,8 +47,9 @@ public class RunCompactionTasksLambda {
         EcsClient ecsClient = EcsClient.create();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
+        AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient);
+        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 
