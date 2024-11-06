@@ -29,7 +29,7 @@
         <module>parquet</module>
         <module>clients</module>
         <module>statestore</module>
-        <module>statestore-commit</module>
+        <module>statestore-committer</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
         <module>compaction</module>

@@ -28,7 +28,7 @@ on:
       - 'java/splitter/splitter-core/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-job-execution/**'
-      - 'java/statestore-commit/**'
+      - 'java/statestore-committer/**'
       - 'java/garbage-collector/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/query/query-runner/**'

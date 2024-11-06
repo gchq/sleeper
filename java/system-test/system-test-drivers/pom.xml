@@ -137,7 +137,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore-commit</artifactId>
+            <artifactId>statestore-committer</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

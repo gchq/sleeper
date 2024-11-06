@@ -29,7 +29,7 @@ chunks:
       - common/dynamodb-tools
       - common/dynamodb-test
       - statestore
-      - statestore-commit
+      - statestore-committer
       - statestore-lambda
       - statestore
       - metrics
