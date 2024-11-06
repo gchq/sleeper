@@ -44,7 +44,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryException;

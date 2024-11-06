@@ -37,7 +37,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.trino.SleeperConfig;

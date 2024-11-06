@@ -41,11 +41,11 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.splitter.find.FindPartitionsToSplit;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
@@ -68,8 +68,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
+import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 @Testcontainers
 public class FindPartitionsToSplitIT {
