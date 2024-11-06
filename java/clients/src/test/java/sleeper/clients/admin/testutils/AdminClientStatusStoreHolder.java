@@ -16,8 +16,8 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;

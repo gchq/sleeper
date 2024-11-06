@@ -18,13 +18,13 @@ package sleeper.compaction.job.creation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.strategy.CompactionStrategy;
+import sleeper.compaction.core.strategy.CompactionStrategyIndex;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.compaction.strategy.CompactionStrategy;
-import sleeper.compaction.strategy.CompactionStrategyIndex;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
