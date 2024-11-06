@@ -48,7 +48,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
 
 /**
  * An in-memory file reference store implementation backed by a TreeMap.
@@ -67,7 +66,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             if (state.file(file.getFilename()).isPresent()) {
                 throw new FileAlreadyExistsException(file.getFilename());
             }
-            state.add(file.withCreatedUpdateTime(updateTime));
+            state.add(StateStoreFile.newFile(updateTime, file));
         }
     }
 
@@ -188,7 +187,8 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (String filename : request.getInputFiles()) {
             state.updateFile(filename, file -> file.removeReferenceForPartition(request.getPartitionId(), updateTime));
         }
-        state.add(fileWithOneReference(request.getNewReference(), updateTime));
+        FileReference newReference = request.getNewReference();
+        state.add(new StateStoreFile(newReference.getFilename(), updateTime, List.of(newReference)));
     }
 
     private Stream<FileReference> streamFileReferences() throws StateStoreException {
@@ -253,16 +253,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) {
-        List<AllReferencesToAFile> filesWithNoReferences = state.referencedAndUnreferenced().stream()
-                .filter(file -> file.getReferences().isEmpty())
-                .map(StateStoreFile::toModel).toList();
-        List<AllReferencesToAFile> files = Stream.concat(
-                state.referencedAndUnreferenced().stream()
-                        .filter(file -> !file.getReferences().isEmpty())
-                        .map(StateStoreFile::toModel),
-                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
-                .collect(toUnmodifiableList());
-        return new AllReferencesToAllFiles(files, filesWithNoReferences.size() > maxUnreferencedFiles);
+        return state.allReferencesToAllFiles(maxUnreferencedFiles);
     }
 
     @Override

@@ -38,7 +38,6 @@ import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTr
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -99,22 +98,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
-        List<AllReferencesToAFile> files = new ArrayList<>();
-        int foundUnreferenced = 0;
-        boolean moreThanMax = false;
-        StateStoreFiles state = files();
-        for (StateStoreFile file : state.referencedAndUnreferenced()) {
-            if (file.getReferences().isEmpty()) {
-                if (foundUnreferenced >= maxUnreferencedFiles) {
-                    moreThanMax = true;
-                    continue;
-                } else {
-                    foundUnreferenced++;
-                }
-            }
-            files.add(file.toModel());
-        }
-        return new AllReferencesToAllFiles(files, moreThanMax);
+        return files().allReferencesToAllFiles(maxUnreferencedFiles);
     }
 
     @Override

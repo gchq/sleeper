@@ -52,7 +52,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 
 /**
@@ -151,17 +150,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public AllReferencesToAllFiles getAllFilesWithMaxUnreferenced(int maxUnreferencedFiles) throws StateStoreException {
         StateStoreFiles allFiles = readFiles(getFilesPath(getCurrentFilesRevisionId()));
-        List<AllReferencesToAFile> filesWithNoReferences = allFiles.referencedAndUnreferenced().stream()
-                .filter(file -> file.getReferences().isEmpty())
-                .map(StateStoreFile::toModel)
-                .collect(toUnmodifiableList());
-        List<AllReferencesToAFile> resultFiles = Stream.concat(
-                allFiles.referencedAndUnreferenced().stream()
-                        .filter(file -> !file.getReferences().isEmpty())
-                        .map(StateStoreFile::toModel),
-                filesWithNoReferences.stream().limit(maxUnreferencedFiles))
-                .collect(toUnmodifiableList());
-        return new AllReferencesToAllFiles(resultFiles, filesWithNoReferences.size() > maxUnreferencedFiles);
+        return allFiles.allReferencesToAllFiles(maxUnreferencedFiles);
     }
 
     private void updateS3Files(Instant updateTime, FileReferenceTransaction transaction) throws StateStoreException {

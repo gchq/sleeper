@@ -15,10 +15,14 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,6 +59,39 @@ public class StateStoreFiles {
      */
     public Collection<StateStoreFile> referencedAndUnreferenced() {
         return filesByFilename.values();
+    }
+
+    /**
+     * Retrieves all references to all files, with a limit on the number of unreferenced files.
+     *
+     * @param  maxUnreferenced the number of unreferenced files to include
+     * @return                 the report
+     */
+    public AllReferencesToAllFiles allReferencesToAllFiles(int maxUnreferenced) {
+        List<AllReferencesToAFile> files = new ArrayList<>();
+        int foundUnreferenced = 0;
+        boolean moreThanMax = false;
+        for (StateStoreFile file : referencedAndUnreferenced()) {
+            if (file.getReferences().isEmpty()) {
+                if (foundUnreferenced >= maxUnreferenced) {
+                    moreThanMax = true;
+                    continue;
+                } else {
+                    foundUnreferenced++;
+                }
+            }
+            files.add(file.toModel());
+        }
+        return new AllReferencesToAllFiles(files, moreThanMax);
+    }
+
+    /**
+     * Retrieves all references to all files.
+     *
+     * @return the report
+     */
+    public AllReferencesToAllFiles allReferencesToAllFiles() {
+        return new AllReferencesToAllFiles(referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList(), false);
     }
 
     /**
