@@ -18,7 +18,6 @@ package sleeper.statestore.transactionlog.snapshots;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.statestore.StateStoreArrowFileStore;
@@ -48,12 +47,10 @@ class TransactionLogSnapshotSerDe {
     }
 
     void saveFiles(TransactionLogSnapshotMetadata snapshot, StateStoreFiles state) throws IOException {
-        dataStore.saveFiles(snapshot.getPath(), state.referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList());
+        dataStore.saveFiles(snapshot.getPath(), state);
     }
 
     StateStoreFiles loadFiles(TransactionLogSnapshotMetadata snapshot) throws IOException {
-        StateStoreFiles files = new StateStoreFiles();
-        dataStore.loadFiles(snapshot.getPath()).forEach(files::add);
-        return files;
+        return dataStore.loadFiles(snapshot.getPath());
     }
 }

@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -70,14 +72,14 @@ public class StateStoreArrowFileStore {
      * @param  files       the state
      * @throws IOException if the file could not be written
      */
-    public void saveFiles(String path, Collection<AllReferencesToAFile> files) throws IOException {
-        LOGGER.debug("Writing {} files to {}", files.size(), path);
+    public void saveFiles(String path, StateStoreFiles files) throws IOException {
+        LOGGER.debug("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStoreFilesArrowFormat.write(files, allocator, channel);
+            StateStoreFilesArrowFormat.write(files.referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList(), allocator, channel);
         }
-        LOGGER.debug("Wrote {} files to {}", files.size(), path);
+        LOGGER.debug("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
     }
 
     /**
@@ -106,13 +108,15 @@ public class StateStoreArrowFileStore {
      * @return             the files
      * @throws IOException if the file could not be read
      */
-    public List<AllReferencesToAFile> loadFiles(String path) throws IOException {
+    public StateStoreFiles loadFiles(String path) throws IOException {
         LOGGER.debug("Loading files from {}", path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            List<AllReferencesToAFile> files = StateStoreFilesArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} files from {}", files.size(), path);
+            List<AllReferencesToAFile> readFiles = StateStoreFilesArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} files from {}", readFiles.size(), path);
+            StateStoreFiles files = new StateStoreFiles();
+            readFiles.forEach(files::add);
             return files;
         }
     }
