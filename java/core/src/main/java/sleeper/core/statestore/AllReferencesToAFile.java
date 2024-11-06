@@ -37,14 +37,12 @@ public class AllReferencesToAFile {
 
     private final String filename;
     private final Instant lastStateStoreUpdateTime;
-    private final Map<String, FileReference> referenceByPartitionId;
-    private final int referenceCount;
+    private final Collection<FileReference> references;
 
     private AllReferencesToAFile(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
-        referenceByPartitionId = Objects.requireNonNull(builder.referenceByPartitionId, "referenceByPartitionId must not be null");
-        referenceCount = referenceByPartitionId.size();
+        references = Objects.requireNonNull(builder.references, "references must not be null");
     }
 
     public static Builder builder() {
@@ -62,9 +60,7 @@ public class AllReferencesToAFile {
     public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
         return builder()
                 .filename(reference.getFilename())
-                .referenceByPartitionId(Map.of(
-                        reference.getPartitionId(),
-                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .references(List.of(reference))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
@@ -109,7 +105,7 @@ public class AllReferencesToAFile {
      */
     public AllReferencesToAFile withCreatedUpdateTime(Instant updateTime) {
         return toBuilder()
-                .references(referenceByPartitionId.values().stream()
+                .references(references.stream()
                         .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
@@ -124,17 +120,17 @@ public class AllReferencesToAFile {
     }
 
     public int getReferenceCount() {
-        return referenceCount;
+        return references.size();
     }
 
     public Collection<FileReference> getReferences() {
-        return referenceByPartitionId.values();
+        return Collections.unmodifiableCollection(references);
     }
 
     public Builder toBuilder() {
         return builder()
                 .filename(filename)
-                .referenceByPartitionId(referenceByPartitionId)
+                .references(references)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
@@ -142,14 +138,13 @@ public class AllReferencesToAFile {
     public String toString() {
         return "AllReferencesToAFile{filename=" + filename +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
-                ", referenceByPartitionId=" + referenceByPartitionId +
-                ", referenceCount=" + referenceCount +
+                ", references=" + references +
                 "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, lastStateStoreUpdateTime, referenceByPartitionId);
+        return Objects.hash(filename, lastStateStoreUpdateTime, references);
     }
 
     @Override
@@ -163,7 +158,7 @@ public class AllReferencesToAFile {
         AllReferencesToAFile other = (AllReferencesToAFile) obj;
         return Objects.equals(filename, other.filename)
                 && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
-                && Objects.equals(referenceByPartitionId, other.referenceByPartitionId);
+                && Objects.equals(references, other.references);
     }
 
     /**
@@ -172,7 +167,7 @@ public class AllReferencesToAFile {
     public static final class Builder {
         private String filename;
         private Instant lastStateStoreUpdateTime;
-        private Map<String, FileReference> referenceByPartitionId;
+        private Collection<FileReference> references;
 
         private Builder() {
         }
@@ -207,9 +202,7 @@ public class AllReferencesToAFile {
          * @return            the builder
          */
         public Builder references(Stream<FileReference> references) {
-            Map<String, FileReference> map = new TreeMap<>();
-            references.forEach(reference -> map.put(reference.getPartitionId(), reference));
-            return referenceByPartitionId(Collections.unmodifiableMap(map));
+            return references(references.toList());
         }
 
         /**
@@ -219,11 +212,7 @@ public class AllReferencesToAFile {
          * @return            the builder
          */
         public Builder references(Collection<FileReference> references) {
-            return references(references.stream());
-        }
-
-        private Builder referenceByPartitionId(Map<String, FileReference> referenceByPartitionId) {
-            this.referenceByPartitionId = referenceByPartitionId;
+            this.references = references;
             return this;
         }
 
