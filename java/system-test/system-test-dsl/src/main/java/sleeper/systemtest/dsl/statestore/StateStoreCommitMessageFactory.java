@@ -28,9 +28,9 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Instant;
 import java.util.List;

@@ -26,8 +26,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.ingest.job.status.IngestJobFailedEvent;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobFailedEvent;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,8 +38,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class BulkImportExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);

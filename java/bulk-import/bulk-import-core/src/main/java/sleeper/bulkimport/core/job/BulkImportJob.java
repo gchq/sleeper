@@ -15,7 +15,7 @@
  */
 package sleeper.bulkimport.core.job;
 
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.util.HashMap;
 import java.util.List;

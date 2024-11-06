@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
 
 import java.io.IOException;

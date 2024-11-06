@@ -23,7 +23,7 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherQueues;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.util.List;

@@ -30,6 +30,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 
 import java.io.IOException;

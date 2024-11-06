@@ -24,7 +24,7 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.IngestResult;
+import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;

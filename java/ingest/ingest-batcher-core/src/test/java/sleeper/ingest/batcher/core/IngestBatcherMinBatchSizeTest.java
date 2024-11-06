@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Collections;

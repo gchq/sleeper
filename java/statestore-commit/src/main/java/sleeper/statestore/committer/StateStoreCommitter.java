@@ -33,10 +33,10 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;

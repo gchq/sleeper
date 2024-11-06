@@ -17,7 +17,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;

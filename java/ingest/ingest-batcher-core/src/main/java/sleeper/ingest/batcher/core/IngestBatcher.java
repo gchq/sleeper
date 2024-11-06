@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.validation.IngestQueue;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -19,6 +19,7 @@ package sleeper.ingest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.core.IngestResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;

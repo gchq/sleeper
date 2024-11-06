@@ -28,10 +28,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.util.List;
 import java.util.UUID;

@@ -36,7 +36,7 @@ import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.lang.reflect.Type;
 

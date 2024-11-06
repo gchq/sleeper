@@ -17,7 +17,7 @@ package sleeper.ingest.batcher.core.testutil;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.util.List;
 import java.util.Map;

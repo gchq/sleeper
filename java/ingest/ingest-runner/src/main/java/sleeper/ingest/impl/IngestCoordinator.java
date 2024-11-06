@@ -32,7 +32,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.IngestResult;
+import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;

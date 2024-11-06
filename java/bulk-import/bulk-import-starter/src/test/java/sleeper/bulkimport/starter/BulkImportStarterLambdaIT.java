@@ -39,10 +39,10 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.job.IngestJobMessageHandler;
-import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusTestHelper;
+import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusTestHelper;
 import sleeper.io.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {

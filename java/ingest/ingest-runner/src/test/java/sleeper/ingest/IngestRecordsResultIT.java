@@ -26,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.core.IngestResult;
 
 import java.util.Arrays;
 import java.util.List;

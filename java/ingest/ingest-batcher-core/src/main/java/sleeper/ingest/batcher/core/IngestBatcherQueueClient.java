@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.batcher.core;
 
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 public interface IngestBatcherQueueClient {
     void send(String queueUrl, IngestJob job);

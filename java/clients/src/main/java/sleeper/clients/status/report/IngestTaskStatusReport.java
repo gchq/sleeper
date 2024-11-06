@@ -25,8 +25,8 @@ import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportArguments
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReporter;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
-import sleeper.ingest.task.IngestTaskStatusStore;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 

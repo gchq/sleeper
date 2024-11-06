@@ -54,7 +54,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
+import sleeper.ingest.core.IngestResult;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreFactory;

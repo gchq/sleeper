@@ -30,7 +30,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
+import sleeper.ingest.core.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;

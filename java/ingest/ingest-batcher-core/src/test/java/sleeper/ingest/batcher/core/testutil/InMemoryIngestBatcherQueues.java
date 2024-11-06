@@ -16,7 +16,7 @@
 package sleeper.ingest.batcher.core.testutil;
 
 import sleeper.ingest.batcher.core.IngestBatcherQueueClient;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
