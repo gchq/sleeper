@@ -68,14 +68,8 @@ public class EC2Scaler {
     public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        // Bit hacky: EC2s don't give 100% of their memory for container use (OS
-        // headroom, system tasks, etc.) so we have to make sure to reduce
-        // the EC2 memory requirement by 5%. If we don't we end up asking for
-        // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
-        int memoryLimitMiB = (int) (requirements.getMemoryLimitMiB() * 0.95);
-
         return new EC2Scaler(asClient, ecsClient, instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
-                instanceProperties.get(COMPACTION_CLUSTER), requirements.getCpu(), memoryLimitMiB);
+                instanceProperties.get(COMPACTION_CLUSTER), requirements.getCpu(), requirements.getMemoryLimitMiB());
     }
 
     public EC2Scaler(AmazonAutoScaling asClient, EcsClient ecsClient, String asGroupName,
@@ -88,22 +82,6 @@ public class EC2Scaler {
         this.memoryReservation = memoryReservation;
         LOGGER.debug("Scaler constraints: CPU reservation {} Memory reservation {}",
                 this.cpuReservation, this.memoryReservation);
-    }
-
-    /**
-     * Find out how many containers of a specific CPU and RAM requirement can fit into the cluster
-     * at the moment.
-     *
-     * @param  instanceDetails cluster EC2 details
-     * @return                 the number of containers that can fit
-     */
-    public int calculateAvailableClusterContainerCapacity(Map<String, EC2InstanceDetails> instanceDetails) {
-        int total = 0;
-        for (EC2InstanceDetails d : instanceDetails.values()) {
-            total += Math.min(d.availableCPU / this.cpuReservation,
-                    d.availableRAM / this.memoryReservation);
-        }
-        return total;
     }
 
     /**
@@ -183,7 +161,7 @@ public class EC2Scaler {
         // Get the first one, we assume the containers are homogenous
         Optional<EC2InstanceDetails> det = details.values().stream().findFirst();
         det.ifPresent(d -> this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
-                d.totalRAM / this.memoryReservation));
+                (int) (d.totalRAM * 0.90) / this.memoryReservation));
     }
 
     /**
