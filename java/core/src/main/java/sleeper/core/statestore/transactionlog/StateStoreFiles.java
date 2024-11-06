@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.UnaryOperator;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -37,7 +37,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * The methods to update this object should only ever be called by the transactions.
  */
 public class StateStoreFiles {
-    private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
+    private final Map<String, StateStoreFile> filesByFilename = new TreeMap<>();
 
     /**
      * Streams through all references to all files in the state store.
@@ -54,7 +54,7 @@ public class StateStoreFiles {
      *
      * @return all files
      */
-    public Collection<AllReferencesToAFile> referencedAndUnreferenced() {
+    public Collection<StateStoreFile> referencedAndUnreferenced() {
         return filesByFilename.values();
     }
 
@@ -67,9 +67,9 @@ public class StateStoreFiles {
      */
     public Stream<String> unreferencedBefore(Instant maxUpdateTime) {
         return filesByFilename.values().stream()
-                .filter(file -> file.getReferenceCount() == 0)
+                .filter(file -> file.getReferences().size() == 0)
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
-                .map(AllReferencesToAFile::getFilename)
+                .map(StateStoreFile::getFilename)
                 .collect(toUnmodifiableList()).stream(); // Avoid concurrent modification during GC
     }
 
@@ -79,7 +79,7 @@ public class StateStoreFiles {
      * @param  filename the filename
      * @return          the file if it exists in the state store
      */
-    public Optional<AllReferencesToAFile> file(String filename) {
+    public Optional<StateStoreFile> file(String filename) {
         return Optional.ofNullable(filesByFilename.get(filename));
     }
 
@@ -93,7 +93,7 @@ public class StateStoreFiles {
      * @param file the file
      */
     public void add(AllReferencesToAFile file) {
-        filesByFilename.put(file.getFilename(), file);
+        filesByFilename.put(file.getFilename(), StateStoreFile.from(file));
     }
 
     /**
@@ -118,10 +118,8 @@ public class StateStoreFiles {
      * @param filename the filename
      * @param update   the update
      */
-    public void updateFile(String filename, UnaryOperator<AllReferencesToAFile> update) {
-        AllReferencesToAFile existing = filesByFilename.get(filename);
-        AllReferencesToAFile updated = update.apply(existing);
-        filesByFilename.put(filename, updated);
+    public void updateFile(String filename, Consumer<StateStoreFile> update) {
+        update.accept(filesByFilename.get(filename));
     }
 
     @Override

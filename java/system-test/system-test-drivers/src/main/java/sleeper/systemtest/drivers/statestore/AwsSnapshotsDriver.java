@@ -22,6 +22,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
@@ -77,7 +78,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
 
     private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
         StateStoreFiles state = snapshot.getState();
-        return new AllReferencesToAllFiles(state.referencedAndUnreferenced(), false);
+        return new AllReferencesToAllFiles(state.referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList(), false);
     }
 
     private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {

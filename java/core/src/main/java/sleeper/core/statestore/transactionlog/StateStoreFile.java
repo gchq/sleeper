@@ -21,6 +21,8 @@ import sleeper.core.statestore.FileReference;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /**
@@ -109,6 +111,51 @@ public class StateStoreFile {
                 referenceByPartitionId.get(partitionId).toBuilder()
                         .jobId(jobId).lastStateStoreUpdateTime(updateTime).build());
         lastStateStoreUpdateTime = updateTime;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public Collection<FileReference> getReferences() {
+        return referenceByPartitionId.values();
+    }
+
+    public Instant getLastStateStoreUpdateTime() {
+        return lastStateStoreUpdateTime;
+    }
+
+    /**
+     * Retrieves the reference for this file on a given partition.
+     *
+     * @param  partitionId the ID of the partition to find the reference in
+     * @return             the reference to this file in the partition, if the file is referenced in that partition
+     */
+    public Optional<FileReference> getReferenceForPartitionId(String partitionId) {
+        return Optional.ofNullable(referenceByPartitionId.get(partitionId));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filename, lastStateStoreUpdateTime, referenceByPartitionId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof StateStoreFile)) {
+            return false;
+        }
+        StateStoreFile other = (StateStoreFile) obj;
+        return Objects.equals(filename, other.filename) && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
+                && Objects.equals(referenceByPartitionId, other.referenceByPartitionId);
+    }
+
+    @Override
+    public String toString() {
+        return "StateStoreFile{filename=" + filename + ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime + ", referenceByPartitionId=" + referenceByPartitionId + "}";
     }
 
 }
