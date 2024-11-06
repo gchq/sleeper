@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,70 +101,6 @@ public class AllReferencesToAFile {
     }
 
     /**
-     * Creates a copy of this model with the reference on one partition removed, and replaced with new references. This
-     * is used in state store implementations to split a file reference into two to move the file down the tree of
-     * partitions. The new references should cover all the records that were previously covered by the reference that's
-     * being removed.
-     *
-     * @param  partitionId   the ID of the partition to remove the file from
-     * @param  newReferences the references to add
-     * @param  updateTime    the update time that this occurs (should be set by the state store implementation)
-     * @return               a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile splitReferenceFromPartition(
-            String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
-        return toBuilder()
-                .references(Stream.concat(
-                        referenceByPartitionId.values().stream()
-                                .filter(reference -> !partitionId.equals(reference.getPartitionId())),
-                        newReferences.stream().map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
-     * Creates a copy of this model with the reference on one partition removed. This is used in state store
-     * implementations when adding the output of a compaction in a new file that contains all the records for a certain
-     * partition. This means that the input files for the compaction must no longer be referenced in that partition.
-     *
-     * @param  partitionId the ID of the partition to remove the file from
-     * @param  updateTime  the update time that this occurs (should be set by the state store implementation)
-     * @return             a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile removeReferenceForPartition(String partitionId, Instant updateTime) {
-        return toBuilder()
-                .references(referenceByPartitionId.values().stream()
-                        .filter(reference -> !partitionId.equals(reference.getPartitionId())))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
-     * Creates a copy of this model with the reference on one partition assigned to a job. This is used in state store
-     * implementations when assigning a compaction job to its input files. Note that parts of a file are assigned to
-     * jobs independently. Each partition that a file is in covers different records. Each reference on each
-     * partition will be assigned to and processed by a different job.
-     *
-     * @param  jobId       the ID of the job to assign the file reference to
-     * @param  partitionId the ID of the partition whose reference should be assigned to the job
-     * @param  updateTime  the update time that this occurs (should be set by the state store implementation)
-     * @return             a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile withJobIdForPartition(String jobId, String partitionId, Instant updateTime) {
-        return toBuilder()
-                .references(referenceByPartitionId.values().stream()
-                        .map(reference -> {
-                            if (partitionId.equals(reference.getPartitionId())) {
-                                return reference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build();
-                            } else {
-                                return reference;
-                            }
-                        }))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
      * Creates a copy of this model with the update time set for the whole file and all its references. This is used in
      * state store implementations when adding a new file to the state store.
      *
@@ -194,16 +129,6 @@ public class AllReferencesToAFile {
 
     public Collection<FileReference> getReferences() {
         return referenceByPartitionId.values();
-    }
-
-    /**
-     * Retrieves the reference for this file on a given partition.
-     *
-     * @param  partitionId the ID of the partition to find the reference in
-     * @return             the reference to this file in the partition, if the file is referenced in that partition
-     */
-    public Optional<FileReference> getReferenceForPartitionId(String partitionId) {
-        return Optional.ofNullable(referenceByPartitionId.get(partitionId));
     }
 
     public Builder toBuilder() {
