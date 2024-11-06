@@ -24,7 +24,7 @@ on:
       - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/common/common-task/**'
       - 'java/ingest/ingest-batcher-store/**'
-      - 'java/bulk-import/bulk-import-common/**'
+      - 'java/bulk-import/bulk-import-core/**'
       - 'java/splitter/splitter-core/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-job-execution/**'

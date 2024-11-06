@@ -24,7 +24,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bulk-import-common</artifactId>
+    <artifactId>bulk-import-core</artifactId>
 
     <dependencies>
         <dependency>

@@ -65,7 +65,7 @@ chunks:
       - ingest/ingest-batcher-store
       - ingest/ingest-batcher-submitter
       - ingest/ingest-batcher-job-creator
-      - bulk-import/bulk-import-common
+      - bulk-import/bulk-import-core
       - bulk-import/bulk-import-starter
       - bulk-import/bulk-import-runner
       - ingest/ingest-runner
