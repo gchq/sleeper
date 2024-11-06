@@ -35,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 

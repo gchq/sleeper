@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.io.parquet.record.ParquetRecordWriterFactory.createParquetRecordWriter;
+import static sleeper.parquet.record.ParquetRecordWriterFactory.createParquetRecordWriter;
 
 public class ShowPageIndexesIT {
     @TempDir

@@ -60,7 +60,7 @@ import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
@@ -91,7 +91,7 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestSta
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 class IngestJobRunnerIT {

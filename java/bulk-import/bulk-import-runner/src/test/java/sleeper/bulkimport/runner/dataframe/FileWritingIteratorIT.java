@@ -31,7 +31,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
 import java.util.ArrayList;

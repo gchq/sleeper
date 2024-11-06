@@ -41,7 +41,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.find.SplitPartitionJobDefinition;
 import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitter.split.SplitPartition;

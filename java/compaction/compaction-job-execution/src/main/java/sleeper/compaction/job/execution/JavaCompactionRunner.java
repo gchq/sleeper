@@ -37,10 +37,10 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.RangeQueryUtils;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 

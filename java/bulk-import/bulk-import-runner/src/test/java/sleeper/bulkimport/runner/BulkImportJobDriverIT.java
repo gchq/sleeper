@@ -80,8 +80,8 @@ import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
@@ -125,7 +125,7 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFin
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 class BulkImportJobDriverIT {

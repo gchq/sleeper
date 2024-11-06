@@ -31,8 +31,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
 import java.text.DecimalFormat;

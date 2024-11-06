@@ -52,7 +52,7 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);

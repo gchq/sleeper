@@ -78,7 +78,7 @@ import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PA
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 @Testcontainers

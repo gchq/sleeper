@@ -35,7 +35,7 @@ import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory
 import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Iterator;

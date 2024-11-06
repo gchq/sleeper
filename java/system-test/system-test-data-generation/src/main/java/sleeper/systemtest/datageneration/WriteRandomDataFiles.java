@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;

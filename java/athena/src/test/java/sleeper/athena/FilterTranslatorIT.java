@@ -41,9 +41,9 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.File;
 import java.io.IOException;

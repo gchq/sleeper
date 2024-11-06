@@ -41,8 +41,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.io.parquet.utils.HadoopPathUtils;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;

@@ -36,10 +36,10 @@ import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTask.MessageHandle;
 import sleeper.ingest.core.task.IngestTask.MessageReceiver;
-import sleeper.io.parquet.utils.HadoopPathUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
+import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.util.List;
 import java.util.Optional;

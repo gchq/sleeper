@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.io.parquet.record;
+package sleeper.parquet.record;
 
 import org.apache.parquet.io.api.GroupConverter;
 

@@ -52,7 +52,7 @@ import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;

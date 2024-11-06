@@ -30,8 +30,8 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.utils.RangeQueryUtils;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.model.LeafPartitionQuery;
 
 import java.io.IOException;

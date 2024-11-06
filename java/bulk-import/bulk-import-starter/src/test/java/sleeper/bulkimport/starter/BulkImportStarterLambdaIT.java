@@ -43,7 +43,7 @@ import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusTestHelper;
-import sleeper.io.parquet.utils.HadoopPathUtils;
+import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
 import java.util.List;

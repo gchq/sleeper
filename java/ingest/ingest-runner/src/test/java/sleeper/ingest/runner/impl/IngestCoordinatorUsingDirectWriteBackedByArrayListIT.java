@@ -71,7 +71,7 @@ import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parque
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {

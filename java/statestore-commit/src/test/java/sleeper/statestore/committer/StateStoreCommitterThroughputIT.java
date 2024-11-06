@@ -45,7 +45,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 

@@ -40,7 +40,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;

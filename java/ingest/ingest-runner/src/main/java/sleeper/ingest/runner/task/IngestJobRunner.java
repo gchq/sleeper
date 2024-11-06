@@ -44,9 +44,9 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.utils.HadoopPathUtils;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.io.IOException;
 import java.time.Instant;

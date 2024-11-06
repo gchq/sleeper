@@ -87,7 +87,7 @@ import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildA
 import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class IngestCoordinatorCommonIT {

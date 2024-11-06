@@ -37,7 +37,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 import java.util.List;

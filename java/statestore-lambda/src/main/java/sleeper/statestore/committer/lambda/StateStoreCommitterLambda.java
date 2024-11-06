@@ -39,7 +39,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
