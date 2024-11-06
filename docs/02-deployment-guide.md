@@ -157,12 +157,13 @@ necessary deployment artifacts to AWS.
 
 Please ensure Sleeper has been built successfully before using this.
 
-Properties set to "changeme" in the templates will be overwritten and should not be set manually during automated
-deployment.
+Properties that are set to "changeme" in the templates will be overwritten and should not be set manually during
+automated deployment.
 
 You can find the template files [here](../scripts/templates). It is recommended that you change these templates to
 configure Sleeper in the way that you want before you run the automated script. At the very least you will want to
-change the tags.template file. See the Configuration section below for further details.
+change the tags.template file. See the Configuration section below for further details. In that guide, ignore the
+properties that are set to "changeme" in the templates as they are overwritten by the automated deployment.
 
 If you deploy from the templates, it will create an instance with no tables:
 
