@@ -151,29 +151,43 @@ jar files and Docker images.
 
 ### Automated Deployment
 
-The automated deployment uses template files to provide a default configuration for Sleeper. It also deploys only one
-table into Sleeper with the schema provided in these template files. You can find the template
-files [here](../scripts/templates).
+The automated deployment creates an instance of Sleeper either from your own configuration files, or from templates.
+This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
+necessary deployment artifacts to AWS.
 
-It is recommended that you change these templates to configure Sleeper in the way that you want before you run the
-automated script. At the very least you will want to change the schema.template and tags.template files. See the
-Configuration section below for further details.
+Please ensure Sleeper has been built successfully before using this.
 
-Note that any property in the templates with "changeme" will be overwritten automatically.
+Properties set to "changeme" in the templates will be overwritten and should not be set manually during automated
+deployment.
 
-From the root of the Git repository with Sleeper already built, you can use the automated script like this:
+You can find the template files [here](../scripts/templates). It is recommended that you change these templates to
+configure Sleeper in the way that you want before you run the automated script. At the very least you will want to
+change the tags.template file. See the Configuration section below for further details.
+
+If you deploy from the templates, it will create an instance with no tables:
 
 ```bash
 cd scripts
 editor templates/instanceproperties.template
-editor templates/schema.template
-editor templates/tableproperties.template
 editor templates/tags.template
-./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
+./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids>
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
 Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
+
+You can also create your own configuration, including tables, and deploy that:
+
+```bash
+cd scripts
+mkdir my-instance
+cp templates/instanceproperties.template my-instance/instance.properties
+cp templates/tags.template my-instance/tags.properties
+cp templates/tableproperties.template my-instance/tables/my-table/table.properties
+cp templates/schema.template my-instance/tables/my-table/schema.json
+# Edit configuration files as above
+./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
+```
 
 This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
 ECR.
