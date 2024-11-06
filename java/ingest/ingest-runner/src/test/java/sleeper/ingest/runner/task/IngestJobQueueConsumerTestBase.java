@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.runner.job;
+package sleeper.ingest.runner.task;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;

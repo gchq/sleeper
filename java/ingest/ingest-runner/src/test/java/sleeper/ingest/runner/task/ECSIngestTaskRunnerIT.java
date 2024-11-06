@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.runner.job;
+package sleeper.ingest.runner.task;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
