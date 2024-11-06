@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.core;
 
 import org.junit.jupiter.api.Test;
 

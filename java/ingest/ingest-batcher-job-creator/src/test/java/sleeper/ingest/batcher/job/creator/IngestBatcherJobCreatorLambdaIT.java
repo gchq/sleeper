@@ -39,8 +39,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.ingest.job.IngestJob;
@@ -60,8 +60,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.jobIdSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
 
 @Testcontainers
 public class IngestBatcherJobCreatorLambdaIT {

@@ -28,9 +28,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
 import java.util.List;
 import java.util.stream.Collectors;

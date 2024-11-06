@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
 
 class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
 

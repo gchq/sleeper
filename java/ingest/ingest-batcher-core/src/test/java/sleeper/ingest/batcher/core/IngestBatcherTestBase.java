@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.core;
 
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
-import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherQueues;
-import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
+import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherQueues;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -39,10 +39,10 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
+import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_ID;
+import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.jobIdSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
 
 public class IngestBatcherTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();

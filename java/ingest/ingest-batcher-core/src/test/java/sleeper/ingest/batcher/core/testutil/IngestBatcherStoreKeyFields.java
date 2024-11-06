@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher.testutil;
+package sleeper.ingest.batcher.core.testutil;
 
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.util.Objects;
 

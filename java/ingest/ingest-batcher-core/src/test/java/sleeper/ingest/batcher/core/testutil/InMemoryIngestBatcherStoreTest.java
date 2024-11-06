@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.batcher.testutil;
+package sleeper.ingest.batcher.core.testutil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
+import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.onJob;
 
 class InMemoryIngestBatcherStoreTest {
     private final IngestBatcherStore store = new InMemoryIngestBatcherStore();

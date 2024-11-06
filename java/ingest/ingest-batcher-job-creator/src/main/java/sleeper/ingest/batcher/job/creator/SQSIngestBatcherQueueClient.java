@@ -17,7 +17,7 @@ package sleeper.ingest.batcher.job.creator;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
-import sleeper.ingest.batcher.IngestBatcherQueueClient;
+import sleeper.ingest.batcher.core.IngestBatcherQueueClient;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 

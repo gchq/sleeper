@@ -20,7 +20,7 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 

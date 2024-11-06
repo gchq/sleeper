@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.core;
 
 import java.util.List;
 

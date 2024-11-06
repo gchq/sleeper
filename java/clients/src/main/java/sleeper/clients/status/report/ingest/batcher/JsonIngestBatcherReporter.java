@@ -23,7 +23,7 @@ import com.google.gson.JsonSerializer;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.io.PrintStream;
 import java.util.List;

@@ -21,7 +21,7 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.io.PrintStream;
 import java.util.List;

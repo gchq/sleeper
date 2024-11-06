@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher.testutil;
+package sleeper.ingest.batcher.core.testutil;
 
 import java.time.Instant;
 import java.util.List;

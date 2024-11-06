@@ -22,7 +22,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.time.Instant;
 import java.util.List;

@@ -25,7 +25,7 @@ import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;

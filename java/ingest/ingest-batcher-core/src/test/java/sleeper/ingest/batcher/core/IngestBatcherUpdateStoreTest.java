@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.core;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
+import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     @Test
