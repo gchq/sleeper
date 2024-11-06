@@ -44,7 +44,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobDriver.AddFilesAsynchronously;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;

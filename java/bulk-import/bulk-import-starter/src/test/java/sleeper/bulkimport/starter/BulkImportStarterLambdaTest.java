@@ -21,7 +21,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;

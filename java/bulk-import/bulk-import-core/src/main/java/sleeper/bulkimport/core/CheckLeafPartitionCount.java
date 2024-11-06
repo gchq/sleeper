@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport;
+package sleeper.bulkimport.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;

@@ -18,7 +18,7 @@ package sleeper.bulkimport.job.runner;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;

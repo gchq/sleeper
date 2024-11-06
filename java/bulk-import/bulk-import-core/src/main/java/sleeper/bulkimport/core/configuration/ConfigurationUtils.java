@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.configuration;
+package sleeper.bulkimport.core.configuration;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;

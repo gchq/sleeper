@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport.job;
+package sleeper.bulkimport.core.job;
 
 import org.junit.jupiter.api.Test;
 

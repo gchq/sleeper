@@ -19,7 +19,7 @@ package sleeper.bulkimport.starter.executor;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;

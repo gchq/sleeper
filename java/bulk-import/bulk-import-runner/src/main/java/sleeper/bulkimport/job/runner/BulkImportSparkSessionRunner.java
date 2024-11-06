@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

@@ -20,8 +20,8 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.google.gson.Gson;
 
-import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 

@@ -26,8 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;

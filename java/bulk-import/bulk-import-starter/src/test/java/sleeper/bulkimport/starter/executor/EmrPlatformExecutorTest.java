@@ -36,8 +36,8 @@ import software.amazon.awssdk.services.emr.model.MarketType;
 import software.amazon.awssdk.services.emr.model.RunJobFlowRequest;
 import software.amazon.awssdk.services.emr.model.RunJobFlowResponse;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.configuration;
+package sleeper.bulkimport.core.configuration;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;

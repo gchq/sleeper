@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.emr.model.ComputeLimits;
 import software.amazon.awssdk.services.emr.model.EbsConfiguration;
 import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
 
 public interface EmrInstanceConfiguration {
 

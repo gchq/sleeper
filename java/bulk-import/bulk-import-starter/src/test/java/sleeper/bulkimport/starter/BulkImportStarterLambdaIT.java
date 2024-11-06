@@ -30,8 +30,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
