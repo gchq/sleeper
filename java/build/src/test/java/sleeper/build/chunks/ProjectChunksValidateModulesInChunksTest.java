@@ -56,7 +56,7 @@ public class ProjectChunksValidateModulesInChunksTest {
                 chunk("common", "core"),
                 chunk("ingest", "ingest"),
                 chunk("bulk-import",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter"));
 
@@ -74,7 +74,7 @@ public class ProjectChunksValidateModulesInChunksTest {
                 chunk("common", "core"),
                 chunk("ingest", "ingest"),
                 chunk("bulk-import",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-starter"));
 
         // When / Then
@@ -92,7 +92,7 @@ public class ProjectChunksValidateModulesInChunksTest {
                 chunk("ingest", "ingest"),
                 chunk("bulk-import",
                         "bulk-import",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter"));
 

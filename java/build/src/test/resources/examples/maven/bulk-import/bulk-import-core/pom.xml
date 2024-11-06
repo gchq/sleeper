@@ -24,7 +24,7 @@
         <version>TEST</version>
     </parent>
 
-    <artifactId>bulk-import-common</artifactId>
+    <artifactId>bulk-import-core</artifactId>
 
     <dependencies>
         <dependency>
