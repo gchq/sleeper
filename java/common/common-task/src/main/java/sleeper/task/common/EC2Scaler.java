@@ -160,6 +160,9 @@ public class EC2Scaler {
 
         // Get the first one, we assume the containers are homogenous
         Optional<EC2InstanceDetails> det = details.values().stream().findFirst();
+        // We don't want to use/request all the resources on an EC2 or try to start too many containers
+        // on one instance. Therefore we reduce the available memory on an EC2 by 10% as a hedge against
+        // this.
         det.ifPresent(d -> this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
                 (int) (d.totalRAM * 0.90) / this.memoryReservation));
     }
