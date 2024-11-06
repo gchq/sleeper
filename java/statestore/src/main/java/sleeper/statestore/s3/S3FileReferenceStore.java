@@ -61,7 +61,6 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
  */
 class S3FileReferenceStore implements FileReferenceStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileReferenceStore.class);
-    private static final String DELIMITER = "|";
 
     private final String stateStorePath;
     private final Configuration conf;
@@ -253,10 +252,6 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     public void fixFileUpdateTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
-    }
-
-    private static String getPartitionIdAndFilename(FileReference fileReference) {
-        return fileReference.getPartitionId() + DELIMITER + fileReference.getFilename();
     }
 
     /**

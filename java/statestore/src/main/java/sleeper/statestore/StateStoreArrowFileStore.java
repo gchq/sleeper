@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.AllReferencesToAFile;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.io.IOException;
@@ -77,7 +75,7 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStoreFilesArrowFormat.write(files.referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList(), allocator, channel);
+            StateStoreFilesArrowFormat.write(files, allocator, channel);
         }
         LOGGER.debug("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
     }
@@ -113,10 +111,8 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            List<AllReferencesToAFile> readFiles = StateStoreFilesArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} files from {}", readFiles.size(), path);
-            StateStoreFiles files = new StateStoreFiles();
-            readFiles.forEach(files::add);
+            StateStoreFiles files = StateStoreFilesArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} files from {}", files.referencedAndUnreferenced().size(), path);
             return files;
         }
     }

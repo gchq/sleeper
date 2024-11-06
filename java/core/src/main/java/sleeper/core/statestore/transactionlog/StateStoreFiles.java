@@ -93,7 +93,16 @@ public class StateStoreFiles {
      * @param file the file
      */
     public void add(AllReferencesToAFile file) {
-        filesByFilename.put(file.getFilename(), StateStoreFile.from(file));
+        add(StateStoreFile.from(file));
+    }
+
+    /**
+     * Adds a file to the state. Should only be called by a transaction.
+     *
+     * @param file the file
+     */
+    public void add(StateStoreFile file) {
+        filesByFilename.put(file.getFilename(), file);
     }
 
     /**

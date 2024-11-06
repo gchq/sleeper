@@ -38,7 +38,7 @@ public class StateStoreFile {
     private Instant lastStateStoreUpdateTime;
     private final Map<String, FileReference> referenceByPartitionId = new TreeMap<>();
 
-    private StateStoreFile(String filename, Instant lastStateStoreUpdateTime, Collection<FileReference> references) {
+    public StateStoreFile(String filename, Instant lastStateStoreUpdateTime, Collection<FileReference> references) {
         this.filename = filename;
         this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
         references.forEach(reference -> referenceByPartitionId.put(reference.getPartitionId(), reference));

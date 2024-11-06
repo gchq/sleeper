@@ -21,12 +21,15 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
@@ -152,11 +155,14 @@ public class StateStoreFilesArrowFormatTest {
     }
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
-        StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
+        StateStoreFiles state = new StateStoreFiles();
+        files.forEach(state::add);
+        StateStoreFilesArrowFormat.write(state, allocator, Channels.newChannel(stream));
     }
 
-    private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
+    private Stream<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
         return StateStoreFilesArrowFormat.read(allocator,
-                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())))
+                .referencedAndUnreferenced().stream().map(StateStoreFile::toModel);
     }
 }
