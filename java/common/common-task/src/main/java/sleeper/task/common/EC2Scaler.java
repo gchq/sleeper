@@ -164,7 +164,7 @@ public class EC2Scaler {
             // We don't want to use/request all the resources on an EC2 or try to start too many containers
             // on one instance. Therefore we reduce the available memory on an EC2 by 10% as a hedge against
             // this.
-            long memoryMiB = (long) (typeInfo.getMemoryInfo().getSizeInMiB() * 0.90);
+            long memoryMiB = typeInfo.getMemoryInfo().getSizeInMiB();
             this.cachedContainersPerInstance = Math.min(vCPUCount / this.cpuReservation,
                     (int) (memoryMiB / this.memoryReservation));
             if (cachedContainersPerInstance < 1) {
