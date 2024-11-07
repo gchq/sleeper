@@ -164,7 +164,7 @@ public class StateStoreFile {
         }
         StateStoreFile other = (StateStoreFile) obj;
         return Objects.equals(filename, other.filename) && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
-                && Objects.equals(referenceByPartitionId.values(), other.referenceByPartitionId.values());
+                && Objects.equals(referenceByPartitionId, other.referenceByPartitionId);
     }
 
     @Override
