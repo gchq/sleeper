@@ -16,35 +16,29 @@
 
 package sleeper.core.deploy;
 
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.schema.Schema;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Settings to create a configuration for a Sleeper instance by combining templates with configuration files.
+ * Settings to create a configuration for a Sleeper instance from templates.
  */
 public class DeployInstanceConfigurationFromTemplates {
-    private final Path instancePropertiesPath;
     private final Path templatesDir;
     private final String tableNameForTemplate;
     private final Path splitPointsFileForTemplate;
 
     private DeployInstanceConfigurationFromTemplates(Builder builder) {
-        instancePropertiesPath = builder.instancePropertiesPath;
         templatesDir = builder.templatesDir;
         tableNameForTemplate = builder.tableNameForTemplate;
         splitPointsFileForTemplate = builder.splitPointsFileForTemplate;
@@ -55,61 +49,26 @@ public class DeployInstanceConfigurationFromTemplates {
     }
 
     /**
-     * Load the configuration files, and use templates for any missing components of the configuration.
+     * Loads the templates for the instance and table properties.
      *
      * @return the configuration
      */
     public DeployInstanceConfiguration load() {
-        if (instancePropertiesPath == null) {
-            return fromTemplatesDir();
-        }
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
-        if (instanceProperties.getTags().isEmpty()) {
-            loadTagsTemplate(instanceProperties);
-        }
-        List<TableProperties> tableProperties = LoadLocalProperties
-                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
-                .map(properties -> {
-                    loadTemplateIfMissing(properties);
-                    return properties;
-                })
-                .collect(Collectors.toUnmodifiableList());
-        if (tableProperties.isEmpty()) {
-            tableProperties = List.of(loadTablePropertiesTemplate(instanceProperties));
-        }
+        InstanceProperties instanceProperties = loadInstanceProperties(templatesDir);
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
+                .tableProperties(loadTableProperties(instanceProperties))
+                .build();
     }
 
-    private DeployInstanceConfiguration fromTemplatesDir() {
-        InstanceProperties instanceProperties = loadInstancePropertiesTemplate();
-        loadTagsTemplate(instanceProperties);
-        TableProperties tableProperties = loadTablePropertiesTemplate(instanceProperties);
-        return DeployInstanceConfiguration.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties).build();
-    }
-
-    private void loadTemplateIfMissing(TableProperties tableProperties) {
-        if (tableProperties.getSchema() == null) {
-            tableProperties.setSchema(Schema.loadFromString(loadSchemaJsonTemplate()));
-        }
-    }
-
-    private InstanceProperties loadInstancePropertiesTemplate() {
-        return InstanceProperties.createWithoutValidation(
-                loadProperties(templatesDir.resolve("instanceproperties.template")));
-    }
-
-    private void loadTagsTemplate(InstanceProperties instanceProperties) {
-        instanceProperties.loadTags(loadProperties(templatesDir.resolve("tags.template")));
-    }
-
-    private TableProperties loadTablePropertiesTemplate(InstanceProperties instanceProperties) {
-        Properties properties = loadProperties(templatesDir.resolve("tableproperties.template"));
-        properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate());
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+    /**
+     * Loads the templates for the table properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the table properties
+     */
+    public TableProperties loadTableProperties(InstanceProperties instanceProperties) {
+        TableProperties tableProperties = loadTableProperties(templatesDir, instanceProperties);
         tableProperties.set(TABLE_NAME, tableNameForTemplate);
         if (splitPointsFileForTemplate != null) {
             if (!Files.exists(splitPointsFileForTemplate)) {
@@ -120,7 +79,26 @@ public class DeployInstanceConfigurationFromTemplates {
         return tableProperties;
     }
 
-    private String loadSchemaJsonTemplate() {
+    /**
+     * Loads the templates for the instance properties.
+     *
+     * @param  templatesDir the templates directory
+     * @return              the instance properties
+     */
+    public static InstanceProperties loadInstanceProperties(Path templatesDir) {
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
+                PropertiesUtils.loadProperties(templatesDir.resolve("instanceproperties.template")));
+        instanceProperties.loadTags(PropertiesUtils.loadProperties(templatesDir.resolve("tags.template")));
+        return instanceProperties;
+    }
+
+    private static TableProperties loadTableProperties(Path templatesDir, InstanceProperties instanceProperties) {
+        Properties properties = PropertiesUtils.loadProperties(templatesDir.resolve("tableproperties.template"));
+        properties.setProperty(TableProperty.SCHEMA.getPropertyName(), loadSchemaJsonTemplate(templatesDir));
+        return new TableProperties(instanceProperties, properties);
+    }
+
+    private static String loadSchemaJsonTemplate(Path templatesDir) {
         try {
             return Files.readString(templatesDir.resolve("schema.template"));
         } catch (IOException e) {
@@ -132,25 +110,11 @@ public class DeployInstanceConfigurationFromTemplates {
      * A builder for instances of this class.
      */
     public static final class Builder {
-        private Path instancePropertiesPath;
         private Path templatesDir;
         private String tableNameForTemplate;
         private Path splitPointsFileForTemplate;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the path to load the Sleeper instance configuration from. This should point to the instance properties
-         * file. Any other configuration files will be found relative to this. If this is not set, the templates will
-         * be used directly.
-         *
-         * @param  instancePropertiesPath the path to the instance properties file
-         * @return                        this builder
-         */
-        public Builder instancePropertiesPath(Path instancePropertiesPath) {
-            this.instancePropertiesPath = instancePropertiesPath;
-            return this;
         }
 
         /**

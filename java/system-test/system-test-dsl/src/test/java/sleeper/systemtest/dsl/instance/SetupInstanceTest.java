@@ -27,13 +27,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SetupInstanceTest {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(withDefaultProperties("main"));
+        sleeper.connectToInstance(MAIN);
     }
 
     @Test

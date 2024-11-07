@@ -99,7 +99,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         }
 
         @Override
-        public void completed() {
+        public void deleteFromQueue() {
             // Delete message from queue
             LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
             try {
@@ -110,7 +110,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         }
 
         @Override
-        public void failed() {
+        public void returnToQueue() {
             LOGGER.info("Compaction job {}: Returning message to queue", job.getId());
             int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);

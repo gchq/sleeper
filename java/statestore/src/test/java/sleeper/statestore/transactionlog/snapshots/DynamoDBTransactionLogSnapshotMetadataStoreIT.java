@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.transactionlog;
+package sleeper.statestore.transactionlog.snapshots;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +24,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
 import java.util.List;

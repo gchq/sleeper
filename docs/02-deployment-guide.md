@@ -116,8 +116,8 @@ sleeper environment deploy VPCEnvironment -c deployEc2=false
 # Deploy EC2 in an existing VPC
 sleeper environment deploy EC2Environment -c vpcId=[vpc-id]
 
-# Deploy with nightly system test automation
-sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true
+# Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
+sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
 ```
 
 You can switch environments like this:
@@ -151,29 +151,44 @@ jar files and Docker images.
 
 ### Automated Deployment
 
-The automated deployment uses template files to provide a default configuration for Sleeper. It also deploys only one
-table into Sleeper with the schema provided in these template files. You can find the template
-files [here](../scripts/templates).
+The automated deployment creates an instance of Sleeper either from your own configuration files, or from templates.
+This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
+necessary deployment artifacts to AWS.
 
-It is recommended that you change these templates to configure Sleeper in the way that you want before you run the
-automated script. At the very least you will want to change the schema.template and tags.template files. See the
-Configuration section below for further details.
+Please ensure Sleeper has been built successfully before using this.
 
-Note that any property in the templates with "changeme" will be overwritten automatically.
+Properties that are set to "changeme" in the templates will be overwritten and should not be set manually during
+automated deployment.
 
-From the root of the Git repository with Sleeper already built, you can use the automated script like this:
+You can find the template files [here](../scripts/templates). It is recommended that you change these templates to
+configure Sleeper in the way that you want before you run the automated script. At the very least you will want to
+change the tags.template file. See the Configuration section below for further details. In that guide, ignore the
+properties that are set to "changeme" in the templates as they are overwritten by the automated deployment.
+
+If you deploy from the templates, it will create an instance with no tables:
 
 ```bash
 cd scripts
 editor templates/instanceproperties.template
-editor templates/schema.template
-editor templates/tableproperties.template
 editor templates/tags.template
-./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
+./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids>
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
 Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
+
+You can also create your own configuration, including tables, and deploy that:
+
+```bash
+cd scripts
+mkdir my-instance
+cp templates/instanceproperties.template my-instance/instance.properties
+cp templates/tags.template my-instance/tags.properties
+cp templates/tableproperties.template my-instance/tables/my-table/table.properties
+cp templates/schema.template my-instance/tables/my-table/schema.json
+# Edit configuration files as above
+./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
+```
 
 This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
 ECR.
@@ -452,6 +467,10 @@ that have changed, update all the docker images, and perform a `cdk deploy`.
 ```bash
 ./scripts/deploy/deployExisting.sh <instance-id>
 ```
+
+We are planning to add support to this script for declarative deployment, so that you can set your full instance and
+tables configuration in a folder structure and pass it to this script to apply any changes. Currently such changes must
+be done with the admin client.
 
 #### Add Table
 

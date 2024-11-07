@@ -69,7 +69,7 @@ public class ECSCompactionTaskRunner {
     private ECSCompactionTaskRunner() {
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException, InterruptedException {
+    public static void main(String[] args) throws IOException, ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);

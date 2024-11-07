@@ -33,8 +33,8 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
-import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;

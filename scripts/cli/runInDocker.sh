@@ -76,11 +76,17 @@ build_temp_runner_image() {
   local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
   echo "Propagating current user to Docker image"
+  set +e
   docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
     --build-arg RUN_IMAGE="$RUN_IMAGE" \
     --build-arg SET_UID=$SET_UID \
     --build-arg SET_GID=$SET_GID \
     --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
+  if [ $? -ne 0 ]; then
+    echo "Failed docker build. Please exeucte un 'sleeper cli upgrade'."
+    exit
+  fi
+  set -e
 }
 
 run_in_environment_docker() {

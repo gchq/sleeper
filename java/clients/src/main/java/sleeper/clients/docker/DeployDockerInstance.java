@@ -24,13 +24,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.clients.status.update.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
