@@ -472,14 +472,25 @@ We are planning to add support to this script for declarative deployment, so tha
 tables configuration in a folder structure and pass it to this script to apply any changes. Currently such changes must
 be done with the admin client.
 
-#### Add Table
+#### Tables
 
-The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with
-properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
+Scripts can be used to add, rename and delete tables in a Sleeper instance.
+
+The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
+schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
+client. We will add support for declarative deployment in the future.
 
 ```bash
-./scripts/deploy/addTable.sh <instance-id> <new-table-id>
+cd scripts
+editor templates/tableproperties.template
+editor templates/schema.template
+./utility/addTable.sh <instance-id> <table-name>
+./utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
+./utility/deleteTable.sh <instance-id> <table-name>
 ```
+
+You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
+all the data. This will permanently delete all data held in the table, as well as metadata.
 
 ## Tear Down
 
