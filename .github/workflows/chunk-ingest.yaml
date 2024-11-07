@@ -18,7 +18,7 @@ on:
       - 'java/ingest/ingest-batcher-job-creator/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/bulk-import/pom.xml'
-      - 'java/bulk-import/bulk-import-common/**'
+      - 'java/bulk-import/bulk-import-core/**'
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/bulk-import/bulk-import-runner/**'
       - 'java/common/common-task/**'

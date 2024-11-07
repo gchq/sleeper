@@ -56,7 +56,7 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployDockerInstance {
     private final AmazonS3 s3Client;

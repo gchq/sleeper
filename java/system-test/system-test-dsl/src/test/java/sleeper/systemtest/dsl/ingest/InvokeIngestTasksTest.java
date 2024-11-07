@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.CheckFailedException;
-import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStartedEvent;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStartedEvent;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;

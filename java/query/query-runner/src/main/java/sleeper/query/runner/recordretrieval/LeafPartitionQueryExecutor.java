@@ -29,8 +29,8 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryException;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QueryException;
 
 import java.util.HashMap;
 import java.util.HashSet;

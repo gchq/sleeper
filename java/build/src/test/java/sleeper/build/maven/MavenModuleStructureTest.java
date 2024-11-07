@@ -36,7 +36,7 @@ public class MavenModuleStructureTest {
         assertThat(TestMavenModuleStructure.example().allJavaModules())
                 .extracting(MavenModuleAndPath::getPath).containsExactly(
                         "core", "configuration", "ingest",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter");
     }
@@ -47,7 +47,7 @@ public class MavenModuleStructureTest {
         assertThat(TestMavenModuleStructure.example().allModules())
                 .extracting(MavenModuleAndPath::getPath).containsExactly(
                         "core", "configuration", "ingest",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter",
                         "distribution");

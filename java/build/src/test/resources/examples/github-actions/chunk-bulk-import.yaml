@@ -9,7 +9,7 @@ on:
       - 'maven/bulk-import/pom.xml'
       - 'maven/bulk-import/bulk-import-runner/**'
       - 'maven/bulk-import/bulk-import-starter/**'
-      - 'maven/bulk-import/bulk-import-common/**'
+      - 'maven/bulk-import/bulk-import-core/**'
       - 'maven/ingest/**'
       - 'maven/configuration/**'
       - 'maven/core/**'

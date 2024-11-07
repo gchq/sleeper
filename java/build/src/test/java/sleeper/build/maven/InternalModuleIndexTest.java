@@ -65,16 +65,16 @@ public class InternalModuleIndexTest {
 
         // When / Then
         assertThat(index.dependencyPathsForModules(
-                "bulk-import/bulk-import-common",
+                "bulk-import/bulk-import-core",
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
                 .containsExactly(
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter",
                         "ingest", "configuration", "core");
         assertThat(index.pomPathsForAncestors(
-                "bulk-import/bulk-import-common",
+                "bulk-import/bulk-import-core",
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
                 .containsExactly(

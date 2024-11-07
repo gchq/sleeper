@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.emr.model.InstanceFleetType;
 import software.amazon.awssdk.services.emr.model.InstanceTypeConfig;
 import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 

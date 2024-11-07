@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.record.Record;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;

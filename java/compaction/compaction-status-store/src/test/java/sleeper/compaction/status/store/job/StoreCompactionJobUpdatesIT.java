@@ -17,8 +17,8 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
@@ -31,12 +31,12 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {

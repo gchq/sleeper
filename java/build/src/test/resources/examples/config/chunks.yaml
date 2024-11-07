@@ -2,7 +2,7 @@ chunks:
   bulk-import:
     name: Bulk Import
     workflow: chunk-bulk-import.yaml
-    modules: [ bulk-import/bulk-import-common, bulk-import/bulk-import-starter, bulk-import/bulk-import-runner ]
+    modules: [ bulk-import/bulk-import-core, bulk-import/bulk-import-starter, bulk-import/bulk-import-runner ]
   common:
     name: Common
     workflow: chunk-common.yaml

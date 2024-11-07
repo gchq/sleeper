@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobTestDataHelper;
+import sleeper.compaction.core.task.CompactionTaskStatus;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -51,7 +51,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {

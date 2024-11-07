@@ -17,8 +17,8 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;

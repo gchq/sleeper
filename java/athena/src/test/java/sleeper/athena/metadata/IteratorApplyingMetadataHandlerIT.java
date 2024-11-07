@@ -49,7 +49,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitter.split.SplitPartition;
+import sleeper.splitter.core.split.SplitPartition;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
+import static sleeper.splitter.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT {
 

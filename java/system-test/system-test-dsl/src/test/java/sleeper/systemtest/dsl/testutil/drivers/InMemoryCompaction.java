@@ -16,18 +16,18 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobCommitter;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.core.task.CompactionTaskStatus;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
@@ -63,9 +63,9 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();

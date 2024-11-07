@@ -36,15 +36,15 @@ import software.amazon.awssdk.services.emr.model.MarketType;
 import software.amazon.awssdk.services.emr.model.RunJobFlowRequest;
 import software.amazon.awssdk.services.emr.model.RunJobFlowResponse;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -75,9 +75,9 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);

@@ -32,7 +32,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 
 import java.time.Instant;
 import java.util.List;

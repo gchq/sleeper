@@ -18,13 +18,13 @@ package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,17 +33,17 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
-import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class WaitForJobsStatusTest {
 

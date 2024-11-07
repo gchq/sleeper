@@ -433,8 +433,8 @@ sleeper.ingest.batcher.job.creation.period.minutes=1
 ## https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources
 
 # The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is
-# an alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).
-sleeper.bulk.import.class.name=sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver
+# an alternative option that uses RDDs (sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver).
+sleeper.bulk.import.class.name=sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver
 
 # The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.
 # Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested.
@@ -1066,9 +1066,9 @@ sleeper.compaction.job.status.ttl=604800
 sleeper.compaction.task.status.ttl=604800
 
 # The name of the class that defines how compaction jobs should be created. This should implement
-# sleeper.compaction.strategy.CompactionStrategy. The value of this property is the default value
+# sleeper.compaction.core.strategy.CompactionStrategy. The value of this property is the default value
 # which can be overridden on a per-table basis.
-sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy
+sleeper.default.compaction.strategy.class=sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy
 
 # The maximum number of files to read in a compaction job. Note that the state store must support
 # atomic updates for this many files.

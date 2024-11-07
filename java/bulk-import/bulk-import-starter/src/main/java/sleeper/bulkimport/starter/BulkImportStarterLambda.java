@@ -26,8 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
@@ -38,11 +38,11 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.ingest.job.IngestJobMessageHandler;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.io.parquet.utils.HadoopPathUtils;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;

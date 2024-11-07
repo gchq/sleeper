@@ -27,7 +27,7 @@ import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusR
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;

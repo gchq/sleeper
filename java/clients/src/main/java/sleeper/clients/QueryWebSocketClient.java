@@ -40,8 +40,8 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
 
 import java.net.URI;
 import java.net.URISyntaxException;

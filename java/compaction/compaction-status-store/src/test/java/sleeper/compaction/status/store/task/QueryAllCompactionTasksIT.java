@@ -17,8 +17,8 @@ package sleeper.compaction.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
-import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 

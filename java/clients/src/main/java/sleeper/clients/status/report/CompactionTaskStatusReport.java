@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporter;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 

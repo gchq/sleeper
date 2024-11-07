@@ -41,9 +41,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.IngestJobSerDe;
-import sleeper.query.model.Query;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
+import sleeper.query.core.model.Query;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 

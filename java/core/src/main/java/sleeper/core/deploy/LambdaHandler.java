@@ -130,31 +130,31 @@ public class LambdaHandler {
             .optionalStack(OptionalStack.TableMetricsStack).add();
     public static final LambdaHandler STATESTORE_COMMITTER = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.committer.lambda.StateStoreCommitterLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.committer.StateStoreCommitterLambda::handleRequest")
             .core().add();
     public static final LambdaHandler SNAPSHOT_CREATION_TRIGGER = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
             .core().add();
     public static final LambdaHandler SNAPSHOT_CREATION = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
             .core().add();
     public static final LambdaHandler SNAPSHOT_DELETION_TRIGGER = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
             .core().add();
     public static final LambdaHandler SNAPSHOT_DELETION = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
             .core().add();
     public static final LambdaHandler TRANSACTION_DELETION_TRIGGER = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
             .core().add();
     public static final LambdaHandler TRANSACTION_DELETION = builder()
             .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
+            .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
             .core().add();
 
     private final LambdaJar jar;

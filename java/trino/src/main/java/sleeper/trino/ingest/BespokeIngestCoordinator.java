@@ -24,12 +24,12 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 
