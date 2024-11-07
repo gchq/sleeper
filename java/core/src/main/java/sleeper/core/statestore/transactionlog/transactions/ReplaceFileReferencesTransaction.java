@@ -73,7 +73,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             for (String filename : job.getInputFiles()) {
                 stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(job.getPartitionId(), updateTime));
             }
-            FileReference newReference = job.getNewReference();
+            FileReference newReference = job.getNewReference().toBuilder().lastStateStoreUpdateTime(updateTime).build();
             stateStoreFiles.add(new StateStoreFile(newReference.getFilename(), updateTime, List.of(newReference)));
         }
     }
