@@ -27,11 +27,16 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 /**
- * Holds the state of references to a file, for a state store backed by a transaction log. This object is mutable, is
- * cached in memory in the state store, and is updated by applying each transaction in the log in sequence. This is not
- * thread safe.
+ * Holds the state of references to a file, for a state store implementation that involves mutating the state in-memory.
+ * This object is mutable, and may be cached in memory by the state store under an instance of StateStoreFiles. This is
+ * not thread safe.
  * <p>
- * The methods to update this object should only ever be called by the transactions.
+ * The transaction log state store caches this in memory and updates the state by applying each transaction from the log
+ * in sequence. This class should allow these transactions to be applied efficiently in-place with few copy operations.
+ * <p>
+ * The methods to update this object should only ever be called by a state store implementation. As such, this object
+ * should not be exposed outside of the state store. Instead, it should be converted to an {@link AllReferencesToAFile}
+ * object first.
  */
 public class StateStoreFile {
 
