@@ -36,7 +36,6 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
-import sleeper.core.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -86,9 +85,9 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 8) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <table-name> " +
-                    "<optional-instance-properties-file> <optional-deploy-paused-flag> <optional-split-points-file>");
+        if (args.length < 4 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> " +
+                    "<optional-instance-properties-file> <optional-deploy-paused-flag>");
         }
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
@@ -100,17 +99,11 @@ public class DeployNewInstance {
             PopulateInstanceProperties populateInstanceProperties = PopulateInstancePropertiesAws.builder(sts, regionProvider)
                     .instanceId(args[1]).vpcId(args[2]).subnetIds(args[3])
                     .build();
-            String tableNameForTemplate = optionalArgument(args, 4).orElse(null);
-            Path instancePropertiesFile = optionalArgument(args, 5).map(Path::of).orElse(null);
-            boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false"));
-            Path splitPointsFileForTemplate = optionalArgument(args, 7).map(Path::of).orElse(null);
-            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(scriptsDirectory.resolve("templates"))
-                    .tableNameForTemplate(tableNameForTemplate)
-                    .splitPointsFileForTemplate(splitPointsFileForTemplate)
-                    .build();
+            Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
+            boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
             builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstanceAndTables(instancePropertiesFile, populateInstanceProperties, fromTemplates))
+                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                            instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .deployWithClients(s3, s3v2, dynamoDB, ecr);
