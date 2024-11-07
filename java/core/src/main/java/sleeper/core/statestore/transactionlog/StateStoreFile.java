@@ -20,6 +20,7 @@ import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,6 +67,18 @@ public class StateStoreFile {
                 model.getReferences().stream()
                         .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
                         .toList());
+    }
+
+    /**
+     * Creates an instance of this class for a new file with a given update time.
+     *
+     * @param  updateTime the time the file was added
+     * @param  reference  the reference to the file
+     * @return            the instance
+     */
+    public static StateStoreFile newFile(Instant updateTime, FileReference reference) {
+        return new StateStoreFile(reference.getFilename(), updateTime,
+                List.of(reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
     }
 
     /**

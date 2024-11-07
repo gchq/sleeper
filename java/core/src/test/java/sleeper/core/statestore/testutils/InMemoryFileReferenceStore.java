@@ -187,8 +187,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
         for (String filename : request.getInputFiles()) {
             state.updateFile(filename, file -> file.removeReferenceForPartition(request.getPartitionId(), updateTime));
         }
-        FileReference newReference = request.getNewReference();
-        state.add(new StateStoreFile(newReference.getFilename(), updateTime, List.of(newReference)));
+        state.add(StateStoreFile.newFile(updateTime, request.getNewReference()));
     }
 
     private Stream<FileReference> streamFileReferences() throws StateStoreException {
