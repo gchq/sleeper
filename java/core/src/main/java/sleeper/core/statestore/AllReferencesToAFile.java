@@ -18,7 +18,6 @@ package sleeper.core.statestore;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +36,7 @@ public class AllReferencesToAFile {
 
     private final String filename;
     private final Instant lastStateStoreUpdateTime;
-    private final Collection<FileReference> references;
+    private final List<FileReference> references;
 
     private AllReferencesToAFile(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
@@ -124,8 +123,8 @@ public class AllReferencesToAFile {
         return references.size();
     }
 
-    public Collection<FileReference> getReferences() {
-        return Collections.unmodifiableCollection(references);
+    public List<FileReference> getReferences() {
+        return references;
     }
 
     public Builder toBuilder() {
@@ -168,7 +167,7 @@ public class AllReferencesToAFile {
     public static final class Builder {
         private String filename;
         private Instant lastStateStoreUpdateTime;
-        private Collection<FileReference> references;
+        private List<FileReference> references;
 
         private Builder() {
         }
@@ -202,7 +201,7 @@ public class AllReferencesToAFile {
          * @param  references the references
          * @return            the builder
          */
-        public Builder references(Collection<FileReference> references) {
+        public Builder references(List<FileReference> references) {
             this.references = references;
             return this;
         }

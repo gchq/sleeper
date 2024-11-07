@@ -77,7 +77,7 @@ public class StateStoreFile {
         return AllReferencesToAFile.builder()
                 .filename(filename)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
-                .references(referenceByPartitionId.values())
+                .references(referenceByPartitionId.values().stream().toList())
                 .build();
     }
 
