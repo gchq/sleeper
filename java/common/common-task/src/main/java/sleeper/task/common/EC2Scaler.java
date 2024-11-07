@@ -161,9 +161,6 @@ public class EC2Scaler {
             InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
             // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
             int vCPUCount = typeInfo.getVCpuInfo().getDefaultVCpus() * 1024;
-            // We don't want to use/request all the resources on an EC2 or try to start too many containers
-            // on one instance. Therefore we reduce the available memory on an EC2 by 10% as a hedge against
-            // this.
             long memoryMiB = typeInfo.getMemoryInfo().getSizeInMiB();
             this.cachedContainersPerInstance = Math.min(vCPUCount / this.cpuReservation,
                     (int) (memoryMiB / this.memoryReservation));
