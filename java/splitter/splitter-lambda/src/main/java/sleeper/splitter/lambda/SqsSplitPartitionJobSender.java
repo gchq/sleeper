@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.splitter.find.SplitPartitionJobDefinition;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 

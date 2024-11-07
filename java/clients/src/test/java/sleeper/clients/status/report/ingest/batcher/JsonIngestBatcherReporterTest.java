@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.io.IOException;
 import java.util.Collections;

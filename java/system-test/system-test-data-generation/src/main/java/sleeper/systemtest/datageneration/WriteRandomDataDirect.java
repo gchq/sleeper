@@ -25,10 +25,10 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.commit.AddFilesToStateStore;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;

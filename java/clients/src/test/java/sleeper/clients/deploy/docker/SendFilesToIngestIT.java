@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.docker.SendFilesToIngest;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

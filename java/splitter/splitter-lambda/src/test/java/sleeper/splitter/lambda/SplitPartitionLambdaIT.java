@@ -53,10 +53,10 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
-import sleeper.splitter.find.SplitPartitionJobDefinition;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -79,8 +79,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class SplitPartitionLambdaIT {

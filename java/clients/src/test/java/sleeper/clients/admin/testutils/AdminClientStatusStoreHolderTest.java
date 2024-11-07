@@ -17,13 +17,13 @@ package sleeper.clients.admin.testutils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -41,8 +41,8 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
 
 import java.nio.file.Path;
 import java.util.Iterator;

@@ -17,4 +17,4 @@ java --add-opens java.base/java.nio=ALL-UNNAMED \
     --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
     --add-opens java.base/java.util=ALL-UNNAMED \
     --add-opens java.base/java.lang.invoke=ALL-UNNAMED \
-    -cp /ingest.jar sleeper.ingest.job.ECSIngestTaskRunner "$@"
+    -cp /ingest.jar sleeper.ingest.runner.task.ECSIngestTaskRunner "$@"

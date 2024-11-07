@@ -22,10 +22,10 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTask.MessageHandle;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;

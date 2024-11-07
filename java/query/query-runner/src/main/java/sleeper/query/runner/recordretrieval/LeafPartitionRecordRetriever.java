@@ -18,7 +18,7 @@ package sleeper.query.runner.recordretrieval;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.core.model.LeafPartitionQuery;
 
 @FunctionalInterface
 public interface LeafPartitionRecordRetriever {

@@ -41,19 +41,19 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
-import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.StateStoreWaitForFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -78,9 +78,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -125,7 +125,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class ECSCompactionTaskRunnerLocalStackIT {

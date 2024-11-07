@@ -28,11 +28,11 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.dynamodb.test.DynamoDBTestBase;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.QueryTrackerException;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryTrackerException;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -43,11 +43,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.query.tracker.QueryState.COMPLETED;
-import static sleeper.query.tracker.QueryState.FAILED;
-import static sleeper.query.tracker.QueryState.IN_PROGRESS;
-import static sleeper.query.tracker.QueryState.PARTIALLY_FAILED;
-import static sleeper.query.tracker.QueryState.QUEUED;
+import static sleeper.query.core.tracker.QueryState.COMPLETED;
+import static sleeper.query.core.tracker.QueryState.FAILED;
+import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
+import static sleeper.query.core.tracker.QueryState.PARTIALLY_FAILED;
+import static sleeper.query.core.tracker.QueryState.QUEUED;
 
 public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
 

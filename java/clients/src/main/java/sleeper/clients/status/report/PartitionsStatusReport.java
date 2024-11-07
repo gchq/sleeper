@@ -25,7 +25,7 @@ import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.status.PartitionsStatus;
+import sleeper.splitter.core.status.PartitionsStatus;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 

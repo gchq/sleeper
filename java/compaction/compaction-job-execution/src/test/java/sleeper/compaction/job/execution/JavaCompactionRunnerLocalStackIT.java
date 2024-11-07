@@ -30,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -59,8 +59,8 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {

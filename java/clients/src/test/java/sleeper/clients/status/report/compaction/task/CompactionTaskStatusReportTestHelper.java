@@ -16,8 +16,8 @@
 
 package sleeper.clients.status.report.compaction.task;
 
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 

@@ -17,7 +17,7 @@ package sleeper.compaction.job.execution;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;

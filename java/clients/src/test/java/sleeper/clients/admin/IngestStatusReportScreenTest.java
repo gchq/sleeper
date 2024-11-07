@@ -26,11 +26,11 @@ import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelpe
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
@@ -58,9 +58,9 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {

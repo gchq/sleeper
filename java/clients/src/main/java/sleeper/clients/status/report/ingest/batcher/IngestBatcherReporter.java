@@ -17,7 +17,7 @@
 package sleeper.clients.status.report.ingest.batcher;
 
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.util.List;
 
