@@ -62,7 +62,10 @@ public class StateStoreFile {
      * @return            the instance
      */
     public static StateStoreFile newFile(Instant updateTime, AllReferencesToAFile model) {
-        return new StateStoreFile(model.getFilename(), updateTime, model.getReferences());
+        return new StateStoreFile(model.getFilename(), updateTime,
+                model.getReferences().stream()
+                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                        .toList());
     }
 
     /**
@@ -161,12 +164,12 @@ public class StateStoreFile {
         }
         StateStoreFile other = (StateStoreFile) obj;
         return Objects.equals(filename, other.filename) && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
-                && Objects.equals(referenceByPartitionId, other.referenceByPartitionId);
+                && Objects.equals(referenceByPartitionId.values(), other.referenceByPartitionId.values());
     }
 
     @Override
     public String toString() {
-        return "StateStoreFile{filename=" + filename + ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime + ", referenceByPartitionId=" + referenceByPartitionId + "}";
+        return "StateStoreFile{filename=" + filename + ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime + ", references=" + referenceByPartitionId.values() + "}";
     }
 
 }

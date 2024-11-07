@@ -60,7 +60,7 @@ public class AllReferencesToAFile {
     public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
         return builder()
                 .filename(reference.getFilename())
-                .references(List.of(reference))
+                .references(List.of(reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
