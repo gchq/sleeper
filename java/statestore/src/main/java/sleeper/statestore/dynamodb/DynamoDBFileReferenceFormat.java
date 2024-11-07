@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -153,9 +154,8 @@ class DynamoDBFileReferenceFormat {
             Map<String, AttributeValue> referenceCountItem,
             Map<String, List<FileReference>> referencesByFilename) {
         String filename = getFilenameFromReferenceCount(referenceCountItem);
-        return AllReferencesToAFile.builder().filename(filename)
-                .lastStateStoreUpdateTime(getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME))
-                .references(referencesByFilename.getOrDefault(filename, List.of()))
-                .build();
+        Instant lastUpdateTime = getInstantAttribute(referenceCountItem, LAST_UPDATE_TIME);
+        List<FileReference> references = referencesByFilename.getOrDefault(filename, List.of());
+        return new StateStoreFile(filename, lastUpdateTime, references).toModel();
     }
 }
