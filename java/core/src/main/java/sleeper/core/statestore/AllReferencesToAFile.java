@@ -49,22 +49,6 @@ public class AllReferencesToAFile {
     }
 
     /**
-     * Creates a record for a file referenced in a single partition. This is used in state store implementations to
-     * model the file when only a reference was provided to add the file to the state store.
-     *
-     * @param  reference  the reference to the file
-     * @param  updateTime the update time in the state store (should be set by the state store implementation)
-     * @return            the file record
-     */
-    public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
-        return builder()
-                .filename(reference.getFilename())
-                .references(List.of(reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
      * Aggregates file references to create a record for each referenced file. This is used in state store
      * implementations to convert to the internal model when only references were provided to add files to the state
      * store. Every reference to each file must be included in the input, or the resulting model will be incorrect.

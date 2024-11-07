@@ -33,7 +33,7 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogSnapshotSerDeIT {
