@@ -125,13 +125,13 @@ public class EC2Scaler {
 
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
-        LOGGER.debug("Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
+        LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}, containers per instance {}",
                 asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
         LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
-                "so total instances wanted {}, limited to {} by ASG maximum", numberContainers, containersPerInstance,
+                "so total instances wanted {}, limited to {} by ASG maximum size limit", numberContainers, containersPerInstance,
                 instancesDesired, newClusterSize);
 
         // Set the new desired size on the cluster
@@ -144,7 +144,7 @@ public class EC2Scaler {
      * used to work out how many containers per instance can fit.
      *
      * @throws IllegalStateException if more than one result is returned from AWS for describeInstanceTypes
-     * @throws IllegalStateException if zero containers can fit on the EC2 instance type set
+     * @throws IllegalStateException if no containers at all can fit on the EC2 instance type set
      */
     private void checkContainersPerInstance() {
         if (containerPerInstanceKnown()) {
@@ -161,7 +161,12 @@ public class EC2Scaler {
             InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
             // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
             int vCPUCount = typeInfo.getVCpuInfo().getDefaultVCpus() * 1024;
-            long memoryMiB = typeInfo.getMemoryInfo().getSizeInMiB();
+            // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
+            // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
+            // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
+            // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
+            // single instance.
+            long memoryMiB = (long) (typeInfo.getMemoryInfo().getSizeInMiB() * 0.9);
             this.cachedContainersPerInstance = Math.min(vCPUCount / this.cpuReservation,
                     (int) (memoryMiB / this.memoryReservation));
             if (cachedContainersPerInstance < 1) {
