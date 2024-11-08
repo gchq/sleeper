@@ -16,8 +16,8 @@
 
 package sleeper.query.runner.tracker;
 
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.time.Instant;
 

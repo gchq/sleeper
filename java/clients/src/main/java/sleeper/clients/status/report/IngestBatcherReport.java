@@ -31,7 +31,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.util.HashMap;

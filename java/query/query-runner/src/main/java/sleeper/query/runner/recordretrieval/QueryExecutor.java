@@ -29,9 +29,9 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryException;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

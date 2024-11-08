@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.emrserverless.model.S3MonitoringConfigura
 import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;

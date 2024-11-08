@@ -18,11 +18,9 @@ package sleeper.core.statestore;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,36 +36,16 @@ public class AllReferencesToAFile {
 
     private final String filename;
     private final Instant lastStateStoreUpdateTime;
-    private final Map<String, FileReference> referenceByPartitionId;
-    private final int referenceCount;
+    private final List<FileReference> references;
 
     private AllReferencesToAFile(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
-        referenceByPartitionId = Objects.requireNonNull(builder.referenceByPartitionId, "referenceByPartitionId must not be null");
-        referenceCount = referenceByPartitionId.size();
+        references = Objects.requireNonNull(builder.references, "references must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates a record for a file referenced in a single partition. This is used in state store implementations to
-     * model the file when only a reference was provided to add the file to the state store.
-     *
-     * @param  reference  the reference to the file
-     * @param  updateTime the update time in the state store (should be set by the state store implementation)
-     * @return            the file record
-     */
-    public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
-        return builder()
-                .filename(reference.getFilename())
-                .referenceByPartitionId(Map.of(
-                        reference.getPartitionId(),
-                        reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
     }
 
     /**
@@ -102,70 +80,6 @@ public class AllReferencesToAFile {
     }
 
     /**
-     * Creates a copy of this model with the reference on one partition removed, and replaced with new references. This
-     * is used in state store implementations to split a file reference into two to move the file down the tree of
-     * partitions. The new references should cover all the records that were previously covered by the reference that's
-     * being removed.
-     *
-     * @param  partitionId   the ID of the partition to remove the file from
-     * @param  newReferences the references to add
-     * @param  updateTime    the update time that this occurs (should be set by the state store implementation)
-     * @return               a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile splitReferenceFromPartition(
-            String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
-        return toBuilder()
-                .references(Stream.concat(
-                        referenceByPartitionId.values().stream()
-                                .filter(reference -> !partitionId.equals(reference.getPartitionId())),
-                        newReferences.stream().map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
-     * Creates a copy of this model with the reference on one partition removed. This is used in state store
-     * implementations when adding the output of a compaction in a new file that contains all the records for a certain
-     * partition. This means that the input files for the compaction must no longer be referenced in that partition.
-     *
-     * @param  partitionId the ID of the partition to remove the file from
-     * @param  updateTime  the update time that this occurs (should be set by the state store implementation)
-     * @return             a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile removeReferenceForPartition(String partitionId, Instant updateTime) {
-        return toBuilder()
-                .references(referenceByPartitionId.values().stream()
-                        .filter(reference -> !partitionId.equals(reference.getPartitionId())))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
-     * Creates a copy of this model with the reference on one partition assigned to a job. This is used in state store
-     * implementations when assigning a compaction job to its input files. Note that parts of a file are assigned to
-     * jobs independently. Each partition that a file is in covers different records. Each reference on each
-     * partition will be assigned to and processed by a different job.
-     *
-     * @param  jobId       the ID of the job to assign the file reference to
-     * @param  partitionId the ID of the partition whose reference should be assigned to the job
-     * @param  updateTime  the update time that this occurs (should be set by the state store implementation)
-     * @return             a copy of the file record with this change applied
-     */
-    public AllReferencesToAFile withJobIdForPartition(String jobId, String partitionId, Instant updateTime) {
-        return toBuilder()
-                .references(referenceByPartitionId.values().stream()
-                        .map(reference -> {
-                            if (partitionId.equals(reference.getPartitionId())) {
-                                return reference.toBuilder().jobId(jobId).lastStateStoreUpdateTime(updateTime).build();
-                            } else {
-                                return reference;
-                            }
-                        }))
-                .lastStateStoreUpdateTime(updateTime)
-                .build();
-    }
-
-    /**
      * Creates a copy of this model with the update time set for the whole file and all its references. This is used in
      * state store implementations when adding a new file to the state store.
      *
@@ -174,8 +88,9 @@ public class AllReferencesToAFile {
      */
     public AllReferencesToAFile withCreatedUpdateTime(Instant updateTime) {
         return toBuilder()
-                .references(referenceByPartitionId.values().stream()
-                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .references(references.stream()
+                        .map(reference -> reference.toBuilder().lastStateStoreUpdateTime(updateTime).build())
+                        .toList())
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
@@ -189,27 +104,17 @@ public class AllReferencesToAFile {
     }
 
     public int getReferenceCount() {
-        return referenceCount;
+        return references.size();
     }
 
-    public Collection<FileReference> getReferences() {
-        return referenceByPartitionId.values();
-    }
-
-    /**
-     * Retrieves the reference for this file on a given partition.
-     *
-     * @param  partitionId the ID of the partition to find the reference in
-     * @return             the reference to this file in the partition, if the file is referenced in that partition
-     */
-    public Optional<FileReference> getReferenceForPartitionId(String partitionId) {
-        return Optional.ofNullable(referenceByPartitionId.get(partitionId));
+    public List<FileReference> getReferences() {
+        return references;
     }
 
     public Builder toBuilder() {
         return builder()
                 .filename(filename)
-                .referenceByPartitionId(referenceByPartitionId)
+                .references(references)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
@@ -217,14 +122,13 @@ public class AllReferencesToAFile {
     public String toString() {
         return "AllReferencesToAFile{filename=" + filename +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
-                ", referenceByPartitionId=" + referenceByPartitionId +
-                ", referenceCount=" + referenceCount +
+                ", references=" + references +
                 "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, lastStateStoreUpdateTime, referenceByPartitionId);
+        return Objects.hash(filename, lastStateStoreUpdateTime, references);
     }
 
     @Override
@@ -238,7 +142,7 @@ public class AllReferencesToAFile {
         AllReferencesToAFile other = (AllReferencesToAFile) obj;
         return Objects.equals(filename, other.filename)
                 && Objects.equals(lastStateStoreUpdateTime, other.lastStateStoreUpdateTime)
-                && Objects.equals(referenceByPartitionId, other.referenceByPartitionId);
+                && Objects.equals(references, other.references);
     }
 
     /**
@@ -247,7 +151,7 @@ public class AllReferencesToAFile {
     public static final class Builder {
         private String filename;
         private Instant lastStateStoreUpdateTime;
-        private Map<String, FileReference> referenceByPartitionId;
+        private List<FileReference> references;
 
         private Builder() {
         }
@@ -281,24 +185,8 @@ public class AllReferencesToAFile {
          * @param  references the references
          * @return            the builder
          */
-        public Builder references(Stream<FileReference> references) {
-            Map<String, FileReference> map = new TreeMap<>();
-            references.forEach(reference -> map.put(reference.getPartitionId(), reference));
-            return referenceByPartitionId(Collections.unmodifiableMap(map));
-        }
-
-        /**
-         * Sets the references to the file on partitions.
-         *
-         * @param  references the references
-         * @return            the builder
-         */
-        public Builder references(Collection<FileReference> references) {
-            return references(references.stream());
-        }
-
-        private Builder referenceByPartitionId(Map<String, FileReference> referenceByPartitionId) {
-            this.referenceByPartitionId = referenceByPartitionId;
+        public Builder references(List<FileReference> references) {
+            this.references = references;
             return this;
         }
 

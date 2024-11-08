@@ -39,7 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * A utility class to report information about the files in the system and their

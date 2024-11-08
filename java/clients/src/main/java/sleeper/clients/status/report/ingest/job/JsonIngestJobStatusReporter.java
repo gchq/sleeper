@@ -29,9 +29,9 @@ import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.ingest.job.status.IngestJobStartedStatus;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobUpdateType;
+import sleeper.ingest.core.job.status.IngestJobStartedStatus;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobUpdateType;
 
 import java.io.PrintStream;
 import java.util.List;

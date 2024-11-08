@@ -21,8 +21,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.onJob;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;
-import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
 public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTestBase {
 

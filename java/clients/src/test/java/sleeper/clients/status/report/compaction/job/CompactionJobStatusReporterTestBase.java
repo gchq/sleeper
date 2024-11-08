@@ -18,10 +18,10 @@ package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobTestDataHelper;
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.status.ProcessRun;
@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
 import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobFilesAssigned;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobFilesAssigned;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public abstract class CompactionJobStatusReporterTestBase {

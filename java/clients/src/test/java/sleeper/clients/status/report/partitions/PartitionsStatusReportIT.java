@@ -50,8 +50,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-import static sleeper.splitter.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 @Testcontainers
 public class PartitionsStatusReportIT {

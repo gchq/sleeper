@@ -21,11 +21,11 @@ import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.output.WebSocketOutput;
-import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.io.IOException;
 import java.util.HashMap;

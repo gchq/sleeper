@@ -47,7 +47,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import java.time.Duration;
 import java.time.Instant;

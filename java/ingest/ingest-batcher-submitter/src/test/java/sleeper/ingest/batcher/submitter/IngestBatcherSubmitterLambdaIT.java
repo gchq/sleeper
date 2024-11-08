@@ -34,9 +34,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 
 import java.time.Instant;
 

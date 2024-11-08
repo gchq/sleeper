@@ -16,10 +16,10 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.util.List;
 import java.util.function.Function;

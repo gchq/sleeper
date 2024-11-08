@@ -34,7 +34,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.bulkimport.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.util.Utils;

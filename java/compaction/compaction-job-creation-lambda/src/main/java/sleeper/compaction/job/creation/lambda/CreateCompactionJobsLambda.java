@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
@@ -48,7 +48,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;

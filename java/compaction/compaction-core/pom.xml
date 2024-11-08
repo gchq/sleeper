@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>dynamodb-tools</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

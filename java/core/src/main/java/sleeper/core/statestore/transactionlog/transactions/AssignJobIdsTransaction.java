@@ -15,13 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -64,7 +64,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
-                AllReferencesToAFile existingFile = stateStoreFiles.file(filename)
+                StateStoreFile existingFile = stateStoreFiles.file(filename)
                         .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
                 FileReference existingReference = existingFile.getReferenceForPartitionId(request.getPartitionId())
                         .orElseThrow(() -> new FileReferenceNotFoundException(filename, request.getPartitionId()));
@@ -80,7 +80,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
                 stateStoreFiles.updateFile(filename,
-                        file -> file.withJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
+                        file -> file.setJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
             }
         }
     }

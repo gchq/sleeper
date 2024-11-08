@@ -27,7 +27,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;

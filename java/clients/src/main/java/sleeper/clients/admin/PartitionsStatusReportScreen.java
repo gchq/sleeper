@@ -22,7 +22,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.status.PartitionsStatus;
+import sleeper.splitter.core.status.PartitionsStatus;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 

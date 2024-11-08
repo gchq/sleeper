@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.ingest.impl.recordbatch.RecordBatch;
+import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 
 import java.util.ArrayList;
 import java.util.List;

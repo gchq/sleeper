@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 

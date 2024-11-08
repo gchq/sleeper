@@ -22,7 +22,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.IngestFactory;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

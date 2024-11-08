@@ -21,7 +21,7 @@ import sleeper.core.key.Key;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.core.model.LeafPartitionQuery;
 
 import java.util.Collection;
 import java.util.HashMap;

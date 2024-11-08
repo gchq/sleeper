@@ -36,7 +36,7 @@ public class TestChunks {
         return ProjectChunk.chunk("bulk-import").name("Bulk Import")
                 .workflow("chunk-bulk-import.yaml")
                 .modulesArray(
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-starter",
                         "bulk-import/bulk-import-runner")
                 .build();

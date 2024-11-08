@@ -16,11 +16,11 @@
 package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Clock;
 import java.util.List;

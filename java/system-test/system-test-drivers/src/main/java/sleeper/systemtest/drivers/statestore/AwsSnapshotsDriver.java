@@ -77,7 +77,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
 
     private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
         StateStoreFiles state = snapshot.getState();
-        return new AllReferencesToAllFiles(state.referencedAndUnreferenced(), false);
+        return state.allReferencesToAllFiles();
     }
 
     private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {

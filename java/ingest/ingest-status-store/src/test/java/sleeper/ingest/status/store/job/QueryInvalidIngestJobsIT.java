@@ -18,17 +18,17 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobValidatedEvent;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedEvent;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedEvent;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test

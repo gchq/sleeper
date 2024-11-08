@@ -23,7 +23,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Duration;
@@ -32,10 +32,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBase {
 
