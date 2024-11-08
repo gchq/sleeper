@@ -25,14 +25,20 @@ import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.StreamSupport;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
@@ -58,23 +64,25 @@ public class GarbageCollectionST {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "5",
+                COMPACTION_FILES_BATCH_SIZE, "10",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 50));
-        sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 10))
-                .numberedRecords(numbers.range(10, 20))
-                .numberedRecords(numbers.range(20, 30))
-                .numberedRecords(numbers.range(30, 40))
-                .numberedRecords(numbers.range(40, 50));
-        sleeper.compaction().createJobs(1).invokeTasks(1).waitForJobs();
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 20_000));
+        SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
+        IntStream.range(0, 2000)
+                .mapToObj(i -> numbers.range(i * 10, i * 10 + 10))
+                .forEach(range -> ingest.numberedRecords(range));
+        sleeper.compaction().createJobs(200).invokeTasks(1).waitForJobs();
 
         // When
         sleeper.garbageCollection().invoke().waitFor();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 50)));
+        assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
+                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 20_000))));
         Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+    }
+
+    private static <T> Set<T> setFrom(Iterable<T> iterable) {
+        return StreamSupport.stream(iterable.spliterator(), false).collect(toSet());
     }
 }
