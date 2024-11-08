@@ -16,28 +16,35 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.UnaryOperator;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * Holds the state of file references, for a state store backed by a transaction log. This object is mutable, is cached
- * in memory in the state store, and is updated by applying each transaction in the log in sequence. This is not thread
- * safe.
+ * Holds the state of file references, for a state store implementation that involves mutating the state in-memory. This
+ * object is mutable, and may be cached in memory by the state store. This is not thread safe.
  * <p>
- * The methods to update this object should only ever be called by the transactions.
+ * The transaction log state store caches this in memory and updates the state by applying each transaction from the log
+ * in sequence. This class should allow these transactions to be applied efficiently in-place with few copy operations.
+ * <p>
+ * The methods to update this object should only ever be called by a state store implementation. As such, this object
+ * should not be exposed outside of the state store. The full state of files in the state store may be exposed by
+ * creating an instance of {@link AllReferencesToAllFiles}.
  */
 public class StateStoreFiles {
-    private final Map<String, AllReferencesToAFile> filesByFilename = new TreeMap<>();
+    private final Map<String, StateStoreFile> filesByFilename = new TreeMap<>();
 
     /**
      * Streams through all references to all files in the state store.
@@ -54,8 +61,41 @@ public class StateStoreFiles {
      *
      * @return all files
      */
-    public Collection<AllReferencesToAFile> referencedAndUnreferenced() {
+    public Collection<StateStoreFile> referencedAndUnreferenced() {
         return filesByFilename.values();
+    }
+
+    /**
+     * Retrieves all references to all files, with a limit on the number of unreferenced files.
+     *
+     * @param  maxUnreferenced the number of unreferenced files to include
+     * @return                 the report
+     */
+    public AllReferencesToAllFiles allReferencesToAllFiles(int maxUnreferenced) {
+        List<AllReferencesToAFile> files = new ArrayList<>();
+        int foundUnreferenced = 0;
+        boolean moreThanMax = false;
+        for (StateStoreFile file : referencedAndUnreferenced()) {
+            if (file.getReferences().isEmpty()) {
+                if (foundUnreferenced >= maxUnreferenced) {
+                    moreThanMax = true;
+                    continue;
+                } else {
+                    foundUnreferenced++;
+                }
+            }
+            files.add(file.toModel());
+        }
+        return new AllReferencesToAllFiles(files, moreThanMax);
+    }
+
+    /**
+     * Retrieves all references to all files.
+     *
+     * @return the report
+     */
+    public AllReferencesToAllFiles allReferencesToAllFiles() {
+        return new AllReferencesToAllFiles(referencedAndUnreferenced().stream().map(StateStoreFile::toModel).toList(), false);
     }
 
     /**
@@ -67,9 +107,9 @@ public class StateStoreFiles {
      */
     public Stream<String> unreferencedBefore(Instant maxUpdateTime) {
         return filesByFilename.values().stream()
-                .filter(file -> file.getReferenceCount() == 0)
+                .filter(file -> file.getReferences().isEmpty())
                 .filter(file -> file.getLastStateStoreUpdateTime().isBefore(maxUpdateTime))
-                .map(AllReferencesToAFile::getFilename)
+                .map(StateStoreFile::getFilename)
                 .collect(toUnmodifiableList()).stream(); // Avoid concurrent modification during GC
     }
 
@@ -79,7 +119,7 @@ public class StateStoreFiles {
      * @param  filename the filename
      * @return          the file if it exists in the state store
      */
-    public Optional<AllReferencesToAFile> file(String filename) {
+    public Optional<StateStoreFile> file(String filename) {
         return Optional.ofNullable(filesByFilename.get(filename));
     }
 
@@ -92,7 +132,7 @@ public class StateStoreFiles {
      *
      * @param file the file
      */
-    public void add(AllReferencesToAFile file) {
+    public void add(StateStoreFile file) {
         filesByFilename.put(file.getFilename(), file);
     }
 
@@ -118,10 +158,8 @@ public class StateStoreFiles {
      * @param filename the filename
      * @param update   the update
      */
-    public void updateFile(String filename, UnaryOperator<AllReferencesToAFile> update) {
-        AllReferencesToAFile existing = filesByFilename.get(filename);
-        AllReferencesToAFile updated = update.apply(existing);
-        filesByFilename.put(filename, updated);
+    public void updateFile(String filename, Consumer<StateStoreFile> update) {
+        update.accept(filesByFilename.get(filename));
     }
 
     @Override

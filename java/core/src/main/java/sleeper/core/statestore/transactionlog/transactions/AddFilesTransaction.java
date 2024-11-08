@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -50,7 +51,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (AllReferencesToAFile file : files) {
-            stateStoreFiles.add(file.withCreatedUpdateTime(updateTime));
+            stateStoreFiles.add(StateStoreFile.newFile(updateTime, file));
         }
     }
 
