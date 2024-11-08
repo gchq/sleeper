@@ -83,7 +83,7 @@ build_temp_runner_image() {
     --build-arg SET_GID=$SET_GID \
     --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
   if [ $? -ne 0 ]; then
-    echo "Failed docker build. Please exeucte un 'sleeper cli upgrade'."
+    echo "Failed docker build. Please run 'sleeper cli upgrade'."
     exit
   fi
   set -e
