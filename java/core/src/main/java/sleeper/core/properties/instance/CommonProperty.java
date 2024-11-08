@@ -17,10 +17,12 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
@@ -77,6 +79,14 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true)
             .ignoreEmptyValue(false).build();
+    UserDefinedInstanceProperty LAMBDA_DEPLOY_TYPE = Index.propertyBuilder("sleeper.lambda.deploy.type")
+            .description("The deployment type for AWS Lambda. Not case sensitive.\n" +
+                    "Valid values: " + SleeperPropertyValueUtils.describeEnumValuesInLowerCase(LambdaDeployType.class))
+            .defaultValue(LambdaDeployType.JAR.toString().toLowerCase(Locale.ROOT))
+            .validationPredicate(LambdaDeployType::isValid)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
@@ -225,9 +235,15 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes")
-            .description("The frequency in minutes with which the transaction log snapshot creation lambda is run.")
-            .defaultValue("5")
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds")
+            .description("The frequency in seconds with which the transaction log snapshot creation lambda is run.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds")
+            .description("The timeout in seconds after which to terminate the transaction log snapshot creation lambda.")
+            .defaultValue("180")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();

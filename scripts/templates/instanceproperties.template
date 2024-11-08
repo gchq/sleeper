@@ -82,7 +82,11 @@ sleeper.retain.infra.after.destroy=true
 # PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, QueryStack, WebSocketQueryStack,
 # AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
 # DashboardStack, TableMetricsStack]
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack
+sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
+
+# The deployment type for AWS Lambda. Not case sensitive.
+# Valid values: [jar, container]
+sleeper.lambda.deploy.type=jar
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
@@ -173,8 +177,11 @@ sleeper.statestore.s3.dynamo.pointintimerecovery=false
 # the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 sleeper.statestore.transactionlog.snapshot.creation.batch.size=1
 
-# The frequency in minutes with which the transaction log snapshot creation lambda is run.
-sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes=5
+# The frequency in seconds with which the transaction log snapshot creation lambda is run.
+sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds=60
+
+# The timeout in seconds after which to terminate the transaction log snapshot creation lambda.
+sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds=180
 
 # The reserved concurrency for the snapshot creation lambda.
 # See reserved concurrency overview at:
@@ -426,8 +433,8 @@ sleeper.ingest.batcher.job.creation.period.minutes=1
 ## https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources
 
 # The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is
-# an alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).
-sleeper.bulk.import.class.name=sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver
+# an alternative option that uses RDDs (sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver).
+sleeper.bulk.import.class.name=sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver
 
 # The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.
 # Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested.
@@ -573,7 +580,7 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-6.13.0
+sleeper.bulk.import.emr.serverless.release=emr-7.2.0
 
 # Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
 sleeper.bulk.import.emr.serverless.autostart.enabled=true
@@ -709,7 +716,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-6.13.0
+sleeper.default.bulk.import.emr.release.label=emr-7.2.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
@@ -762,7 +769,7 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-6.13.0
+sleeper.bulk.import.persistent.emr.release.label=emr-7.2.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
@@ -938,6 +945,17 @@ sleeper.compaction.job.failed.visibility.timeout.seconds=60
 # messages in the time defined by this property, it will try to wait for a message again.
 sleeper.compaction.task.wait.time.seconds=20
 
+# Set to true if compaction tasks should wait for input files to be assigned to a compaction job
+# before starting it. The compaction task will poll the state store for whether the input files have
+# been assigned to the job, and will only start once this has occurred.
+# This prevents invalid compaction jobs from being run, particularly in the case where the compaction
+# job creator runs again before the input files are assigned.
+# This also causes compaction tasks to wait idle while input files are assigned, and puts extra load
+# on the state store when there are many compaction tasks.
+# If this is false, any created job will be executed, and will only be validated when committed to the
+# state store.
+sleeper.compaction.task.wait.for.input.file.assignment=false
+
 # The time in seconds for a compaction task to wait after receiving no compaction jobs before
 # attempting to receive a message again.
 # When a compaction task waits for compaction jobs to appear on the SQS queue, if the task receives no
@@ -1048,9 +1066,9 @@ sleeper.compaction.job.status.ttl=604800
 sleeper.compaction.task.status.ttl=604800
 
 # The name of the class that defines how compaction jobs should be created. This should implement
-# sleeper.compaction.strategy.CompactionStrategy. The value of this property is the default value
+# sleeper.compaction.core.strategy.CompactionStrategy. The value of this property is the default value
 # which can be overridden on a per-table basis.
-sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy
+sleeper.default.compaction.strategy.class=sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy
 
 # The maximum number of files to read in a compaction job. Note that the state store must support
 # atomic updates for this many files.
@@ -1242,9 +1260,9 @@ sleeper.default.statestore.transactionlog.add.transaction.max.retry.wait.ceiling
 
 # The number of seconds to wait after we've loaded a snapshot before looking for a new snapshot. This
 # should relate to the rate at which new snapshots are created, configured in the instance property
-# `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.minutes`. This default can be
+# `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds`. This default can be
 # overridden by a table property.
-sleeper.default.statestore.transactionlog.time.between.snapshot.checks.secs=60
+sleeper.default.statestore.transactionlog.time.between.snapshot.checks.seconds=60
 
 # The number of milliseconds to wait after we've updated from the transaction log before checking for
 # new transactions. The state visible to an instance of the state store can be out of date by this

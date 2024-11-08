@@ -16,11 +16,13 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.configuration.SystemTestProperty;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -39,6 +41,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_AC
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
@@ -77,6 +80,10 @@ public class SystemTestParameters {
         forceStateStoreClassname = builder.forceStateStoreClassname;
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
         instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
+        // Combines with SystemTestInstanceConfiguration.shortName and a hyphen to create an instance ID within maximum length
+        if (!SystemTestProperty.SYSTEM_TEST_ID.getValidationPredicate().test(shortTestId)) {
+            throw new IllegalArgumentException("shortTestId is not valid, must be at most " + SYSTEM_TEST_ID_MAX_LEN + " characters: " + shortTestId);
+        }
     }
 
     public static Builder builder() {
@@ -200,6 +207,10 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
+    }
+
+    public boolean isInstancePropertyOverridden(InstanceProperty property) {
+        return instancePropertiesOverrides.isSet(property);
     }
 
     private static Path findScriptsDir() {

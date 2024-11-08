@@ -116,9 +116,9 @@ public class DeployExistingInstance {
                 .build().sync();
 
         UploadDockerImages.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(runCommand, StacksForDockerUpload.from(properties));
+                .build().upload(runCommand, UploadDockerImagesRequest.forExistingInstance(properties));
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");

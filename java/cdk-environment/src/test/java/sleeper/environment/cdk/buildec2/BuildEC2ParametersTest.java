@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.environment.cdk.config.AppContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.environment.cdk.buildec2.BuildEC2Image.LOGIN_USER;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
+import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_DEPLOY_ID;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_RUN_ENABLED;
 import static sleeper.environment.cdk.config.AppParameters.NIGHTLY_TEST_SUBNETS;
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
@@ -73,17 +75,20 @@ public class BuildEC2ParametersTest {
         assertThat(BuildEC2Parameters.builder()
                 .context(AppContext.of(
                         NIGHTLY_TEST_RUN_ENABLED.value(true),
+                        NIGHTLY_TEST_DEPLOY_ID.value("mt"),
                         VPC_ID.value("my-vpc"),
                         NIGHTLY_TEST_SUBNETS.value("subnet-1,subnet-2"),
                         FORK.value("my-fork"),
                         REPOSITORY.value("my-repo")))
                 .testBucket("nightly-test-results")
                 .build().fillUserDataTemplate("{" +
+                        "\"deployId\": \"${deployId}\"," +
                         "\"vpc\":\"${vpc}\"," +
                         "\"subnets\":\"${subnets}\"," +
                         "\"resultsBucket\":\"${testBucket}\"," +
                         "\"repoPath\":\"${fork}/${repository}\"}"))
                 .isEqualTo("{" +
+                        "\"deployId\": \"mt\"," +
                         "\"vpc\":\"my-vpc\"," +
                         "\"subnets\":\"subnet-1,subnet-2\"," +
                         "\"resultsBucket\":\"nightly-test-results\"," +
@@ -96,15 +101,45 @@ public class BuildEC2ParametersTest {
                 .context(AppContext.empty())
                 .testBucket(null)
                 .build().fillUserDataTemplate("{" +
+                        "\"deployId\": \"${deployId}\"," +
                         "\"vpc\":\"${vpc}\"," +
                         "\"subnets\":\"${subnets}\"," +
                         "\"resultsBucket\":\"${testBucket}\"," +
                         "\"repoPath\":\"${fork}/${repository}\"}"))
                 .isEqualTo("{" +
+                        "\"deployId\": \"${deployId}\"," +
                         "\"vpc\":\"${vpc}\"," +
                         "\"subnets\":\"${subnets}\"," +
                         "\"resultsBucket\":\"${testBucket}\"," +
                         "\"repoPath\":\"gchq/sleeper\"}");
     }
 
+    @Test
+    void shouldRefuseTooLongNightlyTestDeployId() {
+        AppContext context = AppContext.of(
+                NIGHTLY_TEST_RUN_ENABLED.value(true),
+                NIGHTLY_TEST_DEPLOY_ID.value("abc"),
+                VPC_ID.value("my-vpc"),
+                NIGHTLY_TEST_SUBNETS.value("subnet-1,subnet-2"),
+                FORK.value("my-fork"),
+                REPOSITORY.value("my-repo"));
+
+        assertThatThrownBy(() -> BuildEC2Parameters.from(context))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("nightlyTestDeployId must be at most 2 characters long");
+    }
+
+    @Test
+    void shouldRefuseNoNightlyTestDeployId() {
+        AppContext context = AppContext.of(
+                NIGHTLY_TEST_RUN_ENABLED.value(true),
+                VPC_ID.value("my-vpc"),
+                NIGHTLY_TEST_SUBNETS.value("subnet-1,subnet-2"),
+                FORK.value("my-fork"),
+                REPOSITORY.value("my-repo"));
+
+        assertThatThrownBy(() -> BuildEC2Parameters.from(context))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("nightlyTestDeployId must be set (up to 2 characters)");
+    }
 }

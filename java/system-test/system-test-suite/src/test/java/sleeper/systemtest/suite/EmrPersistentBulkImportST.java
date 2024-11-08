@@ -37,7 +37,7 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_P
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERSISTENT_EMR;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @SystemTest
@@ -50,7 +50,7 @@ public class EmrPersistentBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(BULK_IMPORT_PERSISTENT_EMR);
         sleeper.enableOptionalStack(OptionalStack.PersistentEmrBulkImportStack);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
         // Note that we don't purge the bulk import job queue when the test fails,

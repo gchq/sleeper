@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
-import static sleeper.io.parquet.utils.HadoopPathUtils.getRequestPath;
-import static sleeper.io.parquet.utils.HadoopPathUtils.streamFiles;
+import static sleeper.parquet.utils.HadoopPathUtils.getRequestPath;
+import static sleeper.parquet.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileIngestRequestSerDe.class);

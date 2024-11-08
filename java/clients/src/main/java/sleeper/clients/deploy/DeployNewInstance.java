@@ -35,9 +35,9 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
-import sleeper.core.properties.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -46,44 +46,34 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
-    private final AWSSecurityTokenService sts;
-    private final AwsRegionProvider regionProvider;
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
     private final EcrClient ecr;
     private final Path scriptsDirectory;
-    private final String instanceId;
-    private final String vpcId;
-    private final String subnetIds;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
-    private final Consumer<InstanceProperties> extraInstanceProperties;
     private final List<StackDockerImage> extraDockerImages;
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
-        sts = builder.sts;
-        regionProvider = builder.regionProvider;
         s3 = builder.s3;
         s3v2 = builder.s3v2;
         dynamoDB = builder.dynamoDB;
         ecr = builder.ecr;
         scriptsDirectory = builder.scriptsDirectory;
-        instanceId = builder.instanceId;
-        vpcId = builder.vpcId;
-        subnetIds = builder.subnetIds;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
-        extraInstanceProperties = builder.extraInstanceProperties;
         extraDockerImages = builder.extraDockerImages;
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
@@ -95,24 +85,33 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 8) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <table-name> " +
-                    "<optional-instance-properties-file> <optional-deploy-paused-flag> <optional-split-points-file>");
+        if (args.length < 4 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> " +
+                    "<optional-instance-properties-file> <optional-deploy-paused-flag>");
         }
-        Path scriptsDirectory = Path.of(args[0]);
-        builder().scriptsDirectory(scriptsDirectory)
-                .instanceId(args[1])
-                .vpcId(args[2])
-                .subnetIds(args[3])
-                .deployInstanceConfiguration(DeployInstanceConfigurationFromTemplates.builder()
-                        .tableNameForTemplate(args[4])
-                        .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
-                        .templatesDir(scriptsDirectory.resolve("templates"))
-                        .splitPointsFileForTemplate(optionalArgument(args, 7).map(Path::of).orElse(null))
-                        .build().load())
-                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
-                .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                .deployWithDefaultClients();
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
+        try (S3Client s3v2 = S3Client.create();
+                EcrClient ecr = EcrClient.create()) {
+            Path scriptsDirectory = Path.of(args[0]);
+            PopulateInstanceProperties populateInstanceProperties = PopulateInstancePropertiesAws.builder(sts, regionProvider)
+                    .instanceId(args[1]).vpcId(args[2]).subnetIds(args[3])
+                    .build();
+            Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
+            boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
+            builder().scriptsDirectory(scriptsDirectory)
+                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                            instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
+                    .deployPaused(deployPaused)
+                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .deployWithClients(s3, s3v2, dynamoDB, ecr);
+        } finally {
+            sts.shutdown();
+            s3.shutdown();
+            dynamoDB.shutdown();
+        }
     }
 
     public void deploy() throws IOException, InterruptedException {
@@ -125,32 +124,28 @@ public class DeployNewInstance {
         Path jarsDirectory = scriptsDirectory.resolve("jars");
         String sleeperVersion = Files.readString(templatesDirectory.resolve("version.txt"));
 
+        InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+        String instanceId = instanceProperties.get(ID);
         LOGGER.info("instanceId: {}", instanceId);
-        LOGGER.info("vpcId: {}", vpcId);
-        LOGGER.info("subnetIds: {}", subnetIds);
+        LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
+        LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("deployPaused: {}", deployPaused);
-        InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
-                .sts(sts).regionProvider(regionProvider)
-                .deployInstanceConfig(deployInstanceConfiguration)
-                .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
-                .build().populate();
-        extraInstanceProperties.accept(instanceProperties);
         validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
 
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(runCommand,
-                        StacksForDockerUpload.from(instanceProperties, sleeperVersion),
-                        extraDockerImages);
+                        UploadDockerImagesRequest.forNewDeployment(instanceProperties, sleeperVersion)
+                                .withExtraImages(extraDockerImages));
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
@@ -181,35 +176,18 @@ public class DeployNewInstance {
     }
 
     public static final class Builder {
-        private AWSSecurityTokenService sts;
-        private AwsRegionProvider regionProvider;
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonDynamoDB dynamoDB;
         private EcrClient ecr;
         private Path scriptsDirectory;
-        private String instanceId;
-        private String vpcId;
-        private String subnetIds;
         private DeployInstanceConfiguration deployInstanceConfiguration;
-        private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
-        };
         private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
         private boolean deployPaused;
 
         private Builder() {
-        }
-
-        public Builder sts(AWSSecurityTokenService sts) {
-            this.sts = sts;
-            return this;
-        }
-
-        public Builder regionProvider(AwsRegionProvider regionProvider) {
-            this.regionProvider = regionProvider;
-            return this;
         }
 
         public Builder s3(AmazonS3 s3) {
@@ -237,28 +215,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instanceId(String instanceId) {
-            this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder vpcId(String vpcId) {
-            this.vpcId = vpcId;
-            return this;
-        }
-
-        public Builder subnetIds(String subnetIds) {
-            this.subnetIds = subnetIds;
-            return this;
-        }
-
         public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
-            return this;
-        }
-
-        public Builder extraInstanceProperties(Consumer<InstanceProperties> extraInstanceProperties) {
-            this.extraInstanceProperties = extraInstanceProperties;
             return this;
         }
 
@@ -286,27 +244,9 @@ public class DeployNewInstance {
             return new DeployNewInstance(this);
         }
 
-        public void deployWithDefaultClients() throws IOException, InterruptedException {
-            AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-            AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-            AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-            try (S3Client s3v2 = S3Client.create();
-                    EcrClient ecr = EcrClient.create()) {
-                deployWithClients(
-                        sts, DefaultAwsRegionProviderChain.builder().build(),
-                        s3, s3v2, dynamoDB, ecr);
-            } finally {
-                sts.shutdown();
-                s3.shutdown();
-                dynamoDB.shutdown();
-            }
-        }
-
         public void deployWithClients(
-                AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
                 AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, EcrClient ecr) throws IOException, InterruptedException {
-            sts(sts).regionProvider(regionProvider)
-                    .s3(s3).s3v2(s3v2).dynamoDB(dynamoDB).ecr(ecr)
+            s3(s3).s3v2(s3v2).dynamoDB(dynamoDB).ecr(ecr)
                     .build().deploy();
         }
     }

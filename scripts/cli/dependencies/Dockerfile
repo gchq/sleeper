@@ -12,25 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     ca-certificates \
     curl \
     gnupg \
     lsb-release \
     unzip \
     less \
-    openjdk-17-jre \
     nano \
     vim \
     emacs \
     bash-completion \
     man-db \
+    unminimize \
     && yes | unminimize \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && userdel -r ubuntu \
+    && groupdel systemd-journal
+# The deleted user and group are added either by one of the above packages, or by unminimize. They are deleted to avoid
+# conflicts when propagating the host user and group IDs.
+# The ubuntu user is deleted because it conflicts with the sleeper user.
+# The systemd-journal group is deleted because it conflicts with the docker group.
 
 RUN mkdir -p /etc/apt/keyrings
+
+# Install Amazon Corretto JDK
+RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
+    | tee /etc/apt/sources.list.d/corretto.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    java-17-amazon-corretto-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg

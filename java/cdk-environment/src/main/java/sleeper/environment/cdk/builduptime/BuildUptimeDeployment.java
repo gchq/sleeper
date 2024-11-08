@@ -21,6 +21,9 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -31,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
-import static software.amazon.awscdk.services.lambda.Runtime.JAVA_11;
+import static sleeper.environment.cdk.config.AppParameters.LOG_RETENTION_DAYS;
 
 public class BuildUptimeDeployment {
     public static final OptionalStringParameter LAMBDA_JAR = AppParameters.BUILD_UPTIME_LAMBDA_JAR;
@@ -44,16 +47,21 @@ public class BuildUptimeDeployment {
         String lambdaJarPath = context.get(LAMBDA_JAR)
                 .orElseThrow(() -> new IllegalArgumentException("buildUptimeLambdaJar is required for BuildUptimeStack"));
 
+        String functionName = "sleeper-" + context.get(INSTANCE_ID) + "-build-uptime";
         function = Function.Builder.create(scope, "BuildUptimeFunction")
                 .code(Code.fromAsset(lambdaJarPath))
-                .functionName("sleeper-" + context.get(INSTANCE_ID) + "-build-uptime")
+                .functionName(functionName)
                 .description("Start and stop EC2 instances and schedule rules")
-                .runtime(JAVA_11)
+                .runtime(Runtime.JAVA_17)
                 .memorySize(1024)
                 .timeout(Duration.minutes(10))
                 .handler("sleeper.build.uptime.lambda.BuildUptimeLambda::handleRequest")
                 .environment(Map.of())
                 .reservedConcurrentExecutions(1)
+                .logGroup(LogGroup.Builder.create(scope, "BuildUptimeLogs")
+                        .logGroupName(functionName)
+                        .retention(context.get(LOG_RETENTION_DAYS).map(RetentionDays::valueOf).orElse(RetentionDays.TWO_MONTHS))
+                        .build())
                 .build().getCurrentVersion();
 
         function.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()

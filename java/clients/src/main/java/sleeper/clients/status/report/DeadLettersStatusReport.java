@@ -25,13 +25,13 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QuerySerDe;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;

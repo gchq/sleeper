@@ -62,7 +62,7 @@ public final class DeployedSleeperTablesForTest {
         }
     }
 
-    public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
+    private void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties -> driver.addTable(instanceProperties, tableProperties));
         tables.forEach(tableProperties -> {

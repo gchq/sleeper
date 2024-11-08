@@ -22,8 +22,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryTrackerException;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 

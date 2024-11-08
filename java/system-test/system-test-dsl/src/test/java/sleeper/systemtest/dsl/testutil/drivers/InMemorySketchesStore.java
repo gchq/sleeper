@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
-
 import sleeper.sketches.Sketches;
 
 import java.util.HashMap;
@@ -25,8 +23,8 @@ import java.util.Map;
 public class InMemorySketchesStore {
     private final Map<String, Sketches> filenameToSketches = new HashMap<>();
 
-    public void addSketchForFile(String filename, Map<String, ItemsSketch> keyFieldToSketchMap) {
-        filenameToSketches.put(filename.replace(".parquet", ".sketches"), new Sketches(keyFieldToSketchMap));
+    public void addSketchForFile(String filename, Sketches sketches) {
+        filenameToSketches.put(filename.replace(".parquet", ".sketches"), sketches);
     }
 
     public Sketches load(String filename) {

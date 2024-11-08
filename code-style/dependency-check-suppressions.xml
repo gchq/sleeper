@@ -21,7 +21,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
-        <cpe>cpe:/a:apache:spark:3.4.1</cpe>
+        <cpe>cpe:/a:apache:spark:3.5.1</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -31,7 +31,7 @@
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/spark-[^/]+-3\.4\.1\.jar/.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.5\.1\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -40,7 +40,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*$</packageUrl>
-        <cpe>cpe:/a:apache:hadoop:3.3.3</cpe>
+        <cpe>cpe:/a:apache:hadoop:3.3.6</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -50,7 +50,7 @@
         Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/hadoop-client-[^/]+-3\.3\.3\.jar/.*$</filePath>
+        <filePath regex="true">^.*/hadoop-client-[^/]+-3\.3\.6\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -282,6 +282,14 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
+        directly.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-http@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[

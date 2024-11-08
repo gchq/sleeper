@@ -23,8 +23,8 @@ import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
 
 import java.io.IOException;
 import java.util.ArrayList;

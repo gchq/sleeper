@@ -37,16 +37,16 @@ public class TestMavenModuleStructure {
                         dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build(),
                         dependencyBuilder("sleeper:configuration").type("test-jar").scope("test").exported(false).build()).build(),
                 midParentBuilder("bulk-import").modulesArray(
-                        sourceModuleBuilder("bulk-import-common").dependenciesArray(
+                        sourceModuleBuilder("bulk-import-core").dependenciesArray(
                                 dependency("sleeper:configuration"),
                                 dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").scope("test").exported(false).build()).build(),
                         sourceModuleBuilder("bulk-import-runner").dependenciesArray(
-                                dependency("sleeper:bulk-import-common"),
+                                dependency("sleeper:bulk-import-core"),
                                 dependency("sleeper:ingest"),
                                 dependency("sleeper:configuration"),
                                 dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build(),
                         sourceModuleBuilder("bulk-import-starter").dependenciesArray(
-                                dependency("sleeper:bulk-import-common"),
+                                dependency("sleeper:bulk-import-core"),
                                 dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build())
                         .build(),
                 resourcesModuleBuilder("distribution").build()).build();

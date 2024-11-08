@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -36,8 +36,6 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.properties.validation.OptionalStack;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreFactory;
@@ -47,13 +45,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
@@ -71,7 +65,7 @@ public class AdminClientPropertiesStore {
             Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.dockerImageConfiguration = new DockerImageConfiguration();
+        this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
         this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
@@ -104,12 +98,12 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
-            if (shouldUploadDockerImages(diff)) {
-                LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
-                uploadDockerImages.upload(StacksForDockerUpload.from(properties));
-            }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
+                Optional<UploadDockerImagesRequest> dockerUploadOpt = UploadDockerImagesRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
+                if (dockerUploadOpt.isPresent()) {
+                    uploadDockerImages.upload(dockerUploadOpt.get());
+                }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
             } else {
@@ -129,24 +123,6 @@ public class AdminClientPropertiesStore {
             }
             throw wrapped;
         }
-    }
-
-    private boolean shouldUploadDockerImages(PropertiesDiff diff) {
-        Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
-                .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
-                .findFirst();
-        if (stackDiffOptional.isEmpty()) {
-            return false;
-        }
-        PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<OptionalStack> stacksBefore = SleeperPropertyValueUtils
-                .streamEnumList(OPTIONAL_STACKS, stackDiff.getOldValue(), OptionalStack.class)
-                .collect(toUnmodifiableSet());
-        Set<OptionalStack> newStacks = SleeperPropertyValueUtils
-                .streamEnumList(OPTIONAL_STACKS, stackDiff.getNewValue(), OptionalStack.class)
-                .filter(not(stacksBefore::contains))
-                .collect(toUnmodifiableSet());
-        return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties) {

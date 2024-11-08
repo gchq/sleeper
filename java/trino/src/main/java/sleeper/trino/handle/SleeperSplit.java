@@ -24,8 +24,8 @@ import io.trino.spi.connector.ConnectorSplit;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QuerySerDe;
 
 import java.util.List;
 import java.util.Objects;

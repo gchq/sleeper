@@ -36,7 +36,7 @@ public class ProjectChunksTest {
         assertThat(chunk.getName()).isEqualTo("Bulk Import");
         assertThat(chunk.getWorkflow()).isEqualTo("chunk-bulk-import.yaml");
         assertThat(chunk.getMavenProjectList()).isEqualTo(
-                "bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
+                "bulk-import/bulk-import-core,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
     }
 
     @Test

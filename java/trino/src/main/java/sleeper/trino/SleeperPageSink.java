@@ -22,7 +22,7 @@ import io.trino.spi.Page;
 import io.trino.spi.connector.ConnectorPageSink;
 import io.trino.spi.connector.SchemaTableName;
 
-import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 

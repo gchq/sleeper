@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForECS;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForECS;
 
 public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopConfigurationProvider {
     /**
@@ -31,7 +31,7 @@ public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopC
      * are not visible by default when it runs inside a Trino plugin. It causes truly horrible bugs which are difficult
      * to track down. Setting the classloader to the same one that is used by this class resolves the issue.
      * <p>
-     * The configuration details are taken from {@link sleeper.io.parquet.utils.HadoopConfigurationProvider}.
+     * The configuration details are taken from {@link sleeper.parquet.utils.HadoopConfigurationProvider}.
      *
      * @return The Hadoop configuration.
      */

@@ -24,6 +24,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -55,6 +56,16 @@ public class SystemTestOptionalStacks {
     public void removeOptionalStack(OptionalStack stack) {
         LOGGER.info("Removing optional stack: {}", stack);
         updateOptionalStacks(stacks -> stacks.remove(stack));
+    }
+
+    public void addOptionalStacks(Collection<OptionalStack> stacks) {
+        LOGGER.info("Adding optional stacks: {}", stacks);
+        updateOptionalStacks(stacksSet -> stacksSet.addAll(stacks));
+    }
+
+    public void removeOptionalStacks(Collection<OptionalStack> stacks) {
+        LOGGER.info("Removing optional stacks: {}", stacks);
+        updateOptionalStacks(stacksSet -> stacksSet.removeAll(stacks));
     }
 
     private OptionalStack stack(Class<?> stackClass) {

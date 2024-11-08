@@ -21,14 +21,14 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusType;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.GsonConfig;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusType;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusType;
 
 import java.time.Duration;
 import java.time.Instant;

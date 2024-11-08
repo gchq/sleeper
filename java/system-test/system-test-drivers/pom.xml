@@ -51,11 +51,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>cdk</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>clients</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -142,7 +137,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore-commit</artifactId>
+            <artifactId>statestore-committer-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

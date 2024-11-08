@@ -19,6 +19,7 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -30,6 +31,7 @@ import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
@@ -39,6 +41,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestBucketStack extends NestedStack {
 
@@ -48,7 +51,7 @@ public class SystemTestBucketStack extends NestedStack {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = createBucket("SystemTestBucket", bucketName, properties.toInstancePropertiesForCdkUtils(), jars);
+        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars);
         Tags.of(this).add("DeploymentStack", id);
     }
 
@@ -58,11 +61,11 @@ public class SystemTestBucketStack extends NestedStack {
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        bucket = createBucket("SystemTestIngestBucket", bucketName, properties, jars);
+        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars);
         Utils.addStackTagIfSet(this, properties);
     }
 
-    private IBucket createBucket(String id, String bucketName, InstanceProperties instanceProperties, BuiltJars jars) {
+    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars) {
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
@@ -70,7 +73,15 @@ public class SystemTestBucketStack extends NestedStack {
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
-        AutoDeleteS3Objects.autoDeleteForBucket(this, jars, instanceProperties, bucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket, bucketName,
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+                        .logGroupName(functionName)
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build(),
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+                        .logGroupName(functionName + "-provider")
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build());
         return bucket;
     }
 

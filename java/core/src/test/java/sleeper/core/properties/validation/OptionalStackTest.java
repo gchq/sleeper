@@ -39,9 +39,9 @@ public class OptionalStackTest {
     void shouldGenerateListOfDefaultValueForOptionalStack() {
         InstanceProperties properties = new InstanceProperties();
         assertThat(properties.get(OPTIONAL_STACKS))
-                .isEqualTo("CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack," +
-                        "PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack," +
-                        "EmrStudioStack,DashboardStack,TableMetricsStack");
+                .isEqualTo("IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack," +
+                        "QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack," +
+                        "DashboardStack,TableMetricsStack");
     }
 
     @Test

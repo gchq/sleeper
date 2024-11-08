@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.function.Supplier;
@@ -34,8 +34,9 @@ public class SystemTestInstanceConfiguration {
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
         disableTransactionLogSnapshots = builder.disableTransactionLogSnapshots;
-        if (shortName.length() > 7) {
-            throw new IllegalArgumentException("Instance shortName must not be longer than 7 characters");
+        // Combines with SystemTestParameters.shortTestId and a hyphen to create an instance ID within maximum length
+        if (shortName.length() > 6) {
+            throw new IllegalArgumentException("Instance shortName must not be longer than 6 characters");
         }
     }
 

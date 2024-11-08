@@ -18,8 +18,8 @@ package sleeper.compaction.rust;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -24,8 +24,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
-
-import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -50,18 +48,24 @@ public class InMemoryTestInstance {
             .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
+
     public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", () -> {
+        InstanceProperties instanceProperties = createDslInstanceProperties();
+        TableProperties tableProperties = createDslTableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "predefined-test-table");
+        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+    });
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", () -> {
+        InstanceProperties instanceProperties = createDslInstanceProperties();
+        TableProperties tableProperties = createDslTableProperties(instanceProperties);
+        tableProperties.unset(TABLE_NAME);
+        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+    });
 
-    public static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
-        return withInstanceProperties(identifier, properties -> {
-        });
-    }
-
-    public static SystemTestInstanceConfiguration withInstanceProperties(
-            String identifier, Consumer<InstanceProperties> config) {
+    private static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
         return usingSystemTestDefaults(identifier, () -> {
             InstanceProperties instanceProperties = createDslInstanceProperties();
-            config.accept(instanceProperties);
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(createDslTableProperties(instanceProperties))
@@ -69,7 +73,7 @@ public class InMemoryTestInstance {
         });
     }
 
-    public static InstanceProperties createDslInstanceProperties() {
+    private static InstanceProperties createDslInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         instanceProperties.set(FILE_SYSTEM, "file://");
@@ -79,7 +83,7 @@ public class InMemoryTestInstance {
         return instanceProperties;
     }
 
-    public static TableProperties createDslTableProperties(InstanceProperties instanceProperties) {
+    private static TableProperties createDslTableProperties(InstanceProperties instanceProperties) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
         tableProperties.unset(TABLE_ID);
         tableProperties.set(TABLE_NAME, "system-test");

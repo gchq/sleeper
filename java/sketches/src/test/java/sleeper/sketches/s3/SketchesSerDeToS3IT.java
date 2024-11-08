@@ -32,9 +32,6 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,28 +48,23 @@ class SketchesSerDeToS3IT {
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
-        ItemsSketch<Integer> sketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        Sketches sketches = Sketches.from(schema);
+        ItemsSketch<Number> sketch1 = sketches.getQuantilesSketch("key1");
         for (int i = 0; i < 100; i++) {
             sketch1.update(i);
         }
-        ItemsSketch<Long> sketch2 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<Number> sketch2 = sketches.getQuantilesSketch("key2");
         for (long i = 1_000_000L; i < 1_000_500L; i++) {
             sketch2.update(i);
         }
-        ItemsSketch<String> sketch3 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<String> sketch3 = sketches.getQuantilesSketch("key3");
         for (long i = 1_000_000L; i < 1_000_500L; i++) {
             sketch3.update("" + i);
         }
-        ItemsSketch<ByteArray> sketch4 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<ByteArray> sketch4 = sketches.getQuantilesSketch("key4");
         for (byte i = 0; i < 100; i++) {
             sketch4.update(ByteArray.wrap(new byte[]{i, (byte) (i + 1)}));
         }
-        Map<String, ItemsSketch> map = new HashMap<>();
-        map.put("key1", sketch1);
-        map.put("key2", sketch2);
-        map.put("key3", sketch3);
-        map.put("key4", sketch4);
-        Sketches sketches = new Sketches(map);
         SketchesSerDeToS3 sketchesSerDeToS3 = new SketchesSerDeToS3(schema);
         String file = createTempDirectory(folder, null).toString() + "/file.sketches";
         Path path = new Path(file);

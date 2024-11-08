@@ -27,7 +27,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.net.URI;
@@ -101,7 +101,7 @@ public class EmrServerlessPlatformExecutorIT {
                     assertThatJson(body)
                             .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
                             .startsWith("--class BulkImportClass ")
-                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64 ");
+                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ");
                 });
     }
 

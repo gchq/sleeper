@@ -16,20 +16,18 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
-
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitter;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobCommitter;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.core.task.CompactionTaskStatus;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
@@ -46,8 +44,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -65,9 +63,9 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
@@ -75,12 +73,12 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
-    private final InMemoryDataStore data;
-    private final InMemorySketchesStore sketches;
+    private final InMemoryDataStore dataStore;
+    private final InMemorySketchesStore sketchesStore;
 
-    public InMemoryCompaction(InMemoryDataStore data, InMemorySketchesStore sketches) {
-        this.data = data;
-        this.sketches = sketches;
+    public InMemoryCompaction(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
+        this.dataStore = dataStore;
+        this.sketchesStore = sketchesStore;
     }
 
     public CompactionDriver driver(SystemTestInstanceContext instance) {
@@ -223,14 +221,14 @@ public class InMemoryCompaction {
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
-        Map<String, ItemsSketch> keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(schema);
+        Sketches sketches = Sketches.from(schema);
         List<Record> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
-            PartitionFileWriterUtils.updateQuantileSketchMap(schema, keyFieldToSketchMap, record);
+            sketches.update(schema, record);
         });
-        data.addFile(job.getOutputFile(), records);
-        sketches.addSketchForFile(job.getOutputFile(), keyFieldToSketchMap);
+        dataStore.addFile(job.getOutputFile(), records);
+        sketchesStore.addSketchForFile(job.getOutputFile(), sketches);
         return new RecordsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
@@ -247,7 +245,7 @@ public class InMemoryCompaction {
         private long count = 0;
 
         CountingIterator(String filename, Region region, Schema schema) {
-            iterator = data.streamRecords(List.of(filename))
+            iterator = dataStore.streamRecords(List.of(filename))
                     .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
                     .iterator();
         }

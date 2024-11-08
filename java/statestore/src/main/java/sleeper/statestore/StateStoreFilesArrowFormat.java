@@ -33,8 +33,9 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
@@ -85,20 +86,20 @@ public class StateStoreFilesArrowFormat {
      * @param  channel     the channel to write to
      * @throws IOException if writing to the channel fails
      */
-    public static void write(Collection<AllReferencesToAFile> files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
+    public static void write(StateStoreFiles files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
-            vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.size()));
+            vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.referencedAndUnreferenced().size()));
             vectorSchemaRoot.allocateNew();
             writer.start();
             int rowNumber = 0;
             VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
             TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
             ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
-            for (AllReferencesToAFile file : files) {
+            for (StateStoreFile file : files.referencedAndUnreferenced()) {
                 filenameVector.setSafe(rowNumber, file.getFilename().getBytes(StandardCharsets.UTF_8));
                 updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
-                writeReferences(file, rowNumber, allocator, referencesVector.getWriter());
+                writeReferences(file.getReferences(), rowNumber, allocator, referencesVector.getWriter());
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
             }
@@ -113,8 +114,8 @@ public class StateStoreFilesArrowFormat {
      * @param  channel the channel to read from
      * @return         the files in the state store
      */
-    public static List<AllReferencesToAFile> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
-        List<AllReferencesToAFile> files = new ArrayList<>();
+    public static StateStoreFiles read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+        StateStoreFiles files = new StateStoreFiles();
         try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
             reader.loadNextBatch();
             VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
@@ -124,20 +125,16 @@ public class StateStoreFilesArrowFormat {
             for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
                 String filename = filenameVector.getObject(rowNumber).toString();
                 List<FileReference> references = readReferences(filename, referencesVector, rowNumber);
-                files.add(AllReferencesToAFile.builder()
-                        .filename(filename)
-                        .lastStateStoreUpdateTime(Instant.ofEpochMilli(updateTimeVector.get(rowNumber)))
-                        .references(references)
-                        .build());
+                files.add(new StateStoreFile(filename, Instant.ofEpochMilli(updateTimeVector.get(rowNumber)), references));
             }
         }
         return files;
     }
 
-    private static void writeReferences(AllReferencesToAFile file, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
+    private static void writeReferences(Collection<FileReference> references, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
         writer.setPosition(fileNumber);
         writer.startList();
-        for (FileReference reference : file.getReferences()) {
+        for (FileReference reference : references) {
             StructWriter struct = writer.struct();
             struct.start();
             writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.suite.fixtures;
 
-import sleeper.core.properties.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
@@ -62,6 +62,10 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.validation.OptionalStack.EmrBulkImportStack;
+import static sleeper.core.properties.validation.OptionalStack.EmrServerlessBulkImportStack;
+import static sleeper.core.properties.validation.OptionalStack.IngestBatcherStack;
+import static sleeper.core.properties.validation.OptionalStack.IngestStack;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
@@ -69,22 +73,25 @@ public class SystemTestInstance {
     private SystemTestInstance() {
     }
 
-    public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("compact", SystemTestInstance::buildCompactionPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cpt-pll", SystemTestInstance::buildCompactionInParallelConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cpt-ec2", SystemTestInstance::buildCompactionOnEC2Configuration);
-    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("commitr", SystemTestInstance::buildStateStoreCommitterThroughputConfiguration);
+    public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
+    public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cptec2", SystemTestInstance::createCompactionOnEC2Configuration);
+    public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("cmmitr", SystemTestInstance::createStateStoreCommitterThroughputConfiguration);
+    public static final SystemTestInstanceConfiguration REENABLE_OPTIONAL_STACKS = usingSystemTestDefaults("opstck", SystemTestInstance::createReenableOptionalStacksConfiguration);
+    public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::createNoSourceBucketConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m7i.4xlarge,m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
 
-    private static InstanceProperties buildMainProperties() {
+    private static InstanceProperties createInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
-        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
@@ -102,21 +109,22 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
         properties.set(METRICS_TABLE_BATCH_SIZE, "2");
         properties.setTags(Map.of(
-                "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
                 "Product", "Sleeper",
                 "ApplicationID", "SLEEPER",
-                "Project", "SystemTest",
-                "SystemTestInstance", "main"));
+                "Project", "SystemTest"));
         return properties;
     }
 
-    private static DeployInstanceConfiguration buildMainConfiguration() {
-        return buildInstanceConfiguration(buildMainProperties());
+    private static DeployInstanceConfiguration createMainConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
+        setSystemTestTags(properties, "main", "Sleeper Maven system test main instance");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildIngestPerformanceConfiguration() {
-        InstanceProperties properties = buildMainProperties();
+    private static DeployInstanceConfiguration createIngestPerformanceConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
@@ -129,15 +137,12 @@ public class SystemTestInstance {
         properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
         properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
         properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "ingestPerformance");
-        tags.put("Description", "Sleeper Maven system test ingest performance instance");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "ingestPerformance", "Sleeper Maven system test ingest performance");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration() {
-        InstanceProperties properties = buildMainProperties();
+    private static DeployInstanceConfiguration createCompactionPerformanceConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
@@ -146,62 +151,85 @@ public class SystemTestInstance {
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "compactionPerformance");
-        tags.put("Description", "Sleeper Maven system test compaction performance instance");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "compactionPerformance", "Sleeper Maven system test compaction performance");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration() {
-        InstanceProperties properties = buildMainProperties();
+    private static DeployInstanceConfiguration createCompactionOnDataFusionConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+        properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+        properties.set(COMPACTION_TASK_X86_CPU, "1024");
+        properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
+        properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
+        setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createBulkImportPerformanceConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "bulkImportPerformance");
-        tags.put("Description", "Sleeper Maven system test bulk import performance instance");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "bulkImportPerformance", "Sleeper Maven system test bulk import performance");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildCompactionOnEC2Configuration() {
-        InstanceProperties properties = buildMainProperties();
+    private static DeployInstanceConfiguration createBulkImportOnEksConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        setSystemTestTags(properties, "bulkImportOnEks", "Sleeper Maven system test bulk import on EKS");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createBulkImportOnPersistentEmrConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        setSystemTestTags(properties, "bulkImportOnPersistentEmr", "Sleeper Maven system test bulk import on persistent EMR cluster");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createCompactionOnEC2Configuration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
-
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "compactionOnEc2");
-        tags.put("Description", "Sleeper Maven system test compaction on EC2 instance");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "compactionOnEc2", "Sleeper Maven system test compaction on EC2");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildCompactionInParallelConfiguration() {
-        InstanceProperties properties = buildMainProperties();
+    private static DeployInstanceConfiguration createCompactionInParallelConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
-
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "compactionInParallel");
-        tags.put("Description", "Sleeper Maven system test compaction in parallel");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "compactionInParallel", "Sleeper Maven system test compaction in parallel");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildStateStoreCommitterThroughputConfiguration() {
-        InstanceProperties properties = buildMainProperties();
-
+    private static DeployInstanceConfiguration createStateStoreCommitterThroughputConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
-
-        Map<String, String> tags = new HashMap<>(properties.getTags());
-        tags.put("SystemTestInstance", "stateStoreCommitterThroughput");
-        tags.put("Description", "Sleeper Maven system test state store committer throughput");
-        properties.setTags(tags);
-        return buildInstanceConfiguration(properties);
+        setSystemTestTags(properties, "stateStoreCommitterThroughput", "Sleeper Maven system test state store committer throughput");
+        return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration buildInstanceConfiguration(InstanceProperties instanceProperties) {
+    private static DeployInstanceConfiguration createReenableOptionalStacksConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        setSystemTestTags(properties, "reenableOptionalStacks", "Sleeper Maven system test reenable optional stacks");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createNoSourceBucketConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnumList(OPTIONAL_STACKS, List.of(IngestStack, EmrBulkImportStack, EmrServerlessBulkImportStack, IngestBatcherStack));
+        setSystemTestTags(properties, "noSourceBucket", "Sleeper Maven system test no source bucket");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createInstanceConfiguration(InstanceProperties instanceProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
         tableProperties.set(TABLE_NAME, "system-test");
@@ -209,5 +237,12 @@ public class SystemTestInstance {
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties)
                 .build();
+    }
+
+    private static void setSystemTestTags(InstanceProperties properties, String instanceName, String description) {
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", instanceName);
+        tags.put("Description", description);
+        properties.setTags(tags);
     }
 }

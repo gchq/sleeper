@@ -17,8 +17,8 @@
 package sleeper.clients.status.report.ingest.batcher.query;
 
 import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 
 import java.util.List;
 

@@ -19,7 +19,7 @@ package sleeper.clients.status.report.compaction.task;
 import com.google.gson.Gson;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.core.task.CompactionTaskStatus;
 
 import java.io.PrintStream;
 import java.util.List;

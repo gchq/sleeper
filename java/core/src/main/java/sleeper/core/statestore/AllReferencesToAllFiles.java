@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -65,6 +66,18 @@ public class AllReferencesToAllFiles {
         return getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream())
                 .collect(toUnmodifiableList());
+    }
+
+    /**
+     * Builds a map from filename to the number of referenced records.
+     *
+     * @return the map
+     */
+    public Map<String, Long> recordsByFilename() {
+        return getFilesWithReferences().stream()
+                .collect(toMap(
+                        AllReferencesToAFile::getFilename,
+                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
     }
 
     public boolean isMoreThanMax() {

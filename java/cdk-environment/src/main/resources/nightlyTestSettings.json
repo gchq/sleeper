@@ -1,4 +1,5 @@
 {
+  "deployId": "${deployId}",
   "vpc": "${vpc}",
   "subnets": "${subnets}",
   "resultsBucket": "${testBucket}",

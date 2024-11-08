@@ -30,7 +30,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
+import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
 
 import java.util.List;
 

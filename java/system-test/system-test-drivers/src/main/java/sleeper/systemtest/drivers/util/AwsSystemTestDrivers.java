@@ -266,7 +266,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public SnapshotsDriver snapshots() {
-        return new AwsSnapshotsDriver(clients.getCloudWatchEvents());
+        return new AwsSnapshotsDriver(clients);
     }
 
 }

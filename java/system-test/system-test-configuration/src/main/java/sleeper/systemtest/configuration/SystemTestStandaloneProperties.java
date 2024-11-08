@@ -26,6 +26,7 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -34,14 +35,22 @@ import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestStandaloneProperties
         extends SleeperProperties<SystemTestProperty>
@@ -107,7 +116,12 @@ public class SystemTestStandaloneProperties
 
     public InstanceProperties toInstancePropertiesForCdkUtils() {
         InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(ID, get(SYSTEM_TEST_ID));
+        instanceProperties.set(VPC_ID, get(SYSTEM_TEST_VPC_ID));
+        instanceProperties.set(JARS_BUCKET, get(SYSTEM_TEST_JARS_BUCKET));
+        instanceProperties.set(CONFIG_BUCKET, get(SYSTEM_TEST_BUCKET_NAME));
         instanceProperties.set(LOG_RETENTION_IN_DAYS, get(SYSTEM_TEST_LOG_RETENTION_DAYS));
+        instanceProperties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR);
         instanceProperties.set(LOGGING_LEVEL, "DEBUG");
         instanceProperties.set(ROOT_LOGGING_LEVEL, "INFO");
         instanceProperties.set(APACHE_LOGGING_LEVEL, "INFO");

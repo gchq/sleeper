@@ -17,7 +17,7 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;

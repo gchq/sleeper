@@ -53,6 +53,10 @@ public class SystemTestTableFiles {
         }
     }
 
+    public Map<String, Long> recordsByFilename() {
+        return all().recordsByFilename();
+    }
+
     public Map<String, AllReferencesToAllFiles> filesByTable() {
         return instance.streamTableProperties().parallel()
                 .map(this::getFiles)

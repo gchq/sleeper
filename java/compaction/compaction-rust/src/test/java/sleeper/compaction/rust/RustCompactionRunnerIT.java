@@ -25,10 +25,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionRunner;
-import sleeper.configuration.TableFilePaths;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -40,9 +39,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.record.RecordReadSupport;
+import sleeper.core.table.TableFilePaths;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.RecordReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -237,13 +237,7 @@ public class RustCompactionRunnerIT {
 
             // Then
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.builder()
-                            .field("key", deciles -> deciles
-                                    .min("record-1").max("record-2")
-                                    .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
-                                    .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")
-                                    .rank(0.7, "record-2").rank(0.8, "record-2").rank(0.9, "record-2"))
-                            .build());
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
     }
 

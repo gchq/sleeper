@@ -18,7 +18,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
@@ -72,7 +72,7 @@ public class ParallelCompactionsST {
                     properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1_000_000);
                 }).runDataGenerationTasks(
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .waitForTotalFileReferences(81920);
 
         // When we run compaction
