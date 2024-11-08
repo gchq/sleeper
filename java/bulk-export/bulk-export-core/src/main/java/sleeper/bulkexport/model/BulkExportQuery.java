@@ -18,13 +18,15 @@ package sleeper.bulkexport.model;
 import java.util.Objects;
 
 /**
- * Model for a BulkExportQuery.
+ * A request for a bulk export on a given table.
  */
 public class BulkExportQuery {
     private final String exportId;
+    private final String tableId;
     private final String tableName;
 
     private BulkExportQuery(Builder builder) {
+        tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
         tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
         exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
     }
@@ -53,9 +55,10 @@ public class BulkExportQuery {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        BulkExportQuery bulkExportQuery = (BulkExportQuery) object;
-        return Objects.equals(tableId, bulkExportQuery.tableId) && Objects.equals(tableName, bulkExportQuery.tableName)
-                && Objects.equals(exportId, bulkExportQuery.exportId);
+        BulkExportQuery that = (BulkExportQuery) object;
+        return Objects.equals(tableId, that.tableId)
+                && Objects.equals(tableName, that.tableName)
+                && Objects.equals(exportId, that.exportId);
     }
 
     @Override
@@ -68,7 +71,7 @@ public class BulkExportQuery {
         return "BulkExportQuery{" +
                 "tableId='" + tableId + '\'' +
                 ", tableName='" + tableName + '\'' +
-                ", exportId='" + exportId +
+                ", exportId='" + exportId + '\'' +
                 '}';
     }
 

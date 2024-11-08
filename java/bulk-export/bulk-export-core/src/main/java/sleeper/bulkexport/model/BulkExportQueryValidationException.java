@@ -18,6 +18,9 @@ package sleeper.bulkexport.model;
 
 import java.util.Optional;
 
+/**
+ * Custom exception for validation failure for a bulk export.
+ */
 public class BulkExportQueryValidationException extends RuntimeException {
     private final String exportId;
 

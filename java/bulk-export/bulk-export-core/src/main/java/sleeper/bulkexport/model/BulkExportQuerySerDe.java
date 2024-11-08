@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises a query to and from JSON.
+ * Serialises an export query to and from JSON.
  */
 public class BulkExportQuerySerDe {
     private final Gson gson;
@@ -43,8 +43,8 @@ public class BulkExportQuerySerDe {
         return toJson(query);
     }
 
-    public BulkExportQuery fromJson(String json) {
+    public BulkExportQueryOrLeafPartitionQuery fromJson(String json) {
         BulkExportQueryJson queryJson = gson.fromJson(json, BulkExportQueryJson.class);
-        return BulkExportQueryJson.to(queryJson);
+        return queryJson.toQueryOrLeafQuery();
     }
 }
