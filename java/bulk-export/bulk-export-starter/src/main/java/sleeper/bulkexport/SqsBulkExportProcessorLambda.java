@@ -27,18 +27,16 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.bulkexport.model.BulkExportQuery;
+import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
 import sleeper.bulkexport.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.model.BulkExportQueryValidationException;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.properties.instance.InstanceProperties;
 
 /**
- * TODO Update
- * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
- * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
- * The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
- * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
+ * A lambda that is triggered when a serialised export query arrives on an SQS
+ * queue. A
+ * processor executes the request and publishes the results to S3 based on.
  */
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
@@ -65,16 +63,16 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
                 .map(SQSEvent.SQSMessage::getBody)
                 .peek(body -> LOGGER.info("Received message with body {}", body))
                 .flatMap(body -> deserialiseAndValidate(body).stream())
-                .peek(json -> LOGGER.debug(json.toString()));
-        //.forEach(processor::processQuery);
+                .peek(json -> LOGGER.debug(json.toString()))
+                .forEach(processor::processExport);
         return null;
     }
 
-    public Optional<BulkExportQuery> deserialiseAndValidate(String message) {
+    public Optional<BulkExportQueryOrLeafPartitionQuery> deserialiseAndValidate(String message) {
         try {
-            BulkExportQuery query = bulkExportQuerySerDe.fromJson(message);
-            LOGGER.info("Deserialised message to query {}", query);
-            return Optional.of(query);
+            BulkExportQueryOrLeafPartitionQuery exportQuery = bulkExportQuerySerDe.fromJson(message);
+            LOGGER.info("Deserialised message to query {}", exportQuery);
+            return Optional.of(exportQuery);
         } catch (BulkExportQueryValidationException e) {
             LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
             return Optional.empty();

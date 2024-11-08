@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -38,6 +39,10 @@ public class SqsBulkExportProcessor {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
+    }
+
+    public void processExport(BulkExportQueryOrLeafPartitionQuery exportQuery) {
+
     }
 
     public static Builder builder() {
