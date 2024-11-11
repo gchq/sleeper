@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -31,6 +32,7 @@ import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +76,8 @@ public class GarbageCollectionST {
         sleeper.compaction().createJobs(200).invokeTasks(1).waitForJobs();
 
         // When
-        sleeper.garbageCollection().invoke().waitFor();
+        sleeper.garbageCollection().invoke().waitFor(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then
         assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
