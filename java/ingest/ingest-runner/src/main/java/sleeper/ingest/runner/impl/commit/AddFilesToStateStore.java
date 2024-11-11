@@ -26,8 +26,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
@@ -38,7 +37,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 @FunctionalInterface
@@ -75,6 +73,7 @@ public interface AddFilesToStateStore {
             Supplier<String> s3FilenameSupplier,
             Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
+        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject, s3FilenameSupplier);
         return references -> {
             IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
                     .fileReferences(references);
@@ -82,13 +81,7 @@ public interface AddFilesToStateStore {
             IngestAddFilesCommitRequest request = requestBuilder.build();
             String json = serDe.toJson(request);
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-            // Store in S3 if the request will not fit in an SQS message
-            if (json.length() > 262144) {
-                String s3Key = StateStoreCommitRequestInS3.createFileS3Key(request.getTableId(), s3FilenameSupplier.get());
-                s3Client.putObject(instanceProperties.get(DATA_BUCKET), s3Key, json);
-                json = new StateStoreCommitRequestInS3SerDe().toJson(new StateStoreCommitRequestInS3(s3Key));
-                LOGGER.info("Request to add files was too big for an SQS message. Will submit a reference to file in data bucket: {}", s3Key);
-            }
+            json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), json);
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                     .withMessageBody(json)
