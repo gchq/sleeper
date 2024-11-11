@@ -5,6 +5,7 @@
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/merge.hpp>
+#include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <internal_use_only/config.hpp>
 #include <rmm/cuda_stream_view.hpp>
@@ -19,6 +20,7 @@
 #include "data_sink.hpp"
 #include "io/prefetch_source.hpp"
 #include "io/s3_utils.hpp"
+#include "lub.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -83,7 +85,6 @@ int main(int argc, char **argv) {
         readers.reserve(inputFiles.size());
 
         for (auto const &f : inputFiles) {
-            // std::unique_ptr<cudf::io::datasource> source = cudf::io::datasource::create(f);
             auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
             source->prefetch(false);
             auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
@@ -92,20 +93,11 @@ int main(int argc, char **argv) {
                 chunkReadLimit * 1'048'576, passReadLimit * 1'048'576, reader_builder.build()),
               0,
               0);
+            // Enable pre-fetching after footer read
+            dynamic_cast<gpu_compact::io::PrefetchingSource *>(std::get<0>(readers.back()).get())->prefetch(true);
         }
 
         auto const totalRows = calcTotalRows(readers);
-
-        // Enable prefetching
-        for (auto const &r : readers) {
-            auto const s = dynamic_cast<gpu_compact::io::PrefetchingSource *>(std::get<0>(r).get());
-            if (s) {
-                SPDLOG_INFO("Prefetching enabled");
-                s->prefetch(true);
-            } else {
-                SPDLOG_WARN("Can't enable prefetching!");
-            }
-        }
 
         // Make writer
         SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
@@ -142,14 +134,19 @@ int main(int argc, char **argv) {
             }
 
             // Merge and write tables
-            if (lastTotalRowCount) {
+            if (lastTotalRowCount > 0) {
                 std::vector<cudf::table_view> views;
                 views.reserve(tables.size());
                 for (auto const &table : tables) { views.push_back(*table.tbl); }
+
+                // Find the least upper bound across these tables
+                findLeastUpperBound(views);
+
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
                 views.clear();
                 tables.clear();
+                writer.write(*merged);
                 auto const elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(timestamp() - startTime);
                 auto const rowsWritten = calcRowsWritten(readers);
                 auto const fracRowsWritten = (static_cast<double>(rowsWritten) / totalRows);
@@ -162,7 +159,6 @@ int main(int argc, char **argv) {
                   elapsedTime.count() % 60,
                   predictedTime.count() / 60,
                   predictedTime.count() % 60);
-                writer.write(*merged);
             }
         }
 
