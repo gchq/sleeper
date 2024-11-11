@@ -35,7 +35,6 @@ import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
@@ -65,15 +64,14 @@ public interface AddFilesToStateStore {
     static AddFilesToStateStore bySqs(
             AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties,
             Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
-        return bySqs(sqsClient, s3Client, instanceProperties, () -> UUID.randomUUID().toString(), requestConfig);
+        return bySqs(sqsClient, instanceProperties, new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject), requestConfig);
     }
 
     static AddFilesToStateStore bySqs(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties,
-            Supplier<String> s3FilenameSupplier,
+            AmazonSQS sqsClient, InstanceProperties instanceProperties,
+            StateStoreCommitRequestInS3Uploader s3Uploader,
             Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
-        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject, s3FilenameSupplier);
         return references -> {
             IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
                     .fileReferences(references);

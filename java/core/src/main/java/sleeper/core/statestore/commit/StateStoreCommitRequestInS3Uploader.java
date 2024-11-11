@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -29,15 +30,22 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
  */
 public class StateStoreCommitRequestInS3Uploader {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitRequestInS3Uploader.class);
+    public static final int MAX_JSON_LENGTH = 262144;
 
     private final InstanceProperties instanceProperties;
     private final Client client;
     private final Supplier<String> filenameSupplier;
+    private final int maxJsonLength;
     private final StateStoreCommitRequestInS3SerDe serDe = new StateStoreCommitRequestInS3SerDe();
 
-    public StateStoreCommitRequestInS3Uploader(InstanceProperties instanceProperties, Client client, Supplier<String> filenameSupplier) {
+    public StateStoreCommitRequestInS3Uploader(InstanceProperties instanceProperties, Client client) {
+        this(instanceProperties, client, MAX_JSON_LENGTH, () -> UUID.randomUUID().toString());
+    }
+
+    public StateStoreCommitRequestInS3Uploader(InstanceProperties instanceProperties, Client client, int maxJsonLength, Supplier<String> filenameSupplier) {
         this.instanceProperties = instanceProperties;
         this.client = client;
+        this.maxJsonLength = maxJsonLength;
         this.filenameSupplier = filenameSupplier;
     }
 
@@ -51,7 +59,7 @@ public class StateStoreCommitRequestInS3Uploader {
      */
     public String uploadAndWrapIfTooBig(String tableId, String commitRequestJson) {
         // Store in S3 if the request will not fit in an SQS message
-        if (commitRequestJson.length() > 262144) {
+        if (commitRequestJson.length() > maxJsonLength) {
             String s3Key = StateStoreCommitRequestInS3.createFileS3Key(tableId, filenameSupplier.get());
             client.putObject(instanceProperties.get(DATA_BUCKET), s3Key, commitRequestJson);
             LOGGER.info("Request was too big for an SQS message. Will submit a reference to file in data bucket: {}", s3Key);

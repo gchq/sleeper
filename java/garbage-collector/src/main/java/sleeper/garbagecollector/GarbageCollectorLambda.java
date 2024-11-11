@@ -38,6 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -84,7 +85,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
                 instanceProperties, stateStoreProvider,
-                sendAsyncCommit(instanceProperties, sqsClient));
+                sendAsyncCommit(instanceProperties, sqsClient, new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject)));
     }
 
     @Override
