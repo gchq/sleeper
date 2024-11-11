@@ -226,7 +226,7 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        CompactionRunner compactor = selector.createCompactor(job, tableProperties);
+        CompactionRunner compactor = selector.createCompactor(job, instanceProperties, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
         RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
