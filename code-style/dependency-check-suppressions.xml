@@ -288,7 +288,7 @@
         We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
         directly.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
     </suppress>
     <suppress>
