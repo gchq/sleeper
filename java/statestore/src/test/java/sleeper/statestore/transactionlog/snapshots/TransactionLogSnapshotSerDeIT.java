@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
@@ -32,7 +33,7 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AllReferencesToAFile.fileWithOneReference;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogSnapshotSerDeIT {
@@ -62,7 +63,7 @@ public class TransactionLogSnapshotSerDeIT {
         // Given
         AllReferencesToAFile file = fileWithOneReference(fileFactory().rootFile(123L), DEFAULT_UPDATE_TIME);
         StateStoreFiles state = new StateStoreFiles();
-        state.add(file);
+        state.add(StateStoreFile.from(file));
 
         // When
         snapshotSerDe.saveFiles(filesSnapshot(1), state);

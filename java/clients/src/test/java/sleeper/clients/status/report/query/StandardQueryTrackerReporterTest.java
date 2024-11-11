@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.time.Instant;
 import java.util.List;

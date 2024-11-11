@@ -23,9 +23,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobAddedFilesStatus;
-import sleeper.ingest.job.status.IngestJobStartedStatus;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.IngestJobAddedFilesStatus;
+import sleeper.ingest.core.job.status.IngestJobStartedStatus;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Duration;
@@ -37,18 +37,18 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
-import static sleeper.ingest.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.core.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
+import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
+import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test

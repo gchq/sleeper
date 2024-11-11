@@ -27,7 +27,7 @@
     <artifactId>bulk-import</artifactId>
 
     <modules>
-        <module>bulk-import-common</module>
+        <module>bulk-import-core</module>
         <module>bulk-import-runner</module>
         <module>bulk-import-starter</module>
         <module>bulk-import-eks</module>

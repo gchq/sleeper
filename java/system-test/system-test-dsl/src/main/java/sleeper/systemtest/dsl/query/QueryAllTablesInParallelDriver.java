@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;

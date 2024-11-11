@@ -38,7 +38,7 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeleteTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTable.class);

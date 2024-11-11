@@ -69,7 +69,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "config/chunks.yaml",
                 "maven/pom.xml",
                 "maven/bulk-import/pom.xml",
-                "maven/bulk-import/bulk-import-common/**",
+                "maven/bulk-import/bulk-import-core/**",
                 "maven/bulk-import/bulk-import-starter/**",
                 "maven/bulk-import/bulk-import-runner/**",
                 "maven/ingest/**",

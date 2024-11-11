@@ -22,7 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -33,8 +33,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,10 +50,10 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedAndFailedToStartIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedAndFailedToStartIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 class BulkImportExecutorTest {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()

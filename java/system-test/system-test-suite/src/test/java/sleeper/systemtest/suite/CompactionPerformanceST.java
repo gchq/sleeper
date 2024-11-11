@@ -54,6 +54,7 @@ public class CompactionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
+        // Given
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
@@ -61,9 +62,11 @@ public class CompactionPerformanceST {
         }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
+        // When
         sleeper.compaction().createJobs(10).invokeTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
+        // Then
         assertThat(sleeper.tableFiles().references())
                 .hasSize(10)
                 .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,

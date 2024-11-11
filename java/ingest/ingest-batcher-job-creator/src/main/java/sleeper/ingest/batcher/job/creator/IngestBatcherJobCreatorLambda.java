@@ -30,7 +30,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.ingest.batcher.IngestBatcher;
+import sleeper.ingest.batcher.core.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.time.Instant;

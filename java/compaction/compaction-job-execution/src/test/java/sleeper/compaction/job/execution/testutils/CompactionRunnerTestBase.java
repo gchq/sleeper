@@ -19,9 +19,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -33,9 +33,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 

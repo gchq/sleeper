@@ -36,7 +36,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestFactory;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
@@ -60,7 +60,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 public class DockerInstanceIT extends DockerInstanceTestBase {
     @Nested

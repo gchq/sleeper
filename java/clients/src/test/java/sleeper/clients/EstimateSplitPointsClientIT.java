@@ -31,8 +31,8 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import java.io.IOException;
 import java.util.List;

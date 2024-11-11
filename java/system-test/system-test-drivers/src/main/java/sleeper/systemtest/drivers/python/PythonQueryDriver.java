@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.record.Record;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;

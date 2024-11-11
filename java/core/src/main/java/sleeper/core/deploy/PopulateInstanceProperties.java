@@ -16,6 +16,8 @@
 package sleeper.core.deploy;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -23,6 +25,7 @@ import sleeper.core.properties.validation.LambdaDeployType;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -45,11 +48,14 @@ import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
  * Populates instance properties when deploying a new instance or when tearing down an instance without the properties.
  */
 public class PopulateInstanceProperties {
+    public static final Logger LOGGER = LoggerFactory.getLogger(PopulateInstanceProperties.class);
+
     private final Supplier<String> accountSupplier;
     private final Supplier<String> regionIdSupplier;
     private final String instanceId;
     private final String vpcId;
     private final String subnetIds;
+    private final Consumer<InstanceProperties> extraInstanceProperties;
 
     private PopulateInstanceProperties(Builder builder) {
         accountSupplier = Objects.requireNonNull(builder.accountSupplier, "accountSupplier must not be null");
@@ -57,6 +63,7 @@ public class PopulateInstanceProperties {
         instanceId = ObjectUtils.requireNonEmpty(builder.instanceId, "instanceId must not be empty");
         vpcId = ObjectUtils.requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetIds = ObjectUtils.requireNonEmpty(builder.subnetIds, "subnetIds must not be empty");
+        extraInstanceProperties = Objects.requireNonNull(builder.extraInstanceProperties, "extraInstanceProperties must not be null");
     }
 
     public static Builder builder() {
@@ -78,6 +85,7 @@ public class PopulateInstanceProperties {
         properties.set(REGION, regionIdSupplier.get());
         properties.set(VPC_ID, vpcId);
         properties.set(SUBNETS, subnetIds);
+        extraInstanceProperties.accept(properties);
         return properties;
     }
 
@@ -124,6 +132,8 @@ public class PopulateInstanceProperties {
         private String instanceId;
         private String vpcId;
         private String subnetIds;
+        private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
+        };
 
         private Builder() {
         }
@@ -180,6 +190,17 @@ public class PopulateInstanceProperties {
          */
         public Builder subnetIds(String subnetIds) {
             this.subnetIds = subnetIds;
+            return this;
+        }
+
+        /**
+         * Sets any extra instance properties that should be set for the instance.
+         *
+         * @param  extraInstanceProperties the function to set the extra properties
+         * @return                         this builder
+         */
+        public Builder extraInstanceProperties(Consumer<InstanceProperties> extraInstanceProperties) {
+            this.extraInstanceProperties = extraInstanceProperties;
             return this;
         }
 

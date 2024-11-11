@@ -25,9 +25,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutputInfo;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;

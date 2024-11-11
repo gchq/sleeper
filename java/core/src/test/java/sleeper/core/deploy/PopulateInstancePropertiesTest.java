@@ -23,6 +23,8 @@ import sleeper.core.properties.validation.LambdaDeployType;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.testPopulateInstancePropertiesBuilder;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -49,14 +51,9 @@ import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 
 public class PopulateInstancePropertiesTest {
-
-    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionIdSupplier(() -> "test-region")
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
-    }
 
     private InstanceProperties expectedInstanceProperties() {
         InstanceProperties expected = new InstanceProperties();
@@ -78,7 +75,7 @@ public class PopulateInstancePropertiesTest {
     @Test
     void shouldPopulateInstanceProperties() {
         // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate(new InstanceProperties());
+        InstanceProperties properties = createTestPopulateInstanceProperties().populate(new InstanceProperties());
 
         // Then
         assertThat(properties).isEqualTo(expectedInstanceProperties());
@@ -91,8 +88,7 @@ public class PopulateInstancePropertiesTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
 
         // When
-        populateInstancePropertiesBuilder()
-                .build().populate(properties);
+        createTestPopulateInstanceProperties().populate(properties);
 
         // Then
         InstanceProperties expected = expectedInstanceProperties();
@@ -108,7 +104,7 @@ public class PopulateInstancePropertiesTest {
     @Test
     void shouldGetDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
         // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate(new InstanceProperties());
+        InstanceProperties properties = createTestPopulateInstanceProperties().populate(new InstanceProperties());
 
         // Then
         assertThat(properties.getTags())
@@ -120,13 +116,25 @@ public class PopulateInstancePropertiesTest {
         // Given/When
         InstanceProperties properties = new InstanceProperties();
         properties.setTags(Map.of("TestTag", "TestValue"));
-        populateInstancePropertiesBuilder()
-                .build().populate(properties);
+        createTestPopulateInstanceProperties().populate(properties);
 
         // Then
         assertThat(properties.getTags())
                 .isEqualTo(Map.of("TestTag", "TestValue",
                         "InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldSetExtraProperties() {
+        // Given/When
+        InstanceProperties properties = new InstanceProperties();
+        testPopulateInstancePropertiesBuilder()
+                .extraInstanceProperties(p -> p.setNumber(DEFAULT_PARTITION_SPLIT_THRESHOLD, 1000))
+                .build().populate(properties);
+
+        // Then
+        assertThat(properties.getInt(DEFAULT_PARTITION_SPLIT_THRESHOLD))
+                .isEqualTo(1000);
     }
 
     @Test

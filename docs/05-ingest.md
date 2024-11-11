@@ -573,7 +573,7 @@ To change the algorithm used on a per-job basis, set the `className` field on th
 
 ```JSON
 {
-  "className": "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver"
+  "className": "sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver"
 }
 ```
 

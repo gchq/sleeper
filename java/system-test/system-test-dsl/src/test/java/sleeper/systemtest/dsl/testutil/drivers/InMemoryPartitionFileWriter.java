@@ -22,8 +22,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
+import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 

@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.IngestTaskStatusReport;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.io.PrintStream;
 import java.time.Duration;

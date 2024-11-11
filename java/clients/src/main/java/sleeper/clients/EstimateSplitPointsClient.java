@@ -23,9 +23,9 @@ import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

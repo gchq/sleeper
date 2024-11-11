@@ -41,11 +41,11 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.splitter.find.SplitPartitionJobDefinition;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
-import sleeper.splitter.split.SplitPartition;
-import sleeper.splitter.split.SplitPartition.SendAsyncCommit;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.split.SplitPartition;
+import sleeper.splitter.core.split.SplitPartition.SendAsyncCommit;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
+import static sleeper.splitter.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.

@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.ingest.task;
 
-import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatus;
 
 import java.io.PrintStream;
 import java.util.List;

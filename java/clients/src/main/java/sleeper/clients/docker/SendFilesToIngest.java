@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.IngestJobSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

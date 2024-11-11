@@ -29,7 +29,7 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
+            <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->

@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;

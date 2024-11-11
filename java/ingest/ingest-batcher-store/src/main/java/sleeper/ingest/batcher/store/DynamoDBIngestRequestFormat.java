@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.time.Duration;
 import java.util.Map;

@@ -19,7 +19,7 @@ import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;

@@ -19,8 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.validation.IngestQueue;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.IngestJobSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.util.Collections;

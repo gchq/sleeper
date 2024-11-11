@@ -40,7 +40,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 
 import java.util.ArrayList;
 import java.util.List;

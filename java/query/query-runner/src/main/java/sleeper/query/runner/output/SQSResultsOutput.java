@@ -26,10 +26,10 @@ import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.output.ResultsOutputLocation;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -18,10 +18,10 @@ package sleeper.query.runner.tracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 
 import java.util.ArrayList;
 import java.util.List;

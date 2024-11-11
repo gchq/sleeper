@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
-import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;

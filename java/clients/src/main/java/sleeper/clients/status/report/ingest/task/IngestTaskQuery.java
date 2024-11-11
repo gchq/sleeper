@@ -15,8 +15,8 @@
  */
 package sleeper.clients.status.report.ingest.task;
 
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.time.Instant;
 import java.util.List;

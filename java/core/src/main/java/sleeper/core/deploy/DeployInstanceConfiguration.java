@@ -17,10 +17,14 @@
 package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * The configuration to deploy a Sleeper instance and configure Sleeper tables.
@@ -46,12 +50,100 @@ public class DeployInstanceConfiguration {
         return new Builder();
     }
 
+    /**
+     * Creates a configuration for a new instance, setting tables from templates if not specified.
+     *
+     * @param  instancePropertiesPath     the path to the local configuration instance properties file
+     * @param  populateInstanceProperties the settings to populate the instance properties
+     * @param  fromTemplates              the settings to load the templates
+     * @return                            the instance configuration
+     */
+    public static DeployInstanceConfiguration forNewInstanceDefaultingTables(
+            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
+            DeployInstanceConfigurationFromTemplates fromTemplates) {
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+        if (configuration.getTableProperties().isEmpty()) {
+            configuration = configuration.withTableProperties(instanceProperties -> List.of(
+                    fromTemplates.loadTableProperties(instanceProperties)));
+        }
+        return configuration;
+    }
+
+    /**
+     * Creates a configuration for a new instance, setting instance properties from templates if not
+     * specified.
+     *
+     * @param  instancePropertiesPath     the path to the local configuration instance properties file, or null if not
+     *                                    present
+     * @param  populateInstanceProperties the settings to populate the instance properties
+     * @param  templatesDir               the directory to load the templates from
+     * @return                            the instance configuration
+     */
+    public static DeployInstanceConfiguration forNewInstanceDefaultingInstance(
+            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
+            Path templatesDir) {
+        if (instancePropertiesPath != null) {
+            return fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+        } else {
+            InstanceProperties instanceProperties = DeployInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir);
+            populateInstanceProperties.populate(instanceProperties);
+            return new DeployInstanceConfiguration(instanceProperties, List.of());
+        }
+    }
+
+    /**
+     * Creates an instance configuration from local files.
+     *
+     * @param  instancePropertiesPath the path to the local configuration instance properties file
+     * @return                        the instance configuration
+     */
+    public static DeployInstanceConfiguration fromLocalConfiguration(Path instancePropertiesPath) {
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
+        List<TableProperties> tableProperties = LoadLocalProperties
+                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
+                .collect(Collectors.toUnmodifiableList());
+        return DeployInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties).build();
+    }
+
+    private static DeployInstanceConfiguration fromLocalConfiguration(
+            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties) {
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
+        populateInstanceProperties.populate(configuration.getInstanceProperties());
+        return configuration;
+    }
+
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
     }
 
     public List<TableProperties> getTableProperties() {
         return tableProperties;
+    }
+
+    /**
+     * Creates an instance configuration with the same instance properties but the given table properties. Takes a
+     * function to build the table properties from the instance properties. Note that the same instance properties
+     * object is reused, and any changes to those will impact both the before and after instance configuration.
+     *
+     * @param  buildTableProperties the function to build the table properties
+     * @return                      the new instance configuration
+     */
+    public DeployInstanceConfiguration withTableProperties(Function<InstanceProperties, List<TableProperties>> buildTableProperties) {
+        return new DeployInstanceConfiguration(instanceProperties, buildTableProperties.apply(instanceProperties));
+    }
+
+    /**
+     * Gets the table properties. Fails if there is not exactly one table in the configuration.
+     *
+     * @return the table properties
+     */
+    public TableProperties singleTableProperties() {
+        if (tableProperties.size() != 1) {
+            throw new IllegalArgumentException("Expected exactly one table in configuration");
+        }
+        return tableProperties.get(0);
     }
 
     @Override
