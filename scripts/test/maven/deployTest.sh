@@ -33,6 +33,11 @@ shift 3
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
+PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
+if [ ! -f "$PROPERTIES_FILE" ]; then
+   cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
+fi
+
 "$SCRIPTS_DIR/build/buildPython.sh"
 
 pushd "$MAVEN_DIR"
@@ -41,6 +46,8 @@ mvn verify -PsystemTest -DskipRust=true \
   -Dsleeper.system.test.short.id="$SHORT_ID" \
   -Dsleeper.system.test.vpc.id="$VPC" \
   -Dsleeper.system.test.subnet.ids="$SUBNETS" \
+  -Dsleeper.system.test.standalone.properties.template="$PROPERTIES_FILE" \
+  -Dsleeper.system.test.instance.properties.overrides="$PROPERTIES_FILE" \
   "$@"
 
 popd

@@ -38,7 +38,7 @@ public class GraphModelTest {
                         "core",
                         "configuration",
                         "ingest",
-                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter",
                         "distribution");
@@ -53,10 +53,10 @@ public class GraphModelTest {
                 .containsExactly(
                         "configuration > core",
                         "ingest > configuration",
-                        "bulk-import/bulk-import-common > configuration",
-                        "bulk-import/bulk-import-runner > bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-core > configuration",
+                        "bulk-import/bulk-import-runner > bulk-import/bulk-import-core",
                         "bulk-import/bulk-import-runner > ingest",
-                        "bulk-import/bulk-import-starter > bulk-import/bulk-import-common");
+                        "bulk-import/bulk-import-starter > bulk-import/bulk-import-core");
     }
 
     @Test

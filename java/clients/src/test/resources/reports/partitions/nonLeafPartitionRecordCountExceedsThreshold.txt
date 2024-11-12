@@ -4,9 +4,9 @@ Partitions Status Report:
 There are 3 partitions (2 leaf partitions)
 There are 0 leaf partitions that will be split
 Split threshold is 10 records
-----------------------------------------------------------------------------------------------------------------------------------------------------
-| ID   | PARENT | PARENT_SIDE | FILES | APPROX_RECORDS | KNOWN_RECORDS | LEAF | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
-| L    | root   | min         |     0 |              0 |             0 | yes  | no            | yes                    |             |             |
-| R    | root   | max         |     0 |              0 |             0 | yes  | no            | yes                    |             |             |
-| root |        |             |     1 |            100 |           100 | no   |               |                        | key         | abc         |
-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| ID   | LEAF | PARENT | PARENT_SIDE | FILES | FILES_ON_JOBS | APPROX_RECORDS | APPROX_RECORDS_REFERENCED | EXACT_RECORDS_REFERENCED | WILL_BE_SPLIT | MAY_SPLIT_IF_COMPACTED | SPLIT_FIELD | SPLIT_VALUE |
+| L    | yes  | root   | min         |     0 |             0 |             50 |                         0 |                        0 | no            | yes                    |             |             |
+| R    | yes  | root   | max         |     0 |             0 |             50 |                         0 |                        0 | no            | yes                    |             |             |
+| root | no   |        |             |     1 |             0 |            100 |                       100 |                      100 |               |                        | key         | abc         |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

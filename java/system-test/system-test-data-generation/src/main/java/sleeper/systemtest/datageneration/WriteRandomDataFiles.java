@@ -21,11 +21,11 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;

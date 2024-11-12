@@ -28,22 +28,22 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.QueryStatusReportListener;
-import sleeper.query.tracker.QueryTrackerException;
-import sleeper.query.tracker.QueryTrackerStore;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.core.tracker.QueryTrackerException;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.query.runner.tracker.DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
 
 /**

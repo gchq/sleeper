@@ -18,12 +18,12 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.splitter.find.FindPartitionsToSplit;
-import sleeper.splitter.find.FindPartitionsToSplit.JobSender;
-import sleeper.splitter.split.SplitPartition;
+import sleeper.splitter.core.find.FindPartitionsToSplit;
+import sleeper.splitter.core.find.FindPartitionsToSplit.JobSender;
+import sleeper.splitter.core.split.SplitPartition;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 

@@ -18,10 +18,10 @@ package sleeper.compaction.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionTaskStatusStoreFactory {
 

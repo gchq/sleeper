@@ -15,19 +15,19 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
-import com.amazonaws.services.elasticmapreduce.model.Configuration;
-import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
-import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
-import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
-import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
+import software.amazon.awssdk.services.emr.model.ComputeLimits;
+import software.amazon.awssdk.services.emr.model.ComputeLimitsUnitType;
+import software.amazon.awssdk.services.emr.model.Configuration;
+import software.amazon.awssdk.services.emr.model.EbsConfiguration;
+import software.amazon.awssdk.services.emr.model.InstanceFleetConfig;
+import software.amazon.awssdk.services.emr.model.InstanceFleetType;
+import software.amazon.awssdk.services.emr.model.InstanceTypeConfig;
+import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,16 +35,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
+import static sleeper.core.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
@@ -57,34 +57,37 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
     public JobFlowInstancesConfig createJobFlowInstancesConfig(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
 
-        return new JobFlowInstancesConfig()
-                .withEc2SubnetIds(instanceProperties.getList(SUBNETS))
-                .withInstanceFleets(
+        return JobFlowInstancesConfig.builder()
+                .ec2SubnetIds(instanceProperties.getList(SUBNETS))
+                .instanceFleets(
                         executorFleet(ebsConfiguration, platformSpec),
-                        driverFleet(ebsConfiguration, platformSpec));
+                        driverFleet(ebsConfiguration, platformSpec))
+                .build();
     }
 
     @Override
     public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
 
-        return new ComputeLimits()
-                .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
-                .withMinimumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
-                .withMaximumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
+        return ComputeLimits.builder()
+                .unitType(ComputeLimitsUnitType.INSTANCE_FLEET_UNITS)
+                .minimumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
+                .maximumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY))
+                .build();
     }
 
     private InstanceFleetConfig executorFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        InstanceFleetConfig config = new InstanceFleetConfig()
-                .withName("Executors")
-                .withInstanceFleetType(InstanceFleetType.CORE)
-                .withInstanceTypeConfigs(readExecutorInstanceTypes(instanceProperties, ebsConfiguration, platformSpec));
+        InstanceFleetConfig config = InstanceFleetConfig.builder()
+                .name("Executors")
+                .instanceFleetType(InstanceFleetType.CORE)
+                .instanceTypeConfigs(readExecutorInstanceTypes(instanceProperties, ebsConfiguration, platformSpec))
+                .build();
 
         int initialExecutorCapacity = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY);
         if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {
-            config.setTargetOnDemandCapacity(initialExecutorCapacity);
+            config = config.toBuilder().targetOnDemandCapacity(initialExecutorCapacity).build();
         } else {
-            config.setTargetSpotCapacity(initialExecutorCapacity);
+            config = config.toBuilder().targetSpotCapacity(initialExecutorCapacity).build();
         }
         return config;
     }
@@ -93,31 +96,34 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
             InstanceProperties instanceProperties, EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
         return readInstanceTypes(platformSpec.getTableProperties(), BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
                 BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
-                .map(config -> new InstanceTypeConfig()
-                        .withInstanceType(config.getInstanceType())
-                        .withWeightedCapacity(config.getWeightedCapacity())
-                        .withEbsConfiguration(ebsConfiguration)
-                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
+                .map(config -> InstanceTypeConfig.builder()
+                        .instanceType(config.getInstanceType())
+                        .weightedCapacity(config.getWeightedCapacity())
+                        .ebsConfiguration(ebsConfiguration)
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
     private InstanceFleetConfig driverFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        return new InstanceFleetConfig()
-                .withName("Driver")
-                .withInstanceFleetType(InstanceFleetType.MASTER)
-                .withInstanceTypeConfigs(readMasterInstanceTypes(ebsConfiguration, platformSpec))
-                .withTargetOnDemandCapacity(1);
+        return InstanceFleetConfig.builder()
+                .name("Driver")
+                .instanceFleetType(InstanceFleetType.MASTER)
+                .instanceTypeConfigs(readMasterInstanceTypes(ebsConfiguration, platformSpec))
+                .targetOnDemandCapacity(1)
+                .build();
     }
 
     private List<InstanceTypeConfig> readMasterInstanceTypes(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
         return readInstanceTypes(platformSpec.getTableProperties(), BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
                 BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
-                .map(config -> new InstanceTypeConfig()
-                        .withInstanceType(config.getInstanceType())
-                        .withEbsConfiguration(ebsConfiguration)
-                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
+                .map(config -> InstanceTypeConfig.builder()
+                        .instanceType(config.getInstanceType())
+                        .ebsConfiguration(ebsConfiguration)
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -126,48 +132,56 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         List<Configuration> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
-        Configuration emrConfiguration = new Configuration()
-                .withClassification("spark")
-                .withProperties(emrSparkProps);
+        Configuration emrConfiguration = Configuration.builder()
+                .classification("spark")
+                .properties(emrSparkProps)
+                .build();
         configurations.add(emrConfiguration);
 
         Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
-        Configuration yarnConfiguration = new Configuration()
-                .withClassification("yarn-site")
-                .withProperties(yarnConf);
+        Configuration yarnConfiguration = Configuration.builder()
+                .classification("yarn-site")
+                .properties(yarnConf)
+                .build();
         configurations.add(yarnConfiguration);
 
         Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(
                 instanceProperties, architecture);
-        Configuration sparkDefaultsConfigurations = new Configuration()
-                .withClassification("spark-defaults")
-                .withProperties(sparkConf);
+        Configuration sparkDefaultsConfigurations = Configuration.builder()
+                .classification("spark-defaults")
+                .properties(sparkConf)
+                .build();
         configurations.add(sparkDefaultsConfigurations);
 
         Map<String, String> sparkExecutorJavaHome = new HashMap<>();
         sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome(architecture));
-        Configuration sparkEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(sparkExecutorJavaHome);
-        Configuration sparkEnvConfigurations = new Configuration()
-                .withClassification("spark-env")
-                .withConfigurations(sparkEnvExportConfigurations);
+        Configuration sparkEnvExportConfigurations = Configuration.builder()
+                .classification("export")
+                .properties(sparkExecutorJavaHome)
+                .build();
+        Configuration sparkEnvConfigurations = Configuration.builder()
+                .classification("spark-env")
+                .configurations(sparkEnvExportConfigurations)
+                .build();
         configurations.add(sparkEnvConfigurations);
 
         Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
-        Configuration mapRedSiteConfigurations = new Configuration()
-                .withClassification("mapred-site")
-                .withProperties(mapReduceSiteConf);
+        Configuration mapRedSiteConfigurations = Configuration.builder()
+                .classification("mapred-site")
+                .properties(mapReduceSiteConf)
+                .build();
         configurations.add(mapRedSiteConfigurations);
 
         Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration(architecture);
 
-        Configuration hadoopEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(javaHomeConf);
-        Configuration hadoopEnvConfigurations = new Configuration()
-                .withClassification("hadoop-env")
-                .withConfigurations(hadoopEnvExportConfigurations);
+        Configuration hadoopEnvExportConfigurations = Configuration.builder()
+                .classification("export")
+                .properties(javaHomeConf)
+                .build();
+        Configuration hadoopEnvConfigurations = Configuration.builder()
+                .classification("hadoop-env")
+                .configurations(hadoopEnvExportConfigurations)
+                .build();
         configurations.add(hadoopEnvConfigurations);
 
         return configurations;

@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestDirectBulkImport {
 

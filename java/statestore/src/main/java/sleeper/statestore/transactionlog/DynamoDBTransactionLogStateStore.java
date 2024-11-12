@@ -21,9 +21,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
 
 /**
  * An implementation of the state store backed by a transaction log held in DynamoDB and S3.

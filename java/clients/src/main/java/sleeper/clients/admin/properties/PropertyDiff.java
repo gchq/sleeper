@@ -17,15 +17,15 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.formatDescription;
+import static sleeper.core.properties.SleeperPropertiesPrettyPrinter.formatDescription;
 
 public class PropertyDiff {
     private final String propertyName;

@@ -15,13 +15,14 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class SystemTestStateStoreFakeCommits {
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
+    private final PollWithRetriesDriver pollDriver;
     private final WaitForStateStoreCommitLogs waiter;
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
     private final Instant getRunsAfterTime;
@@ -41,8 +43,10 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits(
             SystemTestContext context,
             StateStoreCommitterDriver driver,
-            StateStoreCommitterLogsDriver logsDriver) {
+            StateStoreCommitterLogsDriver logsDriver,
+            PollWithRetriesDriver pollDriver) {
         this.driver = driver;
+        this.pollDriver = pollDriver;
         instance = context.instance();
         waiter = new WaitForStateStoreCommitLogs(logsDriver);
         getRunsAfterTime = context.reporting().getRecordingStartTime();
@@ -77,8 +81,10 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits waitForCommitLogs(PollWithRetries poll) throws InterruptedException {
-        waiter.waitForCommitLogs(poll, waitForNumCommitsByTableId, getRunsAfterTime);
+    public SystemTestStateStoreFakeCommits waitForCommitLogs() throws InterruptedException {
+        waiter.waitForCommitLogs(
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(20), Duration.ofMinutes(5)),
+                waitForNumCommitsByTableId, getRunsAfterTime);
         return this;
     }
 

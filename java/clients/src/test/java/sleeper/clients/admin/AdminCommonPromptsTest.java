@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.Optional;
 import java.util.function.Supplier;

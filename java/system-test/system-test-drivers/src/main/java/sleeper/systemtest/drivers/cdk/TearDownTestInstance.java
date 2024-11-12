@@ -16,7 +16,7 @@
 package sleeper.systemtest.drivers.cdk;
 
 import sleeper.clients.teardown.TearDownInstance;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 

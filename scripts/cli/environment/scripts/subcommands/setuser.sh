@@ -22,7 +22,7 @@ ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
 if [ "$#" -lt 1 ]; then
-  USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+  USERNAME=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2LoginUser" "$OUTPUTS_FILE" --raw-output)
   echo "Setting default user: $USERNAME"
 else
   USERNAME=$1

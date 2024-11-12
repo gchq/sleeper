@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -31,33 +30,32 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.SleeperScheduleRule;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 
 /**
  * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
@@ -74,7 +72,7 @@ public class GarbageCollectorStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         // Garbage collector code
-        LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");
@@ -83,26 +81,22 @@ public class GarbageCollectorStack extends NestedStack {
         Duration handlerTimeout = Duration.seconds((60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES)));
 
         // Garbage collector function
-        IFunction triggerFunction = gcJar.buildFunction(this, "GarbageCollectorTrigger", builder -> builder
+        IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR_TRIGGER, "GarbageCollectorTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
-                .runtime(Runtime.JAVA_11)
-                .handler("sleeper.garbagecollector.GarbageCollectorTriggerLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(createLambdaLogGroup(this, "GarbageCollectorTriggerLogGroup", triggerFunctionName, instanceProperties)));
-        IFunction handlerFunction = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
+                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
+        IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state store looking for files that need deleting and delete them")
-                .runtime(Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(handlerTimeout)
-                .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(createLambdaLogGroup(this, "GarbageCollectorLambdaLogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
         // Grant this function permission delete files from the data bucket and

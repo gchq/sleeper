@@ -30,20 +30,21 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.clients.status.update.AddTable;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
@@ -57,20 +58,19 @@ import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.configuration.properties.instance.InstanceProperties.S3_INSTANCE_PROPERTIES_FILE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
 public class AwsSleeperTablesDriver implements SleeperTablesDriver {
@@ -99,8 +99,8 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
     public void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
-        clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3_INSTANCE_PROPERTIES_FILE.equals(key));
-        clearTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
+        clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE.equals(key));
+        clearTable(instanceProperties.get(ACTIVE_FILES_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
         clearTable(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.FILE_NAME);
         clearTable(instanceProperties.get(PARTITION_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID);
         clearTable(instanceProperties.get(REVISION_TABLENAME), S3StateStore.TABLE_ID, S3StateStore.REVISION_ID_KEY);
@@ -130,7 +130,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties) {
-        return new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     }
 
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
@@ -142,7 +142,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
     private void clearBucket(String bucketName) {

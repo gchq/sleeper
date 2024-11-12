@@ -19,8 +19,8 @@ package sleeper.clients.docker.stack;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -28,19 +28,19 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLELENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -74,7 +74,7 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-online-by-name"));
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        instanceProperties.set(ACTIVE_FILES_TABLELENAME, String.join("-", "sleeper", instanceId, "active-files"));
+        instanceProperties.set(ACTIVE_FILES_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, String.join("-", "sleeper", instanceId, "file-refs"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
@@ -88,7 +88,7 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
-        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILES_TABLELENAME));
+        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILES_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));

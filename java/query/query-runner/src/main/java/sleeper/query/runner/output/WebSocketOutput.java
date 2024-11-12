@@ -27,9 +27,9 @@ import com.amazonaws.services.apigatewaymanagementapi.model.LimitExceededExcepti
 import com.amazonaws.services.apigatewaymanagementapi.model.PayloadTooLargeException;
 import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequest;
 
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

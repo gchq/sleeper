@@ -27,7 +27,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.inmemory.StateStoreTestHelper;
+import sleeper.core.statestore.testutils.StateStoreTestHelper;
 
 import java.util.ArrayList;
 import java.util.List;

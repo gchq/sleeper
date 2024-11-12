@@ -24,10 +24,12 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper
@@ -38,19 +40,22 @@ public class ConfigBucketStack extends NestedStack {
     private final IBucket configBucket;
 
     public ConfigBucketStack(
-            Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
+            Construct scope, String id, InstanceProperties instanceProperties,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, BuiltJars jars) {
         super(scope, id);
-
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "config");
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
-                .bucketName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "config"))
+                .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
-                .autoDeleteObjects(true)
                 .build();
+
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
+
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, loggingStack, jars, configBucket, bucketName);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());

@@ -20,11 +20,11 @@ import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 
 public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {

@@ -29,11 +29,11 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.IngestStatusStoreException;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.status.store.IngestStatusStoreException;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,8 +41,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;

@@ -1,0 +1,56 @@
+name: Build Clients & CDK Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-clients-cdk.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/system-test/pom.xml'
+      - 'java/clients/**'
+      - 'java/cdk/**'
+      - 'java/cdk-custom-resources/**'
+      - 'java/cdk-environment/**'
+      - 'java/build-uptime-lambda/**'
+      - 'java/system-test/system-test-cdk/**'
+      - 'java/system-test/system-test-configuration/**'
+      - 'java/system-test/system-test-data-generation/**'
+      - 'java/system-test/system-test-dsl/**'
+      - 'java/system-test/system-test-drivers/**'
+      - 'java/system-test/system-test-suite/**'
+      - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/ingest/ingest-batcher-submitter/**'
+      - 'java/common/common-task/**'
+      - 'java/ingest/ingest-batcher-store/**'
+      - 'java/bulk-import/bulk-import-core/**'
+      - 'java/splitter/splitter-core/**'
+      - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-job-execution/**'
+      - 'java/statestore-committer-core/**'
+      - 'java/garbage-collector/**'
+      - 'java/ingest/ingest-batcher-core/**'
+      - 'java/query/query-runner/**'
+      - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-status-store/**'
+      - 'java/common/common-invoke-tables/**'
+      - 'java/query/query-core/**'
+      - 'java/ingest/ingest-runner/**'
+      - 'java/compaction/compaction-core/**'
+      - 'java/statestore/**'
+      - 'java/common/common-job/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/sketches/**'
+      - 'java/parquet/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: clients-cdk

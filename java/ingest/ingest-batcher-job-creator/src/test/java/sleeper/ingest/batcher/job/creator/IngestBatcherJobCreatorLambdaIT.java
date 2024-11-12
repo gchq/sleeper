@@ -31,38 +31,37 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.IngestJobSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
-import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.jobIdSupplier;
+import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
 
 @Testcontainers
 public class IngestBatcherJobCreatorLambdaIT {
@@ -81,7 +80,7 @@ public class IngestBatcherJobCreatorLambdaIT {
     });
     private final TableProperties tableProperties = createTestTable(instanceProperties, schemaWithKey("key"));
     private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
-            new TablePropertiesProvider(instanceProperties, s3, dynamoDB));
+            S3TableProperties.createProvider(instanceProperties, s3, dynamoDB));
 
     @BeforeEach
     void setUp() {
@@ -146,14 +145,14 @@ public class IngestBatcherJobCreatorLambdaIT {
     }
 
     private InstanceProperties createTestInstance(Consumer<InstanceProperties> config) {
-        InstanceProperties instance = createTestInstanceProperties(s3, config);
+        InstanceProperties instance = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3, config);
         DynamoDBTableIndexCreator.create(dynamoDB, instance);
         return instance;
     }
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(tableProperties);
         return tableProperties;
     }
 

@@ -21,10 +21,11 @@ import org.apache.commons.codec.binary.Base64;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -39,7 +40,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.query.model.Query;
+import sleeper.query.core.model.Query;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +48,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Allows a user to enter a query from the command line.
@@ -66,7 +67,7 @@ public abstract class QueryCommandLineClient {
 
     protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
             ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
+        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
     }
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,

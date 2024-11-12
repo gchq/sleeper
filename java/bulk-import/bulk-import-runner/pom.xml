@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -48,7 +48,10 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>${scala.minor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -97,7 +100,7 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
+            <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -211,6 +214,23 @@
                         </filter>
                     </filters>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <ignoredDependencies>
+                                <!-- Plugin thinks this is unused, but BulkImportJobDataframeDriver fails to compile if it is not a compile dependency. -->
+                                <ignoredDependency>org.scala-lang:scala-reflect</ignoredDependency>
+                            </ignoredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

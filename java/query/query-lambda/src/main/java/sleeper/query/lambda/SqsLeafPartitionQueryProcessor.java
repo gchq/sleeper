@@ -24,19 +24,19 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.QueryException;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.ResultsOutputConstants;
-import sleeper.query.output.ResultsOutputInfo;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QueryException;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
@@ -52,8 +52,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {

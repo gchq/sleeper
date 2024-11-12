@@ -29,7 +29,8 @@ cp /sleeper-builder/sleeper/scripts/test/nightly/nightlyTestSettings.json /sleep
 vim nightlyTestSettings.json
 ```
 
-You'll need to set a VPC, subnets, results S3 bucket and a path to your fork in GitHub.
+You'll need to set a deployment ID, a VPC, subnets, a results S3 bucket and a path to your fork in GitHub. The
+deployment ID is at most 2 characters, to avoid S3 naming conflicts between your deployment and any others.
 
 #### Automatic merge to main
 

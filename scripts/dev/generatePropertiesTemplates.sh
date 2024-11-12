@@ -21,9 +21,9 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn install -Pquick -q -pl configuration -am
+mvn install -Pquick -q -pl core -am
 echo "Regenerating templates..."
-mvn exec:java -q -pl configuration \
-  -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
+mvn exec:java -q -pl core \
+  -Dexec.mainClass="sleeper.core.deploy.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
 popd

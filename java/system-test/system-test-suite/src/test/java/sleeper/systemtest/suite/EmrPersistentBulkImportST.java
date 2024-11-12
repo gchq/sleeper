@@ -20,7 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -32,13 +32,13 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERSISTENT_EMR;
 
 @SystemTest
 // Slow because it needs to do two CDK deployments, one to add the EMR cluster and one to remove it.
@@ -50,7 +50,7 @@ public class EmrPersistentBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(BULK_IMPORT_PERSISTENT_EMR);
         sleeper.enableOptionalStack(OptionalStack.PersistentEmrBulkImportStack);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
         // Note that we don't purge the bulk import job queue when the test fails,

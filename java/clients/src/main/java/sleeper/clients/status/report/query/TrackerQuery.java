@@ -16,9 +16,9 @@
 
 package sleeper.clients.status.report.query;
 
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.QueryTrackerStore;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 

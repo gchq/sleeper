@@ -20,11 +20,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -32,8 +34,23 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestStandaloneProperties
         extends SleeperProperties<SystemTestProperty>
@@ -47,9 +64,20 @@ public class SystemTestStandaloneProperties
         super(properties);
     }
 
+    /**
+     * Creates a copy of the given system test properties.
+     *
+     * @param  properties the system test properties
+     * @return            the copy
+     */
+    public static SystemTestStandaloneProperties copyOf(SystemTestStandaloneProperties properties) {
+        return new SystemTestStandaloneProperties(loadProperties(properties.saveAsString()));
+    }
+
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String propertiesString = s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        properties.resetAndValidate(loadProperties(propertiesString));
         return properties;
     }
 
@@ -62,9 +90,11 @@ public class SystemTestStandaloneProperties
     }
 
     public void saveToS3(AmazonS3 s3Client) {
-        saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String bucket = get(SYSTEM_TEST_BUCKET_NAME);
+        LOGGER.debug("Uploading config to bucket {}", bucket);
+        s3Client.putObject(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, saveAsString());
         LOGGER.info("Saved system test properties to bucket {}, key {}",
-                get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+                bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override
@@ -82,6 +112,22 @@ public class SystemTestStandaloneProperties
         return SleeperPropertiesPrettyPrinter.builder()
                 .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON))
                 .build();
+    }
+
+    public InstanceProperties toInstancePropertiesForCdkUtils() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(ID, get(SYSTEM_TEST_ID));
+        instanceProperties.set(VPC_ID, get(SYSTEM_TEST_VPC_ID));
+        instanceProperties.set(JARS_BUCKET, get(SYSTEM_TEST_JARS_BUCKET));
+        instanceProperties.set(CONFIG_BUCKET, get(SYSTEM_TEST_BUCKET_NAME));
+        instanceProperties.set(LOG_RETENTION_IN_DAYS, get(SYSTEM_TEST_LOG_RETENTION_DAYS));
+        instanceProperties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR);
+        instanceProperties.set(LOGGING_LEVEL, "DEBUG");
+        instanceProperties.set(ROOT_LOGGING_LEVEL, "INFO");
+        instanceProperties.set(APACHE_LOGGING_LEVEL, "INFO");
+        instanceProperties.set(PARQUET_LOGGING_LEVEL, "WARN");
+        instanceProperties.set(AWS_LOGGING_LEVEL, "INFO");
+        return instanceProperties;
     }
 
     public static String buildSystemTestBucketName(String deploymentId) {

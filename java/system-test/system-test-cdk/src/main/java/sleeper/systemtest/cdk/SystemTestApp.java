@@ -15,23 +15,21 @@
  */
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperCdkApp;
-import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
@@ -39,15 +37,17 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
+    private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
         super(app, id, props, sleeperProperties, jars);
+        this.jars = jars;
     }
 
     @Override
     public void create() {
         SystemTestProperties properties = getInstanceProperties();
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars);
         super.create();
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
@@ -88,9 +88,8 @@ public class SystemTestApp extends SleeperCdkApp {
                 .region(systemTestProperties.get(REGION))
                 .build();
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
-            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(JARS_BUCKET));
+        try (S3Client s3Client = S3Client.create()) {
+            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties);
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
@@ -99,8 +98,6 @@ public class SystemTestApp extends SleeperCdkApp {
                     systemTestProperties, jars).create();
 
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

@@ -26,12 +26,12 @@ import sleeper.clients.status.report.compaction.job.JsonCompactionJobStatusRepor
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 
 import java.time.Clock;
@@ -104,7 +104,7 @@ public class CompactionJobStatusReport {
             AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
             try {
-                InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));

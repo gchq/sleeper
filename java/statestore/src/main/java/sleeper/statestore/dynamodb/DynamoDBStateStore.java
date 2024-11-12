@@ -17,11 +17,11 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.DelegatingStateStore;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 
 /**
  * An implementation of StateStore that uses DynamoDB to store the state.

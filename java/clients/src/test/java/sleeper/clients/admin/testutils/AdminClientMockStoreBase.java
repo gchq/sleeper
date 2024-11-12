@@ -21,8 +21,8 @@ import org.mockito.Mockito;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -36,8 +36,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 

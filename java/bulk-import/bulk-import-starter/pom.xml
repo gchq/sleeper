@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -43,19 +43,17 @@
             <version>${aws-java-sdk.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-emr</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>emr</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
+            <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

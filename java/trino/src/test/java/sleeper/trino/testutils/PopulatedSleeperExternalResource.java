@@ -32,18 +32,19 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestFactory;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -58,14 +59,14 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
@@ -133,12 +134,12 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private TableProperties createTable(InstanceProperties instanceProperties, TableDefinition tableDefinition) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 
     private TableProperties getTableProperties(String tableName) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         return tablePropertiesProvider.getByName(tableName);
     }
 
@@ -163,7 +164,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(FILE_SYSTEM, "s3a://");
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();

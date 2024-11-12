@@ -20,16 +20,16 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.output.ResultsOutputLocation;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -38,11 +38,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
-import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.core.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
+import static sleeper.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 
 /**
  * A query results output that writes results to Parquet files in an S3 bucket.

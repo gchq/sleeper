@@ -19,11 +19,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 public class BulkImportJobWriterToS3 implements BulkImportExecutor.WriteJobToBucket {
     public static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobWriterToS3.class);

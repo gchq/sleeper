@@ -15,21 +15,21 @@
  */
 package sleeper.ingest.starter;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.core.ContainerConstants;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.RunIngestTasks;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function to run ingest tasks.
@@ -40,16 +40,15 @@ public class RunIngestTasksLambda {
 
     public RunIngestTasksLambda() {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        EcsClient ecsClient = EcsClient.create();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         this.runTasks = new RunIngestTasks(sqsClient,
                 ecsClient, instanceProperties,
-                PropertiesReloader.ifConfigured(s3Client, instanceProperties),
+                S3PropertiesReloader.ifConfigured(s3Client, instanceProperties),
                 ContainerConstants.INGEST_CONTAINER_NAME);
     }
 

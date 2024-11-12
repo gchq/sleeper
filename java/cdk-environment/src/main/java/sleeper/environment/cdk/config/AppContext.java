@@ -15,10 +15,10 @@
  */
 package sleeper.environment.cdk.config;
 
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Stack;
+import software.constructs.Construct;
 import software.constructs.Node;
 
+import java.util.List;
 import java.util.Optional;
 
 @FunctionalInterface
@@ -30,20 +30,28 @@ public interface AppContext {
         return string.get(this);
     }
 
+    default String get(RequiredStringParameter string) {
+        return string.get(this);
+    }
+
     default Optional<String> get(OptionalStringParameter string) {
         return string.get(this);
+    }
+
+    default List<String> get(StringListParameter list) {
+        return list.get(this);
+    }
+
+    default boolean get(BooleanParameter bool) {
+        return bool.get(this);
     }
 
     default int get(IntParameter integer) {
         return integer.get(this);
     }
 
-    static AppContext of(App app) {
-        return of(app.getNode());
-    }
-
-    static AppContext of(Stack stack) {
-        return of(stack.getNode());
+    static AppContext of(Construct construct) {
+        return of(construct.getNode());
     }
 
     static AppContext of(Node node) {

@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -33,6 +33,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -41,9 +43,9 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;

@@ -15,13 +15,12 @@
  */
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.ecs.model.Task;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.systemtest.drivers.ingest.json.TaskStatusJson;
 
 import java.time.Instant;
-import java.util.Date;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
@@ -30,9 +29,10 @@ public class TaskStatusJsonTest {
     @Test
     public void shouldOutputJson() {
         // Given
-        Task task = new Task()
-                .withTaskArn("some-task").withClusterArn("some-cluster")
-                .withCreatedAt(Date.from(Instant.parse("2022-12-22T10:08:01Z")));
+        Task task = Task.builder()
+                .taskArn("some-task").clusterArn("some-cluster")
+                .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
+                .build();
 
         // When
         String json = new TaskStatusJson(task).toString();

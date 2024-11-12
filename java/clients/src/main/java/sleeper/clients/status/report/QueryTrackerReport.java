@@ -26,11 +26,11 @@ import sleeper.clients.status.report.query.QueryTrackerReporter;
 import sleeper.clients.status.report.query.StandardQueryTrackerReporter;
 import sleeper.clients.status.report.query.TrackerQuery;
 import sleeper.clients.status.report.query.TrackerQueryPrompt;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryTrackerStore;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -80,7 +80,7 @@ public class QueryTrackerReport {
             TrackerQuery queryType = optionalArgument(args, 2)
                     .map(QueryTrackerReport::readTypeArgument)
                     .orElseGet(QueryTrackerReport::promptForQueryType);
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
             new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
         } catch (IllegalArgumentException e) {

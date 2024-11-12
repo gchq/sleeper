@@ -19,16 +19,16 @@ import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguratio
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.ingest.core.task.IngestTaskFinishedStatus;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
-import sleeper.ingest.task.IngestTaskFinishedStatus;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,8 +36,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
 
 public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {

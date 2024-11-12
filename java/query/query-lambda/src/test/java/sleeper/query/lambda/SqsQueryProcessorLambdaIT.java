@@ -45,14 +45,14 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -66,22 +66,22 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.IngestFactory;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
-import sleeper.query.tracker.QueryStatusReportListener;
-import sleeper.query.tracker.QueryTrackerStore;
-import sleeper.query.tracker.TrackedQuery;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -107,22 +107,22 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-import static sleeper.query.tracker.QueryState.COMPLETED;
-import static sleeper.query.tracker.QueryState.IN_PROGRESS;
-import static sleeper.query.tracker.QueryState.QUEUED;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.query.core.tracker.QueryState.COMPLETED;
+import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
+import static sleeper.query.core.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class SqsQueryProcessorLambdaIT {
@@ -718,7 +718,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void processQuery(Query query) {
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
+        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }
@@ -798,7 +798,7 @@ public class SqsQueryProcessorLambdaIT {
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
@@ -825,7 +825,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();

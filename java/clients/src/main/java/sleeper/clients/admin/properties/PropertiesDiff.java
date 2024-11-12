@@ -17,9 +17,10 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.SleeperPropertyValues;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -134,6 +135,16 @@ public class PropertiesDiff {
 
     public List<PropertyDiff> getChanges() {
         return new ArrayList<>(changes.values());
+    }
+
+    public Optional<PropertyDiff> getDiff(SleeperProperty property) {
+        return Optional.ofNullable(changes.get(property.getPropertyName()));
+    }
+
+    public <T extends SleeperProperty> SleeperPropertyValues<T> getValuesBefore(SleeperPropertyValues<T> valuesAfter) {
+        return property -> getDiff(property)
+                .map(diff -> diff.getOldValue())
+                .orElseGet(() -> valuesAfter.get(property));
     }
 
     public boolean isChanged() {

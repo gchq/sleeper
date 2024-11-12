@@ -23,11 +23,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -37,10 +36,11 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,15 +54,15 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
+import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
@@ -70,7 +70,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorIT {
@@ -472,13 +472,13 @@ public class GarbageCollectorIT {
 
     private GarbageCollector collector() throws Exception {
         return new GarbageCollector(deleteFileAndSketches(new Configuration()), instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName),
+                FixedStateStoreProvider.byTableName(stateStoreByTableName),
                 sentCommits::add);
     }
 
     private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
         return new GarbageCollector(deleteFile, instanceProperties,
-                new FixedStateStoreProvider(stateStoreByTableName),
+                FixedStateStoreProvider.byTableName(stateStoreByTableName),
                 sentCommits::add);
     }
 

@@ -28,12 +28,16 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class DurationStatistics {
     private final Duration min;
     private final Duration mean;
+    private final Duration percent99;
+    private final Duration percent999;
     private final Duration max;
     private final Duration standardDeviation;
 
     public DurationStatistics(Builder builder) {
         this.min = builder.min;
         this.mean = builder.mean;
+        this.percent99 = builder.percent99;
+        this.percent999 = builder.percent999;
         this.max = builder.max;
         this.standardDeviation = builder.standardDeviation;
     }
@@ -61,9 +65,11 @@ public class DurationStatistics {
 
     @Override
     public String toString() {
-        return String.format("avg: %s, min: %s, max: %s, std dev: %s",
+        return String.format("avg: %s, min: %s, 99%%: %s, 99.9%%: %s, max: %s, std dev: %s",
                 LoggedDuration.withShortOutput(mean),
                 LoggedDuration.withShortOutput(min),
+                LoggedDuration.withShortOutput(percent99),
+                LoggedDuration.withShortOutput(percent999),
                 LoggedDuration.withShortOutput(max),
                 LoggedDuration.withShortOutput(standardDeviation));
     }
@@ -74,29 +80,36 @@ public class DurationStatistics {
     private static class Builder {
         private Duration min;
         private Duration mean;
+        private Duration percent99;
+        private Duration percent999;
         private Duration max;
         private Duration standardDeviation;
-        private long minMillis = Long.MAX_VALUE;
-        private long maxMillis = Long.MIN_VALUE;
 
         Builder computeFromMilliseconds(List<Long> durationsInMilliseconds) {
-            int n = durationsInMilliseconds.size();
-            double meanMillis = durationsInMilliseconds.stream()
-                    .peek(millis -> minMillis = Math.min(millis, minMillis))
-                    .peek(millis -> maxMillis = Math.max(millis, maxMillis))
+            List<Long> sortedMilliseconds = durationsInMilliseconds.stream()
+                    .sorted().collect(toUnmodifiableList());
+            int n = sortedMilliseconds.size();
+            double meanMillis = sortedMilliseconds.stream()
                     .mapToLong(millis -> millis).sum() / (double) n;
-            double variance = durationsInMilliseconds.stream()
+            double variance = sortedMilliseconds.stream()
                     .mapToDouble(millis -> Math.pow(millis - meanMillis, 2))
                     .sum() / n;
-            min = Duration.ofMillis(minMillis);
+            min = Duration.ofMillis(sortedMilliseconds.get(0));
             mean = Duration.ofMillis((long) meanMillis);
-            max = Duration.ofMillis(maxMillis);
+            percent99 = Duration.ofMillis(getPercentile(sortedMilliseconds, 99.0));
+            percent999 = Duration.ofMillis(getPercentile(sortedMilliseconds, 99.9));
+            max = Duration.ofMillis(sortedMilliseconds.get(sortedMilliseconds.size() - 1));
             standardDeviation = Duration.ofMillis((long) Math.sqrt(variance));
             return this;
         }
 
         DurationStatistics build() {
             return new DurationStatistics(this);
+        }
+
+        private static <T> T getPercentile(List<T> sorted, double percentile) {
+            int rank = percentile == 0 ? 1 : (int) Math.ceil(percentile / 100.0 * sorted.size());
+            return sorted.get(rank - 1);
         }
     }
 }

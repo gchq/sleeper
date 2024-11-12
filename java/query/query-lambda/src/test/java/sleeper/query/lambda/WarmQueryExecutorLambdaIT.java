@@ -35,12 +35,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -48,10 +49,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryProcessingConfig;
-import sleeper.query.model.QuerySerDe;
-import sleeper.query.output.ResultsOutputConstants;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -65,19 +66,19 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 @Testcontainers
@@ -174,7 +175,7 @@ public class WarmQueryExecutorLambdaIT {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
@@ -182,7 +183,7 @@ public class WarmQueryExecutorLambdaIT {
     }
 
     private void createTable(TableProperties tableProperties) {
-        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
         try {

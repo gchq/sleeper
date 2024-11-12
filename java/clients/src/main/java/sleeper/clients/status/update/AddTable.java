@@ -22,22 +22,22 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class AddTable {
     private final TableProperties tableProperties;
@@ -54,7 +54,7 @@ public class AddTable {
             AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.tableProperties = tableProperties;
-        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
+        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, configuration);
     }
 
@@ -76,7 +76,7 @@ public class AddTable {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesFile));
             tableProperties.setSchema(Schema.load(schemaFile));
 

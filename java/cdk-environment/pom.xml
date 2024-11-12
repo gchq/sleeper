@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -39,7 +39,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudformation</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Utilities -->
         <dependency>
@@ -53,6 +52,10 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <!-- Test Dependencies -->
         <dependency>

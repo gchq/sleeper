@@ -16,6 +16,7 @@
 package sleeper.environment.cdk.buildec2;
 
 import org.apache.commons.io.IOUtils;
+import software.amazon.awscdk.Fn;
 
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -28,7 +29,29 @@ class LoadUserDataUtil {
     }
 
     static String userData(BuildEC2Parameters params) {
-        return params.fillUserDataTemplate(templateString());
+        return params.fillUserDataTemplate(templateString())
+                .replace("%write-files-yaml%", writeFilesYaml(params));
+    }
+
+    static String writeFilesYaml(BuildEC2Parameters params) {
+        if (!params.isNightlyTestEnabled()) {
+            return "";
+        }
+        return resourceString("write-files-nightly-tests.yaml")
+                .replace("${nightlyTestSettingsBase64}",
+                        Fn.base64(nightlyTestSettingsJson(params)))
+                .replace("${crontabBase64}",
+                        Fn.base64(crontab(params)));
+    }
+
+    static String nightlyTestSettingsJson(BuildEC2Parameters params) {
+        String template = resourceString("nightlyTestSettings.json");
+        return params.fillUserDataTemplate(template);
+    }
+
+    static String crontab(BuildEC2Parameters params) {
+        String template = resourceString("crontab");
+        return params.fillUserDataTemplate(template);
     }
 
     private static String templateString() {

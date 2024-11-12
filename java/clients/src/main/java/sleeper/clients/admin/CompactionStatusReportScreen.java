@@ -27,8 +27,8 @@ import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
@@ -37,7 +37,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;

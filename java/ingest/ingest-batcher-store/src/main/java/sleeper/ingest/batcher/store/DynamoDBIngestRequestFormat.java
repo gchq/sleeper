@@ -18,15 +18,15 @@ package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 
 import java.time.Duration;
 import java.util.Map;
 
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
+import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;

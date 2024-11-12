@@ -49,27 +49,27 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.cdk.Utils.createAlarmForDlq;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 
 /**
  * Deploys resources to run queries. This consists of lambda {@link Function}s to
@@ -98,6 +98,8 @@ public class QueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
 
@@ -118,52 +120,28 @@ public class QueryStack extends NestedStack {
 
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
-        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
-        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, queryJar, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, queryJar, jarsBucket, queryTrackingTable, errorMetrics);
+        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, lambdaCode, jarsBucket, queryTrackingTable, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    /***
-     * Creates a Lambda Function.
-     *
-     * @param  id                 of the function to be created
-     * @param  queryJar           the jar containing the code for the Lambda
-     * @param  instanceProperties containing configuration details
-     * @param  functionName       the name of the function
-     * @param  handler            the path for the method be be used as the entry point for the Lambda
-     * @param  description        a description for the function
-     * @return                    an IFunction
-     */
-    private IFunction createFunction(String id, LambdaCode queryJar, InstanceProperties instanceProperties,
-            String functionName, String handler, String description) {
-        return queryJar.buildFunction(this, id, builder -> builder
+    private IFunction createFunction(
+            String id, CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode lambdaCode, LambdaHandler handler,
+            String functionName, String description) {
+        return lambdaCode.buildFunction(this, handler, id, builder -> builder
                 .functionName(functionName)
                 .description(description)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler(handler)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(createLambdaLogGroup(this, id + "LogGroup", functionName, instanceProperties)));
+                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
     }
 
-    /***
-     * Creates the lambda to run queries against a table.
-     *
-     * @param  coreStacks         the core stacks this belongs to
-     * @param  instanceProperties containing configuration details
-     * @param  queryJar           the jar containing the code for the Lambda
-     * @param  jarsBucket         bucket containing the jars used by Lambda
-     * @param  queryTrackingTable used to track a query
-     * @return                    the lambda created
-     */
-    private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode queryJar,
+    private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
-        IFunction lambda = createFunction("QueryExecutorLambda", queryJar, instanceProperties, functionName,
-                "sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest",
+        IFunction lambda = createFunction("QueryExecutorLambda", coreStacks, instanceProperties, lambdaCode, LambdaHandler.QUERY_EXECUTOR, functionName,
                 "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
 
         attachPolicy(lambda, "Query");
@@ -193,26 +171,15 @@ public class QueryStack extends NestedStack {
         return lambda;
     }
 
-    /***
-     * Creates the queue and lambda to run internal sub-queries against a specific leaf partition.
-     *
-     * @param  coreStacks         the core stacks this belongs to
-     * @param  instanceProperties containing configuration details
-     * @param  queryJar           the jar containing the code for the Lambda
-     * @param  jarsBucket         bucket containing the jars used by Lambda
-     * @param  queryTrackingTable used to track a query
-     * @return                    the lambda created
-     */
     private IFunction setupLeafPartitionQueryQueueAndLambda(
-            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic, LambdaCode queryJar,
-            IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
+            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
+            LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
-        IBucket queryResultsBucket = setupResultsBucket(instanceProperties);
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
-        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", queryJar, instanceProperties, leafQueryFunctionName,
-                "sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest",
+        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", coreStacks, instanceProperties, lambdaCode, LambdaHandler.QUERY_LEAF_PARTITION, leafQueryFunctionName,
                 "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
 
         attachPolicy(lambda, "LeafPartition");
@@ -335,26 +302,25 @@ public class QueryStack extends NestedStack {
         return resultsQueue;
     }
 
-    /***
-     * Creates the bucket used to store results.
-     *
-     * @param  instanceProperties containing configuration details
-     * @return                    the bucket created
-     */
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "query-results");
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "query-results"))
+                .bucketName(bucketName)
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
-                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
+                .removalPolicy(removalPolicy)
                 .lifecycleRules(Collections.singletonList(
                         LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
+
+        if (removalPolicy == RemovalPolicy.DESTROY) {
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, lambdaCode, resultsBucket, bucketName);
+        }
 
         return resultsBucket;
     }

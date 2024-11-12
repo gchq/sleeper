@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;

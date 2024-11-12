@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class WaitForCompactionJobCreation {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobCreation.class);

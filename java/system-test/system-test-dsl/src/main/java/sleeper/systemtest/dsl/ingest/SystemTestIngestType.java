@@ -20,8 +20,8 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Map;
 
-import static sleeper.configuration.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class SystemTestIngestType {
 

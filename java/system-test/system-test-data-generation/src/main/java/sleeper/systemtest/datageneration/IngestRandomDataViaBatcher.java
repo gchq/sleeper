@@ -23,8 +23,8 @@ import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRandomDataViaBatcher {
 

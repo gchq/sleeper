@@ -29,9 +29,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.athena.TestUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -45,7 +45,7 @@ import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_SYSTEM_PROPERTY;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public abstract class AbstractMetadataHandlerIT {

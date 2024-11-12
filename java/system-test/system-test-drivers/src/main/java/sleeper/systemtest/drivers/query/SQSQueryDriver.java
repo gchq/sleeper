@@ -25,13 +25,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.QueryTrackerException;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.QueryTrackerException;
-import sleeper.query.tracker.QueryTrackerStore;
-import sleeper.query.tracker.TrackedQuery;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -43,8 +43,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class SQSQueryDriver implements QuerySendAndWaitDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);

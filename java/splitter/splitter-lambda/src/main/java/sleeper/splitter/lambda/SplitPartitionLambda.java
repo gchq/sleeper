@@ -31,18 +31,21 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.splitter.find.SplitPartitionJobDefinition;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
-import sleeper.splitter.split.SplitPartition;
-import sleeper.splitter.split.SplitPartition.SendAsyncCommit;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.split.SplitPartition;
+import sleeper.splitter.core.split.SplitPartition.SendAsyncCommit;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
@@ -50,9 +53,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.splitter.split.FindPartitionSplitPoint.loadSketchesFromFile;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.splitter.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.
@@ -82,9 +85,9 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     public SplitPartitionLambda(InstanceProperties instanceProperties, Configuration conf, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
         this.conf = conf;
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.sqsClient = sqsClient;
         this.idSupplier = idSupplier;
     }
@@ -121,9 +124,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
         }
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
-        return instanceProperties;
+        return S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
     }
 
     private static SendAsyncCommit sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {

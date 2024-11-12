@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>aws</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
@@ -34,11 +34,6 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ec2</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-core</artifactId>
             <version>${aws-lambda-java-core.version}</version>
         </dependency>
@@ -46,6 +41,14 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-events</artifactId>
             <version>${aws-lambda-java-events.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ec2</artifactId>
         </dependency>
         <!-- Test dependencies -->
         <dependency>

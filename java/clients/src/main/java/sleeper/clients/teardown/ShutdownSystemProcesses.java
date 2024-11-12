@@ -15,55 +15,56 @@
  */
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.ListTasksRequest;
-import com.amazonaws.services.ecs.model.ListTasksResult;
-import com.amazonaws.services.ecs.model.StopTaskRequest;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
 import sleeper.clients.util.EmrUtils;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
+import sleeper.core.util.ThreadSleep;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownSystemProcesses.class);
 
-    private final AmazonCloudWatchEvents cloudWatch;
-    private final AmazonECS ecs;
-    private final AmazonElasticMapReduce emrClient;
+    private final CloudWatchEventsClient cloudWatch;
+    private final EcsClient ecs;
+    private final EmrClient emrClient;
     private final EmrServerlessClient emrServerlessClient;
-    private final StaticRateLimit<ListClustersResult> listActiveClustersLimit;
+    private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
+    private final ThreadSleep threadSleep;
 
     public ShutdownSystemProcesses(TearDownClients clients) {
-        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
+        this(clients.getCloudWatch(), clients.getEcs(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT, Thread::sleep);
     }
 
     public ShutdownSystemProcesses(
-            AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
-            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient,
-            StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+            CloudWatchEventsClient cloudWatch, EcsClient ecs,
+            EmrClient emrClient, EmrServerlessClient emrServerlessClient,
+            StaticRateLimit<ListClustersResponse> listActiveClustersLimit,
+            ThreadSleep threadSleep) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
         this.emrServerlessClient = emrServerlessClient;
         this.listActiveClustersLimit = listActiveClustersLimit;
+        this.threadSleep = threadSleep;
     }
 
     public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
@@ -82,40 +83,36 @@ public class ShutdownSystemProcesses {
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
-        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit).run();
+        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit, threadSleep).run();
     }
 
     private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    public static <T extends SleeperProperty> void stopTasks(AmazonECS ecs, SleeperProperties<T> properties, T property) {
+    public static <T extends SleeperProperty> void stopTasks(EcsClient ecs, SleeperProperties<T> properties, T property) {
         if (!properties.isSet(property)) {
             return;
         }
         stopTasks(ecs, properties.get(property));
     }
 
-    private static void stopTasks(AmazonECS ecs, String clusterName) {
+    private static void stopTasks(EcsClient ecs, String clusterName) {
         LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
         forEachTaskArn(ecs, clusterName, taskArn -> {
             // Rate limit for ECS StopTask is 100 burst, 40 sustained:
             // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
             sleepForSustainedRatePerSecond(30);
-            ecs.stopTask(new StopTaskRequest().withCluster(clusterName).withTask(taskArn)
-                    .withReason("Cleaning up before cdk destroy"));
+            ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
+                    .reason("Cleaning up before cdk destroy"));
         });
     }
 
-    private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
-        String nextToken = null;
-        do {
-            ListTasksResult result = ecs.listTasks(
-                    new ListTasksRequest().withCluster(clusterName).withNextToken(nextToken));
-
-            LOGGER.info("Found {} tasks", result.getTaskArns().size());
-            result.getTaskArns().forEach(consumer);
-            nextToken = result.getNextToken();
-        } while (nextToken != null);
+    private static void forEachTaskArn(EcsClient ecs, String clusterName, Consumer<String> consumer) {
+        ecs.listTasksPaginator(builder -> builder.cluster(clusterName))
+                .stream()
+                .peek(response -> LOGGER.info("Found {} tasks", response.taskArns().size()))
+                .flatMap(response -> response.taskArns().stream())
+                .forEach(consumer);
     }
 }

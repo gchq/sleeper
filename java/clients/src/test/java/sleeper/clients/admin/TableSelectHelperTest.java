@@ -27,7 +27,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OP
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test

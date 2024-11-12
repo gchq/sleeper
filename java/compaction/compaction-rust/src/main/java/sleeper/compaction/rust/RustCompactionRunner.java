@@ -18,11 +18,11 @@ package sleeper.compaction.rust;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.process.RecordsProcessed;
@@ -37,14 +37,14 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class RustCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);

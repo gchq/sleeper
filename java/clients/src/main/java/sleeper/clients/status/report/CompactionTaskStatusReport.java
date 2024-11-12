@@ -23,10 +23,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporter;
-import sleeper.clients.util.ClientUtils;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -64,7 +64,7 @@ public class CompactionTaskStatusReport {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, arguments.getInstanceId());
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, arguments.getInstanceId());
             CompactionTaskStatusStore statusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             new CompactionTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
         } finally {

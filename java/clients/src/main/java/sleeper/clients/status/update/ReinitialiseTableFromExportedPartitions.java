@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.status.partitions.ExportPartitions;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;

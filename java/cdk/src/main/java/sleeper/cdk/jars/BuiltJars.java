@@ -15,28 +15,67 @@
  */
 package sleeper.cdk.jars;
 
-import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.LambdaDeployType;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 public class BuiltJars {
 
-    private final AmazonS3 s3;
-    private final String bucketName;
+    public static final Logger LOGGER = LoggerFactory.getLogger(BuiltJars.class);
 
-    public BuiltJars(AmazonS3 s3, String bucketName) {
+    private final S3Client s3;
+    private final String bucketName;
+    private final LambdaDeployType deployType;
+    private final String ecrRepositoryPrefix;
+    private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
+
+    private BuiltJars(S3Client s3, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
         this.s3 = s3;
         this.bucketName = bucketName;
+        this.deployType = deployType;
+        this.ecrRepositoryPrefix = ecrRepositoryPrefix;
+    }
+
+    public static BuiltJars from(S3Client s3, InstanceProperties instanceProperties) {
+        return new BuiltJars(s3,
+                instanceProperties.get(JARS_BUCKET),
+                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
+                Optional.ofNullable(instanceProperties.get(ECR_REPOSITORY_PREFIX))
+                        .orElseGet(() -> instanceProperties.get(ID)));
     }
 
     public String bucketName() {
         return bucketName;
     }
 
-    public LambdaCode lambdaCode(BuiltJar jar, IBucket bucketConstruct) {
-        return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
+    public LambdaCode lambdaCode(IBucket bucketConstruct) {
+        return new LambdaCode(this, deployType, bucketConstruct);
     }
 
-    public String getLatestVersionId(BuiltJar jar) {
-        return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
+    public String getLatestVersionId(LambdaJar jar) {
+        return latestVersionIdByJar.computeIfAbsent(jar,
+                missingJar -> {
+                    String versionId = s3.headObject(builder -> builder.bucket(bucketName).key(missingJar.getFilename())).versionId();
+                    LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFilename(), versionId);
+                    return versionId;
+                });
+    }
+
+    public String getRepositoryName(LambdaJar jar) {
+        return ecrRepositoryPrefix + "/" + jar.getImageName();
     }
 }

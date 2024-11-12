@@ -20,24 +20,24 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.google.gson.Gson;
 
-import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
  * Starts a bulk import job on Spark in an EKS cluster via AWS Step Functions. It creates a list of arguments and

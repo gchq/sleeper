@@ -16,23 +16,23 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.SyncJars;
 import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -44,8 +44,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
+import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
@@ -55,7 +55,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
     private final S3Client s3v2;
-    private final AmazonECR ecr;
+    private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
@@ -112,22 +112,22 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())
-                .uploadFilter(jar -> BuiltJar.isFileJar(jar, CUSTOM_RESOURCES))
+                .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                 .deleteOldJars(false).build().sync();
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
+                .jarsDirectory(parameters.getJarsDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(ClientUtils::runCommandLogOutput,
-                        StacksForDockerUpload.builder()
+                        UploadDockerImagesRequest.builder()
                                 .ecrPrefix(parameters.getSystemTestShortId())
                                 .account(parameters.getAccount())
                                 .region(parameters.getRegion())
                                 .version(SleeperVersion.getVersion())
-                                .stacks(List.of())
-                                .build(),
-                        List.of(SYSTEM_TEST_IMAGE));
+                                .images(List.of(SYSTEM_TEST_IMAGE))
+                                .build());
     }
 }

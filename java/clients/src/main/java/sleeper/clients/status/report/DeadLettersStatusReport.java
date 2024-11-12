@@ -21,26 +21,28 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QuerySerDe;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.util.function.Function;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 
 /**
  * A utility class to report information about messages on the various dead-letter
@@ -48,13 +50,16 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  */
 public class DeadLettersStatusReport {
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
+    private final QueueMessageCount.Client messageCount;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public DeadLettersStatusReport(AmazonSQS sqsClient,
+    public DeadLettersStatusReport(SqsClient sqsClient,
+            QueueMessageCount.Client messageCount,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider) {
         this.sqsClient = sqsClient;
+        this.messageCount = messageCount;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
@@ -79,17 +84,14 @@ public class DeadLettersStatusReport {
         if (queueUrl == null) {
             return;
         }
-        QueueMessageCount stats = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl);
+        QueueMessageCount stats = messageCount.getQueueMessageCount(queueUrl);
         System.out.println("Messages on the " + description + " queue:" + stats);
 
         if (stats.getApproximateNumberOfMessages() > 0) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                    .withQueueUrl(queueUrl)
-                    .withMaxNumberOfMessages(10)
-                    .withVisibilityTimeout(1);
-            ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
-            for (Message message : result.getMessages()) {
-                System.out.println(decoder.apply(message.getBody()));
+            ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
+                    .queueUrl(queueUrl).maxNumberOfMessages(10).visibilityTimeout(1));
+            for (Message message : response.messages()) {
+                System.out.println(decoder.apply(message.body()));
             }
         }
     }
@@ -100,17 +102,18 @@ public class DeadLettersStatusReport {
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        AmazonSQS sqsClientV1 = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
-        try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-            DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+            DeadLettersStatusReport statusReport = new DeadLettersStatusReport(
+                    sqsClient, QueueMessageCount.withSqsClient(sqsClientV1), instanceProperties, tablePropertiesProvider);
             statusReport.run();
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
-            sqsClient.shutdown();
+            sqsClientV1.shutdown();
         }
     }
 }

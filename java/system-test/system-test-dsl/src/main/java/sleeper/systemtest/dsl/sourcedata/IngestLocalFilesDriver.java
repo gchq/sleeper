@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 
 import java.nio.file.Path;

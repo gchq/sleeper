@@ -23,8 +23,8 @@ import sleeper.clients.util.console.UserExitedException;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.Chosen;
 import sleeper.clients.util.console.menu.ConsoleChoice;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.Optional;
 

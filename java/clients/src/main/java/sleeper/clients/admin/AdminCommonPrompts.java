@@ -19,8 +19,8 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ConsoleChoice;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.Optional;
 import java.util.function.Supplier;

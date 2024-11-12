@@ -23,14 +23,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
-import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
@@ -56,11 +56,11 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {

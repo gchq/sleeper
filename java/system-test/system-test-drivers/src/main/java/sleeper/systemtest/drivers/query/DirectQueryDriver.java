@@ -17,14 +17,14 @@
 package sleeper.systemtest.drivers.query;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryException;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

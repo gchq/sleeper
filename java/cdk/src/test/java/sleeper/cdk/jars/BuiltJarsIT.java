@@ -15,46 +15,40 @@
  */
 package sleeper.cdk.jars;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
-import com.amazonaws.services.s3.model.CreateBucketRequest;
-import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.cdk.testutils.LocalStackTestBase;
+import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.UUID;
 
-import static com.amazonaws.services.s3.model.BucketVersioningConfiguration.ENABLED;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-@Testcontainers
-public class BuiltJarsIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
-    private final BuiltJars builtJars = new BuiltJars(s3, bucketName);
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
-        s3.createBucket(new CreateBucketRequest(bucketName));
-        s3.setBucketVersioningConfiguration(new SetBucketVersioningConfigurationRequest(bucketName,
-                new BucketVersioningConfiguration(ENABLED)));
-        String versionId = s3.putObject(bucketName, "test.jar", "data").getVersionId();
+        createBucket(bucketName);
+        s3Client.putBucketVersioning(put -> put.bucket(bucketName)
+                .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
+        String versionId = putObject(bucketName, "test.jar", "data").versionId();
 
-        assertThat(builtJars.getLatestVersionId(BuiltJar.fromFormat("test.jar")))
+        assertThat(builtJars.getLatestVersionId(LambdaJar.withFormatAndImage("test.jar", "test-lambda")))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(JARS_BUCKET, bucketName);
+        return properties;
     }
 }

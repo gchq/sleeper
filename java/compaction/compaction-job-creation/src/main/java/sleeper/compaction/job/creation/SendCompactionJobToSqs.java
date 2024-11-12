@@ -21,13 +21,13 @@ import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 
 public class SendCompactionJobToSqs {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendCompactionJobToSqs.class);

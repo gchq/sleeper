@@ -15,14 +15,13 @@
  */
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
-import com.amazonaws.services.ecs.model.DescribeTasksRequest;
-import com.amazonaws.services.ecs.model.DescribeTasksResult;
-import com.amazonaws.services.ecs.model.Failure;
-import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
+import software.amazon.awssdk.services.ecs.model.Failure;
+import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.json.TaskStatusJson;
@@ -48,12 +47,12 @@ public class WaitForGenerateData {
     private static final Set<String> FINISHED_STATUSES = Stream.of("STOPPED", "DELETED").collect(Collectors.toSet());
     private static final PollWithRetries DEFAULT_POLL = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
 
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final List<Task> generateDataTasks;
     private final ECSTaskStatusFormat ecsStatusFormat;
 
     public WaitForGenerateData(
-            AmazonECS ecsClient,
+            EcsClient ecsClient,
             List<Task> generateDataTasks,
             ECSTaskStatusFormat ecsStatusFormat) {
         this.ecsClient = ecsClient;
@@ -72,12 +71,12 @@ public class WaitForGenerateData {
     private boolean isGenerateDataTasksFinished() {
         List<Task> tasks = describeGenerateDataTasks();
         LOGGER.info("Generate data task statuses: {}", ecsStatusFormat.statusOutput(tasks));
-        return tasks.stream().allMatch(task -> FINISHED_STATUSES.contains(task.getLastStatus()));
+        return tasks.stream().allMatch(task -> FINISHED_STATUSES.contains(task.lastStatus()));
     }
 
     private List<Task> describeGenerateDataTasks() {
         Map<String, List<Task>> tasksByCluster = generateDataTasks.stream()
-                .collect(Collectors.groupingBy(Task::getClusterArn));
+                .collect(Collectors.groupingBy(Task::clusterArn));
         return tasksByCluster.entrySet().stream()
                 .flatMap(entry -> describeTasks(entry.getKey(), entry.getValue()).stream())
                 .collect(Collectors.toList());
@@ -86,19 +85,20 @@ public class WaitForGenerateData {
     private List<Task> describeTasks(String cluster, List<Task> tasks) {
         List<DescribeTasksRequest> tasksRequests = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i += 100) {
-            tasksRequests.add(new DescribeTasksRequest().withCluster(cluster).withTasks(
+            tasksRequests.add(DescribeTasksRequest.builder().cluster(cluster).tasks(
                     tasks.subList(i, min(i + 100, tasks.size()))
-                            .stream().map(Task::getTaskArn).collect(Collectors.toList())));
+                            .stream().map(Task::taskArn).collect(Collectors.toList()))
+                    .build());
         }
         return tasksRequests.stream()
                 .map(ecsClient::describeTasks)
                 .peek(result -> {
-                    List<Failure> failures = result.getFailures();
+                    List<Failure> failures = result.failures();
                     if (!failures.isEmpty()) {
                         LOGGER.warn("Failures describing tasks for cluster {}: {}", cluster, failures);
                     }
                 })
-                .map(DescribeTasksResult::getTasks).flatMap(List::stream)
+                .map(DescribeTasksResponse::tasks).flatMap(List::stream)
                 .collect(Collectors.toList());
     }
 
@@ -115,12 +115,9 @@ public class WaitForGenerateData {
                 .orElse("summary");
         ECSTaskStatusFormat ecsTaskFormat = ecsTaskStatusFormat(statusFormatStr);
 
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        try {
+        try (EcsClient ecsClient = EcsClient.create()) {
             WaitForGenerateData wait = new WaitForGenerateData(ecsClient, generateDataTasks, ecsTaskFormat);
             wait.pollUntilFinished();
-        } finally {
-            ecsClient.shutdown();
         }
     }
 

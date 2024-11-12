@@ -17,9 +17,9 @@ package sleeper.clients;
 
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
 
 import java.util.ArrayList;
 import java.util.List;

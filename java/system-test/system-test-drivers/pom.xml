@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,23 +27,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-emr</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudwatch</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>lambda</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apache-client</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -54,11 +47,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>bulk-import-starter</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>cdk</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -149,7 +137,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore-commit</artifactId>
+            <artifactId>statestore-committer-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

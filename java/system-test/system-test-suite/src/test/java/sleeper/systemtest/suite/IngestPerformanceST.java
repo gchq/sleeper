@@ -29,15 +29,15 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.create128StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to ingest this many records on fairly large ECS instances.

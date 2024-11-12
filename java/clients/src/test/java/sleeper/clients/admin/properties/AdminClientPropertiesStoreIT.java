@@ -22,13 +22,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.StacksForDockerUpload;
+import sleeper.clients.deploy.StackDockerImage;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -47,19 +49,20 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
+import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromDirectory;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
@@ -227,7 +230,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
 
             // When
             updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
@@ -256,7 +259,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
             doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
 
             // When / Then
@@ -336,7 +339,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @BeforeEach
         void setup() {
             instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
-            instanceProperties.saveToS3(s3);
+            S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
         @Test
@@ -345,7 +348,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.CompactionStack, OptionalStack.IngestStack));
+            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
         }
 
         @Test
@@ -372,7 +375,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks(OptionalStack.QueryStack, OptionalStack.IngestStack));
+            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
         }
 
         @Test
@@ -389,13 +392,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         updateInstanceProperty(store(), instanceId, property, value);
     }
 
-    private StacksForDockerUpload withStacks(OptionalStack... stacks) {
-        return StacksForDockerUpload.builder()
+    private UploadDockerImagesRequest withImages(StackDockerImage... images) {
+        return UploadDockerImagesRequest.builder()
                 .ecrPrefix(instanceProperties.get(ID))
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .version(instanceProperties.get(VERSION))
-                .stacks(List.of(stacks))
+                .images(List.of(images))
                 .build();
     }
 

@@ -21,7 +21,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
-        <cpe>cpe:/a:apache:spark:3.4.1</cpe>
+        <cpe>cpe:/a:apache:spark:3.5.1</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -31,7 +31,7 @@
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/spark-[^/]+-3\.4\.1\.jar/.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.5\.1\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -40,7 +40,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*$</packageUrl>
-        <cpe>cpe:/a:apache:hadoop:3.3.3</cpe>
+        <cpe>cpe:/a:apache:hadoop:3.3.6</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -50,8 +50,16 @@
         Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/hadoop-client-[^/]+-3\.3\.3\.jar/.*$</filePath>
+        <filePath regex="true">^.*/hadoop-client-[^/]+-3\.3\.6\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/hadoop-common@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-23454</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -108,14 +116,14 @@
         The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
         we can use that instead.
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.202\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-[.0-9]+\.jar/.*$</filePath>
         <cve>CVE-2021-23497</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
         The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.202\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-[.0-9]+\.jar/.*$</filePath>
         <cve>CVE-2020-10663</cve>
     </suppress>
     <suppress>
@@ -277,11 +285,29 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
+        directly.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty(/.*$|\.http2/http2.*$|\.websocket/websocket.*$)</packageUrl>
+        <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
         of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
         we're using uses Jetty 9.
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+        <vulnerabilityName regex="true">CVE-2024-45801|CVE-2024-47875|CVE-2024-48910</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This seems to be a false positive, as the CVE is for Eclipse Glassfish, which isn't on the classpath for Sleeper
+        anywhere. The dependency it flagged is for HK2, which is a dependency injection framework used by both Glassfish
+        and Jersey. We only have Jersey and not Glassfish. The version number it's flagged is also specific to the OSGi
+        Resource Locator, and not Glassfish, and it's comparing it to the vulnerable version of Glassfish.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
     </suppress>
 </suppressions>

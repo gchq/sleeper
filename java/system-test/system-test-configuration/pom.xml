@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
 
     <artifactId>system-test-configuration</artifactId>
@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
             <type>test-jar</type>

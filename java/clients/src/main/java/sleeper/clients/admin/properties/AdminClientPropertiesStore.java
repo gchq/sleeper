@@ -23,20 +23,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.SleeperPropertyValues;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.StateStoreFactory;
@@ -46,15 +45,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
@@ -71,7 +65,7 @@ public class AdminClientPropertiesStore {
             Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.dockerImageConfiguration = new DockerImageConfiguration();
+        this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
         this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
@@ -79,7 +73,7 @@ public class AdminClientPropertiesStore {
 
     public InstanceProperties loadInstanceProperties(String instanceId) {
         try {
-            return new InstanceProperties(loadPropertiesFromS3GivenInstanceId(s3, instanceId));
+            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
         } catch (AmazonS3Exception e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
@@ -87,7 +81,7 @@ public class AdminClientPropertiesStore {
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+            return S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                     .loadByNameNoValidation(tableName);
         } catch (TableNotFoundException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
@@ -95,7 +89,7 @@ public class AdminClientPropertiesStore {
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).streamAllTables();
+        return S3TableProperties.createStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
@@ -104,23 +98,23 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
-            if (shouldUploadDockerImages(diff)) {
-                LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
-                uploadDockerImages.upload(StacksForDockerUpload.from(properties));
-            }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
+                Optional<UploadDockerImagesRequest> dockerUploadOpt = UploadDockerImagesRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
+                if (dockerUploadOpt.isPresent()) {
+                    uploadDockerImages.upload(dockerUploadOpt.get());
+                }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
             } else {
                 LOGGER.info("Saving to AWS");
-                properties.saveToS3(s3);
+                S3InstanceProperties.saveToS3(s3, properties);
             }
         } catch (IOException | AmazonS3Exception | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
-                SaveLocalProperties.saveFromS3(s3, dynamoDB, instanceId, generatedDirectory);
+                S3InstanceProperties.saveToLocalWithTableProperties(s3, dynamoDB, instanceId, generatedDirectory);
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
@@ -129,24 +123,6 @@ public class AdminClientPropertiesStore {
             }
             throw wrapped;
         }
-    }
-
-    private boolean shouldUploadDockerImages(PropertiesDiff diff) {
-        Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
-                .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
-                .findFirst();
-        if (stackDiffOptional.isEmpty()) {
-            return false;
-        }
-        PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<OptionalStack> stacksBefore = SleeperPropertyValues
-                .streamEnumList(OPTIONAL_STACKS, stackDiff.getOldValue(), OptionalStack.class)
-                .collect(toUnmodifiableSet());
-        Set<OptionalStack> newStacks = SleeperPropertyValues
-                .streamEnumList(OPTIONAL_STACKS, stackDiff.getNewValue(), OptionalStack.class)
-                .filter(not(stacksBefore::contains))
-                .collect(toUnmodifiableSet());
-        return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties) {
@@ -164,11 +140,11 @@ public class AdminClientPropertiesStore {
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
-            S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
+            S3TableProperties.createStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
-                SaveLocalProperties.saveFromS3(s3, dynamoDB, instanceId, generatedDirectory);
+                S3InstanceProperties.saveToLocalWithTableProperties(s3, dynamoDB, instanceId, generatedDirectory);
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
@@ -183,7 +159,7 @@ public class AdminClientPropertiesStore {
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
-        return new TablePropertiesProvider(properties, s3, dynamoDB);
+        return S3TableProperties.createProvider(properties, s3, dynamoDB);
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

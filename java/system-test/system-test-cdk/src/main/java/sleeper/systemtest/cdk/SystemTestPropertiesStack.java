@@ -21,24 +21,24 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createLogGroupWithRetentionDays;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestPropertiesStack extends NestedStack {
 
@@ -49,28 +49,31 @@ public class SystemTestPropertiesStack extends NestedStack {
 
         String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
 
-        String functionName = String.join("-", "sleeper",
-                systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer");
+        String functionName = String.join("-", "sleeper", Utils.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
 
-        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
+        IFunction propertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
-                .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
                 .description("Lambda for writing system test properties to S3 upon initialisation and teardown")
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterLambdaLogGroup", 30))
-                .runtime(Runtime.JAVA_11));
+                .logGroup(LogGroup.Builder.create(this, "PropertiesWriterLambdaLogGroup")
+                        .logGroupName(functionName)
+                        .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build()));
 
         bucketStack.getBucket().grantWrite(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(createLogGroupWithRetentionDays(this, "PropertiesWriterProviderLogGroup", 30))
+                .logGroup(LogGroup.Builder.create(this, "PropertiesWriterProviderLogGroup")
+                        .logGroupName(functionName + "-provider")
+                        .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build())
                 .build();
 
         CustomResource.Builder.create(this, "SystemTestProperties")

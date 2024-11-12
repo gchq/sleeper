@@ -87,7 +87,7 @@
             <property name="id" value="missingJavadocMethod"/>
             <property name="allowMissingPropertyJavadoc" value="true"/>
             <property name="allowedAnnotations" value="Override"/>
-            <property name="ignoreMethodNamesRegex" value="^builder$|^build$|^toBuilder$"/>
+            <property name="ignoreMethodNamesRegex" value="^builder$|^build$|^toBuilder$|^main$"/>
             <property name="scope" value="public"/>
             <property name="tokens" value="METHOD_DEF,ANNOTATION_FIELD_DEF"/>
         </module>

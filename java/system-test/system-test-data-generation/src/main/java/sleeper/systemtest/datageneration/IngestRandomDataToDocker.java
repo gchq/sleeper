@@ -27,13 +27,14 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.StateStoreProvider;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.impl.commit.AddFilesToStateStore;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
@@ -114,9 +115,8 @@ public class IngestRandomDataToDocker {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
             new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)

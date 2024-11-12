@@ -20,10 +20,10 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryTrackerException;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -45,7 +45,7 @@ public class TrackedQueryProgressReport {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
             System.out.println(queryTracker.getStatus(queryId));
         } finally {

@@ -18,8 +18,8 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
@@ -32,8 +32,8 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStoreTestBase {

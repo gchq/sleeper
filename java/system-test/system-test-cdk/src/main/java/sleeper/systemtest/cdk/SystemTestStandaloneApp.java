@@ -16,13 +16,12 @@
 
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -32,7 +31,6 @@ import java.nio.file.Path;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 
 public class SystemTestStandaloneApp extends Stack {
@@ -41,7 +39,7 @@ public class SystemTestStandaloneApp extends Stack {
             App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
         }
@@ -57,9 +55,8 @@ public class SystemTestStandaloneApp extends Stack {
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
-            BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
+        try (S3Client s3Client = S3Client.create()) {
+            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties.toInstancePropertiesForCdkUtils());
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
             Environment environment = Environment.builder()
@@ -70,8 +67,6 @@ public class SystemTestStandaloneApp extends Stack {
                     StackProps.builder().stackName(id).env(environment).build(),
                     systemTestProperties, jars);
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

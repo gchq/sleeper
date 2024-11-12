@@ -19,18 +19,18 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 
 /**
  * Creates a client to access the state store for a Sleeper table. The client may not be thread safe, as it may cache

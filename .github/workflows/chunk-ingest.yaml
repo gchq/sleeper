@@ -1,0 +1,38 @@
+name: Build Ingest Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-ingest.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/ingest/pom.xml'
+      - 'java/ingest/ingest-core/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-starter/**'
+      - 'java/ingest/ingest-batcher-core/**'
+      - 'java/ingest/ingest-batcher-store/**'
+      - 'java/ingest/ingest-batcher-submitter/**'
+      - 'java/ingest/ingest-batcher-job-creator/**'
+      - 'java/ingest/ingest-runner/**'
+      - 'java/bulk-import/pom.xml'
+      - 'java/bulk-import/bulk-import-core/**'
+      - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/bulk-import/bulk-import-runner/**'
+      - 'java/common/common-task/**'
+      - 'java/common/common-job/**'
+      - 'java/sketches/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/common/dynamodb-tools/**'
+      - 'java/core/**'
+      - 'java/common/dynamodb-test/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: ingest

@@ -33,17 +33,20 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
@@ -53,14 +56,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.groupingBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
 
-    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final PropertiesReloader propertiesReloader;
@@ -69,11 +72,11 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties.loadFromS3(s3Client, configBucketName);
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override

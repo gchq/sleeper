@@ -15,16 +15,17 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.clients.docker.DeployDockerInstance;
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -32,11 +33,10 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSleeperInstanceDriver.class);
@@ -52,18 +52,18 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     @Override
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        instanceProperties.loadFromS3GivenInstanceId(clients.getS3(), instanceId);
+        S3InstanceProperties.reloadGivenInstanceId(clients.getS3(), instanceProperties, instanceId);
     }
 
     @Override
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
         LOGGER.info("Saving properties with instance ID: {}", instanceProperties.get(ID));
-        instanceProperties.saveToS3(clients.getS3());
+        S3InstanceProperties.saveToS3(clients.getS3(), instanceProperties);
     }
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (clients.getS3().doesBucketExistV2(getConfigBucketFromInstanceId(instanceId))) {
+        if (clients.getS3().doesBucketExistV2(InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
@@ -71,22 +71,23 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName());
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).getQueueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
                 .s3Client(clients.getS3())
                 .dynamoDB(clients.getDynamoDB())
-                .sqsClient(clients.getSqs())
+                .sqsClient(clients.getSqsV2())
                 .configuration(clients.createHadoopConf())
                 .build().deploy(instanceProperties, deployConfig.getTableProperties());
         return true;
     }
 
-    private CreateQueueResult createStateStoreCommitterQueue(String instanceId) {
-        return clients.getSqs().createQueue(new CreateQueueRequest()
-                .withQueueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
-                .withAttributes(Map.of("FifoQueue", "true",
-                        "FifoThroughputLimit", "perMessageGroupId",
-                        "DeduplicationScope", "messageGroup")));
+    private CreateQueueResponse createStateStoreCommitterQueue(String instanceId) {
+        return clients.getSqsV2().createQueue(request -> request
+                .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
+                .attributes(Map.of(
+                        QueueAttributeName.FIFO_QUEUE, "true",
+                        QueueAttributeName.FIFO_THROUGHPUT_LIMIT, "perMessageGroupId",
+                        QueueAttributeName.DEDUPLICATION_SCOPE, "messageGroup")));
     }
 
     @Override

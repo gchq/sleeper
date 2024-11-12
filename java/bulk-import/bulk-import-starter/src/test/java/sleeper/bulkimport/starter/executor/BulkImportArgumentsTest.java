@@ -19,14 +19,14 @@ package sleeper.bulkimport.starter.executor;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class BulkImportArgumentsTest {
 
@@ -55,7 +55,7 @@ public class BulkImportArgumentsTest {
                         "--deploy-mode",
                         "cluster",
                         "--class",
-                        "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
+                        "sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
                         "s3a://jarsBucket/bulk-import-runner-1.2.3.jar",
                         "configBucket",
                         "my-job",

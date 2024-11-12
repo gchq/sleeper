@@ -17,32 +17,32 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Lambda Function which writes properties to an S3 Bucket.
  */
 public class PropertiesWriterLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final String bucketName;
 
     public PropertiesWriterLambda() {
-        this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(S3Client.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public PropertiesWriterLambda(AmazonS3 s3Client, String bucketName) {
+    public PropertiesWriterLambda(S3Client s3Client, String bucketName) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
     }
@@ -65,13 +65,14 @@ public class PropertiesWriterLambda {
     private void deleteProperties(String propertiesStr) throws IOException {
         String bucketName = readBucketName(propertiesStr);
         LOGGER.info("Deleting from bucket {}", bucketName);
-        s3Client.deleteObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE));
     }
 
     private void updateProperties(String propertiesStr) throws IOException {
         String bucketName = readBucketName(propertiesStr);
         LOGGER.info("Writing to bucket {}", bucketName);
-        s3Client.putObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
+        s3Client.putObject(builder -> builder.bucket(bucketName).key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE),
+                RequestBody.fromString(propertiesStr));
     }
 
     private String readBucketName(String propertiesStr) throws IOException {

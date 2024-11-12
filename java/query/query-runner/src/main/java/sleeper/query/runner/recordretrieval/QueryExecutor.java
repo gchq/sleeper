@@ -20,18 +20,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryException;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -44,8 +44,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class

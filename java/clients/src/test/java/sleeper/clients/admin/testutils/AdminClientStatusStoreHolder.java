@@ -16,19 +16,19 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFactory {
 

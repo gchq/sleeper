@@ -29,5 +29,5 @@ java --add-opens=java.base/java.nio=ALL-UNNAMED \
   --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
   --add-opens=java.base/java.util=ALL-UNNAMED \
   --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
-  -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
+  -cp "${SCRIPTS_DIR}/jars/system-test-data-generation-${VERSION}.jar" \
   sleeper.systemtest.datageneration.IngestRandomDataToDocker "$@"  

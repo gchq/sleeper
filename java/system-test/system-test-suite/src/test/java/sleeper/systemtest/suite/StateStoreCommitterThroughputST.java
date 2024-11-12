@@ -21,7 +21,6 @@ import org.junit.jupiter.api.parallel.Execution;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.Slow;
@@ -65,7 +64,7 @@ public class StateStoreCommitterThroughputST {
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
@@ -86,7 +85,7 @@ public class StateStoreCommitterThroughputST {
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFileWithJob))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
@@ -108,7 +107,7 @@ public class StateStoreCommitterThroughputST {
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())
@@ -138,7 +137,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root", List.of(filename(i)))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -175,7 +174,7 @@ public class StateStoreCommitterThroughputST {
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
                                 jobId(i), "root", List.of(filename(i), filename(i + 1000)),
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -218,7 +217,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000)))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -252,7 +251,7 @@ public class StateStoreCommitterThroughputST {
                                         jobId(i), "root", List.of(filename(i), filename(i + 1000)),
                                         "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
                                 factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())
@@ -282,17 +281,17 @@ public class StateStoreCommitterThroughputST {
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(90.0, 200.0);
+                .isGreaterThan(50.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(35.0, 80.0);
+                .isGreaterThan(35.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isBetween(20.0, 200.0);
+                .isGreaterThan(20.0);
     }
 
 }

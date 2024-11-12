@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.record.Record;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class PythonQueryDriver implements PythonQueryTypesDriver {
     private static final Gson GSON = new GsonBuilder().create();

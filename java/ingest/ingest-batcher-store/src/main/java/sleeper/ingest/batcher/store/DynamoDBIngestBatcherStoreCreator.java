@@ -24,12 +24,12 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.waiters.WaiterParameters;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;

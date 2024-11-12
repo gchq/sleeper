@@ -55,6 +55,21 @@ public class AllReferencesToAFileTestHelper {
     }
 
     /**
+     * Creates a record for a file referenced in a single partition.
+     *
+     * @param  reference  the reference to the file
+     * @param  updateTime the last time the file was updated in the state store
+     * @return            the file
+     */
+    public static AllReferencesToAFile fileWithOneReference(FileReference reference, Instant updateTime) {
+        return AllReferencesToAFile.builder()
+                .filename(reference.getFilename())
+                .references(List.of(reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()))
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
+    }
+
+    /**
      * Creates a file record with given references. This will be as it is before being added to the state store, with no
      * update time.
      *

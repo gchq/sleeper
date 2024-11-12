@@ -51,14 +51,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -70,6 +71,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreFactory;
@@ -80,8 +82,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * Deals with requests about the layout of a Sleeper instance. It provides information about the tables and schemas of
@@ -104,10 +106,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) {
         super(SOURCE_TYPE);
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 
@@ -116,10 +117,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
             AmazonAthena athena, String spillBucket, String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
     }
 

@@ -33,25 +33,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestRecords;
-import sleeper.ingest.IngestResult;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.IngestRecords;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -63,17 +63,17 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class DeleteTableIT {
@@ -87,7 +87,7 @@ public class DeleteTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
     private String inputFolderName;
 

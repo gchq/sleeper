@@ -23,15 +23,15 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssumeSleeperRole.class);

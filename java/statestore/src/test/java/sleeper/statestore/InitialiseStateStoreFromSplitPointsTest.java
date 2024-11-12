@@ -18,21 +18,21 @@ package sleeper.statestore;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class InitialiseStateStoreFromSplitPointsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();

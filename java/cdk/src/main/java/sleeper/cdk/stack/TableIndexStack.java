@@ -26,15 +26,15 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public final class TableIndexStack extends NestedStack {
 

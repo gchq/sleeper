@@ -26,7 +26,7 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.withDefaultProperties;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 
 @InMemoryDslTest
 public class SystemTestSourceFilesTest {
@@ -38,7 +38,7 @@ public class SystemTestSourceFilesTest {
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.connectToInstance(withDefaultProperties("main"));
+        sleeper.connectToInstance(MAIN);
 
         // When
         sleeper.sourceFiles().create("test.parquet", record);

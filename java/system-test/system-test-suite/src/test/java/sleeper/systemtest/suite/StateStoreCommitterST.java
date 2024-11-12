@@ -20,15 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.time.Duration;
-import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -57,12 +53,10 @@ public class StateStoreCommitterST {
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
                         .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
-        Map<String, Long> recordsByFilename = sleeper.tableFiles().references().stream()
-                .collect(toMap(FileReference::getFilename, FileReference::getNumberOfRecords));
-        assertThat(recordsByFilename).isEqualTo(
+        assertThat(sleeper.tableFiles().recordsByFilename()).isEqualTo(
                 LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
     }

@@ -26,25 +26,28 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.ingest.job.IngestJobMessageHandler;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.io.parquet.utils.HadoopPathUtils;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Consumes bulk import jobs from SQS and starts them in the execution platform. An environment variable configures
@@ -60,8 +63,8 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarterLambda() {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = loadInstanceProperties(s3);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamo);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
@@ -70,7 +73,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfig),
                 ingestJobStatusStore, new BulkImportJobWriterToS3(instanceProperties, s3),
                 platformExecutor, Instant::now);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobStatusStore(ingestJobStatusStore)
@@ -100,11 +103,5 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 .flatMap(message -> ingestJobMessageHandler.deserialiseAndValidate(message).stream())
                 .forEach(executor::runJob);
         return null;
-    }
-
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-        return instanceProperties;
     }
 }

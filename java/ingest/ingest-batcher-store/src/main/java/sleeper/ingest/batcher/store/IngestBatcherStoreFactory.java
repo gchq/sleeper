@@ -18,14 +18,14 @@ package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.validation.OptionalStack;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.validation.OptionalStack;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 
 import java.util.Optional;
 
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class IngestBatcherStoreFactory {
     private IngestBatcherStoreFactory() {

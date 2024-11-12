@@ -15,15 +15,17 @@
  */
 package sleeper.statestore.transactionlog;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
-import static sleeper.configuration.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 
 /**
  * Given a transaction log state store, finds transactions that are old enough to be deleted and deletes them.

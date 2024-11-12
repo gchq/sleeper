@@ -16,16 +16,15 @@
 
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
-import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
-import com.amazonaws.services.elasticmapreduce.model.TerminateJobFlowsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ClusterSummary;
+import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.StaticRateLimit;
+import sleeper.core.util.ThreadSleep;
 
 import java.time.Duration;
 import java.util.List;
@@ -41,21 +40,23 @@ public class TerminateEMRClusters {
     private final PollWithRetries poll = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
 
-    private final AmazonElasticMapReduce emrClient;
+    private final EmrClient emrClient;
     private final String clusterPrefix;
-    private final StaticRateLimit<ListClustersResult> listActiveClustersLimit;
+    private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
+    private final ThreadSleep threadSleep;
 
-    public TerminateEMRClusters(AmazonElasticMapReduce emrClient, String instanceId, StaticRateLimit<ListClustersResult> listActiveClustersLimit) {
+    public TerminateEMRClusters(EmrClient emrClient, String instanceId, StaticRateLimit<ListClustersResponse> listActiveClustersLimit, ThreadSleep threadSleep) {
         this.emrClient = emrClient;
         this.clusterPrefix = "sleeper-" + instanceId + "-";
         this.listActiveClustersLimit = listActiveClustersLimit;
+        this.threadSleep = threadSleep;
     }
 
     public void run() throws InterruptedException {
         List<ClusterSummary> clusters = activeClusters();
         List<String> clusterIds = clusters.stream()
-                .filter(cluster -> cluster.getName().startsWith(clusterPrefix))
-                .map(ClusterSummary::getId)
+                .filter(cluster -> cluster.name().startsWith(clusterPrefix))
+                .map(ClusterSummary::id)
                 .collect(Collectors.toList());
         if (clusterIds.isEmpty()) {
             LOGGER.info("No running clusters to terminate");
@@ -73,11 +74,11 @@ public class TerminateEMRClusters {
         for (int i = 0; i < clusters.size(); i += 10) {
             int endIndex = min(i + 10, clusters.size());
             List<String> clusterBatch = clusters.subList(i, endIndex);
-            emrClient.terminateJobFlows(new TerminateJobFlowsRequest().withJobFlowIds(clusterBatch));
+            emrClient.terminateJobFlows(request -> request.jobFlowIds(clusterBatch));
             LOGGER.info("Terminated {} clusters out of {}", endIndex, clusters.size());
             // Sustained limit of 0.5 calls per second
             // See https://docs.aws.amazon.com/general/latest/gr/emr.html
-            sleepForSustainedRatePerSecond(0.2);
+            sleepForSustainedRatePerSecond(0.2, threadSleep);
         }
     }
 
@@ -88,13 +89,13 @@ public class TerminateEMRClusters {
     private boolean allClustersTerminated() {
         List<ClusterSummary> clusters = activeClusters();
         long clustersStillRunning = clusters.stream()
-                .filter(cluster -> cluster.getName().startsWith(clusterPrefix)).count();
+                .filter(cluster -> cluster.name().startsWith(clusterPrefix)).count();
         LOGGER.info("{} clusters are still terminating for instance", clustersStillRunning);
         return clustersStillRunning == 0;
     }
 
     private List<ClusterSummary> activeClusters() {
-        return listActiveClusters(emrClient, listActiveClustersLimit).getClusters();
+        return listActiveClusters(emrClient, listActiveClustersLimit).clusters();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -104,12 +105,9 @@ public class TerminateEMRClusters {
         }
         String instanceId = args[0];
 
-        AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
-        try {
-            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, instanceId, StaticRateLimit.none());
+        try (EmrClient emrClient = EmrClient.create()) {
+            TerminateEMRClusters terminateClusters = new TerminateEMRClusters(emrClient, instanceId, StaticRateLimit.none(), Thread::sleep);
             terminateClusters.run();
-        } finally {
-            emrClient.shutdown();
         }
     }
 }

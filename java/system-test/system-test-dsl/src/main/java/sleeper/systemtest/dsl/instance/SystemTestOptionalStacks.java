@@ -20,15 +20,16 @@ import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class SystemTestOptionalStacks {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestOptionalStacks.class);
@@ -55,6 +56,16 @@ public class SystemTestOptionalStacks {
     public void removeOptionalStack(OptionalStack stack) {
         LOGGER.info("Removing optional stack: {}", stack);
         updateOptionalStacks(stacks -> stacks.remove(stack));
+    }
+
+    public void addOptionalStacks(Collection<OptionalStack> stacks) {
+        LOGGER.info("Adding optional stacks: {}", stacks);
+        updateOptionalStacks(stacksSet -> stacksSet.addAll(stacks));
+    }
+
+    public void removeOptionalStacks(Collection<OptionalStack> stacks) {
+        LOGGER.info("Removing optional stacks: {}", stacks);
+        updateOptionalStacks(stacksSet -> stacksSet.removeAll(stacks));
     }
 
     private OptionalStack stack(Class<?> stackClass) {

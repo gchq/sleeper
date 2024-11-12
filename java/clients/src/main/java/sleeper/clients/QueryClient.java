@@ -21,27 +21,28 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
-import sleeper.query.model.Query;
-import sleeper.query.model.QueryException;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryException;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 
@@ -52,9 +53,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 /**
  * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
@@ -77,7 +78,7 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient,
             ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
         this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient),
+                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient),
                 in, out, objectFactory, stateStoreProvider);
     }
 
@@ -143,7 +144,7 @@ public class QueryClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryClient queryClient = new QueryClient(
                     s3Client, instanceProperties, dynamoDBClient,
                     getConfigurationForClient(instanceProperties),

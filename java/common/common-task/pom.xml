@@ -19,7 +19,7 @@
     <parent>
         <artifactId>common</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,9 +32,8 @@
             <version>${aws-java-sdk.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecs</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecs</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

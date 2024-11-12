@@ -31,21 +31,22 @@ import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.task.common.QueueMessageCount;
 
 import java.nio.file.Path;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {
@@ -86,9 +87,9 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         instanceId = instanceProperties.get(ID);
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3);
+        S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+        tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
     @Override

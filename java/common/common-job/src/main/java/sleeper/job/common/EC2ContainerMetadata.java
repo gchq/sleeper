@@ -15,10 +15,6 @@
  */
 package sleeper.job.common;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.ContainerInstance;
-import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
-import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,6 +22,9 @@ import com.google.gson.stream.JsonReader;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.ContainerInstance;
+import software.amazon.awssdk.services.ecs.model.DescribeContainerInstancesResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -78,7 +77,7 @@ public class EC2ContainerMetadata {
      * @return             container details if available
      * @throws IOException for an I/O error reading the metadata file
      */
-    public static Optional<EC2ContainerMetadata> retrieveContainerMetadata(AmazonECS ecsClient) throws IOException {
+    public static Optional<EC2ContainerMetadata> retrieveContainerMetadata(EcsClient ecsClient) throws IOException {
         if (ECS_EC2_ENV.equalsIgnoreCase(System.getenv(EXECUTION_ENV))) {
             Optional<Triple<String, String, String>> metadata = retrieveContainerMetadataViaEnvFile();
             if (metadata.isPresent()) {
@@ -86,7 +85,7 @@ public class EC2ContainerMetadata {
 
                 if (instanceDetails.isPresent()) {
                     return Optional.of(new EC2ContainerMetadata(metadata.get().getLeft(), metadata.get().getMiddle(),
-                            instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
+                            instanceDetails.get().ec2InstanceId(), metadata.get().getRight(), instanceDetails.get().status()));
                 }
             }
         } else {
@@ -142,19 +141,17 @@ public class EC2ContainerMetadata {
      * @param  containerInstanceARN EC2 instance ARN
      * @return                      container instance or an empty optional
      */
-    private static Optional<ContainerInstance> describeContainerInstance(AmazonECS ecsClient, String ecsCluster, String containerInstanceARN) {
+    private static Optional<ContainerInstance> describeContainerInstance(EcsClient ecsClient, String ecsCluster, String containerInstanceARN) {
         Objects.requireNonNull(ecsClient);
         Objects.requireNonNull(ecsCluster, "ecsCluster");
         Objects.requireNonNull(containerInstanceARN, "containerInstanceARN");
-        DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
-                .withCluster(ecsCluster)
-                .withContainerInstances(containerInstanceARN);
-        DescribeContainerInstancesResult result = ecsClient.describeContainerInstances(req);
-        if (result.getContainerInstances().isEmpty()) {
+        DescribeContainerInstancesResponse response = ecsClient.describeContainerInstances(request -> request
+                .cluster(ecsCluster).containerInstances(containerInstanceARN));
+        if (response.containerInstances().isEmpty()) {
             LOGGER.warn("No EC2 instances returned in describeContainerInstance request!");
             return Optional.empty();
         } else {
-            return Optional.of(result.getContainerInstances().get(0));
+            return Optional.of(response.containerInstances().get(0));
         }
     }
 

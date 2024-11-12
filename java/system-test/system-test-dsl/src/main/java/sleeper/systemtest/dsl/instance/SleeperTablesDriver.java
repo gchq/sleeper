@@ -16,10 +16,10 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 
 public interface SleeperTablesDriver {

@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
 import javax.annotation.Nullable;
@@ -29,6 +30,7 @@ import java.util.Objects;
 
 public class CoreStacks {
 
+    private final LoggingStack loggingStack;
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
     private final ManagedPoliciesStack policiesStack;
@@ -38,11 +40,12 @@ public class CoreStacks {
     private final IngestStatusStoreResources ingestStatusStore;
     private final CompactionStatusStoreResources compactionStatusStore;
 
-    public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestStatusStoreResources ingestStatusStore,
             CompactionStatusStoreResources compactionStatusStore) {
+        this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
@@ -51,6 +54,26 @@ public class CoreStacks {
         this.stateStoreCommitterStack = stateStoreCommitterStack;
         this.ingestStatusStore = ingestStatusStore;
         this.compactionStatusStore = compactionStatusStore;
+    }
+
+    public ILogGroup getLogGroupByFunctionName(String functionName) {
+        return loggingStack.getLogGroupByFunctionName(functionName);
+    }
+
+    public ILogGroup getProviderLogGroupByFunctionName(String functionName) {
+        return loggingStack.getProviderLogGroupByFunctionName(functionName);
+    }
+
+    public ILogGroup getLogGroupByECSLogDriverId(String id) {
+        return loggingStack.getLogGroupByECSLogDriverId(id);
+    }
+
+    public ILogGroup getLogGroupByStateMachineId(String id) {
+        return loggingStack.getLogGroupByStateMachineId(id);
+    }
+
+    public ILogGroup getLogGroupByEksClusterName(String clusterName) {
+        return loggingStack.getLogGroupByEksClusterName(clusterName);
     }
 
     public void grantReadInstanceConfig(IGrantable grantee) {

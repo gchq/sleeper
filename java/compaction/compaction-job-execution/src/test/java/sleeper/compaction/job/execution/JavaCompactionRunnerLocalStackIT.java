@@ -30,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -53,14 +53,14 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
@@ -126,13 +126,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
-                .isEqualTo(SketchesDeciles.builder()
-                        .field("key", deciles -> deciles
-                                .min(0L).max(199L)
-                                .rank(0.1, 20L).rank(0.2, 40L).rank(0.3, 60L)
-                                .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
-                                .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
-                        .build());
+                .isEqualTo(SketchesDeciles.from(schema, expectedResults));
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {

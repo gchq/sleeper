@@ -16,20 +16,37 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.properties.deploy.DeployInstanceConfiguration;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.configuration.SystemTestProperty;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.function.Predicate.not;
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestParameters {
 
@@ -45,6 +62,8 @@ public class SystemTestParameters {
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
+    private final SystemTestStandaloneProperties standalonePropertiesTemplate;
+    private final InstanceProperties instancePropertiesOverrides;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
@@ -59,6 +78,12 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
+        standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
+        instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
+        // Combines with SystemTestInstanceConfiguration.shortName and a hyphen to create an instance ID within maximum length
+        if (!SystemTestProperty.SYSTEM_TEST_ID.getValidationPredicate().test(shortTestId)) {
+            throw new IllegalArgumentException("shortTestId is not valid, must be at most " + SYSTEM_TEST_ID_MAX_LEN + " characters: " + shortTestId);
+        }
     }
 
     public static Builder builder() {
@@ -152,6 +177,15 @@ public class SystemTestParameters {
     public void setRequiredProperties(DeployInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
         properties.set(ECR_REPOSITORY_PREFIX, shortTestId);
+        if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_ECS_SECURITY_GROUPS)) {
+            properties.set(ECS_SECURITY_GROUPS, standalonePropertiesTemplate.get(SYSTEM_TEST_ECS_SECURITY_GROUPS));
+        }
+        if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_LOG_RETENTION_DAYS)) {
+            properties.set(LOG_RETENTION_IN_DAYS, standalonePropertiesTemplate.get(SYSTEM_TEST_LOG_RETENTION_DAYS));
+        }
+        instancePropertiesOverrides.streamNonDefaultEntries().forEach(entry -> {
+            properties.set(entry.getKey(), entry.getValue());
+        });
         for (TableProperties tableProperties : deployConfig.getTableProperties()) {
             setRequiredProperties(tableProperties);
         }
@@ -161,6 +195,22 @@ public class SystemTestParameters {
         if (forceStateStoreClassname != null) {
             tableProperties.set(STATESTORE_CLASSNAME, forceStateStoreClassname);
         }
+    }
+
+    public SystemTestStandaloneProperties buildSystemTestStandaloneProperties() {
+        SystemTestStandaloneProperties properties = SystemTestStandaloneProperties.copyOf(standalonePropertiesTemplate);
+        properties.set(SYSTEM_TEST_ID, getSystemTestShortId());
+        properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
+        properties.set(SYSTEM_TEST_REGION, getRegion());
+        properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
+        properties.set(SYSTEM_TEST_JARS_BUCKET, buildJarsBucketName());
+        properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
+        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
+        return properties;
+    }
+
+    public boolean isInstancePropertyOverridden(InstanceProperty property) {
+        return instancePropertiesOverrides.isSet(property);
     }
 
     private static Path findScriptsDir() {
@@ -205,6 +255,8 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
+        private SystemTestStandaloneProperties standalonePropertiesTemplate;
+        private InstanceProperties instancePropertiesOverrides;
 
         private Builder() {
         }
@@ -269,6 +321,16 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder systemTestStandalonePropertiesTemplate(SystemTestStandaloneProperties standalonePropertiesTemplate) {
+            this.standalonePropertiesTemplate = standalonePropertiesTemplate;
+            return this;
+        }
+
+        public Builder instancePropertiesOverrides(InstanceProperties instancePropertiesOverrides) {
+            this.instancePropertiesOverrides = instancePropertiesOverrides;
+            return this;
+        }
+
         public Builder loadFromSystemProperties() {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
@@ -280,7 +342,15 @@ public class SystemTestParameters {
                     .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
-                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null));
+                    .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
+                    .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
+                            .map(Paths::get)
+                            .map(SystemTestStandaloneProperties::fromFile)
+                            .orElseGet(SystemTestStandaloneProperties::new))
+                    .instancePropertiesOverrides(getOptionalProperty("sleeper.system.test.instance.properties.overrides")
+                            .map(Paths::get)
+                            .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
+                            .orElseGet(InstanceProperties::new));
         }
 
         public Builder findDirectories() {

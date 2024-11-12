@@ -19,23 +19,23 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.CompactionMethod;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestResult;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
@@ -45,13 +45,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactionRunnerTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";

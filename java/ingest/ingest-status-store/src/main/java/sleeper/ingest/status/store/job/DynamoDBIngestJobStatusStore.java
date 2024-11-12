@@ -28,17 +28,17 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.IngestStatusStoreException;
-import sleeper.ingest.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.job.status.IngestJobFailedEvent;
-import sleeper.ingest.job.status.IngestJobFinishedEvent;
-import sleeper.ingest.job.status.IngestJobStartedEvent;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobValidatedEvent;
+import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.core.job.status.IngestJobFailedEvent;
+import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
+import sleeper.ingest.core.job.status.IngestJobStartedEvent;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
+import sleeper.ingest.status.store.IngestStatusStoreException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -50,8 +50,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;

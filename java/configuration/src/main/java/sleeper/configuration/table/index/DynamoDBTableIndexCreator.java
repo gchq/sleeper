@@ -22,19 +22,23 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ID_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_NAME_FIELD;
 import static sleeper.configuration.table.index.DynamoDBTableIndex.TABLE_ONLINE_FIELD;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 
+/**
+ * Creates the DynamoDB tables required to implement a Sleeper table index. Usually this will be done by the CDK. This
+ * is used for a local instance or integration tests.
+ */
 public class DynamoDBTableIndexCreator {
     private final InstanceProperties instanceProperties;
     private final AmazonDynamoDB dynamoDB;
@@ -44,11 +48,17 @@ public class DynamoDBTableIndexCreator {
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
 
+    /**
+     * Creates the DynamoDB tables for a Sleeper table index.
+     *
+     * @param dynamoDBClient     the DynamoDB client
+     * @param instanceProperties the instance properties
+     */
     public static void create(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         new DynamoDBTableIndexCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    public void create() {
+    private void create() {
         initialiseTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 List.of(new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
                 List.of(new KeySchemaElement(TABLE_NAME_FIELD, KeyType.HASH)));

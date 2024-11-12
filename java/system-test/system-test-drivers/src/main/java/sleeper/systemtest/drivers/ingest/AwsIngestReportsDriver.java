@@ -17,7 +17,7 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.status.report.IngestJobStatusReport;
 import sleeper.clients.status.report.IngestTaskStatusReport;
@@ -26,11 +26,11 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
-import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
@@ -45,7 +45,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDB;
     private final QueueMessageCount.Client queueMessages;
-    private final AmazonElasticMapReduce emr;
+    private final EmrClient emr;
 
     public AwsIngestReportsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;

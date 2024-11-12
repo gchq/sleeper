@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 
 public interface DirectBulkImportDriver {
 

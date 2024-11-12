@@ -15,8 +15,8 @@
  */
 package sleeper.statestore.transactionlog;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -24,10 +24,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
 
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 

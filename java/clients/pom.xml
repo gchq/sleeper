@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,47 +38,43 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sts</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecr</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-events</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>lambda</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatchevents</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudwatchlogs</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecr</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudformation</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-emr</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>lambda</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>emr</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.java-websocket</groupId>
@@ -164,6 +160,13 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>splitter-core</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

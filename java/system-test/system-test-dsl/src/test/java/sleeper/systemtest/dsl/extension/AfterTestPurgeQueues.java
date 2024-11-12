@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 

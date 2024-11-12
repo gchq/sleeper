@@ -16,25 +16,23 @@
 
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.ListTasksRequest;
-import com.amazonaws.services.ecs.model.StopTaskRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class RestartTasks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestartTasks.class);
-    private final AmazonECS ecs;
+    private final EcsClient ecs;
     private final LambdaClient lambda;
     private final InstanceProperties properties;
     private final boolean skip;
@@ -70,12 +68,12 @@ public class RestartTasks {
     }
 
     private void stopTasksInCluster(String cluster) {
-        ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns()
-                .forEach(task -> ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster)));
+        ecs.listTasks(builder -> builder.cluster(cluster)).taskArns()
+                .forEach(task -> ecs.stopTask(builder -> builder.cluster(cluster).task(task)));
     }
 
     public static final class Builder {
-        private AmazonECS ecs;
+        private EcsClient ecs;
         private LambdaClient lambda;
         private InstanceProperties properties;
         private boolean skip;
@@ -83,7 +81,7 @@ public class RestartTasks {
         private Builder() {
         }
 
-        public Builder ecs(AmazonECS ecs) {
+        public Builder ecs(EcsClient ecs) {
             this.ecs = ecs;
             return this;
         }

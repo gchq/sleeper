@@ -32,10 +32,11 @@ import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -52,9 +53,9 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
@@ -149,9 +150,8 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         Dimensions dimensions;
         try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient)
                     .loadByName(tableName);
             dimensions = new Dimensions(instanceProperties, tableProperties);
         } finally {

@@ -24,9 +24,9 @@ import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
@@ -34,8 +34,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
 
 import java.time.Instant;
 import java.util.List;
@@ -62,10 +62,10 @@ import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
 import static sleeper.clients.QueryWebSocketClientTestHelper.message;
 import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
 import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryWebSocketCommandLineClientTest {

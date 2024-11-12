@@ -24,16 +24,16 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
-import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;

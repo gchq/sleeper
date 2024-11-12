@@ -26,12 +26,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -42,16 +43,15 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
@@ -64,7 +64,7 @@ public class PartitionsStatusReportIT {
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstance();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
@@ -94,7 +94,7 @@ public class PartitionsStatusReportIT {
     }
 
     private InstanceProperties createTestInstance() {
-        InstanceProperties properties = createTestInstanceProperties(s3);
+        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3);
         s3.createBucket(properties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoDB, properties);
         new TransactionLogStateStoreCreator(properties, dynamoDB).create();

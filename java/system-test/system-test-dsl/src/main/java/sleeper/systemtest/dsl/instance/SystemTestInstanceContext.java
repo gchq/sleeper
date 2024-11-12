@@ -16,14 +16,14 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -43,8 +43,8 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
@@ -100,10 +100,11 @@ public class SystemTestInstanceContext {
                 .collect(toUnmodifiableList()));
     }
 
-    public void createTable(String name, Schema schema) {
+    public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
         tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
-        currentTables().addTables(tablesDriver(), List.of(tableProperties));
+        setProperties.forEach(tableProperties::set);
+        currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
         testNameByTableId.put(tableProperties.get(TABLE_ID), name);
     }

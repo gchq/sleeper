@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>compaction</artifactId>
-        <version>0.25.0</version>
+        <version>0.26.0</version>
     </parent>
 
     <artifactId>compaction-task-creation</artifactId>
@@ -41,11 +41,6 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-autoscaling</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecs</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->

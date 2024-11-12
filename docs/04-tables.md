@@ -4,7 +4,7 @@ Tables
 A Sleeper instance contains one or more tables. Each table has four important
 properties: a name, a schema for storing data for that table, a state store for 
 storing metadata about the table, and a flag to denote whether the table is 
-online or not (see [here](12-design.md#Tables) for more information about 
+online or not (see [here](14-design.md#Tables) for more information about 
 online tables). All resources for the instance, such as the S3 bucket used for 
 storing data in a table, ECS clusters and lambda functions are shared across 
 all the tables.

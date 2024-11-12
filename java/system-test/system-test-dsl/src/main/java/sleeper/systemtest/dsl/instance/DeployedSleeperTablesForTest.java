@@ -19,12 +19,12 @@ package sleeper.systemtest.dsl.instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -32,9 +32,9 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public final class DeployedSleeperTablesForTest {
 
@@ -62,7 +62,7 @@ public final class DeployedSleeperTablesForTest {
         }
     }
 
-    public void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
+    private void addTables(SleeperTablesDriver driver, List<TableProperties> tables) {
         LOGGER.info("Adding {} tables with instance ID: {}", tables.size(), instanceProperties.get(ID));
         tables.stream().parallel().forEach(tableProperties -> driver.addTable(instanceProperties, tableProperties));
         tables.forEach(tableProperties -> {

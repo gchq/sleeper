@@ -20,11 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
 
@@ -32,13 +32,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDeleted;
-import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
-import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
+import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
 public class PropertiesDiffTest {
 
@@ -124,9 +124,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectNoChanges() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
 
             // When / Then
@@ -136,9 +136,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=1"));
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=2"));
 
             // When / Then
@@ -150,7 +150,7 @@ public class PropertiesDiffTest {
         void shouldDetectPropertyIsNewlySet() {
             // Given
             InstanceProperties before = new InstanceProperties();
-            InstanceProperties after = new InstanceProperties(
+            InstanceProperties after = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=12"));
 
             // When / Then
@@ -161,7 +161,7 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsUnset() {
             // Given
-            InstanceProperties before = new InstanceProperties(
+            InstanceProperties before = InstanceProperties.createWithoutValidation(
                     loadProperties("unknown.property=12"));
             InstanceProperties after = new InstanceProperties();
 

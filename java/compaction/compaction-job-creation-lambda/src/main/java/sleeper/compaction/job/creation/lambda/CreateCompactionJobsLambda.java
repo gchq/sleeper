@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
@@ -38,14 +38,17 @@ import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueu
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -56,7 +59,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.groupingBy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Creates compaction jobs for batches of tables sent to an SQS queue, running in AWS Lambda. Runs compaction job
@@ -79,18 +82,17 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         createJobs = new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY,

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
@@ -39,6 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcsClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequestedForCloudWatchEvents;
@@ -74,17 +75,17 @@ import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRe
 import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestWithJobIdCount;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedFor;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedWithJobIdsCount;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -95,7 +96,7 @@ class ShutdownSystemProcessesIT {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
-                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none());
+                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none(), noWaits());
     }
 
     private void shutdown() throws Exception {

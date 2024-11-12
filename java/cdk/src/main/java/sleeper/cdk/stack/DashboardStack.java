@@ -31,9 +31,9 @@ import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,10 +44,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 public class DashboardStack extends NestedStack {
     private final String instanceId;
@@ -155,30 +155,34 @@ public class DashboardStack extends NestedStack {
                                 .statistic("Maximum")
                                 .build())))
                         .width(6)
-                        .build(),
-                GraphWidget.Builder.create()
-                        .view(GraphWidgetView.TIME_SERIES)
-                        .stacked(true)
-                        .title("NumRecordsWritten")
-                        .left(
-                                IntStream.range(0, tableNames.size())
-                                        .mapToObj(i -> MathExpression.Builder.create()
-                                                .label(tableNames.get(i))
-                                                .expression("FILL(m" + i + ", 0)")
-                                                .period(window)
-                                                .usingMetrics(Collections.singletonMap("m" + i, Metric.Builder.create()
-                                                        .namespace(metricsNamespace)
-                                                        .metricName("StandardIngestRecordsWritten")
-                                                        .unit(Unit.COUNT)
-                                                        .period(window)
-                                                        .statistic("Sum")
-                                                        .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
-                                                        .build()))
-                                                .build())
-                                        .collect(Collectors.toList()))
-                        .leftYAxis(YAxisProps.builder().min(0).build())
-                        .width(6)
                         .build());
+
+        if (!tableNames.isEmpty()) {
+            dashboard.addWidgets(
+                    GraphWidget.Builder.create()
+                            .view(GraphWidgetView.TIME_SERIES)
+                            .stacked(true)
+                            .title("NumRecordsWritten")
+                            .left(
+                                    IntStream.range(0, tableNames.size())
+                                            .mapToObj(i -> MathExpression.Builder.create()
+                                                    .label(tableNames.get(i))
+                                                    .expression("FILL(m" + i + ", 0)")
+                                                    .period(window)
+                                                    .usingMetrics(Collections.singletonMap("m" + i, Metric.Builder.create()
+                                                            .namespace(metricsNamespace)
+                                                            .metricName("StandardIngestRecordsWritten")
+                                                            .unit(Unit.COUNT)
+                                                            .period(window)
+                                                            .statistic("Sum")
+                                                            .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
+                                                            .build()))
+                                                    .build())
+                                            .collect(Collectors.toList()))
+                            .leftYAxis(YAxisProps.builder().min(0).build())
+                            .width(6)
+                            .build());
+        }
     }
 
     private static Map<String, String> createDimensionMap(String instanceId, String tableName) {

@@ -20,20 +20,21 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.eclipse.jetty.io.RuntimeIOException;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.clients.status.update.AddTable;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -43,25 +44,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployDockerInstance {
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final Configuration configuration;
     private final Consumer<TableProperties> extraTableProperties;
 
@@ -87,15 +87,13 @@ public class DeployDockerInstance {
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
                     .configuration(getConfigurationForClient()).build()
                     .deploy(instanceId);
         } finally {
             s3Client.shutdown();
             dynamoDB.shutdown();
-            sqsClient.shutdown();
         }
     }
 
@@ -112,8 +110,10 @@ public class DeployDockerInstance {
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
         TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
+        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
+        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
 
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         for (TableProperties tableProperties : tables) {
             try {
@@ -122,22 +122,18 @@ public class DeployDockerInstance {
                 throw new RuntimeIOException(e);
             }
         }
-
-        IngestDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
-        CompactionDockerStack.from(instanceProperties, dynamoDB, sqsClient).deploy();
     }
 
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, "sleeper-" + instanceId + "-IngestJobQ");
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "sleeper-" + instanceId + "-CompactionJobQ");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
+        instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
@@ -150,7 +146,7 @@ public class DeployDockerInstance {
     public static final class Builder {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoDB;
-        private AmazonSQS sqsClient;
+        private SqsClient sqsClient;
         private Configuration configuration;
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
         };
@@ -168,7 +164,7 @@ public class DeployDockerInstance {
             return this;
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }

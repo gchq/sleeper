@@ -24,19 +24,21 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -77,9 +79,8 @@ public class CreateCompactionJobsClient {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             List<TableProperties> tables = tableNames.stream()
                     .map(name -> tablePropertiesProvider.getByName(name))
                     .collect(toUnmodifiableList());

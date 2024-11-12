@@ -15,5 +15,5 @@ Make sure you have checked _all_ steps below.
 
 - [ ] In case of new functionality, my PR adds documentation that describes how to use it, or I have linked to a
   separate issue for that below.
-- [ ] If I have added, removed, or updated any external dependencies used in the project, I have updated the
-  [NOTICES](/NOTICES) file to reflect this.
+
+- [ ] If I have added or removed any dependencies from the project, I have updated the [NOTICES](/NOTICES) file.

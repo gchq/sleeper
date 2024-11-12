@@ -22,11 +22,11 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTask.MessageHandle;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTask.MessageHandle;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
@@ -34,11 +34,11 @@ import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import java.io.IOException;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 
 public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsCompactionQueueHandler.class);
@@ -99,7 +99,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         }
 
         @Override
-        public void completed() {
+        public void deleteFromQueue() {
             // Delete message from queue
             LOGGER.info("Compaction job {}: Deleting message from queue", job.getId());
             try {
@@ -110,7 +110,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         }
 
         @Override
-        public void failed() {
+        public void returnToQueue() {
             LOGGER.info("Compaction job {}: Returning message to queue", job.getId());
             int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);

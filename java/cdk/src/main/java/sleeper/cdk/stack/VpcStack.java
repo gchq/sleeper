@@ -16,8 +16,6 @@
 package sleeper.cdk.stack;
 
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.CustomResourceProps;
 import software.amazon.awscdk.NestedStack;
@@ -27,52 +25,39 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.createCustomResourceProviderLogGroup;
-import static sleeper.cdk.Utils.createLambdaLogGroup;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class VpcStack extends NestedStack {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
 
-    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack logging) {
         super(scope, id);
-
-        if (!instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
-                    + "in very significant NAT charges.");
-            return;
-        }
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "vpc-check");
 
-        IFunction vpcCheckLambda = jar.buildFunction(this, "VpcCheckLambda", builder -> builder
+        IFunction vpcCheckLambda = lambdaCode.buildFunction(this, LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)
-                .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logGroup(createLambdaLogGroup(this, "VpcCheckLambdaLogGroup", functionName, instanceProperties))
-                .runtime(Runtime.JAVA_11));
+                .logGroup(logging.getLogGroupByFunctionName(functionName)));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
                 .actions(Lists.newArrayList("ec2:DescribeVpcEndpoints"))
@@ -84,7 +69,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logGroup(createCustomResourceProviderLogGroup(this, "VpcCustomResourceProviderLogGroup", functionName, instanceProperties))
+                        .logGroup(logging.getProviderLogGroupByFunctionName(functionName))
                         .build());
 
         // Custom resource to check whether VPC is valid

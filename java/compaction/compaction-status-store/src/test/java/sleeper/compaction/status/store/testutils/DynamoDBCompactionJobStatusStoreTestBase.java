@@ -19,18 +19,18 @@ import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguratio
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -47,18 +47,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {

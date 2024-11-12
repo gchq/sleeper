@@ -15,29 +15,16 @@
  */
 package sleeper.clients.testutil;
 
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClient;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import static sleeper.task.common.WiremockTestHelper.WIREMOCK_ACCESS_KEY;
-import static sleeper.task.common.WiremockTestHelper.WIREMOCK_SECRET_KEY;
-import static sleeper.task.common.WiremockTestHelper.wiremockCredentialsProvider;
-import static sleeper.task.common.WiremockTestHelper.wiremockEndpointConfiguration;
+import static sleeper.task.common.WiremockTestHelper.wiremockAwsV2Client;
 
 public class ClientWiremockTestHelper {
 
@@ -46,57 +33,31 @@ public class ClientWiremockTestHelper {
     private ClientWiremockTestHelper() {
     }
 
-    public static AmazonECR wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonECRClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static EcsClient wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
-    public static AmazonCloudWatchEvents wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonCloudWatchEventsClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static EcrClient wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EcrClient.builder());
     }
 
-    public static AmazonElasticMapReduce wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonElasticMapReduceClient.builder()
-                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
-                .build();
+    public static CloudWatchEventsClient wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, CloudWatchEventsClient.builder());
+    }
+
+    public static EmrClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EmrClient.builder());
     }
 
     public static EmrServerlessClient wiremockEmrServerlessClient(WireMockRuntimeInfo runtimeInfo) {
-        return callWiremock(EmrServerlessClient.builder(), runtimeInfo);
+        return wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder());
     }
 
     public static CloudWatchLogsClient wiremockLogsClient(WireMockRuntimeInfo runtimeInfo) {
-        return callWiremock(CloudWatchLogsClient.builder(), runtimeInfo);
+        return wiremockAwsV2Client(runtimeInfo, CloudWatchLogsClient.builder());
     }
 
     public static CloudFormationClient wiremockCloudFormationClient(WireMockRuntimeInfo runtimeInfo) {
-        return callWiremock(CloudFormationClient.builder(), runtimeInfo);
-    }
-
-    public static <B extends AwsClientBuilder<B, T>, T> T callWiremock(
-            B builder, WireMockRuntimeInfo runtimeInfo) {
-        return builder
-                .endpointOverride(wiremockEndpointOverride(runtimeInfo))
-                .credentialsProvider(wiremockCredentialsProviderV2())
-                .region(Region.AWS_GLOBAL)
-                .build();
-    }
-
-    public static URI wiremockEndpointOverride(WireMockRuntimeInfo runtimeInfo) {
-        try {
-            return new URI(runtimeInfo.getHttpBaseUrl());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    public static AwsCredentialsProvider wiremockCredentialsProviderV2() {
-        return StaticCredentialsProvider.create(AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY));
+        return wiremockAwsV2Client(runtimeInfo, CloudFormationClient.builder());
     }
 }

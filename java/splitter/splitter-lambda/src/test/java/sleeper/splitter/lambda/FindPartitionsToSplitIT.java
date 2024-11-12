@@ -28,12 +28,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -41,14 +40,15 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.splitter.find.FindPartitionsToSplit;
-import sleeper.splitter.find.SplitPartitionJobDefinition;
-import sleeper.splitter.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.splitter.core.find.FindPartitionsToSplit;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,16 +60,16 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
+import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 @Testcontainers
 public class FindPartitionsToSplitIT {

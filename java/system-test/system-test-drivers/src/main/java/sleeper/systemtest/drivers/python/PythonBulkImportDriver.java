@@ -25,7 +25,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
     private final SystemTestInstanceContext instance;

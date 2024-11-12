@@ -18,16 +18,16 @@ package sleeper.bulkimport.starter.executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.CheckLeafPartitionCount;
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.bulkimport.core.CheckLeafPartitionCount;
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.job.status.IngestJobFailedEvent;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.ingest.core.job.status.IngestJobFailedEvent;
+import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,8 +38,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class BulkImportExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);

@@ -18,22 +18,22 @@ package sleeper.statestore.transactionlog;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.time.Duration;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
-import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
-import static sleeper.configuration.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
-import static sleeper.configuration.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
-import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
-import static sleeper.configuration.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
 /**
  * An implementation of the state store backed by a transaction log held in DynamoDB and S3, with snapshots disabled.

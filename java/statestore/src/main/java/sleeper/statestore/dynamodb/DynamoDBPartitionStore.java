@@ -31,10 +31,10 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
@@ -52,7 +52,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;

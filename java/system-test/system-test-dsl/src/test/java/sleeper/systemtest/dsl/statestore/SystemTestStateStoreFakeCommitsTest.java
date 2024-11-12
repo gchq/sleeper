@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.statestore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
@@ -47,7 +46,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         // When
         sleeper.stateStore().fakeCommits()
                 .send(StateStoreCommitMessage.addPartitionFile("root", "file.parquet", 100))
-                .waitForCommitLogs(PollWithRetries.noRetries());
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
@@ -63,7 +62,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(LongStream.rangeClosed(1, 1000)
                         .mapToObj(i -> StateStoreCommitMessage.addPartitionFile("root", "file-" + i + ".parquet", i)))
-                .waitForCommitLogs(PollWithRetries.noRetries());
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
@@ -78,7 +77,7 @@ public class SystemTestStateStoreFakeCommitsTest {
         committer.addFakeCommits(sleeper, 1);
 
         // When / Then
-        assertThatCode(() -> commitsDsl.waitForCommitLogs(PollWithRetries.noRetries()))
+        assertThatCode(() -> commitsDsl.waitForCommitLogs())
                 .doesNotThrowAnyException();
     }
 

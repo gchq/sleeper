@@ -15,32 +15,28 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
-import com.amazonaws.services.ecs.model.ContainerOverride;
-import com.amazonaws.services.ecs.model.LaunchType;
-import com.amazonaws.services.ecs.model.NetworkConfiguration;
-import com.amazonaws.services.ecs.model.PropagateTags;
-import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.ContainerOverride;
+import software.amazon.awssdk.services.ecs.model.LaunchType;
+import software.amazon.awssdk.services.ecs.model.PropagateTags;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 
-import sleeper.configuration.properties.PropertiesReloader;
-import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.properties.PropertiesReloader;
+import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
-import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.
@@ -49,13 +45,13 @@ public class RunIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunIngestTasks.class);
 
     private final AmazonSQS sqsClient;
-    private final AmazonECS ecsClient;
+    private final EcsClient ecsClient;
     private final InstanceProperties properties;
     private final PropertiesReloader propertiesReloader;
     private final String containerName;
 
     public RunIngestTasks(AmazonSQS sqsClient,
-            AmazonECS ecsClient,
+            EcsClient ecsClient,
             InstanceProperties properties,
             PropertiesReloader propertiesReloader,
             String containerName) {
@@ -98,32 +94,24 @@ public class RunIngestTasks {
         // Create 1 task per ingest jobs up to the maximum number of tasks to create
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
 
-        List<String> args = new ArrayList<>();
-        args.add(properties.get(CONFIG_BUCKET));
+        List<String> args = List.of(properties.get(CONFIG_BUCKET));
 
-        ContainerOverride containerOverride = new ContainerOverride()
-                .withName(containerName)
-                .withCommand(args);
-
-        TaskOverride override = new TaskOverride()
-                .withContainerOverrides(containerOverride);
-
-        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(properties.getList(SUBNETS))
-                .withSecurityGroups(properties.getList(ECS_SECURITY_GROUPS));
-
-        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                .withAwsvpcConfiguration(vpcConfiguration);
-
-        RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(properties.get(INGEST_CLUSTER))
-                .withLaunchType(LaunchType.FARGATE)
-                .withTaskDefinition(properties.get(INGEST_TASK_DEFINITION_FAMILY))
-                .withNetworkConfiguration(networkConfiguration)
-                .withOverrides(override)
-                .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                .withPlatformVersion(properties.get(FARGATE_VERSION));
-
+        RunTaskRequest runTaskRequest = RunTaskRequest.builder()
+                .cluster(properties.get(INGEST_CLUSTER))
+                .launchType(LaunchType.FARGATE)
+                .taskDefinition(properties.get(INGEST_TASK_DEFINITION_FAMILY))
+                .networkConfiguration(networkConfiguration -> networkConfiguration
+                        .awsvpcConfiguration(vpcConfiguration -> vpcConfiguration
+                                .subnets(properties.getList(SUBNETS))
+                                .securityGroups(properties.getList(ECS_SECURITY_GROUPS))))
+                .overrides(overrides -> overrides
+                        .containerOverrides(ContainerOverride.builder()
+                                .name(containerName)
+                                .command(args)
+                                .build()))
+                .propagateTags(PropagateTags.TASK_DEFINITION)
+                .platformVersion(properties.get(FARGATE_VERSION))
+                .build();
         RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate);
     }
 }

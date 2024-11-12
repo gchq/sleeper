@@ -17,7 +17,7 @@ package sleeper.systemtest.configuration;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstanceProperty;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

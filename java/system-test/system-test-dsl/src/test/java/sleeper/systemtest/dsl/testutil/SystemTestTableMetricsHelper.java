@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableMetricsHelper {
 

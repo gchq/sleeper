@@ -1,0 +1,91 @@
+########################################################################################
+#                              System Test Properties                                  #
+########################################################################################
+
+# Test runs will use a copy of this file with the same name but without `.template` on the end.
+# Please do not edit the template. If you do not create the copy it will be created automatically.
+
+# The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', or 'generate_only'.
+# Direct means that the data is written directly using an ingest coordinator.
+# Queue means that the data is written to a Parquet file and an ingest job is created. This is posted to the queue
+# configured by the property `sleeper.systemtest.ingest.queue`.
+# Batcher means that the data is written to a Parquet file and posted to the ingest batcher. This will be processed
+# based on the table properties under `sleeper.table.ingest.batcher`. These are defaulted based on instance properties
+# under `sleeper.default.ingest.batcher`.
+# Generate only means that the data is written to a Parquet file in the system test bucket, but the file is not
+# ingested. The ingest will need to be performed manually in a separate step.
+sleeper.systemtest.ingest.mode=direct
+
+# Which queue to use when using the 'queue' ingest mode.
+# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
+# bulk_import_emr_serverless]
+sleeper.systemtest.ingest.queue=standard_ingest
+
+# The number of containers that write random data
+sleeper.systemtest.writers=11
+
+# The number of ingests to run for each writer
+sleeper.systemtest.ingests.per.writer=1
+
+# The number of random records that each ingest should write
+sleeper.systemtest.records.per.ingest=40000000
+
+########################################################################################
+#                             Sleeper Instance Properties                              #
+########################################################################################
+
+# Logging level for sleeper classes
+sleeper.logging.level=debug
+
+# The optional stacks to deploy.
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,AthenaStack,EmrBulkImportStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack
+
+# Whether to keep the sleeper table bucket, Dynamo tables related to tables and query results bucket or not.
+sleeper.retain.infra.after.destroy=false
+
+# How often partition splitting should happen
+# This has been reduced to 2 minutes for testing purposes
+sleeper.partition.splitting.period.minutes=2
+
+# How often the garbage collector should run
+# This has been reduced to 5 minutes for testing purposes
+sleeper.gc.period.minutes=5
+
+# Specifies the minimum total file size required for an ingest job to be batched and sent. An ingest
+# job will be created if the batcher runs while this much data is waiting, and the minimum number of
+# files is also met.
+sleeper.default.ingest.batcher.job.min.size=1G
+
+# Specifies the maximum total file size for a job in the ingest batcher. If more data is waiting than
+# this, it will be split into multiple jobs. If a single file exceeds this, it will still be ingested
+# in its own job. It's also possible some data may be left for a future run of the batcher if some
+# recent files overflow the size of a job but aren't enough to create a job on their own.
+sleeper.default.ingest.batcher.job.max.size=5G
+
+# Specifies the minimum number of files for a job in the ingest batcher. An ingest job will be created
+# if the batcher runs while this many files are waiting, and the minimum size of files is also met.
+sleeper.default.ingest.batcher.job.min.files=1
+
+# Specifies the maximum number of files for a job in the ingest batcher. If more files are waiting
+# than this, they will be split into multiple jobs. It's possible some data may be left for a future
+# run of the batcher if some recent files overflow the size of a job but aren't enough to create a job
+# on their own.
+sleeper.default.ingest.batcher.job.max.files=100
+
+# Specifies the maximum time in seconds that a file can be held in the batcher before it will be
+# included in an ingest job. When any file has been waiting for longer than this, jobs will be created
+# for all the currently held files, even if other criteria for a batch are not met.
+sleeper.default.ingest.batcher.file.max.age.seconds=300
+
+# Specifies the target ingest queue where batched jobs are sent.
+# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
+# bulk_import_emr_serverless]
+sleeper.default.ingest.batcher.ingest.queue=standard_ingest
+
+# The time in minutes that the tracking information is retained for a file before the records of its
+# ingest are deleted (eg. which ingest job it was assigned to, the time this occurred, the size of the
+# file).
+# The expiry time is fixed when a file is saved to the store, so changing this will only affect new
+# data.
+# Defaults to 1 week.
+sleeper.default.ingest.batcher.file.tracking.ttl.minutes=10080

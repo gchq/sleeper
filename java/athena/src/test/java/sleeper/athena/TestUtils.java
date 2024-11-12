@@ -22,18 +22,19 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.IngestFactory;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -45,16 +46,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 
 public class TestUtils {
 
@@ -71,7 +72,7 @@ public class TestUtils {
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3Client);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
@@ -83,7 +84,7 @@ public class TestUtils {
             Configuration configuration, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
         tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
-        S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
+        S3TableProperties.createStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
             StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);

@@ -27,23 +27,23 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionRunner;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
-import sleeper.configuration.TableUtils;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.io.parquet.record.RecordReadSupport;
+import sleeper.core.table.TableFilePaths;
+import sleeper.parquet.record.ParquetReaderIterator;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.RecordReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -57,13 +57,13 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
-import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class RustCompactionRunnerLocalStackIT {
@@ -106,13 +106,7 @@ public class RustCompactionRunnerLocalStackIT {
         assertThat(readDataFile(schema, job.getOutputFile()))
                 .containsExactly(record1, record2);
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                .isEqualTo(SketchesDeciles.builder()
-                        .field("key", deciles -> deciles
-                                .min("record-1").max("record-2")
-                                .rank(0.1, "record-1").rank(0.2, "record-1").rank(0.3, "record-1")
-                                .rank(0.4, "record-1").rank(0.5, "record-2").rank(0.6, "record-2")
-                                .rank(0.7, "record-2").rank(0.8, "record-2").rank(0.9, "record-2"))
-                        .build());
+                .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
     }
 
     protected CompactionJobFactory compactionFactory() {
@@ -155,8 +149,8 @@ public class RustCompactionRunnerLocalStackIT {
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
-        String prefix = TableUtils.buildDataFilePathPrefix(instanceProperties, tableProperties);
-        return TableUtils.constructPartitionParquetFilePath(prefix, partitionId, filename);
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, filename);
     }
 
     private List<Record> readDataFile(Schema schema, String filename) throws IOException {

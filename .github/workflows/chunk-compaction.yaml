@@ -19,6 +19,7 @@ on:
       - 'java/splitter/splitter-core/**'
       - 'java/splitter/splitter-lambda/**'
       - 'java/compaction/compaction-rust/**'
+      - 'java/garbage-collector/**'
       - 'java/common/common-task/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/ingest/ingest-runner/**'
@@ -32,6 +33,10 @@ on:
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
       - 'java/common/dynamodb-test/**'
+      - 'java/bulk-export/pom.xml'
+      - 'java/bulk-export/bulk-export-core/**'
+      - 'java/bulk-export/bulk-export-runner/**'
+      - 'java/bulk-export/bulk-export-starter/**'
 
 jobs:
   chunk-workflow:

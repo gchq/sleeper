@@ -16,8 +16,7 @@
 
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
-import com.amazonaws.services.ecr.model.Repository;
+import software.amazon.awssdk.services.ecr.model.Repository;
 import software.amazon.awssdk.services.s3.model.Bucket;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
@@ -41,7 +40,7 @@ public class CleanUpDeletedSleeperInstances {
 
     private final TearDownClients clients;
     private final TearDownInstance.Builder tearDownBuilder;
-    private final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration();
+    private final DockerImageConfiguration dockerImageConfiguration = DockerImageConfiguration.getDefault();
 
     public CleanUpDeletedSleeperInstances(TearDownClients clients, TearDownInstance.Builder tearDownBuilder) {
         this.clients = clients;
@@ -74,11 +73,9 @@ public class CleanUpDeletedSleeperInstances {
     }
 
     private Stream<String> allRepositoryNames() {
-        return Stream.iterate(clients.getEcr().describeRepositories(new DescribeRepositoriesRequest()),
-                result -> result.getNextToken() != null,
-                result -> clients.getEcr().describeRepositories(new DescribeRepositoriesRequest().withNextToken(result.getNextToken())))
-                .flatMap(result -> result.getRepositories().stream())
-                .map(Repository::getRepositoryName);
+        return clients.getEcr().describeRepositoriesPaginator().stream()
+                .flatMap(result -> result.repositories().stream())
+                .map(Repository::repositoryName);
     }
 
     public static Stream<String> instanceIdsByJarsBuckets(Stream<String> bucketNames) {

@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -24,6 +23,7 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -49,7 +49,7 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (SplitFileReferenceRequest request : requests) {
-            AllReferencesToAFile file = stateStoreFiles.file(request.getFilename())
+            StateStoreFile file = stateStoreFiles.file(request.getFilename())
                     .orElseThrow(() -> new FileNotFoundException(request.getFilename()));
             FileReference oldReference = file.getReferenceForPartitionId(request.getFromPartitionId())
                     .orElseThrow(() -> new FileReferenceNotFoundException(request.getOldReference()));

@@ -31,7 +31,7 @@ public class GetChunkConfigTest {
     @Test
     public void shouldGetChunkProjectList() {
         assertThat(GetChunkConfig.get(CHUNKS.getById("bulk-import"), "maven_project_list"))
-                .isEqualTo("bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
+                .isEqualTo("bulk-import/bulk-import-core,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
     }
 
     @Test

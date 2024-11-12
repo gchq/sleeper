@@ -16,15 +16,15 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.InMemoryTableProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.statestore.FixedStateStoreProvider;
-import sleeper.configuration.statestore.StateStoreProvider;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.query.runner.recordretrieval.InMemoryDataStore;
@@ -34,9 +34,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreUninitialised;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
 public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
 
@@ -93,7 +93,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         addInstanceIfNotPresent(instanceId);
-        return new FixedStateStoreProvider(stateStoresByInstanceId.get(instanceId));
+        return FixedStateStoreProvider.byTableName(stateStoresByInstanceId.get(instanceId));
     }
 
     @Override

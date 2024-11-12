@@ -15,8 +15,8 @@
  */
 package sleeper.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -24,6 +24,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
@@ -43,6 +44,7 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.InstanceRolesStack;
 import sleeper.cdk.stack.KeepLambdaWarmStack;
+import sleeper.cdk.stack.LoggingStack;
 import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
@@ -67,24 +69,27 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.OptionalStack;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  */
 public class SleeperCdkApp extends Stack {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCdkApp.class);
+
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
@@ -117,15 +122,23 @@ public class SleeperCdkApp extends Stack {
                 .collect(toUnmodifiableSet());
 
         List<IMetric> errorMetrics = new ArrayList<>();
+
+        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties, jars);
+        if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
+            new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+        } else {
+            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
+                    + "in very significant NAT charges.");
+        }
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
@@ -136,15 +149,15 @@ public class SleeperCdkApp extends Stack {
                 instanceProperties, policiesStack).getResources();
         CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
                 instanceProperties, policiesStack).getResources();
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
-                configBucketStack, tableIndexStack,
+                loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestStatusStore, compactionStatusStore,
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
-                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
@@ -161,7 +174,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -344,16 +357,15 @@ public class SleeperCdkApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::new, app);
+        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, app);
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
-            BuiltJars jars = new BuiltJars(s3Client, instanceProperties.get(JARS_BUCKET));
+        try (S3Client s3Client = S3Client.create()) {
+            BuiltJars jars = BuiltJars.from(s3Client, instanceProperties);
 
             new SleeperCdkApp(app, id, StackProps.builder()
                     .stackName(id)
@@ -362,8 +374,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars).create();
 
             app.synth();
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

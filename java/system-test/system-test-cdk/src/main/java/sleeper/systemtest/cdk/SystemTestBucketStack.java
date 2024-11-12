@@ -19,55 +19,70 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.util.AutoDeleteS3Objects;
+import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
 import java.util.Locale;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestBucketStack extends NestedStack {
 
     private final IBucket bucket;
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = createBucket("SystemTestBucket", bucketName);
+        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars);
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars) {
         super(scope, id);
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        bucket = createBucket("SystemTestIngestBucket", bucketName);
+        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars);
         Utils.addStackTagIfSet(this, properties);
     }
 
-    private IBucket createBucket(String id, String bucketName) {
-        return Bucket.Builder.create(this, id)
+    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars) {
+        IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
-                .autoDeleteObjects(true)
                 .build();
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket, bucketName,
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+                        .logGroupName(functionName)
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build(),
+                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+                        .logGroupName(functionName + "-provider")
+                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                        .build());
+        return bucket;
     }
 
     public IBucket getBucket() {

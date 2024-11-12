@@ -17,8 +17,8 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -28,9 +28,9 @@ import java.time.Period;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
+import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
