@@ -2,6 +2,7 @@
 
 #include <cudf/copying.hpp>
 #include <cudf/scalar/scalar.hpp>
+#include <cudf/utilities/error.hpp>
 #include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 

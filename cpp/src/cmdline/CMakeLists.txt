@@ -24,7 +24,9 @@ add_executable(
   data_sink.cpp
   ../../include/cmdline/data_sink.hpp
   lub.cpp
-  ../../include/cmdline/lub.hpp)
+  ../../include/cmdline/lub.hpp
+  slice.cpp
+  ../../include/cmdline/slice.hpp)
 target_link_system_libraries(
   chunk_reader
   PRIVATE

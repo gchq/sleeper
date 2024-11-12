@@ -10,6 +10,7 @@
 #include <cudf/search.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <cudf/utilities/error.hpp>
 #include <internal_use_only/config.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/owning_wrapper.hpp>
@@ -24,6 +25,7 @@
 #include "io/prefetch_source.hpp"
 #include "io/s3_utils.hpp"
 #include "lub.hpp"
+#include "slice.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -145,10 +147,23 @@ int main(int argc, char **argv) {
                 auto const lubTable = views[leastUpperBound].select({ 0 });
                 auto const needle = cudf::split(lubTable, { lubTable.num_rows() - 1 })[1];
 
-                // Find index of needle in each table
-                for (auto const &view : views) {
-                    std::unique_ptr<cudf::column> result = cudf::upper_bound(
+                // Split each table at the point of that needle
+                for (::size_t idx = 0; auto const &view : views) {
+                    // Find needle in each table view, table is "haystack"
+                    std::unique_ptr<cudf::column> splitPoint = cudf::upper_bound(
                       view.select({ 0 }), needle, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });
+                    CUDF_EXPECTS(splitPoint->size() == 1, "Split result should be single row");
+                    // Get this index back to host
+                    std::unique_ptr<cudf::scalar> splitIndex = cudf::get_element(*splitPoint, 0);
+                    int const splitPos = convertInteger(*splitIndex);
+                    // Now split this table at that index
+                    std::vector<cudf::table_view> splitTables = cudf::split(view, { splitPos });
+                    CUDF_EXPECTS(splitTables.size() == 2, "Should be two tables from split");
+                    SPDLOG_INFO("File {:d} Table size after split {:d} and {:d}",
+                      idx,
+                      splitTables[0].num_rows(),
+                      splitTables[1].num_rows());
+                    idx++;
                 }
 
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
