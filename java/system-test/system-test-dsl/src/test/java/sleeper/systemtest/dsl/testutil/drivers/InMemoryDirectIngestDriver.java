@@ -59,7 +59,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
             StateStore stateStore, AddFilesToStateStore addFilesToStateStore, Iterator<Record> records) {
         try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(InMemoryRecordBatch::new)
+                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
                 .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, sketches, instanceProperties, tableProperties))
                 .stateStore(stateStore)
                 .addFilesToStateStore(addFilesToStateStore)

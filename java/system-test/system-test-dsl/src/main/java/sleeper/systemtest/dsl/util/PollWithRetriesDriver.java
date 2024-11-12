@@ -22,18 +22,20 @@ import java.time.Duration;
 @FunctionalInterface
 public interface PollWithRetriesDriver {
 
-    PollWithRetries pollWithIntervalAndTimeout(Duration pollInterval, Duration timeout);
+    PollWithRetries poll(PollWithRetries config);
+
+    default PollWithRetries pollWithIntervalAndTimeout(Duration pollInterval, Duration timeout) {
+        return poll(PollWithRetries.intervalAndPollingTimeout(pollInterval, timeout));
+    }
 
     static PollWithRetriesDriver realWaits() {
-        return PollWithRetries::intervalAndPollingTimeout;
+        return poll -> poll;
     }
 
     static PollWithRetriesDriver noWaits() {
-        return (pollInterval, timeout) -> PollWithRetries.builder()
-                .pollIntervalAndTimeout(pollInterval, timeout)
+        return poll -> poll.toBuilder()
                 .sleepInInterval(millis -> { // Do not really wait
-                })
-                .build();
+                }).build();
 
     }
 
