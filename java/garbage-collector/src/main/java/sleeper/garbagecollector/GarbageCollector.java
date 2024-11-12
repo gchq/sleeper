@@ -30,6 +30,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -193,11 +194,11 @@ public class GarbageCollector {
         void sendCommit(GarbageCollectionCommitRequest commitRequest);
     }
 
-    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
+    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs, StateStoreCommitRequestInS3Uploader s3Uploader) {
         GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(serDe.toJson(request))
+                .withMessageBody(s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request)))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }

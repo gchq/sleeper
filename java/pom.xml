@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.26.0-SNAPSHOT</version>
+    <version>0.26.0</version>
 
     <modules>
         <module>core</module>
@@ -97,7 +97,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
         <protobuf.version>4.28.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>9.45</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>9.46</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -124,7 +124,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.12</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.29.8</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.29.10</aws-java-sdk-v2.version>
         <aws-crt.version>0.33.0</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>

@@ -13,7 +13,7 @@
 # limitations under the License.
 [package]
 name = "compaction"
-version = "0.26.0-SNAPSHOT"
+version = "0.26.0"
 edition = "2021"
 authors = ["GCHQ"]
 rust-version = "1.77"

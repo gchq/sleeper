@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -32,6 +32,10 @@ import java.util.List;
 public class PartitionsTestHelper {
 
     private PartitionsTestHelper() {
+    }
+
+    public static PartitionTree create2StringPartitions(SleeperSystemTest sleeper) {
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "2-partitions.txt");
     }
 
     public static PartitionTree create128StringPartitions(SleeperSystemTest sleeper) {

@@ -15,6 +15,8 @@
  */
 package sleeper.cdk;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -80,11 +82,14 @@ import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  */
 public class SleeperCdkApp extends Stack {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCdkApp.class);
+
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
@@ -121,7 +126,12 @@ public class SleeperCdkApp extends Stack {
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
 
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+        if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
+            new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+        } else {
+            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
+                    + "in very significant NAT charges.");
+        }
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
