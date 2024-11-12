@@ -34,9 +34,9 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONL
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.create512StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
 @SystemTest
 @Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.

@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Instant;
 import java.util.Map;
@@ -43,6 +44,7 @@ public class SystemTestStateStore {
     private final StateStoreCommitterDriver driver;
     private final StateStoreCommitterLogsDriver logsDriver;
     private final SnapshotsDriver snapshotsDriver;
+    private final PollWithRetriesDriver pollDriver;
 
     public SystemTestStateStore(SystemTestContext context) {
         this.context = context;
@@ -50,10 +52,11 @@ public class SystemTestStateStore {
         driver = adminDrivers.stateStoreCommitter(context);
         logsDriver = adminDrivers.stateStoreCommitterLogs(context);
         snapshotsDriver = adminDrivers.snapshots();
+        pollDriver = adminDrivers.pollWithRetries();
     }
 
     public SystemTestStateStoreFakeCommits fakeCommits() {
-        return new SystemTestStateStoreFakeCommits(context, driver, logsDriver);
+        return new SystemTestStateStoreFakeCommits(context, driver, logsDriver, pollDriver);
     }
 
     public double commitsPerSecondForTable() {
