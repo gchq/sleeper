@@ -24,7 +24,9 @@ struct PrefetchingSource final : public cudf::io::datasource
     void prefetch(::size_t const offset, ::size_t const len);
 
   public:
-    PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept;
+    PrefetchingSource(std::string_view path,
+      std::unique_ptr<cudf::io::datasource> source,
+      bool prefetch = true) noexcept;
 
     std::unique_ptr<cudf::io::datasource::buffer> host_read(::size_t offset, ::size_t size) override;
 

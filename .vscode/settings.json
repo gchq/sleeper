@@ -74,7 +74,8 @@
     "memory": "cpp",
     "cstddef": "cpp",
     "bitset": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "tuple": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

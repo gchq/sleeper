@@ -14,8 +14,10 @@ void PrefetchingSource::prefetch(::size_t const offset, ::size_t const len) {
     }
 }
 
-PrefetchingSource::PrefetchingSource(std::string_view path, std::unique_ptr<cudf::io::datasource> source) noexcept
-  : enablePrefetch(true), src(std::move(source)), file(path) {}
+PrefetchingSource::PrefetchingSource(std::string_view path,
+  std::unique_ptr<cudf::io::datasource> source,
+  bool prefetch) noexcept
+  : enablePrefetch(prefetch), src(std::move(source)), file(path) {}
 
 std::unique_ptr<cudf::io::datasource::buffer> PrefetchingSource::host_read(::size_t offset, ::size_t size) {
     prefetch(offset, size);

@@ -38,13 +38,6 @@
       });
 }
 
-::size_t calcTotalRows(auto const &readers) noexcept {
-    return std::accumulate(readers.cbegin(), readers.cend(), ::size_t{ 0 }, [](auto &&acc, auto const &item) {
-        auto const rows = cudf::io::read_parquet_metadata(cudf::io::source_info(&*std::get<0>(item))).num_rows();
-        return acc + rows;
-    });
-}
-
 [[nodiscard]] inline std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept {
     return std::chrono::steady_clock::now();
 }
@@ -59,9 +52,9 @@ int main(int argc, char **argv) {
     app.add_option("output", outputFile, "Output path for Parquet file")->required();
     std::vector<std::string> inputFiles;
     app.add_option("input", inputFiles, "Input Parquet files")->required()->expected(1, -1);
-    std::size_t chunkReadLimit{ 1000 };
+    std::size_t chunkReadLimit{ 1024 };
     app.add_option("-c,--chunk-read-limit", chunkReadLimit, "cuDF Parquet reader chunk read limit in MiB");
-    std::size_t passReadLimit{ 1000 };
+    std::size_t passReadLimit{ 1024 };
     app.add_option("-p,--pass-read-limit", passReadLimit, "cuDF Parquet reader pass read limit in MiB");
     CLI11_PARSE(app, argc, argv);// NOLINT
 
@@ -76,7 +69,7 @@ int main(int argc, char **argv) {
           rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, rmm::percent_of_free_device_memory(95));
         rmm::mr::set_current_device_resource(mr.get());
 
-        // Make readers
+        // Container for all data sources and Parquet readers
         std::vector<std::tuple<std::unique_ptr<cudf::io::datasource>,
           std::unique_ptr<cudf::io::chunked_parquet_reader>,
           ::size_t,
@@ -84,9 +77,13 @@ int main(int argc, char **argv) {
           readers;
         readers.reserve(inputFiles.size());
 
+        // Make readers and find total row count
+        // We create the data source and disable prefetching while we read the footer
+        ::size_t totalRows = 0;
         for (auto const &f : inputFiles) {
-            auto source = std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f));
-            source->prefetch(false);
+            auto source =
+              std::make_unique<gpu_compact::io::PrefetchingSource>(f, cudf::io::datasource::create(f), false);
+            totalRows += cudf::io::read_parquet_metadata(cudf::io::source_info(source.get())).num_rows();
             auto reader_builder = cudf::io::parquet_reader_options::builder(cudf::io::source_info(&*source));
             readers.emplace_back(std::move(source),
               std::make_unique<cudf::io::chunked_parquet_reader>(
@@ -96,8 +93,6 @@ int main(int argc, char **argv) {
             // Enable pre-fetching after footer read
             dynamic_cast<gpu_compact::io::PrefetchingSource *>(std::get<0>(readers.back()).get())->prefetch(true);
         }
-
-        auto const totalRows = calcTotalRows(readers);
 
         // Make writer
         SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
