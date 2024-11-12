@@ -1,13 +1,12 @@
 #include "configure_logging.hpp"
 
 #include <CLI/CLI.hpp>// NOLINT
-#include <cudf/column/column.hpp>
+
 #include <cudf/copying.hpp>
 #include <cudf/io/datasource.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/merge.hpp>
-#include <cudf/search.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <cudf/utilities/error.hpp>
@@ -141,30 +140,11 @@ int main(int argc, char **argv) {
 
                 // Find the least upper bound in sort column across these tables
                 auto const leastUpperBound = findLeastUpperBound(views, 0);
-                SPDLOG_INFO("Found LUB on file no {:d}", leastUpperBound);
 
                 // Now take search "needle" from last row from of table with LUB
                 auto const lubTable = views[leastUpperBound].select({ 0 });
                 auto const needle = cudf::split(lubTable, { lubTable.num_rows() - 1 })[1];
-
-                // Split each table at the point of that needle
-                for (::size_t idx = 0; auto const &view : views) {
-                    // Find needle in each table view, table is "haystack"
-                    std::unique_ptr<cudf::column> splitPoint = cudf::upper_bound(
-                      view.select({ 0 }), needle, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });
-                    CUDF_EXPECTS(splitPoint->size() == 1, "Split result should be single row");
-                    // Get this index back to host
-                    std::unique_ptr<cudf::scalar> splitIndex = cudf::get_element(*splitPoint, 0);
-                    int const splitPos = convertInteger(*splitIndex);
-                    // Now split this table at that index
-                    std::vector<cudf::table_view> splitTables = cudf::split(view, { splitPos });
-                    CUDF_EXPECTS(splitTables.size() == 2, "Should be two tables from split");
-                    SPDLOG_INFO("File {:d} Table size after split {:d} and {:d}",
-                      idx,
-                      splitTables[0].num_rows(),
-                      splitTables[1].num_rows());
-                    idx++;
-                }
+                auto const tableVectors = splitAtNeedle(needle, views);
 
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });

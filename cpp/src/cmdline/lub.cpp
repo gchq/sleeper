@@ -5,8 +5,8 @@
 #include <cudf/utilities/error.hpp>
 #include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
+#include <spdlog/spdlog.h>
 
-#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -30,31 +30,31 @@
             if constexpr (std::is_same_v<T, cudf::string_view>) {
                 auto const lub = lub_ptr->to_string();
                 auto const last = lastElement_ptr->to_string();
-                std::cout << "Current least bound '" << lub << "' testing '" << last << "' ";
                 // Perform string compare
                 if (last < lub) {
                     currentLub = std::move(lastElement);
                     lubTableIndex = idx;
-                    std::cout << "is lower so updating bound";
+                    SPDLOG_INFO("Current least bound '{}' candidate '{}' is lower", lub, last);
+                } else {
+                    SPDLOG_INFO("Current least bound '{}' candidate '{}'", lub, last);
                 }
-
             } else if constexpr (cudf::is_integral_not_bool<T>()) {
                 auto const lub = lub_ptr->value();
                 auto const last = lastElement_ptr->value();
-                std::cout << "Current least bound '" << lub << "' testing '" << last << "' ";
                 // Perform numeric compare
                 if (std::cmp_less(last, lub)) {
                     currentLub = std::move(lastElement);
                     lubTableIndex = idx;
-                    std::cout << "is lower so updating bound";
+                    SPDLOG_INFO("Current least bound '{}' candidate '{}' is lower", lub, last);
+                } else {
+                    SPDLOG_INFO("Current least bound '{}' candidate '{}'", lub, last);
                 }
             } else {
                 CUDF_FAIL("Column type not supported");
             }
-
-            std::cout << std::endl;
             idx++;
         }
+        SPDLOG_INFO("Found least upper bound on file no {:d}", lubTableIndex);
         return lubTableIndex;
     };
 
