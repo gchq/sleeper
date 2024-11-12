@@ -70,6 +70,8 @@ Bugfixes:
 - Prevented a case where compaction on EC2 occasionally did not deploy as a needed permission was deployed after the autoscaling group
 - Avoided retrying invalid compaction jobs where the file references have been reassigned or deleted
 - Avoided retrying compaction jobs for a Sleeper table which no longer exists
+- Fixed deploying an instance without checking for endpoints in the VPC
+- Fixed garbage collection deleting too many files to fit in an SQS message
 
 
 ## Version 0.25.0
