@@ -30,7 +30,7 @@
                 auto const lub = lub_ptr->to_string();
                 auto const last = lastElement_ptr->to_string();
                 std::cout << "Current least bound '" << lub << "' testing '" << last << "' ";
-                // perform string compare
+                // Perform string compare
                 if (last < lub) {
                     currentLub = std::move(lastElement);
                     lubTableIndex = idx;
@@ -41,7 +41,7 @@
                 auto const lub = lub_ptr->value();
                 auto const last = lastElement_ptr->value();
                 std::cout << "Current least bound '" << lub << "' testing '" << last << "' ";
-                // perform numeric compare
+                // Perform numeric compare
                 if (std::cmp_less(last, lub)) {
                     currentLub = std::move(lastElement);
                     lubTableIndex = idx;

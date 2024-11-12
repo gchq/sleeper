@@ -1,10 +1,13 @@
 #include "configure_logging.hpp"
 
 #include <CLI/CLI.hpp>// NOLINT
+#include <cudf/column/column.hpp>
+#include <cudf/copying.hpp>
 #include <cudf/io/datasource.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/merge.hpp>
+#include <cudf/search.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <internal_use_only/config.hpp>
@@ -134,9 +137,19 @@ int main(int argc, char **argv) {
                 views.reserve(tables.size());
                 for (auto const &table : tables) { views.push_back(*table.tbl); }
 
-                // Find the least upper bound across these tables
-                auto const leastUpperBound = findLeastUpperBound(views);
-                std::cout << "Found LUB on file no " << leastUpperBound << '\n';
+                // Find the least upper bound in sort column across these tables
+                auto const leastUpperBound = findLeastUpperBound(views, 0);
+                SPDLOG_INFO("Found LUB on file no {:d}", leastUpperBound);
+
+                // Now take search "needle" from last row from of table with LUB
+                auto const lubTable = views[leastUpperBound].select({ 0 });
+                auto const needle = cudf::split(lubTable, { lubTable.num_rows() - 1 })[1];
+
+                // Find index of needle in each table
+                for (auto const &view : views) {
+                    std::unique_ptr<cudf::column> result = cudf::upper_bound(
+                      view.select({ 0 }), needle, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });
+                }
 
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
