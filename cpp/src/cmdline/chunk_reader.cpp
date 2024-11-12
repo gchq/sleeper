@@ -140,7 +140,8 @@ int main(int argc, char **argv) {
                 for (auto const &table : tables) { views.push_back(*table.tbl); }
 
                 // Find the least upper bound across these tables
-                findLeastUpperBound(views);
+                auto const leastUpperBound = findLeastUpperBound(views);
+                std::cout << "Found LUB on file no " << leastUpperBound << '\n';
 
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
                 auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
