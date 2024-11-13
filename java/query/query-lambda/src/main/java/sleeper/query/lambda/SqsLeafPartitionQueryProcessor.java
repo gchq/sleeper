@@ -42,6 +42,7 @@ import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
@@ -91,7 +92,8 @@ public class SqsLeafPartitionQueryProcessor {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
             queryTrackers.queryInProgress(leafPartitionQuery);
             Configuration conf = getConfiguration(tableProperties);
-            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
+            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
+                    objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
             CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {

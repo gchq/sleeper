@@ -15,7 +15,6 @@
  */
 package sleeper.query.runner.recordretrieval;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -60,14 +58,6 @@ public class LeafPartitionQueryExecutor {
         this.objectFactory = objectFactory;
         this.tableProperties = tableProperties;
         this.retriever = retriever;
-    }
-
-    public LeafPartitionQueryExecutor(
-            ExecutorService executorService,
-            ObjectFactory objectFactory,
-            Configuration conf,
-            TableProperties tableProperties) {
-        this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
