@@ -42,14 +42,19 @@
       });
 }
 
-[[nodiscard]] inline std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept {
+[[nodiscard]] std::chrono::time_point<std::chrono::steady_clock> timestamp() noexcept {
     return std::chrono::steady_clock::now();
+}
+
+[[nodiscard]] cudf::io::table_metadata grabMetaData(std::string const &file) {
+    auto opts = cudf::io::parquet_reader_options::builder(cudf::io::source_info(file)).build();
+    return cudf::io::read_parquet(opts).metadata;
 }
 
 int main(int argc, char **argv) {
     configure_logging();
     // NOLINTNEXTLINE
-    CLI::App app{ "Simple program to test spooling through Parquet files in chunks with cuDF", "chunk_reader" };
+    CLI::App app{ "Simple program to test chunking compaction algorithm with cuDF", "chunk_reader" };
     app.set_version_flag("--version", std::string{ gpu_compact::cmake::project_version });
 
     std::string outputFile;
@@ -98,8 +103,10 @@ int main(int argc, char **argv) {
             dynamic_cast<gpu_compact::io::PrefetchingSource *>(std::get<0>(readers.back()).get())->prefetch(true);
         }
 
+        // Grab metadata for schema from first file
+        auto const tableMetadata = grabMetaData(inputFiles[0]);
         // Make writer
-        SinkInfoDetails sinkDetails = make_writer(outputFile, s3client);
+        SinkInfoDetails sinkDetails = make_writer(outputFile, tableMetadata, s3client);
         auto &writer = *sinkDetails.writer;
 
         SPDLOG_INFO("Start reading files");

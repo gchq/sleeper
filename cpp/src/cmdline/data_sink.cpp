@@ -13,9 +13,11 @@
     }
 }
 
-cudf::io::chunked_parquet_writer_options_builder write_opts(cudf::io::sink_info const &sink) noexcept {
+cudf::io::chunked_parquet_writer_options_builder write_opts(cudf::io::sink_info const &sink,
+  cudf::io::table_metadata const &metadata) noexcept {
     return cudf::io::chunked_parquet_writer_options::builder(sink)
       .compression(cudf::io::compression_type::ZSTD)
+      .metadata(cudf::io::table_input_metadata{ metadata })
       .row_group_size_bytes(65 * 1'048'576)
       .row_group_size_rows(1'000'000)
       .max_page_size_bytes(512 * 1024)
@@ -25,9 +27,11 @@ cudf::io::chunked_parquet_writer_options_builder write_opts(cudf::io::sink_info 
       .dictionary_policy(cudf::io::dictionary_policy::ADAPTIVE);
 }
 
-[[no_discard]] SinkInfoDetails make_writer(std::string const &path, std::shared_ptr<Aws::S3::S3Client> &s3client) {
+[[no_discard]] SinkInfoDetails make_writer(std::string const &path,
+  cudf::io::table_metadata const &metadata,
+  std::shared_ptr<Aws::S3::S3Client> &s3client) {
     auto data_sink = make_data_sink(path, s3client);
     cudf::io::sink_info sink{ &*data_sink };
-    auto wopts = write_opts(sink);
+    auto wopts = write_opts(sink, metadata);
     return { sink, std::move(data_sink), std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build()) };
 }
