@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
@@ -81,7 +82,7 @@ public class ECSIngestTaskRunner {
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
-            ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
             String localDir = "/mnt/scratch";
             String taskId = UUID.randomUUID().toString();
 

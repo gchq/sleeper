@@ -226,7 +226,7 @@ public class CreateCompactionJobsIT {
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
+        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE, Mode.STRATEGY,

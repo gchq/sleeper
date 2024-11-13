@@ -15,11 +15,8 @@
  */
 package sleeper.configuration.jars;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sleeper.core.properties.instance.InstanceProperties;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -31,12 +28,8 @@ public class ObjectFactory {
 
     private final ClassLoader classLoader;
 
-    public ObjectFactory(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) throws ObjectFactoryException {
-        this.classLoader = new S3UserJarsLoader(instanceProperties, s3Client, localDir).getClassLoader();
-    }
-
-    private ObjectFactory() {
-        classLoader = ObjectFactory.class.getClassLoader();
+    public ObjectFactory(ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
     /**
@@ -45,7 +38,7 @@ public class ObjectFactory {
      * @return the instance
      */
     public static ObjectFactory noUserJars() {
-        return new ObjectFactory();
+        return new ObjectFactory(ObjectFactory.class.getClassLoader());
     }
 
     /**

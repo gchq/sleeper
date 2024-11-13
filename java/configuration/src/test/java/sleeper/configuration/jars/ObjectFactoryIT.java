@@ -126,7 +126,7 @@ public class ObjectFactoryIT {
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
+        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, createTempDirectory(folder, null).toString()).buildObjectFactory();
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");

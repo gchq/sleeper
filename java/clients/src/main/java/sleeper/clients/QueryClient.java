@@ -25,6 +25,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -72,7 +73,7 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
-                new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 

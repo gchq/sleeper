@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -75,7 +76,7 @@ public class SqsQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
         // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
         // so use the standard Configuration rather than the one for query lambdas which is specific to the table.

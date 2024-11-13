@@ -49,12 +49,16 @@ public class S3UserJarsLoader {
     }
 
     /**
-     * Builds a class loader to load from either the current classpath, or the specified user jars.
+     * Builds an object factory to load from either the current classpath, or the specified user jars.
      *
-     * @return                        the class loader
+     * @return                        the object factory
      * @throws ObjectFactoryException if we could not build a URL to reference the local file a jar was downloaded to
      */
-    public ClassLoader getClassLoader() throws ObjectFactoryException {
+    public ObjectFactory buildObjectFactory() throws ObjectFactoryException {
+        return new ObjectFactory(getClassLoader());
+    }
+
+    private ClassLoader getClassLoader() throws ObjectFactoryException {
         List<String> userJarsFiles = instanceProperties.getList(CommonProperty.USER_JARS);
         if (null != userJarsFiles) {
             try {

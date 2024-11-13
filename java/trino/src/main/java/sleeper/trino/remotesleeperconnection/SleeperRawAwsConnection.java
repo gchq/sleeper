@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -144,7 +145,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         }
 
         // Member variables related to queries via direct statestore/S3
-        this.objectFactory = new ObjectFactory(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory());
+        this.objectFactory = new S3UserJarsLoader(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory()).buildObjectFactory();
         this.executorService = Executors.newFixedThreadPool(NO_OF_EXECUTOR_THREADS);
 
         // We store a time-limited cache for the table partition structure, to support transactions.
