@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
@@ -22,8 +22,6 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
-import sleeper.query.core.recordretrieval.RecordRetrievalException;
 
 import java.util.Collection;
 import java.util.HashMap;
