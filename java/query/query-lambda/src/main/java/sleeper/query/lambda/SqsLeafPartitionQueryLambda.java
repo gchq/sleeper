@@ -32,7 +32,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.LeafPartitionQueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;

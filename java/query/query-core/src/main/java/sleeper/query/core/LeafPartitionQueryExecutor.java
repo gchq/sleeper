@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +28,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.LeafPartitionRecordRetriever;
-import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
