@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.PartitionTree;
@@ -39,6 +38,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;

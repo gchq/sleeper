@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.io.File;
 import java.net.MalformedURLException;

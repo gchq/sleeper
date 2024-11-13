@@ -18,7 +18,6 @@ package sleeper.query.runner.recordretrieval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.partition.Partition;
@@ -28,6 +27,7 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.LeafPartitionRecordRetriever;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;

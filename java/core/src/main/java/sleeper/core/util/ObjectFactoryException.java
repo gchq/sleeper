@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.jars;
+package sleeper.core.util;
 
 /**
  * Thrown due to failures creating instances of a class that may be specified in an external user jar. This includes

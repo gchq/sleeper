@@ -26,7 +26,6 @@ import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
