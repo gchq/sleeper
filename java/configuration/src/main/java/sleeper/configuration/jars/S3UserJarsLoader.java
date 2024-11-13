@@ -60,16 +60,12 @@ public class S3UserJarsLoader {
 
     private ClassLoader getClassLoader() throws ObjectFactoryException {
         List<String> userJarsFiles = instanceProperties.getList(CommonProperty.USER_JARS);
-        if (null != userJarsFiles) {
-            try {
-                ClassLoader classLoader = getClassLoader(userJarsFiles);
-                LOGGER.info("Created ClassLoader from jars {}", userJarsFiles);
-                return classLoader;
-            } catch (MalformedURLException e) {
-                throw new ObjectFactoryException("MalformedURLException creating class loader from files " + userJarsFiles, e);
-            }
-        } else {
-            return this.getClass().getClassLoader();
+        try {
+            ClassLoader classLoader = getClassLoader(userJarsFiles);
+            LOGGER.info("Created ClassLoader from jars {}", userJarsFiles);
+            return classLoader;
+        } catch (MalformedURLException e) {
+            throw new ObjectFactoryException("MalformedURLException creating class loader from files " + userJarsFiles, e);
         }
     }
 
