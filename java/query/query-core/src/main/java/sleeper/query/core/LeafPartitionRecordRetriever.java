@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.LeafPartitionQuery;
 
 @FunctionalInterface

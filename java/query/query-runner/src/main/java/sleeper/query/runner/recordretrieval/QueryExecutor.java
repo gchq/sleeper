@@ -28,6 +28,7 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.query.core.LeafPartitionRecordRetriever;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;

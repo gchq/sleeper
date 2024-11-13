@@ -32,6 +32,7 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.RangeQueryUtils;
+import sleeper.query.core.LeafPartitionRecordRetriever;
 import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.LeafPartitionQuery;
 
