@@ -44,6 +44,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.query.core.model.Query;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 
@@ -86,8 +87,8 @@ public class DockerInstanceTestBase {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration())
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
+                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), getHadoopConfiguration()));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }

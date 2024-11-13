@@ -25,6 +25,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -82,8 +83,8 @@ public class DirectQueryDriver implements QueryDriver {
 
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         try {
-            QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                    stateStore, clients.createHadoopConf(), EXECUTOR_SERVICE);
+            QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
+                    new LeafPartitionRecordRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf()));
             executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
             return executor;
         } catch (StateStoreException e) {

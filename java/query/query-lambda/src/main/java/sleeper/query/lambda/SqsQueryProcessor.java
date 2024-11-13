@@ -38,6 +38,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
@@ -105,7 +106,8 @@ public class SqsQueryProcessor {
         QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
-            return new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
+            return new QueryExecutor(objectFactory, tableProperties, stateStore,
+                    new LeafPartitionRecordRetrieverImpl(executorService, conf));
         });
 
         queryExecutor.initIfNeeded(Instant.now());

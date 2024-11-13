@@ -48,6 +48,7 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
@@ -279,8 +280,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                executorService);
+                new LeafPartitionRecordRetrieverImpl(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -307,8 +308,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                this.executorService);
+                new LeafPartitionRecordRetrieverImpl(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.execute(query);
     }

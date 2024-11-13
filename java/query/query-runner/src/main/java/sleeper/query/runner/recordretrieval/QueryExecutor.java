@@ -15,7 +15,6 @@
  */
 package sleeper.query.runner.recordretrieval;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -65,10 +63,8 @@ public class QueryExecutor {
 
     public QueryExecutor(
             ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            Configuration configuration, ExecutorService executorService) {
-        this(objectFactory, stateStore, tableProperties,
-                new LeafPartitionRecordRetrieverImpl(executorService, configuration),
-                Instant.now());
+            LeafPartitionRecordRetriever recordRetriever) {
+        this(objectFactory, stateStore, tableProperties, recordRetriever, Instant.now());
     }
 
     public QueryExecutor(

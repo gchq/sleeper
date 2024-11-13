@@ -43,6 +43,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.recordretrieval.QueryExecutor;
 import sleeper.statestore.StateStoreFactory;
 
@@ -101,7 +102,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    conf, executorService);
+                    new LeafPartitionRecordRetrieverImpl(executorService, conf));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
