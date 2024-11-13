@@ -98,12 +98,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runner</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>statestore-committer-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
