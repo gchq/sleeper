@@ -4,6 +4,76 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.26.0
+
+This includes upgrades to Java, EMR, Spark and the AWS SDK, and improvements to the deployment process.
+
+Upgrades:
+- Fully upgraded from Java 11 to 17
+- Upgraded AWS EMR to 7.2.0
+- Upgraded Apache Spark to 3.5.1
+- Upgraded a number of AWS clients to Java SDK v2
+  - Kept some back to avoid breaking size limit of lambdas including the v1 SDK from Hadoop
+  - We use the Hadoop S3 integration to read/write Parquet files
+  - Prepared for further upgrades when EMR moves to a version of Hadoop using SDK v2
+
+Compaction:
+- Made it optional to wait for input files to be assigned to a compaction before beginning a job
+
+Bulk import:
+- Added logging via CloudWatch in bulk import on EKS
+
+State store:
+- Added ability to configure timeout of snapshot creation lambda
+- Changed configuration of snapshot creation frequency from minutes to seconds
+- Improved speed of reading transactions for files with many references
+
+Deployment:
+- Added ability to remove an optional stack and then redeploy it
+  - Log groups are retained and kept under management of the CDK separately
+- Added an option to deploy all lambdas in Docker containers
+- Added ability to deploy a Sleeper instance with no tables
+- Added ability to deploy a Sleeper instance with no optional stacks enabled
+- Adjustments for further control of log retention & permissions settings
+  - Replaced built-in CDK S3 object autodelete with a custom lambda
+- Added encryption of EMR EBS volumes
+- Added instance properties to set encryption keys in Athena and EMR
+- Automation in `sleeper environment` deployment
+  - Automated setup of nightly system tests
+  - Automatic start and shutdown of EC2 instances
+
+Reporting:
+- Added information to partitions status report
+  - Counts of files assigned to jobs
+  - Estimates of records on a partition if all files were compacted down the tree
+- Added percentiles to statistics in compaction jobs status report
+
+Documentation:
+- Added an overview of dependency conflicts
+- Added missing Javadoc to the configuration module
+- Further design for PostgreSQL state store
+- Documented supported operations on Sleeper tables
+
+CLI:
+- Improved output when CLI fails due to missing Docker images
+
+System tests:
+- Added a template to override properties during JUnit-based system tests
+- Added system tests for:
+  - Transaction log snapshot creation
+  - Compaction performance with Apache DataFusion
+- Allowed running deployAll system test without initially writing any data
+
+Bugfixes:
+- Fixed deleting jars bucket during tear down
+- Fixed memory overhead default value to run expected number of executors in bulk import jobs
+- Prevented a case where compaction on EC2 occasionally did not deploy as a needed permission was deployed after the autoscaling group
+- Avoided retrying invalid compaction jobs where the file references have been reassigned or deleted
+- Avoided retrying compaction jobs for a Sleeper table which no longer exists
+- Fixed deploying an instance without checking for endpoints in the VPC
+- Fixed garbage collection deleting too many files to fit in an SQS message
+
+
 ## Version 0.25.0
 
 This includes improvements to the transaction log state store implementation, and stabilisation of accelerated

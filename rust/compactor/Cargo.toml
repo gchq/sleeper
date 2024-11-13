@@ -16,7 +16,7 @@ name = "compactor"
 authors = ["GCHQ"]
 rust-version = "1.77"
 description = "Binary crate for running the data compactor from the command line."
-version = "0.26.0-SNAPSHOT"
+version = "0.27.0-SNAPSHOT"
 edition = "2021"
 license = "Apache-2.0"
 keywords = ["sleeper", "compaction"]
@@ -27,7 +27,7 @@ default-run = "main"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror = { version = "2.0.0" } # Derivable error enums
+thiserror = { version = "2.0.3" } # Derivable error enums
 log = { version = "0.4.22", features = [
     "release_max_level_debug",
 ] } # Standard logging framework

@@ -40,6 +40,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 
@@ -130,7 +131,9 @@ public class AddFilesToStateStoreIT {
     }
 
     private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
-        return AddFilesToStateStore.bySqs(sqs, s3, instanceProperties, filenameSupplier,
+        return AddFilesToStateStore.bySqs(sqs, instanceProperties,
+                new StateStoreCommitRequestInS3Uploader(instanceProperties, s3::putObject,
+                        StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, filenameSupplier),
                 request -> request.tableId(tableProperties.get(TABLE_ID)));
     }
 
