@@ -1422,15 +1422,15 @@ sleeper.default.statestore.committer.update.every.commit=false
 sleeper.default.statestore.committer.update.every.batch=true
 
 # Default value for the reserved concurrency for each lambda within the Sleeper instance. By default
-# no concurrency is reserved for the lambdas.
-# Each lambda also has its own property that overrides the value found here.
+# no concurrency is reserved for the lambdas. Each lambda also has its own property that overrides the
+# value found here.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
 # sleeper.default.lambda.concurrency.reserved=
 
 # Default value for the maximum concurrency for each lambda within the Sleeper instance. By default
-# the maximum concurrency is unlimited.
-# Each lambda also has its own property that overrides the value found here.
+# the maximum concurrency is unlimited. Each lambda also has its own property that overrides the value
+# found here.
 # See maximum concurrency overview at:
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
 # sleeper.default.lambda.concurrency.max=
