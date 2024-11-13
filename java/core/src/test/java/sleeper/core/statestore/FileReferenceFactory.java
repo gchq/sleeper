@@ -24,7 +24,6 @@ import sleeper.core.table.TableFilePaths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A test helper factory to create file references for a state store.
@@ -37,7 +36,7 @@ public class FileReferenceFactory {
     private FileReferenceFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate, FilePathGenerator filePathGenerator) {
         this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
         this.lastStateStoreUpdate = lastStateStoreUpdate;
-        this.filePathGenerator = Optional.ofNullable(filePathGenerator).orElseGet(FilePathGenerator::filenameOnly);
+        this.filePathGenerator = Objects.requireNonNull(filePathGenerator, "filePathGenerator must not be null");
     }
 
     /**
@@ -47,7 +46,7 @@ public class FileReferenceFactory {
      * @return      the factory
      */
     public static FileReferenceFactory from(PartitionTree tree) {
-        return new FileReferenceFactory(tree, null, null);
+        return new FileReferenceFactory(tree, null, FilePathGenerator.filenameOnly());
     }
 
     /**
@@ -98,7 +97,7 @@ public class FileReferenceFactory {
      * @return                      the factory
      */
     public static FileReferenceFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
-        return new FileReferenceFactory(tree, lastStateStoreUpdate, null);
+        return new FileReferenceFactory(tree, lastStateStoreUpdate, FilePathGenerator.filenameOnly());
     }
 
     /**
@@ -197,7 +196,7 @@ public class FileReferenceFactory {
      * Generates a full path for a file based on its partition and filename. Implemented by TableFilePaths if used.
      */
     @FunctionalInterface
-    public interface FilePathGenerator {
+    private interface FilePathGenerator {
 
         /**
          * Generates a full path for a file.
