@@ -36,7 +36,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
