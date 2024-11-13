@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.core;
+package sleeper.query.core.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;

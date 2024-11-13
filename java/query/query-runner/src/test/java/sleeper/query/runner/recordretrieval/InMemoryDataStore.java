@@ -21,9 +21,9 @@ import sleeper.core.key.Key;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.query.core.LeafPartitionRecordRetriever;
-import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.core.recordretrieval.RecordRetrievalException;
 
 import java.util.Collection;
 import java.util.HashMap;

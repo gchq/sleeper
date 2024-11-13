@@ -39,10 +39,10 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.recordretrieval.RecordRetrievalException;
 
 import java.io.IOException;
 import java.time.Instant;

@@ -28,11 +28,11 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.core.LeafPartitionQueryExecutor;
-import sleeper.query.core.LeafPartitionRecordRetriever;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
