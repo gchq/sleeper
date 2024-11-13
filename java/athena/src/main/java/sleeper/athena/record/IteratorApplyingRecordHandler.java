@@ -51,8 +51,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.query.core.RecordRetrievalException;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.query.runner.recordretrieval.RecordRetrievalException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
