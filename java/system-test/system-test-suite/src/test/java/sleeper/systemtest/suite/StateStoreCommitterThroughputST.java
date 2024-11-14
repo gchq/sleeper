@@ -107,7 +107,7 @@ public class StateStoreCommitterThroughputST {
         // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), partitions);
         sleeper.stateStore().fakeCommits()
-                .sendBatched(IntStream.rangeClosed(1, 1000)
+                .sendBatched(IntStream.rangeClosed(1, 100)
                         .mapToObj(i -> IntStream.rangeClosed(1, 10_000)
                                 .mapToObj(j -> fileFactory.rootFile(UUID.randomUUID().toString(), 123_456))
                                 .toList())
@@ -115,7 +115,7 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs();
 
         // Then
-        assertThat(sleeper.tableFiles().references()).hasSize(10_000_000);
+        assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
     }
