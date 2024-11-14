@@ -39,20 +39,28 @@ std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> splitAtN
 
     // Split each table at the point of that needle
     for (::size_t idx = 0; auto const &table : haystacks) {
-        // Find needle in each table view, table is "haystack"
-        std::unique_ptr<cudf::column> splitPoint =
-          cudf::upper_bound(table->select({ 0 }), needle, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });
-        CUDF_EXPECTS(splitPoint->size() == 1, "Split result should be single row");
-        // Get this index back to host
-        std::unique_ptr<cudf::scalar> splitIndex = cudf::get_element(*splitPoint, 0);
-        int const splitPos = convertInteger(*splitIndex);
-        // Now split this table at that index
-        std::vector<cudf::table_view> splitTables = cudf::split(*table, { splitPos });
-        CUDF_EXPECTS(splitTables.size() == 2, "Should be two tables from split");
-        SPDLOG_INFO(
-          "File {:d} Table size after split {:d} and {:d}", idx, splitTables[0].num_rows(), splitTables[1].num_rows());
-        lists.first.push_back(std::move(splitTables[0]));
-        lists.second.push_back(std::move(splitTables[1]));
+        // Empty table? Just push the empty table and skip
+        if (table->num_rows() == 0) {
+            lists.first.push_back(table->view());
+            lists.second.push_back(table->view());
+        } else {
+            // Find needle in each table view, table is "haystack"
+            std::unique_ptr<cudf::column> splitPoint =
+              cudf::upper_bound(table->select({ 0 }), needle, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });
+            CUDF_EXPECTS(splitPoint->size() == 1, "Split result should be single row");
+            // Get this index back to host
+            std::unique_ptr<cudf::scalar> splitIndex = cudf::get_element(*splitPoint, 0);
+            int const splitPos = convertInteger(*splitIndex);
+            // Now split this table at that index
+            std::vector<cudf::table_view> splitTables = cudf::split(*table, { splitPos });
+            CUDF_EXPECTS(splitTables.size() == 2, "Should be two tables from split");
+            SPDLOG_INFO("File {:d} Table size after split {:d} and {:d}",
+              idx,
+              splitTables[0].num_rows(),
+              splitTables[1].num_rows());
+            lists.first.push_back(std::move(splitTables[0]));
+            lists.second.push_back(std::move(splitTables[1]));
+        }
         idx++;
     }
     return lists;
