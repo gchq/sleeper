@@ -28,6 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -99,12 +100,38 @@ public class CompactionJobDispatcherTest {
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
 
+    @Test
+    void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() throws Exception {
+
+        // Given
+        String batchKey = "batch.json";
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
+        putCompactionJobBatch(batchKey, List.of(job1, job2));
+        stateStore.addFiles(List.of(file1, file2));
+        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
+        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
+        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
+        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
+
+        // When
+        dispatcher().dispatch(request);
+
+        // Then
+        assertThat(compactionQueue).isEmpty();
+        //assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        //        .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
+
+    }
+
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
         s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + key, jobs);
     }
 
     private CompactionJobDispatcher dispatcher() {
-        return new CompactionJobDispatcher(instanceProperties, readBatch(), statusStore, compactionQueue::add);
+        return new CompactionJobDispatcher(instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore), readBatch(), statusStore, compactionQueue::add);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {

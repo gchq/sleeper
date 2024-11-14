@@ -18,6 +18,7 @@ package sleeper.compaction.core.job.dispatch;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.statestore.StateStoreProvider;
 
 import java.util.List;
 
@@ -26,14 +27,16 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 public class CompactionJobDispatcher {
 
     private final InstanceProperties instanceProperties;
+    private final StateStoreProvider stateStoreProvider;
     private final ReadBatch readBatch;
     private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
 
     public CompactionJobDispatcher(
-            InstanceProperties instanceProperties, ReadBatch readBatch,
+            InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider, ReadBatch readBatch,
             CompactionJobStatusStore statusStore, SendJob sendJob) {
         this.instanceProperties = instanceProperties;
+        this.stateStoreProvider = stateStoreProvider;
         this.readBatch = readBatch;
         this.statusStore = statusStore;
         this.sendJob = sendJob;
