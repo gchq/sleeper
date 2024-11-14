@@ -47,7 +47,7 @@
 }
 
 [[nodiscard]] cudf::io::table_metadata grabMetaData(std::string const &file) {
-    auto opts = cudf::io::parquet_reader_options::builder(cudf::io::source_info(file)).build();
+    auto opts = cudf::io::parquet_reader_options::builder(cudf::io::source_info(file)).num_rows(1).build();
     return cudf::io::read_parquet(opts).metadata;
 }
 
@@ -141,21 +141,16 @@ int main(int argc, char **argv) {
 
             // Merge and write tables
             if (lastTotalRowCount > 0) {
-                std::vector<cudf::table_view> views;
-                views.reserve(tables.size());
-                for (auto const &table : tables) { views.push_back(*table.tbl); }
-
                 // Find the least upper bound in sort column across these tables
-                auto const leastUpperBound = findLeastUpperBound(views, 0);
+                auto const leastUpperBound = findLeastUpperBound(tables, 0);
 
                 // Now take search "needle" from last row from of table with LUB
-                auto const lubTable = views[leastUpperBound].select({ 0 });
+                auto const lubTable = tables[leastUpperBound].tbl->select({ 0 });
                 auto const needle = cudf::split(lubTable, { lubTable.num_rows() - 1 })[1];
-                auto const tableVectors = splitAtNeedle(needle, views);
+                auto const tableVectors = splitAtNeedle(needle, tables);
 
                 SPDLOG_INFO("Merging {:d} rows", lastTotalRowCount);
-                auto merged = cudf::merge(views, { 0 }, { cudf::order::ASCENDING });
-                views.clear();
+                auto merged = cudf::merge(tableVectors.first, { 0 }, { cudf::order::ASCENDING });
                 tables.clear();
                 writer.write(*merged);
                 auto const elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(timestamp() - startTime);
