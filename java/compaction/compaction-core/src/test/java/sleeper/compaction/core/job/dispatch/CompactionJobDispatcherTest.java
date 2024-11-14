@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -29,10 +28,12 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -65,9 +66,9 @@ public class CompactionJobDispatcherTest {
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
+    List<CompactionJob> compactionQueue = new ArrayList<>();
 
     @Test
-    @Disabled
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
 
         // Given
@@ -80,13 +81,23 @@ public class CompactionJobDispatcherTest {
         CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
 
         // When
+        dispatcher().dispatch(request);
 
         // Then
         // assert on status store after
         // assert that compaction jobs are on queue
+        assertThat(compactionQueue).containsExactly(job);
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
         s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + key, jobs);
+    }
+
+    private CompactionJobDispatcher dispatcher() {
+        return new CompactionJobDispatcher(instanceProperties, readBatch(), compactionQueue::add);
+    }
+
+    private CompactionJobDispatcher.ReadBatch readBatch() {
+        return (bucketName, key) -> s3PathToCompactionJobBatch.get(bucketName + "/" + key);
     }
 }

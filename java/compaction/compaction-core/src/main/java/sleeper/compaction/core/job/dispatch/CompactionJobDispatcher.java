@@ -15,6 +15,40 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.core.properties.instance.InstanceProperties;
+
+import java.util.List;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+
 public class CompactionJobDispatcher {
+
+    private final InstanceProperties instanceProperties;
+    private final ReadBatch readBatch;
+    private final SendJob sendJob;
+
+    public CompactionJobDispatcher(InstanceProperties instanceProperties, ReadBatch readBatch, SendJob sendJob) {
+        this.instanceProperties = instanceProperties;
+        this.readBatch = readBatch;
+        this.sendJob = sendJob;
+    }
+
+    public void dispatch(CompactionJobDispatchRequest request) {
+        List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
+        for (CompactionJob job : batch) {
+            sendJob.send(job);
+        }
+    }
+
+    public interface ReadBatch {
+
+        List<CompactionJob> readBatch(String bucketName, String key);
+    }
+
+    public interface SendJob {
+
+        void send(CompactionJob job);
+    }
 
 }

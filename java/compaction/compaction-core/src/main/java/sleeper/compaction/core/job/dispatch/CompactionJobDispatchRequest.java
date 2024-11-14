@@ -23,4 +23,8 @@ public class CompactionJobDispatchRequest {
         this.batchKey = batchKey;
     }
 
+    public String getBatchKey() {
+        return batchKey;
+    }
+
 }
