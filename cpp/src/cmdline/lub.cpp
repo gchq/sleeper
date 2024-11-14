@@ -7,22 +7,21 @@
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <spdlog/spdlog.h>
 
-#include <memory>
 #include <type_traits>
 #include <utility>
 
-::size_t findLeastUpperBound(std::vector<cudf::io::table_with_metadata> const &tables, ::size_t const colNo) {
+::size_t findLeastUpperBound(std::vector<std::unique_ptr<cudf::table>> const &tables, ::size_t const colNo) {
 
     auto action = [&tables, &colNo]<typename T>() {
         using CudfScalarType = cudf::scalar_type_t<T>;
         ::size_t lubTableIndex = 0;
         std::unique_ptr<cudf::scalar> currentLub =
-          cudf::get_element(tables.front().tbl->get_column(colNo), tables.front().tbl->get_column(colNo).size() - 1);
+          cudf::get_element(tables.front()->get_column(colNo), tables.front()->get_column(colNo).size() - 1);
         // Loop over each table view, grab the last element in the sort column and find the lowest
-        for (::size_t idx = 0; cudf::io::table_with_metadata const &table : tables) {
+        for (::size_t idx = 0; std::unique_ptr<cudf::table> const &table : tables) {
 
             std::unique_ptr<cudf::scalar> lastElement =
-              cudf::get_element(table.tbl->view().column(colNo), table.tbl->view().column(colNo).size() - 1);
+              cudf::get_element(table->view().column(colNo), table->view().column(colNo).size() - 1);
             auto const lub_ptr = static_cast<CudfScalarType *>(currentLub.get());
             auto const lastElement_ptr = static_cast<CudfScalarType *>(lastElement.get());
 
@@ -59,5 +58,5 @@
     };
 
     CUDF_EXPECTS(!tables.empty(), "vector of tables cannot be empty");
-    return cudf::type_dispatcher(tables.front().tbl->get_column(colNo).type(), action);
+    return cudf::type_dispatcher(tables.front()->get_column(colNo).type(), action);
 }

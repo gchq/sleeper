@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
         std::unique_ptr<cudf::table> checkTable;
         cudf::table_view checkView = currentTable.tbl->view();
         if (prevTable.tbl) {
-            checkTable = cudf::concatenate(std::vector<cudf::table_view>{ *prevTable.tbl, *currentTable.tbl });
+            checkTable = cudf::concatenate(std::vector{ prevTable.tbl->view(), currentTable.tbl->view() });
             checkView = std::move(checkTable->view());
         }
         bool chunkSorted = cudf::is_sorted(checkView, { cudf::order::ASCENDING }, { cudf::null_order::AFTER });

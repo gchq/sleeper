@@ -1,7 +1,9 @@
 #pragma once
-#include <cudf/io/types.hpp>
+
+#include <cudf/table/table.hpp>
 
 #include <cstddef>
+#include <memory>
 #include <vector>
 
-::size_t findLeastUpperBound(std::vector<cudf::io::table_with_metadata> const &tables, ::size_t const colNo = 0);
+std::size_t findLeastUpperBound(std::vector<std::unique_ptr<cudf::table>> const &tables, std::size_t const colNo = 0);
