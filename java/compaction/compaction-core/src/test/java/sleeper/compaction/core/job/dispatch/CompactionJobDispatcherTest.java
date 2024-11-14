@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,13 +29,16 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -64,6 +68,7 @@ public class CompactionJobDispatcherTest {
     StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
@@ -81,13 +86,17 @@ public class CompactionJobDispatcherTest {
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
         CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
+        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
+        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
+        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
         // When
         dispatcher().dispatch(request);
 
         // Then
-        // assert on status store after
         assertThat(compactionQueue).containsExactly(job1, job2);
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
@@ -95,7 +104,7 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher dispatcher() {
-        return new CompactionJobDispatcher(instanceProperties, readBatch(), compactionQueue::add);
+        return new CompactionJobDispatcher(instanceProperties, readBatch(), statusStore, compactionQueue::add);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {

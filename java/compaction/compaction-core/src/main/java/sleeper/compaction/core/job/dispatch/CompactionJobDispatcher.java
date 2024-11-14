@@ -16,6 +16,7 @@
 package sleeper.compaction.core.job.dispatch;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -26,17 +27,22 @@ public class CompactionJobDispatcher {
 
     private final InstanceProperties instanceProperties;
     private final ReadBatch readBatch;
+    private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
 
-    public CompactionJobDispatcher(InstanceProperties instanceProperties, ReadBatch readBatch, SendJob sendJob) {
+    public CompactionJobDispatcher(
+            InstanceProperties instanceProperties, ReadBatch readBatch,
+            CompactionJobStatusStore statusStore, SendJob sendJob) {
         this.instanceProperties = instanceProperties;
         this.readBatch = readBatch;
+        this.statusStore = statusStore;
         this.sendJob = sendJob;
     }
 
     public void dispatch(CompactionJobDispatchRequest request) {
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         for (CompactionJob job : batch) {
+            statusStore.jobCreated(job);
             sendJob.send(job);
         }
     }
