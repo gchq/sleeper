@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core.recordretrieval;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
@@ -29,6 +26,8 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -58,14 +56,6 @@ public class LeafPartitionQueryExecutor {
         this.objectFactory = objectFactory;
         this.tableProperties = tableProperties;
         this.retriever = retriever;
-    }
-
-    public LeafPartitionQueryExecutor(
-            ExecutorService executorService,
-            ObjectFactory objectFactory,
-            Configuration conf,
-            TableProperties tableProperties) {
-        this(objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
     }
 
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {

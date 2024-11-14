@@ -18,12 +18,12 @@ package sleeper.ingest.runner.testutils;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;

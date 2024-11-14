@@ -29,8 +29,7 @@ import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,6 +37,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -88,7 +88,7 @@ public class CreateCompactionJobsClient {
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = new CreateCompactionJobs(
-                    new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                    new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                     instanceProperties, stateStoreProvider,
                     new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode,
                     AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));

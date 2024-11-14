@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core.recordretrieval;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.partition.Partition;
@@ -29,6 +27,7 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
@@ -40,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -65,10 +63,8 @@ public class QueryExecutor {
 
     public QueryExecutor(
             ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            Configuration configuration, ExecutorService executorService) {
-        this(objectFactory, stateStore, tableProperties,
-                new LeafPartitionRecordRetrieverImpl(executorService, configuration),
-                Instant.now());
+            LeafPartitionRecordRetriever recordRetriever) {
+        this(objectFactory, stateStore, tableProperties, recordRetriever, Instant.now());
     }
 
     public QueryExecutor(
