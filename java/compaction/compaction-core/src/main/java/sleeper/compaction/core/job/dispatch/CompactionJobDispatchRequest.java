@@ -17,6 +17,10 @@ package sleeper.compaction.core.job.dispatch;
 
 public class CompactionJobDispatchRequest {
 
-    String batchKey;
+    private final String batchKey;
+
+    public CompactionJobDispatchRequest(String batchKey) {
+        this.batchKey = batchKey;
+    }
 
 }

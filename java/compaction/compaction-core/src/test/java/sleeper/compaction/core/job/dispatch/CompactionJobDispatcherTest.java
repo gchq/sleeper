@@ -18,73 +18,75 @@ package sleeper.compaction.core.job.dispatch;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
+    /*
+     * Message from queue points to batch in s3 <? possible failure case
+     * List of compaction jobs from s3 file <?
+     * should be created if input files have been assigned <
+     * compactions jobs sent to compaction queue and created in status store
+     * log out sucess of batch [info level]
+     * if unassigned
+     * determine age of batch
+     * if young enough
+     * whole message returned to queue <
+     * if too old
+     * dead letter/ throw exception (to determine) <
+     */
 
     Schema schema = schemaWithKey("key");
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
-    FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
+    PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+    StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+    FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+    CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
 
-    Map<String, String> s3PathToContent = new HashMap<>();
+    Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
 
     @Test
     @Disabled
-    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
+    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
 
         // Given
-        String batchKey = "";
-        CompactionJobDispatchCreationHelper.populateBucketWithBatch(batchKey, null);
-        CompactionJobDispatchRequest request = buildS3Message(batchKey);
+        String batchKey = "batch.json";
+        FileReference file = fileFactory.rootFile("test.parquet", 1234);
+        CompactionJob job = compactionFactory.createCompactionJob("test-job", List.of(file), "root");
+        putCompactionJobBatch(batchKey, List.of(job));
+        stateStore.addFile(file);
+        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
 
         // When
 
         // Then
         // assert on status store after
         // assert that compaction jobs are on queue
-
     }
 
-    private CompactionJobDispatchRequest buildS3Message(String batchKey) {
-        return null;
-    }
-
-    private CompactionJobFactory compactionFactory() {
-        return new CompactionJobFactory(instanceProperties, tableProperties);
-    }
-
-    private void notesMethod() {
-        /*
-         * Message from queue points to batch in s3 <? possible failure case
-         * List of compaction jobs from s3 file <?
-         * should be created if input files have been assigned <
-         * compactions jobs sent to compaction queue and created in status store
-         * log out sucess of batch [info level]
-         * if unassigned
-         * determine age of batch
-         * if young enough
-         * whole message returned to queue <
-         * if too old
-         * dead letter/ throw exception (to determine) <
-         */
-
-        //instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
-
+    private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
+        s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + key, jobs);
     }
 }
