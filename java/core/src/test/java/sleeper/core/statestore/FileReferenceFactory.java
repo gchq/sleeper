@@ -174,22 +174,27 @@ public class FileReferenceFactory {
      * @return             the file reference
      */
     public FileReference partitionFile(String partitionId, String filename, long records) {
-        return FileReference.builder()
+        return fileForPartitionBuilder(partitionId, records)
                 .filename(filePathGenerator.buildFilePath(partitionId, filename))
-                .partitionId(partitionId)
-                .numberOfRecords(records)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
                 .build();
     }
 
     private FileReference fileForPartition(Partition partition, long records) {
-        return partitionFile(partition.getId(), partition.getId(), records);
+        return fileForPartitionBuilder(partition.getId(), records).build();
     }
 
     private FileReference fileForPartition(Partition partition, String filename, long records) {
         return partitionFile(partition.getId(), filename, records);
+    }
+
+    private FileReference.Builder fileForPartitionBuilder(String partitionId, long records) {
+        return FileReference.builder()
+                .filename(partitionId + ".parquet")
+                .partitionId(partitionId)
+                .numberOfRecords(records)
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
     }
 
     /**
@@ -213,7 +218,7 @@ public class FileReferenceFactory {
          * @return the generator
          */
         static FilePathGenerator filenameOnly() {
-            return (partitionId, filename) -> filename.contains(".") ? filename : filename + ".parquet";
+            return (partitionId, filename) -> filename;
         }
 
         /**
