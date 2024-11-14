@@ -18,13 +18,19 @@ package sleeper.compaction.core.job.dispatch;
 public class CompactionJobDispatchRequest {
 
     private final String batchKey;
+    private final String tableId;
 
-    public CompactionJobDispatchRequest(String batchKey) {
+    public CompactionJobDispatchRequest(String batchKey, String tableId) {
         this.batchKey = batchKey;
+        this.tableId = tableId;
     }
 
     public String getBatchKey() {
         return batchKey;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
 }

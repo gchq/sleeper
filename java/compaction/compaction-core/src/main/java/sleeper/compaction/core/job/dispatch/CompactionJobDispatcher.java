@@ -18,7 +18,11 @@ package sleeper.compaction.core.job.dispatch;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.UncheckedStateStoreException;
 
 import java.util.List;
 
@@ -27,15 +31,18 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 public class CompactionJobDispatcher {
 
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ReadBatch readBatch;
     private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
 
     public CompactionJobDispatcher(
-            InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider, ReadBatch readBatch,
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider, ReadBatch readBatch,
             CompactionJobStatusStore statusStore, SendJob sendJob) {
         this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.readBatch = readBatch;
         this.statusStore = statusStore;
@@ -44,10 +51,25 @@ public class CompactionJobDispatcher {
 
     public void dispatch(CompactionJobDispatchRequest request) {
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
-        for (CompactionJob job : batch) {
-            statusStore.jobCreated(job);
-            sendJob.send(job);
+        if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
+            for (CompactionJob job : batch) {
+                statusStore.jobCreated(job);
+                sendJob.send(job);
+            }
+        } else {
+            //Do the age checks
         }
+    }
+
+    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) {
+        StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
+        return batch.stream().allMatch(job -> {
+            try {
+                return stateStore.isPartitionFilesAssignedToJob(job.getPartitionId(), job.getInputFiles(), job.getId());
+            } catch (StateStoreException ex) {
+                throw new UncheckedStateStoreException(ex);
+            }
+        });
     }
 
     public interface ReadBatch {

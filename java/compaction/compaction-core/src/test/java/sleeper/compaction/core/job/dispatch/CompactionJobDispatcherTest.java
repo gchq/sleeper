@@ -24,6 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -86,7 +87,7 @@ public class CompactionJobDispatcherTest {
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
-        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
+        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID));
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
@@ -111,7 +112,7 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
+        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID));
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
@@ -121,9 +122,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        //assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-        //        .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
-
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
@@ -131,7 +130,9 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher dispatcher() {
-        return new CompactionJobDispatcher(instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore), readBatch(), statusStore, compactionQueue::add);
+        return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
+                statusStore, compactionQueue::add);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
