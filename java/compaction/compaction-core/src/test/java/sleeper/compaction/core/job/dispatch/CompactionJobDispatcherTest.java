@@ -73,11 +73,13 @@ public class CompactionJobDispatcherTest {
 
         // Given
         String batchKey = "batch.json";
-        FileReference file = fileFactory.rootFile("test.parquet", 1234);
-        CompactionJob job = compactionFactory.createCompactionJob("test-job", List.of(file), "root");
-        putCompactionJobBatch(batchKey, List.of(job));
-        stateStore.addFile(file);
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
+        putCompactionJobBatch(batchKey, List.of(job1, job2));
+        stateStore.addFiles(List.of(file1, file2));
+        assignJobIds(List.of(job1, job2));
         CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey);
 
         // When
@@ -85,8 +87,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         // assert on status store after
-        // assert that compaction jobs are on queue
-        assertThat(compactionQueue).containsExactly(job);
+        assertThat(compactionQueue).containsExactly(job1, job2);
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
@@ -99,5 +100,11 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
         return (bucketName, key) -> s3PathToCompactionJobBatch.get(bucketName + "/" + key);
+    }
+
+    private void assignJobIds(List<CompactionJob> jobs) throws Exception {
+        for (CompactionJob job : jobs) {
+            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        }
     }
 }
