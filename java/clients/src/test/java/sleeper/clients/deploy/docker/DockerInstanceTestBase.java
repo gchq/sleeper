@@ -33,7 +33,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.docker.DeployDockerInstance;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
@@ -41,10 +40,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.query.core.model.Query;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
@@ -86,8 +87,8 @@ public class DockerInstanceTestBase {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration())
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                stateStore, getHadoopConfiguration(), Executors.newSingleThreadExecutor());
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
+                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), getHadoopConfiguration()));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }

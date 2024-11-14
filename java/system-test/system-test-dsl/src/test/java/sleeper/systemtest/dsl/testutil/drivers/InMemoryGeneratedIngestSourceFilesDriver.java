@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 

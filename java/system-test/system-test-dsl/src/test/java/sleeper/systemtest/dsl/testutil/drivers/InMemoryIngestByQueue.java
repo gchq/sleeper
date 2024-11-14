@@ -32,7 +32,7 @@ import sleeper.ingest.core.task.InMemoryIngestTaskStatusStore;
 import sleeper.ingest.core.task.IngestTask;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;

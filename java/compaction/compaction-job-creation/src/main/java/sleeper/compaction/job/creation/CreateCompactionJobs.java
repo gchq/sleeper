@@ -25,8 +25,6 @@ import sleeper.compaction.core.strategy.CompactionStrategy;
 import sleeper.compaction.core.strategy.CompactionStrategyIndex;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CompactionProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,6 +36,8 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.io.IOException;
 import java.time.Instant;

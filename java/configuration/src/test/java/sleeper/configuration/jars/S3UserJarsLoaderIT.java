@@ -29,6 +29,8 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -57,7 +59,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 
 @Testcontainers
-public class ObjectFactoryIT {
+public class S3UserJarsLoaderIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -126,7 +128,7 @@ public class ObjectFactoryIT {
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
+        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, createTempDirectory(folder, null).toString()).buildObjectFactory();
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");
