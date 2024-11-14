@@ -338,16 +338,20 @@ public interface DefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
-            .description("Default value for the reserved concurrency for each lambda within the Sleeper instance. Each lambda also has its own " +
-                    "implementation of the property which will override the value found here.\n" +
+            .description("Default value for the reserved concurrency for each lambda within the Sleeper instance. " +
+                    "By default no concurrency is reserved for the lambdas. Each lambda also has its own property " +
+                    "that overrides the value found here.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
+            .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
-            .description("Default value for the maximum concurrency assigned to each lambda within the Sleeper instance. Each lambda " +
-                    "has its own property that overrides the value found here.\n" +
+            .description("Default value for the maximum concurrency for each lambda within the Sleeper instance. " +
+                    "By default the maximum concurrency is unlimited. Each lambda also has its own property that " +
+                    "overrides the value found here.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
+            .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
