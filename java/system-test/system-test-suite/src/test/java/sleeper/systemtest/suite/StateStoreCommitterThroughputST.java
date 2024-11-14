@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -54,7 +53,6 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THR
 public class StateStoreCommitterThroughputST {
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
@@ -76,7 +74,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
@@ -121,7 +118,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
@@ -148,7 +144,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
@@ -179,7 +174,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
@@ -220,7 +214,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstance(COMMITTER_THROUGHPUT);
@@ -261,7 +254,6 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    @Disabled
     void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
