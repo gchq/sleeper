@@ -115,9 +115,6 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
-        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
-        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
         // When
         CompactionJobDispatchRequest request = generateBatchRequest(batchKey, Instant.parse("2024-11-15T10:36:00Z"));
