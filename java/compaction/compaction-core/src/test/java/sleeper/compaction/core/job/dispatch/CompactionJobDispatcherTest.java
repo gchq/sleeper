@@ -100,6 +100,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
+        assertThat(pendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
@@ -144,8 +145,8 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(pendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
