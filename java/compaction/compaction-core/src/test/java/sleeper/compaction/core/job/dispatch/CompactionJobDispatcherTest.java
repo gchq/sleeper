@@ -32,6 +32,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,7 +125,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, 0));
+        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(1)));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -165,7 +166,7 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
-        return (request) -> pendingQueue.add(BatchRequestMessage.requestAndDelay(request, 0));
+        return (request) -> pendingQueue.add(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(1)));
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
@@ -193,8 +194,8 @@ public class CompactionJobDispatcherTest {
     }
 
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {
-        static BatchRequestMessage requestAndDelay(CompactionJobDispatchRequest request, int delaySeconds) {
-            return new BatchRequestMessage(request, delaySeconds);
+        static BatchRequestMessage requestAndDelay(CompactionJobDispatchRequest request, Duration duration) {
+            return new BatchRequestMessage(request, (int) duration.toSeconds());
         }
     }
 }
