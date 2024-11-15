@@ -18,7 +18,6 @@ package sleeper.ingest.runner.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
@@ -32,6 +31,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;

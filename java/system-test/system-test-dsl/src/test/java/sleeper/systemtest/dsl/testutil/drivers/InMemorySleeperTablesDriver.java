@@ -27,7 +27,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.time.Instant;

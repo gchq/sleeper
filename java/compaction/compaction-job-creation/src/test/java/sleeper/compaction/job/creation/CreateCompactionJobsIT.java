@@ -40,8 +40,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -53,6 +51,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -226,7 +226,7 @@ public class CreateCompactionJobsIT {
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
+        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE, Mode.STRATEGY,

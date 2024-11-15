@@ -30,13 +30,13 @@ import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.VarcharType;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;

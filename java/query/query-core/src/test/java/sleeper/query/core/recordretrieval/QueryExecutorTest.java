@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.core.recordretrieval;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.PartitionTree;
@@ -39,6 +38,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;

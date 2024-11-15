@@ -16,18 +16,18 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 

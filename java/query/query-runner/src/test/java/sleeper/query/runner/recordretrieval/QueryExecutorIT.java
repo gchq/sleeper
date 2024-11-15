@@ -23,8 +23,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -46,11 +44,14 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.recordretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -101,8 +102,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -144,8 +144,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -214,8 +213,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -279,8 +277,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -344,8 +341,7 @@ public class QueryExecutorIT {
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -483,8 +479,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -598,8 +593,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -769,8 +763,7 @@ public class QueryExecutorIT {
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
 
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1010,8 +1003,7 @@ public class QueryExecutorIT {
                         .splitToNewChildren("root", "left", "right", 5L)
                         .buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1065,8 +1057,7 @@ public class QueryExecutorIT {
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1127,8 +1118,7 @@ public class QueryExecutorIT {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
         }
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
-                tableProperties, stateStore, new Configuration(), executorService);
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1161,8 +1151,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
-                new Configuration(), Executors.newFixedThreadPool(1));
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1193,8 +1182,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
-        QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
-                new Configuration(), Executors.newFixedThreadPool(1));
+        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
@@ -1215,6 +1203,11 @@ public class QueryExecutorIT {
             // Then
             assertThat(results).hasNext().toIterable().allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
         }
+    }
+
+    private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
+        return new QueryExecutor(ObjectFactory.noUserJars(),
+                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration()));
     }
 
     private Query queryWithRegion(Region region) {
