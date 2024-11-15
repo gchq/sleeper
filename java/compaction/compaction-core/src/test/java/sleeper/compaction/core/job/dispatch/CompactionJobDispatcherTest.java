@@ -77,7 +77,7 @@ public class CompactionJobDispatcherTest {
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
-    Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
+    Queue<BatchRequestMessage> pendingQueue = new LinkedList<>();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
@@ -124,7 +124,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(pendingQueue).containsExactly(request);
+        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, 0));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -165,7 +165,7 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
-        return (request) -> pendingQueue.add(request);
+        return (request) -> pendingQueue.add(BatchRequestMessage.requestAndDelay(request, 0));
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
@@ -190,5 +190,11 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatchRequest generateBatchRequestWithExpiry(String batchKey, Instant expiryTime) {
         return new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime);
+    }
+
+    private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {
+        static BatchRequestMessage requestAndDelay(CompactionJobDispatchRequest request, int delaySeconds) {
+            return new BatchRequestMessage(request, delaySeconds);
+        }
     }
 }
