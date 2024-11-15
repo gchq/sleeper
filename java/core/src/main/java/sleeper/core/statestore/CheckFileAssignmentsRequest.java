@@ -16,6 +16,7 @@
 package sleeper.core.statestore;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A request to check whether a job is assigned to files on a partition. Used for compaction jobs.
@@ -56,4 +57,25 @@ public class CheckFileAssignmentsRequest {
         return partitionId;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, filenames, partitionId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CheckFileAssignmentsRequest)) {
+            return false;
+        }
+        CheckFileAssignmentsRequest other = (CheckFileAssignmentsRequest) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(filenames, other.filenames) && Objects.equals(partitionId, other.partitionId);
+    }
+
+    @Override
+    public String toString() {
+        return "CheckFileAssignmentsRequest{jobId=" + jobId + ", filenames=" + filenames + ", partitionId=" + partitionId + "}";
+    }
 }

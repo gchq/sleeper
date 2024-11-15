@@ -93,17 +93,6 @@ public interface FileReferenceStoreQueries {
     }
 
     /**
-     * Checks if files on a given partition are assigned to a certain job.
-     *
-     * @param  partitionId         the ID of the partition to query
-     * @return                     true if all files are assigned to the job
-     * @throws StateStoreException if query fails
-     */
-    default boolean isPartitionFilesAssignedToJob(String partitionId, List<String> filenames, String jobId) throws StateStoreException {
-        return isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(jobId, filenames, partitionId)));
-    }
-
-    /**
      * Returns a map from the partition id to a list of file references in that partition. Each file may be included
      * multiple times in this map, as it may be referenced in more than one partition.
      *
