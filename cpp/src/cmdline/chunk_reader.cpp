@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     app.add_option("-c,--chunk-read-limit", chunkReadLimit, "cuDF Parquet reader chunk read limit in MiB");
     std::size_t passReadLimit{ 1024 };
     app.add_option("-p,--pass-read-limit", passReadLimit, "cuDF Parquet reader pass read limit in MiB");
-    std::size_t epsilon{ 1'000 };
+    std::size_t epsilon{ 20'000 };
     app.add_option("-e,--epsilon", epsilon, "Lower bound for rows remaining in a table before loading next chunk");
     bool alwaysMergeAll{ false };
     app.add_flag("-a,--always-merge-all",
