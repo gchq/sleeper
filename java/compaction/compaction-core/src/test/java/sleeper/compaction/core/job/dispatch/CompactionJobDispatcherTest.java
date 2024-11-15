@@ -106,11 +106,12 @@ public class CompactionJobDispatcherTest {
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 123);
-
-        // When
         CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
                 batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        dispatcher().dispatchAtTime(request, Instant.parse("2024-11-15T10:21:00Z"));
+        Instant dispatchTime = Instant.parse("2024-11-15T10:21:00Z");
+
+        // When
+        dispatcher().dispatchAtTime(request, dispatchTime);
 
         // Then
         assertThat(compactionQueue).isEmpty();
@@ -139,6 +140,35 @@ public class CompactionJobDispatcherTest {
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+    }
+
+    @Test
+    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssignedAndTimeoutExpired() throws Exception {
+
+        // Given
+        String batchKey = "batch.json";
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
+        putCompactionJobBatch(batchKey, List.of(job1, job2));
+        stateStore.addFiles(List.of(file1, file2));
+        assignJobIds(List.of(job1, job2));
+        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
+        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
+        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
+        CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
+                batchKey, Instant.parse("2024-11-15T10:36:00Z"));
+        Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
+
+        // When
+        dispatcher().dispatchAtTime(request, dispatchTime);
+
+        // Then
+        assertThat(compactionQueue).containsExactly(job1, job2);
+        assertThat(pendingQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {

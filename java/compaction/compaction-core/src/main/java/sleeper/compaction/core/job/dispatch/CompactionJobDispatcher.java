@@ -56,10 +56,6 @@ public class CompactionJobDispatcher {
     }
 
     public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) {
-        if (timeNow.isAfter(request.getExpiryTime())) {
-            throw new CompactionJobBatchExpiredException(request);
-        }
-
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
@@ -67,6 +63,9 @@ public class CompactionJobDispatcher {
                 sendJob.send(job);
             }
         } else {
+            if (timeNow.isAfter(request.getExpiryTime())) {
+                throw new CompactionJobBatchExpiredException(request);
+            }
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
             returnToPendingQueue.returnRequest(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
         }
@@ -95,10 +94,6 @@ public class CompactionJobDispatcher {
 
     public interface ReturnRequestToPendingQueue {
         void returnRequest(CompactionJobDispatchRequest request, int delaySeconds);
-    }
-
-    public interface SendRequestToDeadLetterQueue {
-        void failedRequest(CompactionJobDispatchRequest request);
     }
 
 }
