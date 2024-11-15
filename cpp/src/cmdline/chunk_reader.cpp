@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
@@ -75,11 +76,12 @@ int main(int argc, char **argv) {
     app.add_option("-c,--chunk-read-limit", chunkReadLimit, "cuDF Parquet reader chunk read limit in MiB");
     std::size_t passReadLimit{ 1024 };
     app.add_option("-p,--pass-read-limit", passReadLimit, "cuDF Parquet reader pass read limit in MiB");
-    std::size_t epsilon{ 10'000 };
+    std::size_t epsilon{ 1'000 };
     app.add_option("-e,--epsilon", epsilon, "Lower bound for rows remaining in a table before loading next chunk");
-    bool wrong{ false };
-    app.add_flag(
-      "-w,--wrong", wrong, "Use broken algorithm that doesn't sort properly. Useful for testing. DO NOT USE!");
+    bool alwaysMergeAll{ false };
+    app.add_flag("-a,--always-merge-all",
+      alwaysMergeAll,
+      "Use broken algorithm that doesn't sort properly. Useful for testing. DO NOT USE!");
 
     CLI11_PARSE(app, argc, argv);// NOLINT
 
@@ -134,12 +136,14 @@ int main(int argc, char **argv) {
         // Loop doing reads
         while (rowsInMemory) {
             rowsInMemory = 0;
+            bool allReadersFinished = true;
             // Loop through each reader
             for (std::size_t rc = 0; auto &[src, reader, chunkNo, rowCount] : readers) {
                 auto &oldTable = tables[rc];
                 // If reader has data and we need some, perform a read
                 SPDLOG_INFO("Reader {:d}", rc);
                 if (reader->has_next()) {
+                    allReadersFinished = false;
                     SPDLOG_INFO("    Reader has rows");
                     if (!oldTable || oldTable->num_rows() < epsilon) {
                         if (oldTable) {
@@ -168,13 +172,28 @@ int main(int argc, char **argv) {
                 }
 
                 // Update overall count
-                rowsInMemory += oldTable->num_rows();
+                // If "all Merge" was true last iteration, the pointer may be null
+                rowsInMemory += (oldTable) ? oldTable->num_rows() : 0;
                 rc++;
             }
 
             SPDLOG_INFO("There are {:d} rows to process", rowsInMemory);
             // Merge and write tables
-            if (rowsInMemory > 0) {
+            if (rowsInMemory == 0) {
+                break;
+            }
+
+            // If all readers have run out of data, then we have all remaining data in memory and safely
+            // merge everything
+            bool const mergeAll = alwaysMergeAll || allReadersFinished;
+            std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> tableVectors;
+
+            if (mergeAll) {
+                std::transform(
+                  tables.cbegin(), tables.cend(), std::back_inserter(tableVectors.first), [](auto &&t) noexcept {
+                      return t->view();
+                  });
+            } else {
                 // Find the least upper bound in sort column across these tables
                 auto const leastUpperBound = findLeastUpperBound(tables, 0);
 
@@ -183,43 +202,45 @@ int main(int argc, char **argv) {
                 auto const needle = cudf::split(lubTable, { lubTable.num_rows() - 1 })[1];
 
                 // Split all tables at the needle
-                std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> const tableVectors =
-                  splitAtNeedle(needle, tables, wrong);
-
-                // Merge all the upper parts of the tables
-                std::size_t rowsToWrite = calcRowsInViews(tableVectors.first);
-                SPDLOG_INFO("Merging {:d} rows", rowsToWrite);
-                auto merged = cudf::merge(tableVectors.first, { 0 }, { cudf::order::ASCENDING });
-
-                // Duplicate the unmerged parts of the tables, so we can opportunistically clear the original
-                // tables we no longer need
-                for (std::size_t idx = 0; auto &&table : tables) {
-                    table = std::make_unique<cudf::table>(tableVectors.second[idx]);
-                    idx++;
-                }
-
-                writer.write(*merged);
-                rowsWritten += rowsToWrite;
-
-                auto const elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(timestamp() - startTime);
-                auto const rowsRead = calcRowsRead(readers);
-                auto const fracRowsRead = (static_cast<double>(rowsRead) / totalRows);
-                auto const predictedTime =
-                  std::chrono::duration_cast<std::chrono::seconds>(elapsedTime * (1 / fracRowsRead));
-                SPDLOG_INFO(
-                  "Read {:d} rows, Wrote {:d} rows, {:.2f}% complete, est. time (total) {:02d}:{:02d} ({:02d}:{:02d})",
-                  rowsRead,
-                  rowsWritten,
-                  fracRowsRead * 100,
-                  elapsedTime.count() / 60,
-                  elapsedTime.count() % 60,
-                  predictedTime.count() / 60,
-                  predictedTime.count() % 60);
+                tableVectors = splitAtNeedle(needle, tables);
             }
+
+            // Merge all the upper parts of the tables
+            std::size_t rowsToWrite = calcRowsInViews(tableVectors.first);
+            SPDLOG_INFO("Merging {:d} rows", rowsToWrite);
+            auto merged = cudf::merge(tableVectors.first, { 0 }, { cudf::order::ASCENDING });
+
+            // Duplicate the unmerged parts of the tables, so we can opportunistically clear the original
+            // tables we no longer need
+            for (std::size_t idx = 0; auto &&table : tables) {
+                if (mergeAll) {
+                    table.release();
+                } else {
+                    table = std::make_unique<cudf::table>(tableVectors.second[idx]);
+                }
+                idx++;
+            }
+
+            writer.write(*merged);
+            rowsWritten += rowsToWrite;
+
+            auto const elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(timestamp() - startTime);
+            auto const rowsRead = calcRowsRead(readers);
+            auto const fracRowsRead = (static_cast<double>(rowsRead) / totalRows);
+            auto const predictedTime =
+              std::chrono::duration_cast<std::chrono::seconds>(elapsedTime * (1 / fracRowsRead));
+            SPDLOG_INFO(
+              "Read {:d} rows, Wrote {:d} rows, {:.2f}% complete, est. time (total) {:02d}:{:02d} ({:02d}:{:02d})",
+              rowsRead,
+              rowsWritten,
+              fracRowsRead * 100,
+              elapsedTime.count() / 60,
+              elapsedTime.count() % 60,
+              predictedTime.count() / 60,
+              predictedTime.count() % 60);
         }
 
         writer.close();
-
         SPDLOG_INFO("Finished, read/wrote {:d} rows from {:d} readers", rowsWritten, inputFiles.size());
     }
     gpu_compact::s3::shutdownAWS();

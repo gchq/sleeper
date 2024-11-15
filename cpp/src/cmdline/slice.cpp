@@ -30,8 +30,7 @@ int convertInteger(cudf::scalar const &scalar) {
 }
 
 std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> splitAtNeedle(cudf::table_view const &needle,
-  std::vector<std::unique_ptr<cudf::table>> const &haystacks,
-  bool skipSplit) {
+  std::vector<std::unique_ptr<cudf::table>> const &haystacks) {
     std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> lists;
     std::vector<cudf::table_view> tablesToMerge;
     std::vector<cudf::table_view> remainingFragments;
@@ -44,6 +43,7 @@ std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> splitAtN
         if (table->num_rows() == 0) {
             lists.first.push_back(table->view());
             lists.second.push_back(table->view());
+            SPDLOG_INFO("File {:d} Table size after split {:d} and {:d}", idx, 0, 0);
         } else {
             // Find needle in each table view, table is "haystack"
             std::unique_ptr<cudf::column> splitPoint =
@@ -51,7 +51,7 @@ std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> splitAtN
             CUDF_EXPECTS(splitPoint->size() == 1, "Split result should be single row");
             // Get this index back to host
             std::unique_ptr<cudf::scalar> splitIndex = cudf::get_element(*splitPoint, 0);
-            int const splitPos = (skipSplit) ? table->num_rows() : convertInteger(*splitIndex);
+            int const splitPos = convertInteger(*splitIndex);
             // Now split this table at that index
             std::vector<cudf::table_view> splitTables = cudf::split(*table, { splitPos });
             CUDF_EXPECTS(splitTables.size() == 2, "Should be two tables from split");

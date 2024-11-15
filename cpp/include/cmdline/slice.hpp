@@ -11,5 +11,4 @@
 int convertInteger(cudf::scalar const &scalar);
 
 std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> splitAtNeedle(cudf::table_view const &needle,
-  std::vector<std::unique_ptr<cudf::table>> const &haystacks,
-  bool skipSplit);
+  std::vector<std::unique_ptr<cudf::table>> const &haystacks);
