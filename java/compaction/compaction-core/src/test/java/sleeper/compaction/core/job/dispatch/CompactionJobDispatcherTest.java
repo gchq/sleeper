@@ -196,7 +196,7 @@ public class CompactionJobDispatcherTest {
         }
     }
 
-    private void dispatchNonExpiredBatchRequest(String batchKey) {
+    private void dispatchNonExpiredBatchRequest(String batchKey) throws Exception {
         Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
         Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
 

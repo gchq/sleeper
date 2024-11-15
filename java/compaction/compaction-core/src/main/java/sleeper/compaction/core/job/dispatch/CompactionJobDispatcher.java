@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.UncheckedStateStoreException;
 
 import java.time.Instant;
 import java.util.List;
@@ -55,7 +54,7 @@ public class CompactionJobDispatcher {
         this.returnToPendingQueue = returnToPendingQueue;
     }
 
-    public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) {
+    public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) throws StateStoreException {
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
@@ -71,15 +70,9 @@ public class CompactionJobDispatcher {
         }
     }
 
-    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) {
+    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
-        return batch.stream().allMatch(job -> {
-            try {
-                return stateStore.isPartitionFilesAssignedToJob(job.getPartitionId(), job.getInputFiles(), job.getId());
-            } catch (StateStoreException ex) {
-                throw new UncheckedStateStoreException(ex);
-            }
-        });
+        return stateStore.isAssigned(batch.stream().map(CompactionJob::createInputFileAssignmentsCheck).toList());
     }
 
     public interface ReadBatch {
