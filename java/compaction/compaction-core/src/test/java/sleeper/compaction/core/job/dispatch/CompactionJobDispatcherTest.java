@@ -33,7 +33,6 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,7 +65,7 @@ public class CompactionJobDispatcherTest {
     InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
-    List<CompactionJob> compactionQueue = new ArrayList<>();
+    Queue<CompactionJob> compactionQueue = new LinkedList<>();
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
 
     @Test
