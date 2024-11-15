@@ -40,12 +40,14 @@ public class CompactionJobDispatcher {
     private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
+    private final SendRequestToDeadLetterQueue sendToDeadLetterQueue;
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ReadBatch readBatch,
             CompactionJobStatusStore statusStore, SendJob sendJob,
-            ReturnRequestToPendingQueue returnToPendingQueue) {
+            ReturnRequestToPendingQueue returnToPendingQueue,
+            SendRequestToDeadLetterQueue sendToDeadLetterQueue) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -53,10 +55,12 @@ public class CompactionJobDispatcher {
         this.statusStore = statusStore;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
+        this.sendToDeadLetterQueue = sendToDeadLetterQueue;
     }
 
     public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) {
         if (timeNow.isAfter(request.getExpiryTime())) {
+            sendToDeadLetterQueue.failedRequest(request);
             return;
         }
 
@@ -95,6 +99,10 @@ public class CompactionJobDispatcher {
 
     public interface ReturnRequestToPendingQueue {
         void returnRequest(CompactionJobDispatchRequest request, int delaySeconds);
+    }
+
+    public interface SendRequestToDeadLetterQueue {
+        void failedRequest(CompactionJobDispatchRequest request);
     }
 
 }
