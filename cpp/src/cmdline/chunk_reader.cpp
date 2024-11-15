@@ -64,7 +64,7 @@ std::size_t calcRowsInViews(auto const &views) noexcept {
 int main(int argc, char **argv) {
     configure_logging();
     // NOLINTNEXTLINE
-    CLI::App app{ "Simple program to test chunking compaction algorithm with cuDF", "chunk_reader" };
+    CLI::App app{ "Simple program based chunking compaction algorithm with cuDF", "chunk_reader" };
     app.set_version_flag("--version", std::string{ gpu_compact::cmake::project_version });
 
     std::string outputFile;
@@ -77,6 +77,10 @@ int main(int argc, char **argv) {
     app.add_option("-p,--pass-read-limit", passReadLimit, "cuDF Parquet reader pass read limit in MiB");
     std::size_t epsilon{ 10'000 };
     app.add_option("-e,--epsilon", epsilon, "Lower bound for rows remaining in a table before loading next chunk");
+    bool wrong{ false };
+    app.add_flag(
+      "-w,--wrong", wrong, "Use broken algorithm that doesn't sort properly. Useful for testing. DO NOT USE!");
+
     CLI11_PARSE(app, argc, argv);// NOLINT
 
     // force gpu initialization so it's not included in the time
@@ -180,7 +184,7 @@ int main(int argc, char **argv) {
 
                 // Split all tables at the needle
                 std::pair<std::vector<cudf::table_view>, std::vector<cudf::table_view>> const tableVectors =
-                  splitAtNeedle(needle, tables);
+                  splitAtNeedle(needle, tables, wrong);
 
                 // Merge all the upper parts of the tables
                 std::size_t rowsToWrite = calcRowsInViews(tableVectors.first);
