@@ -275,11 +275,24 @@ public interface CompactionProperty {
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.timeout.seconds")
+            .description("The amount of time in seconds a batch of compaction jobs may be pending before it should " +
+                    "not be retried. If the input files have not been successfully assigned to the jobs, and this " +
+                    "much time has passed, then the batch will fail to send.\n" +
+                    "Once a pending batch fails the input files will never be compacted again without other " +
+                    "intervention, so it's important to ensure file assignment will be done within this time. That " +
+                    "depends on the throughput of state store commits.\n" +
+                    "It's also necessary to ensure file assignment will be done before the next invocation of " +
+                    "compaction job creation, otherwise invalid jobs will be created for the same input files. " +
+                    "The rate of these invocations is set in `sleeper.compaction.job.creation.period.minutes`.")
+            .defaultValue("40")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.retry.delay.seconds")
             .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
                     "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
                     "the batch will be retried after a delay.")
-            .defaultValue("90")
+            .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")

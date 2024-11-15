@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -66,7 +67,7 @@ public class CompactionJobDispatcherTest {
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
-    Queue<BatchRequestMessage> pendingQueue = new LinkedList<>();
+    Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
@@ -80,6 +81,7 @@ public class CompactionJobDispatcherTest {
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
+
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
@@ -89,7 +91,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
-        assertThat(pendingQueue).isEmpty();
+        assertThat(delayedPendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
@@ -105,17 +107,20 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 123);
-        CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
-                batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        Instant dispatchTime = Instant.parse("2024-11-15T10:21:00Z");
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                batchKey, Instant.parse("2024-11-15T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:22:00Z");
 
         // When
-        dispatchWithTimeAtRetryCheck(request, dispatchTime);
+        dispatchWithTimeAtRetryCheck(request, retryTime);
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(123)));
+        assertThat(delayedPendingQueue).containsExactly(
+                BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -130,15 +135,17 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-6", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-        CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
-                batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                batchKey, Instant.parse("2024-11-15T10:30:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:33:00Z");
 
         // When / Then
-        assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, dispatchTime))
+        assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, retryTime))
                 .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
-        assertThat(pendingQueue).isEmpty();
+        assertThat(delayedPendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -154,19 +161,22 @@ public class CompactionJobDispatcherTest {
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
+
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
-        CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
-                batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                batchKey, Instant.parse("2024-11-15T10:30:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:33:00Z");
 
         // When
-        dispatchWithTimeAtRetryCheck(request, dispatchTime);
+        dispatchWithTimeAtRetryCheck(request, retryTime);
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
-        assertThat(pendingQueue).isEmpty();
+        assertThat(delayedPendingQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
@@ -180,10 +190,11 @@ public class CompactionJobDispatcherTest {
     }
 
     private void dispatchNonExpiredBatchRequest(String batchKey) throws Exception {
-        Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
-        Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
+        Instant batchTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant retryTime = Instant.parse("2024-11-15T10:21:30Z");
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 60);
 
-        dispatchWithTimeAtRetryCheck(generateBatchRequestWithExpiry(batchKey, expiryTime), invokeTime);
+        dispatchWithTimeAtRetryCheck(generateBatchRequestAtTime(batchKey, batchTime), retryTime);
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
@@ -197,7 +208,7 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
-        return (request, delaySeconds) -> pendingQueue.add(
+        return (request, delaySeconds) -> delayedPendingQueue.add(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(delaySeconds)));
     }
 
@@ -207,9 +218,9 @@ public class CompactionJobDispatcherTest {
         }
     }
 
-    private CompactionJobDispatchRequest generateBatchRequestWithExpiry(String batchKey, Instant expiryTime) {
-        return CompactionJobDispatchRequest.forTableWithBatchKeyAndExpiry(
-                tableProperties.get(TABLE_ID), batchKey, expiryTime);
+    private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchKey, Instant timeNow) {
+        return CompactionJobDispatchRequest.forTableWithBatchKeyAtTime(
+                tableProperties, batchKey, timeNow);
     }
 
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {

@@ -15,30 +15,37 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import sleeper.core.properties.table.TableProperties;
+
+import java.time.Duration;
 import java.time.Instant;
+
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class CompactionJobDispatchRequest {
 
-    private final String batchKey;
     private final String tableId;
+    private final String batchKey;
     private final Instant expiryTime;
 
-    private CompactionJobDispatchRequest(String batchKey, String tableId, Instant expiryTime) {
-        this.batchKey = batchKey;
+    private CompactionJobDispatchRequest(String tableId, String batchKey, Instant expiryTime) {
         this.tableId = tableId;
+        this.batchKey = batchKey;
         this.expiryTime = expiryTime;
     }
 
-    public static CompactionJobDispatchRequest forTableWithBatchKeyAndExpiry(String tableId, String batchKey, Instant expiryTime) {
-        return new CompactionJobDispatchRequest(batchKey, tableId, expiryTime);
-    }
-
-    public String getBatchKey() {
-        return batchKey;
+    public static CompactionJobDispatchRequest forTableWithBatchKeyAtTime(TableProperties tableProperties, String batchKey, Instant timeNow) {
+        Duration sendTimeout = Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS));
+        return new CompactionJobDispatchRequest(tableProperties.get(TABLE_ID), batchKey, timeNow.plus(sendTimeout));
     }
 
     public String getTableId() {
         return tableId;
+    }
+
+    public String getBatchKey() {
+        return batchKey;
     }
 
     public Instant getExpiryTime() {
