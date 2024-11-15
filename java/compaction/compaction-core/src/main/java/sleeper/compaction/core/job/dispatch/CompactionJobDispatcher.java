@@ -53,7 +53,7 @@ public class CompactionJobDispatcher {
         this.returnToPendingQueue = returnToPendingQueue;
     }
 
-    public void dispatch(CompactionJobDispatchRequest request, Instant timeNow) {
+    public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) {
 
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {

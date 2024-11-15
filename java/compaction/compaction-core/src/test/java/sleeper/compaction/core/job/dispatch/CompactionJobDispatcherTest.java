@@ -118,8 +118,9 @@ public class CompactionJobDispatcherTest {
         stateStore.addFiles(List.of(file1, file2));
 
         // When
-        CompactionJobDispatchRequest request = generateBatchRequest(batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        dispatcher().dispatch(request, Instant.parse("2024-11-15T10:21:00Z"));
+        CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
+                batchKey, Instant.parse("2024-11-15T10:36:00Z"));
+        dispatcher().dispatchAtTime(request, Instant.parse("2024-11-15T10:21:00Z"));
 
         // Then
         assertThat(compactionQueue).isEmpty();
@@ -177,17 +178,17 @@ public class CompactionJobDispatcherTest {
         Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
         Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
 
-        dispatcher().dispatch(generateBatchRequest(batchKey, expiryTime), invokeTime);
+        dispatcher().dispatchAtTime(generateBatchRequestWithExpiry(batchKey, expiryTime), invokeTime);
     }
 
     private void dispatchExpiredBatchRequest(String batchKey) {
         Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
         Instant expiryTime = Instant.parse("2024-11-15T10:19:00Z");
 
-        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), invokeTime);
+        dispatcher().dispatchAtTime(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), invokeTime);
     }
 
-    private CompactionJobDispatchRequest generateBatchRequest(String batchKey, Instant expiryTime) {
+    private CompactionJobDispatchRequest generateBatchRequestWithExpiry(String batchKey, Instant expiryTime) {
         return new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime);
     }
 }
