@@ -35,8 +35,10 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
@@ -75,6 +77,7 @@ public class CompactionJobDispatcherTest {
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
+    Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
@@ -117,10 +120,12 @@ public class CompactionJobDispatcherTest {
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
         // When
-        dispatchNonExpiredBatchRequest(batchKey);
+        CompactionJobDispatchRequest request = generateBatchRequest(batchKey, Instant.parse("2024-11-15T10:36:00Z"));
+        dispatcher().dispatch(request, Instant.parse("2024-11-15T10:21:00Z"));
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(pendingQueue).containsExactly(request);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -153,11 +158,15 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher dispatcher() {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
-                statusStore, compactionQueue::add);
+                statusStore, compactionQueue::add, returnRequest());
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
         return (bucketName, key) -> s3PathToCompactionJobBatch.get(bucketName + "/" + key);
+    }
+
+    private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
+        return (request) -> pendingQueue.add(request);
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
@@ -167,16 +176,20 @@ public class CompactionJobDispatcherTest {
     }
 
     private void dispatchNonExpiredBatchRequest(String batchKey) {
-        Instant createTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
         Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
 
-        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), createTime);
+        dispatcher().dispatch(generateBatchRequest(batchKey, expiryTime), invokeTime);
     }
 
     private void dispatchExpiredBatchRequest(String batchKey) {
-        Instant createTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
         Instant expiryTime = Instant.parse("2024-11-15T10:19:00Z");
 
-        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), createTime);
+        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), invokeTime);
+    }
+
+    private CompactionJobDispatchRequest generateBatchRequest(String batchKey, Instant expiryTime) {
+        return new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime);
     }
 }

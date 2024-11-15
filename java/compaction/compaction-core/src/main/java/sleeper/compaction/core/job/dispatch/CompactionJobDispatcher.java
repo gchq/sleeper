@@ -37,20 +37,24 @@ public class CompactionJobDispatcher {
     private final ReadBatch readBatch;
     private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
+    private final ReturnRequestToPendingQueue returnToPendingQueue;
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ReadBatch readBatch,
-            CompactionJobStatusStore statusStore, SendJob sendJob) {
+            CompactionJobStatusStore statusStore, SendJob sendJob,
+            ReturnRequestToPendingQueue returnToPendingQueue) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.readBatch = readBatch;
         this.statusStore = statusStore;
         this.sendJob = sendJob;
+        this.returnToPendingQueue = returnToPendingQueue;
     }
 
     public void dispatch(CompactionJobDispatchRequest request, Instant timeNow) {
+
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
@@ -58,7 +62,7 @@ public class CompactionJobDispatcher {
                 sendJob.send(job);
             }
         } else {
-            //Do the age checks
+            returnToPendingQueue.returnRequest(request);
         }
     }
 
@@ -81,6 +85,10 @@ public class CompactionJobDispatcher {
     public interface SendJob {
 
         void send(CompactionJob job);
+    }
+
+    public interface ReturnRequestToPendingQueue {
+        void returnRequest(CompactionJobDispatchRequest request); // TODO add delay time
     }
 
 }
