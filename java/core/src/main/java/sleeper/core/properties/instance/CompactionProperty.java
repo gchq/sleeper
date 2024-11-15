@@ -275,6 +275,13 @@ public interface CompactionProperty {
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.retry.delay.seconds")
+            .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
+                    "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
+                    "the batch will be retried after a delay.")
+            .defaultValue("90")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
                     "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.\n" +

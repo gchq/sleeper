@@ -44,6 +44,7 @@ import java.util.Queue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -117,6 +118,7 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 123);
 
         // When
         CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
@@ -125,7 +127,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(1)));
+        assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(123)));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -166,7 +168,8 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
-        return (request) -> pendingQueue.add(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(1)));
+        return (request, delaySeconds) -> pendingQueue.add(
+                BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(delaySeconds)));
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {

@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
@@ -253,6 +254,13 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.table.compaction.job.send.batch.size")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS)
+            .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
+                    "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
+                    "the batch will be retried after a delay.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")

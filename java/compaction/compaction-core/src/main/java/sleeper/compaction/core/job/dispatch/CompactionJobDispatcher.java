@@ -18,6 +18,7 @@ package sleeper.compaction.core.job.dispatch;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -28,6 +29,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 
 public class CompactionJobDispatcher {
 
@@ -62,7 +64,8 @@ public class CompactionJobDispatcher {
                 sendJob.send(job);
             }
         } else {
-            returnToPendingQueue.returnRequest(request);
+            TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+            returnToPendingQueue.returnRequest(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
         }
     }
 
@@ -88,7 +91,7 @@ public class CompactionJobDispatcher {
     }
 
     public interface ReturnRequestToPendingQueue {
-        void returnRequest(CompactionJobDispatchRequest request); // TODO add delay time
+        void returnRequest(CompactionJobDispatchRequest request, int delaySeconds);
     }
 
 }
