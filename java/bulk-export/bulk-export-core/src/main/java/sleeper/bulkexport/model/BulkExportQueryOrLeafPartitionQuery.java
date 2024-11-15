@@ -16,10 +16,10 @@
 
 package sleeper.bulkexport.model;
 
-import java.util.Objects;
-
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+
+import java.util.Objects;
 
 /**
  * A class used to determine if a query is the main bulk export or a leaf
@@ -41,18 +41,39 @@ public class BulkExportQueryOrLeafPartitionQuery {
                 "exportLeafPartitionQuery must not be null");
     }
 
+    /**
+     * Is the export query a leaf query.
+     *
+     * @return a boolean value.
+     */
     public boolean isLeafQuery() {
         return exportLeafPartitionQuery != null;
     }
 
+    /**
+     * As a BulkExportQuery if its not a leaf export query.
+     *
+     * @return the export query as BulkExportQuery.
+     */
     public BulkExportQuery asParentQuery() {
         return Objects.requireNonNull(exportQuery, "export query is a leaf export query");
     }
 
+    /**
+     * As a BulkExportLeafPartitionQuery if its not an export query.
+     *
+     * @return the leaf partition export query as BulkExportLeafPartitionQuery.
+     */
     public BulkExportLeafPartitionQuery asLeafExportQuery() {
         return Objects.requireNonNull(exportLeafPartitionQuery, "export query is not a leaf export query");
     }
 
+    /**
+     * Gets the export id regardless of it being an parent or leaf partition export
+     * query.
+     *
+     * @return the export id.
+     */
     public String getExportId() {
         if (exportLeafPartitionQuery != null) {
             return exportLeafPartitionQuery.getExportId();
@@ -61,6 +82,13 @@ public class BulkExportQueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Gets the table properties for the table being exported.
+     *
+     * @param provider the provider to get the table properties.
+     *
+     * @return the table properties.
+     */
     public TableProperties getTableProperties(TablePropertiesProvider provider) {
         if (exportLeafPartitionQuery != null) {
             return provider.getById(exportLeafPartitionQuery.getTableId());

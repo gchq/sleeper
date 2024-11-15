@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An export query for a leaf partition. The query contains information about which files should be read.
+ * An export query for a leaf partition. The query contains information about
+ * which files should be read.
  * That query is broken down over leaf partitions into subqueries. Each
  * subquery retrieves records from a leaf partition.
  */
@@ -96,6 +97,9 @@ public class BulkExportLeafPartitionQuery {
                 '}';
     }
 
+    /**
+     * Builder for the BulkExportLeafPartitionQuery model.
+     */
     public static final class Builder {
         private String tableId;
         private String exportId;
@@ -106,35 +110,71 @@ public class BulkExportLeafPartitionQuery {
         private Builder() {
         }
 
-        public Builder parentQuery(BulkExportQuery parentQuery) {
-            return exportId(parentQuery.getExportId());
-        }
-
+        /**
+         * Provide the tableId.
+         *
+         * @param tableId the id for the table.
+         *
+         * @return the builder object.
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Provide the exportId.
+         *
+         * @param exportId the id for the export.
+         *
+         * @return the builder object.
+         */
         public Builder exportId(String exportId) {
             this.exportId = exportId;
             return this;
         }
 
+        /**
+         * Provide the subExportId.
+         *
+         * @param subExportId the id for the sub export.
+         *
+         * @return the builder object.
+         */
         public Builder subExportId(String subExportId) {
             this.subExportId = subExportId;
             return this;
         }
 
+        /**
+         * Provide the leafPartitionId.
+         *
+         * @param leafPartitionId the id for the leaf partition.
+         *
+         * @return the builder object.
+         */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
             return this;
         }
 
+        /**
+         * Provide the leaf partition files.
+         *
+         * @param files the files to be exported
+         *
+         * @return the builder object.
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
         }
 
+        /**
+         * Builds the BulkExportLeafPartitionQuery.
+         *
+         * @return a BulkExportLeafPartitionQuery object.
+         */
         public BulkExportLeafPartitionQuery build() {
             return new BulkExportLeafPartitionQuery(this);
         }

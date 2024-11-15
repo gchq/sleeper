@@ -30,7 +30,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
 import sleeper.bulkexport.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.model.BulkExportQueryValidationException;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.properties.instance.InstanceProperties;
 
 /**

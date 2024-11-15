@@ -19,7 +19,7 @@ package sleeper.bulkexport.model;
 import java.util.List;
 
 /**
- * A json representation of a request for a bulk export.
+ * A JSON representation of a request for a bulk export.
  */
 class BulkExportQueryJson {
     private final String tableName;
@@ -94,6 +94,9 @@ class BulkExportQueryJson {
         return new Builder();
     }
 
+    /**
+     * Builder class for BulkExportQueryJson.
+     */
     private static final class Builder {
         private String tableName;
         private String tableId;

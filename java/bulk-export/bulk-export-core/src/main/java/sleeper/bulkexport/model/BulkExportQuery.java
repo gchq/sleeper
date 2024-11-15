@@ -93,21 +93,47 @@ public class BulkExportQuery {
         private Builder() {
         }
 
+        /**
+         * Provide the tableId.
+         *
+         * @param tableId the id for the table.
+         *
+         * @return the builder object.
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Provide the tableName.
+         *
+         * @param tableName the name for the table.
+         *
+         * @return the builder object.
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Provide the exportId.
+         *
+         * @param exportId the id for the export job.
+         *
+         * @return the builder object.
+         */
         public Builder exportId(String exportId) {
             this.exportId = exportId;
             return this;
         }
 
+        /**
+         * Builds the BulkExportQuery.
+         *
+         * @return a BulkExportQuery object.
+         */
         public BulkExportQuery build() {
             return new BulkExportQuery(this);
         }

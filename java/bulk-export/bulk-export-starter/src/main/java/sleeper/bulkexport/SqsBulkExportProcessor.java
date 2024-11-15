@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.util.ObjectFactoryException;
 
 /**
  * Lambda to start the bulk export job.
@@ -42,7 +42,7 @@ public class SqsBulkExportProcessor {
     }
 
     public void processExport(BulkExportQueryOrLeafPartitionQuery exportQuery) {
-
+        throw new RuntimeException("Not implemented");
     }
 
     public static Builder builder() {
