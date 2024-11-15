@@ -26,6 +26,7 @@ import sleeper.core.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
@@ -39,12 +40,14 @@ public class CompactionJobDispatcher {
     private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
+    private final Supplier<Instant> timeSupplier;
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ReadBatch readBatch,
             CompactionJobStatusStore statusStore, SendJob sendJob,
-            ReturnRequestToPendingQueue returnToPendingQueue) {
+            ReturnRequestToPendingQueue returnToPendingQueue,
+            Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -52,9 +55,10 @@ public class CompactionJobDispatcher {
         this.statusStore = statusStore;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
+        this.timeSupplier = timeSupplier;
     }
 
-    public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) throws StateStoreException {
+    public void dispatch(CompactionJobDispatchRequest request) throws StateStoreException {
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
@@ -62,7 +66,7 @@ public class CompactionJobDispatcher {
                 sendJob.send(job);
             }
         } else {
-            if (timeNow.isAfter(request.getExpiryTime())) {
+            if (timeSupplier.get().isAfter(request.getExpiryTime())) {
                 throw new CompactionJobBatchExpiredException(request);
             }
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
@@ -72,7 +76,9 @@ public class CompactionJobDispatcher {
 
     private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) throws StateStoreException {
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
-        return stateStore.isAssigned(batch.stream().map(CompactionJob::createInputFileAssignmentsCheck).toList());
+        return stateStore.isAssigned(batch.stream()
+                .map(CompactionJob::createInputFileAssignmentsCheck)
+                .toList());
     }
 
     public interface ReadBatch {

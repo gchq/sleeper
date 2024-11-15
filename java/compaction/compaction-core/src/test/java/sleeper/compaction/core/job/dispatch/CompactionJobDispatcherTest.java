@@ -111,7 +111,7 @@ public class CompactionJobDispatcherTest {
         Instant dispatchTime = Instant.parse("2024-11-15T10:21:00Z");
 
         // When
-        dispatcher().dispatchAtTime(request, dispatchTime);
+        dispatchWithTimeAtRetryCheck(request, dispatchTime);
 
         // Then
         assertThat(compactionQueue).isEmpty();
@@ -135,7 +135,7 @@ public class CompactionJobDispatcherTest {
         Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
 
         // When / Then
-        assertThatThrownBy(() -> dispatcher().dispatchAtTime(request, dispatchTime))
+        assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, dispatchTime))
                 .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).isEmpty();
@@ -162,7 +162,7 @@ public class CompactionJobDispatcherTest {
         Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
 
         // When
-        dispatcher().dispatchAtTime(request, dispatchTime);
+        dispatchWithTimeAtRetryCheck(request, dispatchTime);
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
@@ -175,10 +175,21 @@ public class CompactionJobDispatcherTest {
         s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + key, jobs);
     }
 
-    private CompactionJobDispatcher dispatcher() {
+    private void dispatchWithTimeAtRetryCheck(CompactionJobDispatchRequest request, Instant time) throws Exception {
+        dispatcher(List.of(time)).dispatch(request);
+    }
+
+    private void dispatchNonExpiredBatchRequest(String batchKey) throws Exception {
+        Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
+
+        dispatchWithTimeAtRetryCheck(generateBatchRequestWithExpiry(batchKey, expiryTime), invokeTime);
+    }
+
+    private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
-                statusStore, compactionQueue::add, returnRequest());
+                statusStore, compactionQueue::add, returnRequest(), times.iterator()::next);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
@@ -194,13 +205,6 @@ public class CompactionJobDispatcherTest {
         for (CompactionJob job : jobs) {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         }
-    }
-
-    private void dispatchNonExpiredBatchRequest(String batchKey) throws Exception {
-        Instant invokeTime = Instant.parse("2024-11-15T10:21:00Z");
-        Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
-
-        dispatcher().dispatchAtTime(generateBatchRequestWithExpiry(batchKey, expiryTime), invokeTime);
     }
 
     private CompactionJobDispatchRequest generateBatchRequestWithExpiry(String batchKey, Instant expiryTime) {
