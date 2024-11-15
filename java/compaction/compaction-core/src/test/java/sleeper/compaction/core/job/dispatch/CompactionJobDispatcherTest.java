@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
@@ -52,19 +53,6 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
-    /*
-     * Message from queue points to batch in s3 <? possible failure case
-     * List of compaction jobs from s3 file <?
-     * should be created if input files have been assigned <
-     * compactions jobs sent to compaction queue and created in status store
-     * log out sucess of batch [info level]
-     * if unassigned
-     * determine age of batch
-     * if young enough
-     * whole message returned to queue <
-     * if too old
-     * dead letter/ throw exception (to determine) <
-     */
 
     Schema schema = schemaWithKey("key");
     InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -79,7 +67,6 @@ public class CompactionJobDispatcherTest {
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
     Queue<BatchRequestMessage> pendingQueue = new LinkedList<>();
-    Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
@@ -103,7 +90,6 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
         assertThat(pendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
@@ -129,12 +115,11 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(123)));
-        assertThat(pendingDeadLetterQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
     @Test
-    void shouldRemoveBatchFromTheQueueIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
+    void shouldFailIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
 
         // Given
         String batchKey = "batch.json";
@@ -144,16 +129,15 @@ public class CompactionJobDispatcherTest {
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-6", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-
-        // When
         CompactionJobDispatchRequest request = generateBatchRequestWithExpiry(
                 batchKey, Instant.parse("2024-11-15T10:36:00Z"));
-        dispatcher().dispatchAtTime(request, Instant.parse("2024-11-15T10:37:00Z"));
+        Instant dispatchTime = Instant.parse("2024-11-15T10:37:00Z");
 
-        // Then
+        // When / Then
+        assertThatThrownBy(() -> dispatcher().dispatchAtTime(request, dispatchTime))
+                .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).containsExactly(request);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -164,7 +148,7 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher dispatcher() {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
-                statusStore, compactionQueue::add, returnRequest(), sendDeadLetter());
+                statusStore, compactionQueue::add, returnRequest());
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
@@ -174,10 +158,6 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
         return (request, delaySeconds) -> pendingQueue.add(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(delaySeconds)));
-    }
-
-    private CompactionJobDispatcher.SendRequestToDeadLetterQueue sendDeadLetter() {
-        return request -> pendingDeadLetterQueue.add(request);
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
