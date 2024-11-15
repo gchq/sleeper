@@ -23,10 +23,14 @@ public class CompactionJobDispatchRequest {
     private final String tableId;
     private final Instant expiryTime;
 
-    public CompactionJobDispatchRequest(String batchKey, String tableId, Instant expiryTime) {
+    private CompactionJobDispatchRequest(String batchKey, String tableId, Instant expiryTime) {
         this.batchKey = batchKey;
         this.tableId = tableId;
         this.expiryTime = expiryTime;
+    }
+
+    public static CompactionJobDispatchRequest forTableWithBatchKeyAndExpiry(String tableId, String batchKey, Instant expiryTime) {
+        return new CompactionJobDispatchRequest(batchKey, tableId, expiryTime);
     }
 
     public String getBatchKey() {

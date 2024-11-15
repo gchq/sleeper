@@ -208,7 +208,8 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatchRequest generateBatchRequestWithExpiry(String batchKey, Instant expiryTime) {
-        return new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime);
+        return CompactionJobDispatchRequest.forTableWithBatchKeyAndExpiry(
+                tableProperties.get(TABLE_ID), batchKey, expiryTime);
     }
 
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {
