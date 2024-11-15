@@ -56,6 +56,9 @@ public class CompactionJobDispatcher {
     }
 
     public void dispatchAtTime(CompactionJobDispatchRequest request, Instant timeNow) {
+        if (timeNow.isAfter(request.getExpiryTime())) {
+            return;
+        }
 
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {

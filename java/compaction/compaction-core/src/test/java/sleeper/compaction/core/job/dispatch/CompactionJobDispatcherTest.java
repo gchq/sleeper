@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -132,7 +131,6 @@ public class CompactionJobDispatcherTest {
     }
 
     @Test
-    @Disabled
     void shouldRemoveBatchFromTheQueueIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
 
         // Given
