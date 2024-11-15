@@ -59,7 +59,7 @@ public class CompactionJobDispatcher {
     }
 
     public void dispatch(CompactionJobDispatchRequest request) throws StateStoreException {
-        List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
+        List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
                 statusStore.jobCreated(job);
@@ -70,7 +70,7 @@ public class CompactionJobDispatcher {
                 throw new CompactionJobBatchExpiredException(request);
             }
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
-            returnToPendingQueue.returnRequest(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
+            returnToPendingQueue.sendWithDelay(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
         }
     }
 
@@ -81,18 +81,21 @@ public class CompactionJobDispatcher {
                 .toList());
     }
 
+    @FunctionalInterface
     public interface ReadBatch {
 
-        List<CompactionJob> readBatch(String bucketName, String key);
+        List<CompactionJob> read(String bucketName, String key);
     }
 
+    @FunctionalInterface
     public interface SendJob {
 
         void send(CompactionJob job);
     }
 
+    @FunctionalInterface
     public interface ReturnRequestToPendingQueue {
-        void returnRequest(CompactionJobDispatchRequest request, int delaySeconds);
+        void sendWithDelay(CompactionJobDispatchRequest request, int delaySeconds);
     }
 
 }
