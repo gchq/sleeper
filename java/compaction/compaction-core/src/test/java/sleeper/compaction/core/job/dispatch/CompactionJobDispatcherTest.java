@@ -79,7 +79,7 @@ public class CompactionJobDispatcherTest {
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     List<CompactionJob> compactionQueue = new ArrayList<>();
     Queue<BatchRequestMessage> pendingQueue = new LinkedList<>();
-    Queue<CompactionJobDispatchRequest> deadLetterQueue = new LinkedList<>();
+    Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
@@ -103,7 +103,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
         assertThat(pendingQueue).isEmpty();
-        assertThat(deadLetterQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
@@ -129,7 +129,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).containsExactly(BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(123)));
-        assertThat(deadLetterQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -153,7 +153,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(pendingQueue).isEmpty();
-        assertThat(deadLetterQueue).containsExactly(request);
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
@@ -177,7 +177,7 @@ public class CompactionJobDispatcherTest {
     }
 
     private CompactionJobDispatcher.SendRequestToDeadLetterQueue sendDeadLetter() {
-        return request -> deadLetterQueue.add(request);
+        return request -> pendingDeadLetterQueue.add(request);
     }
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
