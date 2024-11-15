@@ -122,7 +122,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+                .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
     }
 
     @Test
@@ -324,6 +324,14 @@ public class StateStoreCommitterThroughputST {
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(20.0);
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {
+        return commitsPerSecond -> {
+            double filesPerSecond = commitsPerSecond * 10_000;
+            assertThat(filesPerSecond)
+                    .isGreaterThan(300.0);
+        };
     }
 
 }
