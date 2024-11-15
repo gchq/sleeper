@@ -15,14 +15,18 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import java.time.Instant;
+
 public class CompactionJobDispatchRequest {
 
     private final String batchKey;
     private final String tableId;
+    private final Instant expiryTime;
 
-    public CompactionJobDispatchRequest(String batchKey, String tableId) {
+    public CompactionJobDispatchRequest(String batchKey, String tableId, Instant expiryTime) {
         this.batchKey = batchKey;
         this.tableId = tableId;
+        this.expiryTime = expiryTime;
     }
 
     public String getBatchKey() {
@@ -31,6 +35,10 @@ public class CompactionJobDispatchRequest {
 
     public String getTableId() {
         return tableId;
+    }
+
+    public Instant getExpiryTime() {
+        return expiryTime;
     }
 
 }

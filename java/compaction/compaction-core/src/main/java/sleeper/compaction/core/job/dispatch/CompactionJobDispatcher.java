@@ -24,6 +24,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.UncheckedStateStoreException;
 
+import java.time.Instant;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -49,7 +50,7 @@ public class CompactionJobDispatcher {
         this.sendJob = sendJob;
     }
 
-    public void dispatch(CompactionJobDispatchRequest request) {
+    public void dispatch(CompactionJobDispatchRequest request, Instant timeNow) {
         List<CompactionJob> batch = readBatch.readBatch(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {

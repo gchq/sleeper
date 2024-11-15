@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -87,13 +88,12 @@ public class CompactionJobDispatcherTest {
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
-        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID));
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
         // When
-        dispatcher().dispatch(request);
+        dispatchNonExpiredBatchRequest(batchKey);
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
@@ -106,23 +106,44 @@ public class CompactionJobDispatcherTest {
 
         // Given
         String batchKey = "batch.json";
-        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
-        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
         putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
-        CompactionJobDispatchRequest request = new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID));
         Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
         // When
-        dispatcher().dispatch(request);
+        dispatchNonExpiredBatchRequest(batchKey);
 
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+    }
+
+    @Test
+    @Disabled
+    void shouldRemoveBatchFromTheQueueIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
+
+        // Given
+        String batchKey = "batch.json";
+        FileReference file1 = fileFactory.rootFile("test5.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test6.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-5", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-6", List.of(file2), "root");
+        putCompactionJobBatch(batchKey, List.of(job1, job2));
+        stateStore.addFiles(List.of(file1, file2));
+
+        // When
+        dispatchExpiredBatchRequest(batchKey);
+
+        // Then
+        assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+
     }
 
     private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
@@ -143,5 +164,19 @@ public class CompactionJobDispatcherTest {
         for (CompactionJob job : jobs) {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         }
+    }
+
+    private void dispatchNonExpiredBatchRequest(String batchKey) {
+        Instant createTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant expiryTime = Instant.parse("2024-11-15T10:36:00Z");
+
+        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), createTime);
+    }
+
+    private void dispatchExpiredBatchRequest(String batchKey) {
+        Instant createTime = Instant.parse("2024-11-15T10:21:00Z");
+        Instant expiryTime = Instant.parse("2024-11-15T10:19:00Z");
+
+        dispatcher().dispatch(new CompactionJobDispatchRequest(batchKey, tableProperties.get(TABLE_ID), expiryTime), createTime);
     }
 }
