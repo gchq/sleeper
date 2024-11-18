@@ -35,6 +35,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
@@ -112,7 +113,7 @@ public class StateStoreWaitForFiles {
         try {
             DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
                 try {
-                    result.set(stateStore.isPartitionFilesAssignedToJob(job.getPartitionId(), job.getInputFiles(), job.getId()));
+                    result.set(stateStore.isAssigned(List.of(job.createInputFileAssignmentsCheck())));
                 } catch (StateStoreException e) {
                     throw new UncheckedStateStoreException(e);
                 }
