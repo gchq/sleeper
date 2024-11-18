@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.core.job.commit;
 
-import org.approvaltests.Approvals;
+import org.approvaltests.JsonApprovals;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -54,7 +54,7 @@ public class CompactionJobIdAssignmentCommitRequestSerDeTest {
 
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commit);
-        Approvals.verify(json);
+        JsonApprovals.verifyJson(json);
     }
 
     @Test
