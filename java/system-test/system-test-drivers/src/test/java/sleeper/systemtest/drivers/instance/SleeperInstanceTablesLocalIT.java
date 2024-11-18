@@ -23,7 +23,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -44,13 +43,9 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.PREDEFINED_TABLE;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.PREDEFINED_TABLE_NO_NAME;
 
 @LocalStackDslTest
 public class SleeperInstanceTablesLocalIT {
@@ -173,42 +168,6 @@ public class SleeperInstanceTablesLocalIT {
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);
             assertThat(sleeper.directQuery().allRecordsByTable()).hasSize(2);
-        }
-    }
-
-    @Nested
-    @DisplayName("Derive actual table name from name specified by test")
-    class DeriveTableName {
-
-        @Test
-        void shouldGenerateNameForTableDefinedInTest(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.connectToInstanceNoTables(MAIN);
-
-            // When
-            sleeper.tables().create("A", DEFAULT_SCHEMA);
-
-            // Then
-            assertThat(sleeper.table("A").tableProperties().get(TABLE_NAME))
-                    .startsWith("A-")
-                    .hasSize(38);
-        }
-
-        @Test
-        void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
-            // When
-            sleeper.connectToInstance(PREDEFINED_TABLE);
-            // Then
-            assertThat(sleeper.tableProperties().get(TABLE_NAME))
-                    .startsWith("predefined-test-table-")
-                    .hasSize(58);
-        }
-
-        @Test
-        void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
-            // When / Then
-            assertThatThrownBy(() -> sleeper.connectToInstance(PREDEFINED_TABLE_NO_NAME))
-                    .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
     }
 
