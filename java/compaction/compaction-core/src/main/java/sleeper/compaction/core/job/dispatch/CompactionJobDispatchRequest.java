@@ -38,11 +38,6 @@ public class CompactionJobDispatchRequest {
         this.expiryTime = expiryTime;
     }
 
-    public static CompactionJobDispatchRequest forTableWithBatchKeyAtTime(TableProperties tableProperties, String batchKey, Instant timeNow) {
-        Duration sendTimeout = Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS));
-        return new CompactionJobDispatchRequest(tableProperties.get(TABLE_ID), batchKey, timeNow.plus(sendTimeout));
-    }
-
     public static CompactionJobDispatchRequest forTableWithBatchIdAtTime(
             InstanceProperties instanceProperties, TableProperties tableProperties, String batchId, Instant timeNow) {
         String batchKey = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
