@@ -20,6 +20,8 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.util.GsonConfig;
 
+import java.util.List;
+
 /**
  * Serialises and deserialises a compaction job to and from a JSON string.
  */
@@ -42,8 +44,23 @@ public class CompactionJobSerDe {
         return gson.toJson(job);
     }
 
+    public String toJsonPrettyPrint(List<CompactionJob> batch) {
+        return gsonPrettyPrint.toJson(new Batch(batch));
+    }
+
+    public String toJson(List<CompactionJob> batch) {
+        return gson.toJson(new Batch(batch));
+    }
+
     public CompactionJob fromJson(String json) {
         return gson.fromJson(json, CompactionJob.class);
+    }
+
+    public List<CompactionJob> batchFromJson(String json) {
+        return gson.fromJson(json, Batch.class).jobs();
+    }
+
+    private record Batch(List<CompactionJob> jobs) {
     }
 
 }

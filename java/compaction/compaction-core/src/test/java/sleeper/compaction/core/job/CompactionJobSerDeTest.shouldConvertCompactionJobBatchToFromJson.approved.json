@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "tableId": "some-table",
+      "jobId": "some-job",
+      "inputFiles": [
+        "file1",
+        "file2"
+      ],
+      "outputFile": "outputfile1",
+      "partitionId": "some-partition"
+    },
+    {
+      "tableId": "other-table",
+      "jobId": "other-job",
+      "inputFiles": [
+        "file3",
+        "file4"
+      ],
+      "outputFile": "outputfile2",
+      "partitionId": "other-partition",
+      "iteratorClassName": "sleeper.core.iterator.impl.AgeOffIterator",
+      "iteratorConfig": "key,600000"
+    }
+  ]
+}
