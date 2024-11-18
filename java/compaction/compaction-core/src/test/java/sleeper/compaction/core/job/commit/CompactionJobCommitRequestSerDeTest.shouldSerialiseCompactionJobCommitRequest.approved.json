@@ -1,7 +1,16 @@
 {
   "type": "COMPACTION_FINISHED",
   "request": {
-    "job": "AAp0ZXN0LXRhYmxlAAh0ZXN0LWpvYgARdGVzdC1wYXJ0aXRpb24taWQAAAACAA1maWxlMS5wYXJxdWV0AA1maWxlMi5wYXJxdWV0AQEAE3Rlc3Qtb3V0cHV0LnBhcnF1ZXQ\u003d",
+    "job": {
+      "tableId": "test-table",
+      "jobId": "test-job",
+      "inputFiles": [
+        "file1.parquet",
+        "file2.parquet"
+      ],
+      "outputFile": "test-output.parquet",
+      "partitionId": "test-partition-id"
+    },
     "taskId": "test-task",
     "jobRunId": "test-job-run",
     "startTime": 1714561080000,

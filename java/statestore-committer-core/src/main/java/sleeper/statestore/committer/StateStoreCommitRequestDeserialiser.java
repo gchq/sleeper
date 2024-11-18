@@ -24,8 +24,6 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobJsonSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.partition.Partition;
@@ -59,7 +57,6 @@ public class StateStoreCommitRequestDeserialiser {
 
     private static Gson gson(TablePropertiesProvider tablePropertiesProvider, DeserialiseFromDataBucket readFromDataBucket) {
         return GsonConfig.standardBuilder()
-                .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
                 .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
                 .serializeNulls()
