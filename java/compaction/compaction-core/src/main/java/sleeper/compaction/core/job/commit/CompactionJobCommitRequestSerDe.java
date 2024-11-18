@@ -27,8 +27,7 @@ public class CompactionJobCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public CompactionJobCommitRequestSerDe() {
-        GsonBuilder builder = GsonConfig.standardBuilder()
-                .serializeNulls();
+        GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }

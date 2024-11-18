@@ -15,7 +15,8 @@
  */
 package sleeper.compaction.core.job;
 
-import org.approvaltests.JsonApprovals;
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -40,7 +41,7 @@ public class CompactionJobSerDeTest {
 
         String json = serDe.toJsonPrettyPrint(job);
         assertThat(serDe.fromJson(json)).isEqualTo(job);
-        JsonApprovals.verifyJson(json);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -57,6 +58,6 @@ public class CompactionJobSerDeTest {
 
         String json = serDe.toJsonPrettyPrint(job);
         assertThat(serDe.fromJson(json)).isEqualTo(job);
-        JsonApprovals.verifyJson(json);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 }
