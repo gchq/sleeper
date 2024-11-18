@@ -35,6 +35,10 @@ public class CompactionJobSerDeNew {
         return gsonPrettyPrint.toJson(job);
     }
 
+    public String toJson(CompactionJob job) {
+        return gson.toJson(job);
+    }
+
     public CompactionJob fromJson(String json) {
         return gson.fromJson(json, CompactionJob.class);
     }

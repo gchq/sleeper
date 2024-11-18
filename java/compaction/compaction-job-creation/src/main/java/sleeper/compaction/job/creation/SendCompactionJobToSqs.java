@@ -43,7 +43,7 @@ public class SendCompactionJobToSqs {
     }
 
     public void send(CompactionJob compactionJob) throws IOException {
-        String serialisedJobDefinition = new CompactionJobSerDeNew().toJsonPrettyPrint(compactionJob);
+        String serialisedJobDefinition = new CompactionJobSerDeNew().toJson(compactionJob);
         LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
