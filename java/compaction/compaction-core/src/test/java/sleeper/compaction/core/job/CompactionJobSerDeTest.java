@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.impl.AgeOffIterator;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,6 +67,34 @@ public class CompactionJobSerDeTest {
 
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(job);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    void shouldConvertCompactionJobBatchToFromJson() {
+        // Given
+        CompactionJob job1 = CompactionJob.builder()
+                .tableId("some-table")
+                .jobId("some-job")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFile("outputfile1")
+                .partitionId("some-partition")
+                .build();
+        CompactionJob job2 = CompactionJob.builder()
+                .tableId("other-table")
+                .jobId("other-job")
+                .inputFiles(Arrays.asList("file3", "file4"))
+                .outputFile("outputfile2")
+                .partitionId("other-partition")
+                .iteratorClassName(AgeOffIterator.class.getName())
+                .iteratorConfig("key,600000")
+                .build();
+
+        // When
+        String json = serDe.toJsonPrettyPrint(List.of(job1, job2));
+
+        // Then
+        assertThat(serDe.batchFromJson(json)).containsExactly(job1, job2);
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 }

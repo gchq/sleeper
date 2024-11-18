@@ -94,6 +94,16 @@ public class TableFilePaths {
         return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
     }
 
+    /**
+     * Generates a path to a batch of compaction jobs to be dispatched.
+     *
+     * @param  batchId the ID of the batch
+     * @return         the file path
+     */
+    public String constructCompactionJobBatchPath(String batchId) {
+        return String.format("%s/compactions/%s.json", filePathPrefix, batchId);
+    }
+
     public String getFilePathPrefix() {
         return filePathPrefix;
     }

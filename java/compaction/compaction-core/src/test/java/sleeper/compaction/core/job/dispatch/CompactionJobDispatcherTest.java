@@ -72,12 +72,10 @@ public class CompactionJobDispatcherTest {
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
 
         // Given
-        String batchKey = "batch.json";
         FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
         FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
@@ -85,8 +83,12 @@ public class CompactionJobDispatcherTest {
         Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
         statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
 
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
+        putCompactionJobBatch(request, List.of(job1, job2));
+
         // When
-        dispatchNonExpiredBatchRequest(batchKey);
+        dispatchWithNoRetry(request);
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
@@ -99,19 +101,18 @@ public class CompactionJobDispatcherTest {
     void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() throws Exception {
 
         // Given
-        String batchKey = "batch.json";
         FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
         FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
-        putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
-                batchKey, Instant.parse("2024-11-15T10:20:00Z"));
+                "test-batch", Instant.parse("2024-11-15T10:20:00Z"));
         Instant retryTime = Instant.parse("2024-11-15T10:22:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
 
         // When
         dispatchWithTimeAtRetryCheck(request, retryTime);
@@ -127,18 +128,17 @@ public class CompactionJobDispatcherTest {
     void shouldFailIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
 
         // Given
-        String batchKey = "batch.json";
         FileReference file1 = fileFactory.rootFile("test5.parquet", 1234);
         FileReference file2 = fileFactory.rootFile("test6.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-5", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-6", List.of(file2), "root");
-        putCompactionJobBatch(batchKey, List.of(job1, job2));
         stateStore.addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
-                batchKey, Instant.parse("2024-11-15T10:30:00Z"));
+                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         Instant retryTime = Instant.parse("2024-11-15T10:33:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
 
         // When / Then
         assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, retryTime))
@@ -148,52 +148,16 @@ public class CompactionJobDispatcherTest {
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
-    @Test
-    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssignedAndTimeoutExpired() throws Exception {
-
-        // Given
-        String batchKey = "batch.json";
-        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
-        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
-        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
-        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        putCompactionJobBatch(batchKey, List.of(job1, job2));
-        stateStore.addFiles(List.of(file1, file2));
-        assignJobIds(List.of(job1, job2));
-
-        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
-        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
-        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
-
-        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
-        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
-                batchKey, Instant.parse("2024-11-15T10:30:00Z"));
-        Instant retryTime = Instant.parse("2024-11-15T10:33:00Z");
-
-        // When
-        dispatchWithTimeAtRetryCheck(request, retryTime);
-
-        // Then
-        assertThat(compactionQueue).containsExactly(job1, job2);
-        assertThat(delayedPendingQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
+    private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
+        s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + request.getBatchKey(), jobs);
     }
 
-    private void putCompactionJobBatch(String key, List<CompactionJob> jobs) {
-        s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + key, jobs);
+    private void dispatchWithNoRetry(CompactionJobDispatchRequest request) throws Exception {
+        dispatcher(List.of()).dispatch(request);
     }
 
     private void dispatchWithTimeAtRetryCheck(CompactionJobDispatchRequest request, Instant time) throws Exception {
         dispatcher(List.of(time)).dispatch(request);
-    }
-
-    private void dispatchNonExpiredBatchRequest(String batchKey) throws Exception {
-        Instant batchTime = Instant.parse("2024-11-15T10:21:00Z");
-        Instant retryTime = Instant.parse("2024-11-15T10:21:30Z");
-        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 60);
-
-        dispatchWithTimeAtRetryCheck(generateBatchRequestAtTime(batchKey, batchTime), retryTime);
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
@@ -217,9 +181,9 @@ public class CompactionJobDispatcherTest {
         }
     }
 
-    private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchKey, Instant timeNow) {
-        return CompactionJobDispatchRequest.forTableWithBatchKeyAtTime(
-                tableProperties, batchKey, timeNow);
+    private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchId, Instant timeNow) {
+        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                instanceProperties, tableProperties, batchId, timeNow);
     }
 
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {

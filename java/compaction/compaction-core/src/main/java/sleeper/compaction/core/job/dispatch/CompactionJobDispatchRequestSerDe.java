@@ -13,54 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.job;
+package sleeper.compaction.core.job.dispatch;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.util.GsonConfig;
 
-import java.util.List;
-
-/**
- * Serialises and deserialises a compaction job to and from a JSON string.
- */
-public class CompactionJobSerDe {
+public class CompactionJobDispatchRequestSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public CompactionJobSerDe() {
+    public CompactionJobDispatchRequestSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJsonPrettyPrint(CompactionJob job) {
+    public String toJsonPrettyPrint(CompactionJobDispatchRequest job) {
         return gsonPrettyPrint.toJson(job);
     }
 
-    public String toJson(CompactionJob job) {
+    public String toJson(CompactionJobDispatchRequest job) {
         return gson.toJson(job);
     }
 
-    public String toJsonPrettyPrint(List<CompactionJob> batch) {
-        return gsonPrettyPrint.toJson(new Batch(batch));
-    }
-
-    public String toJson(List<CompactionJob> batch) {
-        return gson.toJson(new Batch(batch));
-    }
-
-    public CompactionJob fromJson(String json) {
-        return gson.fromJson(json, CompactionJob.class);
-    }
-
-    public List<CompactionJob> batchFromJson(String json) {
-        return gson.fromJson(json, Batch.class).jobs();
-    }
-
-    private record Batch(List<CompactionJob> jobs) {
+    public CompactionJobDispatchRequest fromJson(String json) {
+        return gson.fromJson(json, CompactionJobDispatchRequest.class);
     }
 
 }

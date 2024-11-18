@@ -15,10 +15,13 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableFilePaths;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -35,7 +38,10 @@ public class CompactionJobDispatchRequest {
         this.expiryTime = expiryTime;
     }
 
-    public static CompactionJobDispatchRequest forTableWithBatchKeyAtTime(TableProperties tableProperties, String batchKey, Instant timeNow) {
+    public static CompactionJobDispatchRequest forTableWithBatchIdAtTime(
+            InstanceProperties instanceProperties, TableProperties tableProperties, String batchId, Instant timeNow) {
+        String batchKey = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructCompactionJobBatchPath(batchId);
         Duration sendTimeout = Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS));
         return new CompactionJobDispatchRequest(tableProperties.get(TABLE_ID), batchKey, timeNow.plus(sendTimeout));
     }
@@ -52,4 +58,25 @@ public class CompactionJobDispatchRequest {
         return expiryTime;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, batchKey, expiryTime);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CompactionJobDispatchRequest)) {
+            return false;
+        }
+        CompactionJobDispatchRequest other = (CompactionJobDispatchRequest) obj;
+        return Objects.equals(tableId, other.tableId) && Objects.equals(batchKey, other.batchKey) && Objects.equals(expiryTime, other.expiryTime);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionJobDispatchRequest{tableId=" + tableId + ", batchKey=" + batchKey + ", expiryTime=" + expiryTime + "}";
+    }
 }
