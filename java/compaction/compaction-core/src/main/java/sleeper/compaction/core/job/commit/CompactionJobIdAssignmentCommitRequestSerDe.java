@@ -26,7 +26,7 @@ public class CompactionJobIdAssignmentCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public CompactionJobIdAssignmentCommitRequestSerDe() {
-        GsonBuilder builder = GsonConfig.standardBuilder().serializeNulls();
+        GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
