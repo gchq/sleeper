@@ -1100,12 +1100,12 @@ sleeper.default.table.compaction.job.send.batch.size=10
 # It's also necessary to ensure file assignment will be done before the next invocation of compaction
 # job creation, otherwise invalid jobs will be created for the same input files. The rate of these
 # invocations is set in `sleeper.compaction.job.creation.period.minutes`.
-sleeper.default.table.compaction.job.send.timeout.seconds=40
+sleeper.default.table.compaction.job.send.timeout.seconds=90
 
 # The amount of time in seconds to wait between attempts to send a batch of compaction jobs. The batch
 # will be sent if all input files have been successfully assigned to the jobs, otherwise the batch
 # will be retried after a delay.
-sleeper.default.table.compaction.job.send.retry.delay.seconds=10
+sleeper.default.table.compaction.job.send.retry.delay.seconds=30
 
 # Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.
 # If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio *

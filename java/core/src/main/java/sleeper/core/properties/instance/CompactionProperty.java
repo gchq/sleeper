@@ -285,14 +285,14 @@ public interface CompactionProperty {
                     "It's also necessary to ensure file assignment will be done before the next invocation of " +
                     "compaction job creation, otherwise invalid jobs will be created for the same input files. " +
                     "The rate of these invocations is set in `sleeper.compaction.job.creation.period.minutes`.")
-            .defaultValue("40")
+            .defaultValue("90")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.retry.delay.seconds")
             .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
                     "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
                     "the batch will be retried after a delay.")
-            .defaultValue("10")
+            .defaultValue("30")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
