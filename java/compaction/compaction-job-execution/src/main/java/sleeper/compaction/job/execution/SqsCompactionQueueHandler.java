@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobSerDeNew;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -65,7 +65,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         } else {
             Message message = receiveMessageResult.getMessages().get(0);
             LOGGER.info("Received message: {}", message);
-            CompactionJob compactionJob = new CompactionJobSerDeNew().fromJson(message.getBody());
+            CompactionJob compactionJob = new CompactionJobSerDe().fromJson(message.getBody());
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                     "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
 

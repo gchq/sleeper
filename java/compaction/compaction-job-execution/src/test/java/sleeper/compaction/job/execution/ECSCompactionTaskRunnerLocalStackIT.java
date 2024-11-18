@@ -42,7 +42,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobSerDeNew;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
@@ -504,7 +504,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private String sendJob(CompactionJob job) throws IOException {
-        String jobJson = new CompactionJobSerDeNew().toJson(job);
+        String jobJson = new CompactionJobSerDe().toJson(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(jobJson);

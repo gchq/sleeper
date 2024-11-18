@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.compaction.core.job.CompactionJobSerDeNew;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -67,7 +67,7 @@ public class DeadLettersStatusReport {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
             try {
-                return new CompactionJobSerDeNew().fromJson(s).toString();
+                return new CompactionJobSerDe().fromJson(s).toString();
             } catch (RuntimeException e) {
                 return e.getMessage();
             }

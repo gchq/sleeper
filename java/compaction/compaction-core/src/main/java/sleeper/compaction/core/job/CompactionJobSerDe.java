@@ -15,71 +15,32 @@
  */
 package sleeper.compaction.core.job;
 
-import org.apache.commons.codec.binary.Base64;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import sleeper.core.util.GsonConfig;
 
-/**
- * Serialises and deserialises a compaction job to and from a JSON string.
- */
 public class CompactionJobSerDe {
 
-    private CompactionJobSerDe() {
+    private final Gson gson;
+    private final Gson gsonPrettyPrint;
+
+    public CompactionJobSerDe() {
+        GsonBuilder builder = GsonConfig.standardBuilder();
+        gson = builder.create();
+        gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public static String serialiseToString(CompactionJob compactionJob) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeUTF(compactionJob.getTableId());
-        dos.writeUTF(compactionJob.getId());
-        dos.writeUTF(compactionJob.getPartitionId());
-        dos.writeInt(compactionJob.getInputFiles().size());
-        for (String inputFile : compactionJob.getInputFiles()) {
-            dos.writeUTF(inputFile);
-        }
-        if (null == compactionJob.getIteratorClassName()) {
-            dos.writeBoolean(true);
-        } else {
-            dos.writeBoolean(false);
-            dos.writeUTF(compactionJob.getIteratorClassName());
-        }
-        if (null == compactionJob.getIteratorConfig()) {
-            dos.writeBoolean(true);
-        } else {
-            dos.writeBoolean(false);
-            dos.writeUTF(compactionJob.getIteratorConfig());
-        }
-        dos.writeUTF(compactionJob.getOutputFile());
-        dos.close();
-
-        return Base64.encodeBase64String(baos.toByteArray());
+    public String toJsonPrettyPrint(CompactionJob job) {
+        return gsonPrettyPrint.toJson(job);
     }
 
-    public static CompactionJob deserialiseFromString(String serialisedJob) throws IOException {
-        byte[] bytes = Base64.decodeBase64(serialisedJob);
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        DataInputStream dis = new DataInputStream(bais);
-        String tableId = dis.readUTF();
-        CompactionJob.Builder compactionJobBuilder = CompactionJob.builder()
-                .tableId(tableId)
-                .jobId(dis.readUTF())
-                .partitionId(dis.readUTF());
-        int numInputFiles = dis.readInt();
-        List<String> inputFiles = new ArrayList<>(numInputFiles);
-        for (int i = 0; i < numInputFiles; i++) {
-            inputFiles.add(dis.readUTF());
-        }
-        compactionJobBuilder.inputFiles(inputFiles)
-                .iteratorClassName(!dis.readBoolean() ? dis.readUTF() : null)
-                .iteratorConfig(!dis.readBoolean() ? dis.readUTF() : null);
-        compactionJobBuilder.outputFile(dis.readUTF());
-        dis.close();
-        return compactionJobBuilder.build();
+    public String toJson(CompactionJob job) {
+        return gson.toJson(job);
     }
+
+    public CompactionJob fromJson(String json) {
+        return gson.fromJson(json, CompactionJob.class);
+    }
+
 }

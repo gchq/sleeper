@@ -34,7 +34,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobSerDeNew;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
@@ -168,7 +168,7 @@ public class CreateCompactionJobsIT {
     }
 
     private CompactionJob readJobMessage(Message message) {
-        return new CompactionJobSerDeNew().fromJson(message.getBody());
+        return new CompactionJobSerDe().fromJson(message.getBody());
 
     }
 
