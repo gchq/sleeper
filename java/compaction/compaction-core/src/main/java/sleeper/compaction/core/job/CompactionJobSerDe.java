@@ -20,6 +20,9 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.util.GsonConfig;
 
+/**
+ * Serialises and deserialises a compaction job to and from a JSON string.
+ */
 public class CompactionJobSerDe {
 
     private final Gson gson;
