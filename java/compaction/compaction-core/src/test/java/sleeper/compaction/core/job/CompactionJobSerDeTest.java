@@ -31,6 +31,7 @@ public class CompactionJobSerDeTest {
 
     @Test
     void shouldConvertCompactionJobToFromJsonWithNoIterator() {
+        // Given
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table")
                 .jobId("test-job")
@@ -39,13 +40,17 @@ public class CompactionJobSerDeTest {
                 .partitionId("test-partition")
                 .build();
 
+        // When
         String json = serDe.toJsonPrettyPrint(job);
+
+        // Then
         assertThat(serDe.fromJson(json)).isEqualTo(job);
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
     void shouldConvertCompactionJobToFromJsonWithIterator() {
+        // Given
         CompactionJob job = CompactionJob.builder()
                 .tableId("test-table")
                 .jobId("test-job")
@@ -56,7 +61,10 @@ public class CompactionJobSerDeTest {
                 .iteratorConfig("key,600000")
                 .build();
 
+        // When
         String json = serDe.toJsonPrettyPrint(job);
+
+        // Then
         assertThat(serDe.fromJson(json)).isEqualTo(job);
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
