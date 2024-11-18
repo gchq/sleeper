@@ -65,8 +65,7 @@ jobs:
         working-directory: ./java
       - name: Upload site as artifact
         if: failure() && steps.site.conclusion == 'success'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: site
-          path: |
-            /tmp/sleeper/site
+          path: /tmp/sleeper/site

@@ -31,6 +31,8 @@ import java.util.Objects;
 
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
@@ -253,6 +255,26 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_SEND_TIMEOUT_SECS = Index.propertyBuilder("sleeper.table.compaction.job.send.timeout.seconds")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS)
+            .description("The amount of time in seconds a batch of compaction jobs may be pending before it should " +
+                    "not be retried. If the input files have not been successfully assigned to the jobs, and this " +
+                    "much time has passed, then the batch will fail to send.\n" +
+                    "Once a pending batch fails the input files will never be compacted again without other " +
+                    "intervention, so it's important to ensure file assignment will be done within this time. That " +
+                    "depends on the throughput of state store commits.\n" +
+                    "It's also necessary to ensure file assignment will be done before the next invocation of " +
+                    "compaction job creation, otherwise invalid jobs will be created for the same input files. " +
+                    "The rate of these invocations is set in `sleeper.compaction.job.creation.period.minutes`.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.table.compaction.job.send.retry.delay.seconds")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS)
+            .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
+                    "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
+                    "the batch will be retried after a delay.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")

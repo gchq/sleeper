@@ -16,7 +16,12 @@
 package sleeper.clients.status.report.statestore;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 
 public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
     private final String logStream;
@@ -31,6 +36,13 @@ public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
         this.tableId = Objects.requireNonNull(tableId, "tableId must not be null");
         this.type = Objects.requireNonNull(type, "type must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
+    }
+
+    public static Map<String, Integer> countNumCommitsByTableId(List<StateStoreCommitterLogEntry> entries) {
+        return entries.stream()
+                .filter(entry -> entry instanceof StateStoreCommitSummary)
+                .map(entry -> (StateStoreCommitSummary) entry)
+                .collect(groupingBy(StateStoreCommitSummary::getTableId, summingInt(commit -> 1)));
     }
 
     @Override

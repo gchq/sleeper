@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
+import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -22,6 +23,7 @@ import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingRespons
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -43,11 +45,13 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     private final SystemTestInstanceContext instance;
     private final SqsClient sqs;
+    private final AmazonS3 s3;
     private final LambdaClient lambda;
 
-    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SqsClient sqs, LambdaClient lambda) {
+    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SqsClient sqs, AmazonS3 s3, LambdaClient lambda) {
         this.instance = instance;
         this.sqs = sqs;
+        this.s3 = s3;
         this.lambda = lambda;
     }
 
@@ -62,6 +66,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     private void sendMessageBatch(List<StateStoreCommitMessage> batch) {
+        StateStoreCommitRequestInS3Uploader s3Uploader = s3Uploader();
         sqs.sendMessageBatch(request -> request
                 .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
                 .entries(batch.stream()
@@ -69,9 +74,13 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
                                 .messageDeduplicationId(UUID.randomUUID().toString())
                                 .id(UUID.randomUUID().toString())
                                 .messageGroupId(message.getTableId())
-                                .messageBody(message.getBody())
+                                .messageBody(s3Uploader.uploadAndWrapIfTooBig(message.getTableId(), message.getBody()))
                                 .build())
                         .collect(toUnmodifiableList())));
+    }
+
+    private StateStoreCommitRequestInS3Uploader s3Uploader() {
+        return new StateStoreCommitRequestInS3Uploader(instance.getInstanceProperties(), s3::putObject);
     }
 
     @Override
