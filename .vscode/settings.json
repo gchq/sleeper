@@ -18,6 +18,18 @@
     "java",
     "#"
   ],
+  "java.completion.favoriteStaticMembers": [
+    "java.util.stream.Collectors.*",
+    "org.assertj.core.api.Assertions.*",
+    "org.mockito.Mockito.*",
+    "org.mockito.ArgumentMatchers.*",
+    "org.mockito.Answers.*",
+    "sleeper.core.schema.SchemaTestHelper.*",
+    "sleeper.core.statestore.inmemory.StateStoreTestHelper.*",
+    "sleeper.configuration.properties.InstancePropertiesTestHelper.*",
+    "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
+    "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*"
+  ],
   "comment.java.configuration.runtimes": [
     {
       "name": "JavaSE-11",
