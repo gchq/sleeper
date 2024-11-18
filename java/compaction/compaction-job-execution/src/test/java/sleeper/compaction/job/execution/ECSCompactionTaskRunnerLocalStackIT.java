@@ -201,16 +201,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
             CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
             assignJobIdsToInputFiles(stateStore, job1, job2);
-            String job1Json = CompactionJobSerDe.serialiseToString(job1);
-            String job2Json = CompactionJobSerDe.serialiseToString(job2);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
-            sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job2Json);
-            sqs.sendMessage(sendMessageRequest);
+            sendJob(job1);
+            sendJob(job2);
 
             // When
             createTask("task-id").run();
@@ -335,10 +327,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMessageBody(CompactionJobSerDe.serialiseToString(job));
-        sqs.sendMessage(sendMessageRequest);
+        sendJob(job);
         Queue<Instant> times = new LinkedList<>(List.of(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
@@ -505,17 +494,17 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {
-        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
+        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList())));
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, String... inputFilenames) throws IOException {
-        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, List.of(inputFilenames)));
+        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(inputFilenames)));
     }
 
-    private String sendJobForFilesGetJson(CompactionJob job) throws IOException {
-        String jobJson = CompactionJobSerDe.serialiseToString(job);
+    private String sendJob(CompactionJob job) throws IOException {
+        String jobJson = new CompactionJobSerDe().toJson(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(jobJson);

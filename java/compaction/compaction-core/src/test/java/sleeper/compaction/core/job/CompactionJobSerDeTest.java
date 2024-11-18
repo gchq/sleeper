@@ -15,77 +15,57 @@
  */
 package sleeper.compaction.core.job;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
+import sleeper.core.iterator.impl.AgeOffIterator;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
 public class CompactionJobSerDeTest {
 
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-
-    @BeforeEach
-    void setUp() {
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-    }
-
-    private CompactionJob.Builder jobForTable() {
-        return CompactionJob.builder()
-                .tableId(tableProperties.get(TABLE_ID));
-    }
-
-    private Schema schemaWithStringKey() {
-        return Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    }
+    private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     @Test
-    public void shouldSerDeCorrectlyForJobWithNoIterator() throws IOException {
+    void shouldConvertCompactionJobToFromJsonWithNoIterator() {
         // Given
-        CompactionJob compactionJob = jobForTable()
-                .jobId("compactionJob-1")
+        CompactionJob job = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job")
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFile("outputfile")
-                .partitionId("partition1").build();
-        tableProperties.setSchema(schemaWithStringKey());
-
-        // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
-
-        // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-    }
-
-    @Test
-    public void shouldSerDeCorrectlyForJobWithIterator() throws IOException {
-        // Given
-        CompactionJob compactionJob = jobForTable()
-                .jobId("compactionJob-1")
-                .inputFiles(Arrays.asList("file1", "file2"))
-                .outputFile("outputfile")
-                .partitionId("partition1")
-                .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1")
+                .partitionId("test-partition")
                 .build();
-        tableProperties.setSchema(schemaWithStringKey());
 
         // When
-        CompactionJob deserialisedCompactionJob = CompactionJobSerDe.deserialiseFromString(CompactionJobSerDe.serialiseToString(compactionJob));
+        String json = serDe.toJsonPrettyPrint(job);
 
         // Then
-        assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
+        assertThat(serDe.fromJson(json)).isEqualTo(job);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    void shouldConvertCompactionJobToFromJsonWithIterator() {
+        // Given
+        CompactionJob job = CompactionJob.builder()
+                .tableId("test-table")
+                .jobId("test-job")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFile("outputfile")
+                .partitionId("test-partition")
+                .iteratorClassName(AgeOffIterator.class.getName())
+                .iteratorConfig("key,600000")
+                .build();
+
+        // When
+        String json = serDe.toJsonPrettyPrint(job);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(job);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 }
