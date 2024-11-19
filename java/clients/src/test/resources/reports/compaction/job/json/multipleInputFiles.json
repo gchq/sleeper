@@ -6,6 +6,11 @@
       "partitionId": "test-partition",
       "inputFilesCount": 5
     },
+    "filesAssignedStatus": {
+      "updateTime": "2022-10-13T12:00:00.001Z",
+      "partitionId": "test-partition",
+      "inputFilesCount": 5
+    },
     "jobRuns": []
   }
 ]

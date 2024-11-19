@@ -21,6 +21,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
@@ -177,6 +178,11 @@ public abstract class CompactionJobStatusReporterTestBase {
         Instant creationTime = Instant.parse("2022-10-13T12:00:00.001Z");
         return List.of(CompactionJobStatus.builder().jobId("test-job")
                 .createdStatus(CompactionJobCreatedStatus.builder()
+                        .inputFilesCount(5)
+                        .updateTime(creationTime)
+                        .partitionId("test-partition")
+                        .build())
+                .filesAssignedStatus(CompactionJobInputFilesAssignedStatus.builder()
                         .inputFilesCount(5)
                         .updateTime(creationTime)
                         .partitionId("test-partition")
