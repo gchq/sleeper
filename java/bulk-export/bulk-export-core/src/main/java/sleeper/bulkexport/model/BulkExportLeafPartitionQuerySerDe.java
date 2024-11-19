@@ -19,13 +19,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises an BulkExportQuery to and from JSON.
+ * Serialises an BulkExportLeafPartitionQuery to and from JSON.
  */
-public class BulkExportQuerySerDe {
+public class BulkExportLeafPartitionQuerySerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
-    public BulkExportQuerySerDe() {
+    public BulkExportLeafPartitionQuerySerDe() {
         GsonBuilder builder = new GsonBuilder()
                 .serializeNulls();
         gson = builder.create();
@@ -33,41 +33,41 @@ public class BulkExportQuerySerDe {
     }
 
     /**
-     * Formats a BulkExportQuery as a JSON string.
+     * Formats a BulkExportLeafPartitionQuery as a JSON string.
      *
      * @param query to format
      *
      * @return a JSON string of the query
      */
-    public String toJson(BulkExportQuery query) {
-        return gson.toJson(BulkExportQueryJson.from(query));
+    public String toJson(BulkExportLeafPartitionQuery query) {
+        return gson.toJson(BulkExportLeafPartitionQueryJson.from(query));
     }
 
     /**
-     * Formats a BulkExportQuery as a JSON string with the option to pretty
-     * print.
+     * Formats a BulkExportLeafPartitionQuery as a JSON string with the option to
+     * pretty print.
      *
      * @param query       to format
      * @param prettyPrint option to pretty print
      *
      * @return a JSON string of the query
      */
-    public String toJson(BulkExportQuery query, boolean prettyPrint) {
+    public String toJson(BulkExportLeafPartitionQuery query, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(BulkExportQueryJson.from(query));
+            return gsonPrettyPrinting.toJson(BulkExportLeafPartitionQueryJson.from(query));
         }
         return toJson(query);
     }
 
     /**
-     * Formats a JSON string to a BulkExportQueryJson object.
+     * Formats a JSON string to a BulkExportLeafPartitionQuery object.
      *
      * @param json The JSON string to format.
      *
-     * @return The parsed object as BulkExportQueryJson.
+     * @return The parsed object as BulkExportLeafPartitionQueryJson.
      */
-    public BulkExportQuery fromJson(String json) {
-        BulkExportQueryJson query = gson.fromJson(json, BulkExportQueryJson.class);
-        return query.to();
+    public BulkExportLeafPartitionQuery fromJson(String json) {
+        BulkExportLeafPartitionQueryJson queryJson = gson.fromJson(json, BulkExportLeafPartitionQueryJson.class);
+        return queryJson.to();
     }
 }

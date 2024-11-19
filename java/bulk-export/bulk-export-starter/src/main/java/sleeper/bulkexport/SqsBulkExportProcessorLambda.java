@@ -15,23 +15,26 @@
  */
 package sleeper.bulkexport;
 
-import java.time.Instant;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
+import sleeper.bulkexport.model.BulkExportQuery;
 import sleeper.bulkexport.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.model.BulkExportQueryValidationException;
-import sleeper.core.util.ObjectFactoryException;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.ObjectFactoryException;
+
+import java.util.Optional;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda that is triggered when a serialised export query arrives on an SQS
@@ -42,19 +45,26 @@ import sleeper.core.properties.instance.InstanceProperties;
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportProcessorLambda.class);
 
-    private Instant lastUpdateTime;
     private InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
+    private final AmazonS3 s3Client;
     private SqsBulkExportProcessor processor;
     private BulkExportQuerySerDe bulkExportQuerySerDe;
 
     public SqsBulkExportProcessorLambda() throws ObjectFactoryException {
-        this(AmazonSQSClientBuilder.defaultClient());
+        this(AmazonSQSClientBuilder.defaultClient(), AmazonS3ClientBuilder.defaultClient());
     }
 
-    public SqsBulkExportProcessorLambda(AmazonSQS sqsClient) throws ObjectFactoryException {
+    public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client) throws ObjectFactoryException {
         this.sqsClient = sqsClient;
+        this.s3Client = s3Client;
+        String bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucket);
         bulkExportQuerySerDe = new BulkExportQuerySerDe();
+        processor = SqsBulkExportProcessor.builder()
+                .sqsClient(sqsClient)
+                .instanceProperties(instanceProperties)
+                .build();
     }
 
     @Override
@@ -68,9 +78,16 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
         return null;
     }
 
-    public Optional<BulkExportQueryOrLeafPartitionQuery> deserialiseAndValidate(String message) {
+    /**
+     * Deserialise and validate the bulk export query.
+     *
+     * @param message the bulk export message.
+     *
+     * @return deserialised BulkExportQuery.
+     */
+    public Optional<BulkExportQuery> deserialiseAndValidate(String message) {
         try {
-            BulkExportQueryOrLeafPartitionQuery exportQuery = bulkExportQuerySerDe.fromJson(message);
+            BulkExportQuery exportQuery = bulkExportQuerySerDe.fromJson(message);
             LOGGER.info("Deserialised message to query {}", exportQuery);
             return Optional.of(exportQuery);
         } catch (BulkExportQueryValidationException e) {

@@ -28,6 +28,7 @@ import java.util.Objects;
 public class BulkExportLeafPartitionQuery {
 
     private final String tableId;
+
     private final String exportId;
     private final String subExportId;
     private final String leafPartitionId;

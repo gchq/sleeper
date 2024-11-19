@@ -16,32 +16,45 @@
 
 package sleeper.bulkexport.model;
 
+import java.util.List;
+
 /**
  * A JSON representation of a request for a bulk export.
  */
-class BulkExportQueryJson {
+class BulkExportLeafPartitionQueryJson {
     private final String tableName;
     private final String tableId;
     private final String exportId;
+    private final String subExportId;
+    private final String leafPartitionId;
+    private final List<String> files;
 
-    private BulkExportQueryJson(Builder builder) {
+    private BulkExportLeafPartitionQueryJson(Builder builder) {
         tableName = builder.tableName;
         tableId = builder.tableId;
         exportId = builder.exportQueryId;
+        subExportId = builder.subExportQueryId;
+        leafPartitionId = builder.leafPartitionId;
+        files = builder.files;
     }
 
-    static BulkExportQueryJson from(BulkExportQuery query) {
+    static BulkExportLeafPartitionQueryJson from(BulkExportLeafPartitionQuery leafQuery) {
         return builder()
-                .tableName(query.getTableName())
-                .exportQueryId(query.getExportId())
+                .tableId(leafQuery.getTableId())
+                .exportQueryId(leafQuery.getExportId())
+                .subExportQueryId(leafQuery.getSubExportId())
+                .leafPartitionId(leafQuery.getLeafPartitionId())
+                .files(leafQuery.getFiles())
                 .build();
     }
 
-    BulkExportQuery to() {
-        return BulkExportQuery.builder()
+    BulkExportLeafPartitionQuery to() {
+        return BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
-                .tableName(tableName)
                 .exportId(exportId)
+                .subExportId(subExportId)
+                .leafPartitionId(leafPartitionId)
+                .files(files)
                 .build();
     }
 
@@ -56,6 +69,9 @@ class BulkExportQueryJson {
         private String tableName;
         private String tableId;
         private String exportQueryId;
+        private String subExportQueryId;
+        private String leafPartitionId;
+        private List<String> files;
 
         private Builder() {
         }
@@ -75,8 +91,23 @@ class BulkExportQueryJson {
             return this;
         }
 
-        public BulkExportQueryJson build() {
-            return new BulkExportQueryJson(this);
+        public Builder subExportQueryId(String subExportQueryId) {
+            this.subExportQueryId = subExportQueryId;
+            return this;
+        }
+
+        public Builder leafPartitionId(String leafPartitionId) {
+            this.leafPartitionId = leafPartitionId;
+            return this;
+        }
+
+        public Builder files(List<String> files) {
+            this.files = files;
+            return this;
+        }
+
+        public BulkExportLeafPartitionQueryJson build() {
+            return new BulkExportLeafPartitionQueryJson(this);
         }
     }
 }

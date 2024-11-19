@@ -15,12 +15,11 @@
  */
 package sleeper.bulkexport;
 
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-
-import sleeper.bulkexport.model.BulkExportQueryOrLeafPartitionQuery;
+import sleeper.bulkexport.model.BulkExportQuery;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
@@ -41,7 +40,12 @@ public class SqsBulkExportProcessor {
         tablePropertiesProvider = builder.tablePropertiesProvider;
     }
 
-    public void processExport(BulkExportQueryOrLeafPartitionQuery exportQuery) {
+    /**
+     * Takes a bulk export request and process the export.
+     *
+     * @param exportQuery the bulk export query.
+     */
+    public void processExport(BulkExportQuery exportQuery) {
         throw new RuntimeException("Not implemented");
     }
 
@@ -49,6 +53,9 @@ public class SqsBulkExportProcessor {
         return new Builder();
     }
 
+    /**
+     * A builder class for SqsBulkExportProcessor.
+     */
     public static final class Builder {
         private AmazonSQS sqsClient;
         private InstanceProperties instanceProperties;
@@ -57,21 +64,50 @@ public class SqsBulkExportProcessor {
         private Builder() {
         }
 
+        /**
+         * Sets the AmazonSQS.
+         *
+         * @param sqsClient SQS client to be used.
+         *
+         * @return the builder.
+         */
         public Builder sqsClient(AmazonSQS sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
 
+        /**
+         * Sets the InstanceProperties.
+         *
+         * @param instanceProperties properties to be used.
+         *
+         * @return the builder.
+         */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
         }
 
+        /**
+         * Sets the TablePropertiesProvider.
+         *
+         * @param tablePropertiesProvider table properties provider to be used.
+         *
+         * @return the builder.
+         */
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 
+        /**
+         * Builds the SqsBulkExportProcessor object.
+         *
+         * @return the builder.
+         *
+         * @throws ObjectFactoryException exception can be thrown in the creation of
+         *                                SqsBulkExportProcessor.
+         */
         public SqsBulkExportProcessor build() throws ObjectFactoryException {
             return new SqsBulkExportProcessor(this);
         }
