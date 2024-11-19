@@ -49,7 +49,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
@@ -68,7 +68,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
@@ -88,7 +88,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
@@ -110,7 +110,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         List<String> failureReasons = List.of("Something went wrong");
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFailed(compactionJobFailed(job, defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
@@ -139,7 +139,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(processed, startTime2, finishTime2);
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startTime1).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, startTime2).taskId(DEFAULT_TASK_ID_2).build());
         store.jobFinished(compactionJobFinished(job, summary1).taskId(DEFAULT_TASK_ID).build());
@@ -173,7 +173,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 startedTime, finishedTime, timeInProcess);
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, summary).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
@@ -200,7 +200,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         List<String> failureReasons = List.of("Something went wrong", "More details");
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
         store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 

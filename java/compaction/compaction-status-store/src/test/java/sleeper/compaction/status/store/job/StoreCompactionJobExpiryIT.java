@@ -47,7 +47,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -65,7 +65,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime));
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
 
         // Then
@@ -85,7 +85,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime), defaultUpdateTime(finishedTime));
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, new RecordsProcessedSummary(
                 new RecordsProcessed(60L, 60L), startedTime, finishedTime))
@@ -105,7 +105,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())

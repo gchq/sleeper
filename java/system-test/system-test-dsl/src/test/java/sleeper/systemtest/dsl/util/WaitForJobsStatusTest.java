@@ -249,11 +249,7 @@ public class WaitForJobsStatusTest {
 
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
         store.fixUpdateTime(defaultUpdateTime(createdTime));
-        store.jobCreated(job);
-    }
-
-    private void jobCreated(CompactionJob... jobs) {
-        Stream.of(jobs).forEach(store::jobCreated);
+        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
     }
 
     private void jobInputFilesAssigned(CompactionJob... jobs) {

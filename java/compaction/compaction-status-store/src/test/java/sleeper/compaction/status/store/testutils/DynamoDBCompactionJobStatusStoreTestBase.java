@@ -126,6 +126,20 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
+    protected void storeJobsCreated(CompactionJob... jobs) {
+        for (CompactionJob job : jobs) {
+            storeJobCreated(job);
+        }
+    }
+
+    protected void storeJobCreated(CompactionJob job) {
+        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+    }
+
+    protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
+        storeWithUpdateTime(updateTime).jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+    }
+
     protected static Instant ignoredUpdateTime() {
         return Instant.now();
     }

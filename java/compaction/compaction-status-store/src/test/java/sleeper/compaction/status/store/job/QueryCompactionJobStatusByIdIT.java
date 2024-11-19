@@ -46,8 +46,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         assertThat(getJobStatus(job1.getId()))
@@ -65,7 +64,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId("test-task").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId("test-task").build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId("test-task").build());

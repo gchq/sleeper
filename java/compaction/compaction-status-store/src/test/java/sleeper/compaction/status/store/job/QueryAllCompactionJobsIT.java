@@ -45,9 +45,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
-        store.jobCreated(job3);
+        storeJobsCreated(job1, job2, job3);
 
         // Then
         assertThat(store.getAllJobs(tableId))
@@ -71,8 +69,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         assertThat(store.getAllJobs(tableId))
