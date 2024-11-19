@@ -59,6 +59,14 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
         return updateTime;
     }
 
+    public String getPartitionId() {
+        return partitionId;
+    }
+
+    public int getInputFilesCount() {
+        return inputFilesCount;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(updateTime, partitionId, inputFilesCount);

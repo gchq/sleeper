@@ -1,16 +1,9 @@
 [
   {
     "jobId": "job44444-4444-4444-4444-444444444444",
-    "createdStatus": {
-      "updateTime": "2022-09-20T13:33:12.001Z",
-      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-09-20T13:33:13.001Z",
-      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
-      "inputFilesCount": 1
-    },
+    "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-09-20T13:33:12.001Z",
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
@@ -44,16 +37,9 @@
   },
   {
     "jobId": "job33333-3333-3333-3333-333333333333",
-    "createdStatus": {
-      "updateTime": "2022-09-19T13:33:12.001Z",
-      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-09-19T13:33:13.001Z",
-      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
-      "inputFilesCount": 1
-    },
+    "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-09-19T13:33:12.001Z",
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
@@ -83,16 +69,9 @@
   },
   {
     "jobId": "job22222-2222-2222-2222-222222222222",
-    "createdStatus": {
-      "updateTime": "2022-09-18T13:33:12.001Z",
-      "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-09-18T13:33:13.001Z",
-      "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
-      "inputFilesCount": 1
-    },
+    "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-09-18T13:33:12.001Z",
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
@@ -108,16 +87,9 @@
   },
   {
     "jobId": "job11111-1111-1111-1111-111111111111",
-    "createdStatus": {
-      "updateTime": "2022-09-17T13:33:12.001Z",
-      "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-09-17T13:33:13.001Z",
-      "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
-      "inputFilesCount": 1
-    },
+    "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-09-17T13:33:12.001Z",
     "jobRuns": []
   }
 ]

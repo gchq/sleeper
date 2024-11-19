@@ -43,8 +43,9 @@ import static sleeper.compaction.core.job.status.CompactionJobStatusType.UNCOMMI
 public class CompactionJobStatus {
 
     private final String jobId;
-    private final CompactionJobCreatedStatus createdStatus;
-    private final CompactionJobInputFilesAssignedStatus filesAssignedStatus;
+    private final String partitionId;
+    private final int inputFilesCount;
+    private final Instant createUpdateTime;
     private final ProcessRuns jobRuns;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
@@ -52,8 +53,15 @@ public class CompactionJobStatus {
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        filesAssignedStatus = builder.filesAssignedStatus;
+        if (builder.filesAssignedStatus != null) {
+            partitionId = builder.filesAssignedStatus.getPartitionId();
+            inputFilesCount = builder.filesAssignedStatus.getInputFilesCount();
+            createUpdateTime = builder.filesAssignedStatus.getUpdateTime();
+        } else {
+            partitionId = builder.createdStatus.getPartitionId();
+            inputFilesCount = builder.createdStatus.getInputFilesCount();
+            createUpdateTime = builder.createdStatus.getUpdateTime();
+        }
         jobRuns = builder.jobRuns;
         runsByStatusType = jobRuns.getRunsLatestFirst().stream()
                 .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
@@ -93,20 +101,15 @@ public class CompactionJobStatus {
     }
 
     public Instant getCreateUpdateTime() {
-        return createdStatus.getUpdateTime();
-    }
-
-    public Optional<Instant> getInputFilesAssignedUpdateTime() {
-        return Optional.ofNullable(filesAssignedStatus)
-                .map(CompactionJobInputFilesAssignedStatus::getUpdateTime);
+        return createUpdateTime;
     }
 
     public String getPartitionId() {
-        return createdStatus.getPartitionId();
+        return partitionId;
     }
 
     public int getInputFilesCount() {
-        return createdStatus.getInputFilesCount();
+        return inputFilesCount;
     }
 
     public boolean isStarted() {
@@ -189,10 +192,10 @@ public class CompactionJobStatus {
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isUnstartedOrInProgress()) {
-            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
+            return timeWindowQuery.isUnfinishedProcessInWindow(createUpdateTime);
         } else {
             return timeWindowQuery.isFinishedProcessInWindow(
-                    createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
+                    createUpdateTime, jobRuns.lastTime().orElseThrow());
         }
     }
 
@@ -261,20 +264,18 @@ public class CompactionJobStatus {
             return false;
         }
         CompactionJobStatus other = (CompactionJobStatus) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(createdStatus, other.createdStatus)
-                && Objects.equals(filesAssignedStatus, other.filesAssignedStatus)
-                && Objects.equals(jobRuns, other.jobRuns);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && inputFilesCount == other.inputFilesCount
+                && Objects.equals(createUpdateTime, other.createUpdateTime) && Objects.equals(jobRuns, other.jobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, filesAssignedStatus, jobRuns);
+        return Objects.hash(jobId, partitionId, inputFilesCount, createUpdateTime, jobRuns);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobStatus{jobId=" + jobId + ", createdStatus=" + createdStatus +
-                ", filesAssignedStatus=" + filesAssignedStatus + ", jobRuns=" + jobRuns +
-                ", expiryDate=" + expiryDate + "}";
+        return "CompactionJobStatus{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFilesCount=" + inputFilesCount + ", createUpdateTime=" + createUpdateTime + ", jobRuns=" + jobRuns
+                + ", expiryDate=" + expiryDate + "}";
     }
 }

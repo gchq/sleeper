@@ -4,7 +4,6 @@ Compaction Job Status Report
 Details for job job66666-6666-6666-6666-666666666666:
 State: FINISHED
 Creation time: 2022-09-22T13:33:12.001Z
-Input files assigned to job at time: 2022-09-22T13:33:13.001Z
 Partition ID: partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
 
 Run on task task1111-1111-1111-1111-111111111111
@@ -15,7 +14,6 @@ State store commit time: 2022-09-22T13:36:12.001Z
 Details for job job55555-5555-5555-5555-555555555555:
 State: FINISHED
 Creation time: 2022-09-21T13:33:12.001Z
-Input files assigned to job at time: 2022-09-21T13:33:13.001Z
 Partition ID: partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE
 
 Run on task task1111-1111-1111-1111-111111111111
@@ -34,7 +32,6 @@ Delay between finish and commit: 1m
 Details for job job44444-4444-4444-4444-444444444444:
 State: UNCOMMITTED
 Creation time: 2022-09-20T13:33:12.001Z
-Input files assigned to job at time: 2022-09-20T13:33:13.001Z
 Partition ID: partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD
 
 Run on task task1111-1111-1111-1111-111111111111
@@ -52,7 +49,6 @@ Not committed
 Details for job job33333-3333-3333-3333-333333333333:
 State: FAILED
 Creation time: 2022-09-19T13:33:12.001Z
-Input files assigned to job at time: 2022-09-19T13:33:13.001Z
 Partition ID: partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
 
 Run on task task1111-1111-1111-1111-111111111111
@@ -68,7 +64,6 @@ Run failed, reasons:
 Details for job job22222-2222-2222-2222-222222222222:
 State: IN_PROGRESS
 Creation time: 2022-09-18T13:33:12.001Z
-Input files assigned to job at time: 2022-09-18T13:33:13.001Z
 Partition ID: partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
 
 Run on task task1111-1111-1111-1111-111111111111
@@ -79,6 +74,5 @@ Not finished
 Details for job job11111-1111-1111-1111-111111111111:
 State: PENDING
 Creation time: 2022-09-17T13:33:12.001Z
-Input files assigned to job at time: 2022-09-17T13:33:13.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------

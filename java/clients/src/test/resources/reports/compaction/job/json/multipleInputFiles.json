@@ -1,16 +1,9 @@
 [
   {
     "jobId": "test-job",
-    "createdStatus": {
-      "updateTime": "2022-10-13T12:00:00.001Z",
-      "partitionId": "test-partition",
-      "inputFilesCount": 5
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-13T12:00:00.001Z",
-      "partitionId": "test-partition",
-      "inputFilesCount": 5
-    },
+    "partitionId": "test-partition",
+    "inputFilesCount": 5,
+    "createUpdateTime": "2022-10-13T12:00:00.001Z",
     "jobRuns": []
   }
 ]
