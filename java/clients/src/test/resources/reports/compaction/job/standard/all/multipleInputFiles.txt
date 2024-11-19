@@ -14,5 +14,5 @@ Statistics for delay between finish and commit time:
   no jobs committed
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE   | CREATE_TIME              | FILES_ASSIGNED_TIME | JOB_ID   | INPUT_FILES | PARTITION_ID   | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
-| CREATED | 2022-10-13T12:00:00.001Z |                     | test-job |           5 | test-partition |         |            |             |             |          |              |                 |               |                |
+| PENDING | 2022-10-13T12:00:00.001Z |                     | test-job |           5 | test-partition |         |            |             |             |          |              |                 |               |                |
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

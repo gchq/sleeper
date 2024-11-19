@@ -34,32 +34,15 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFromUpdates;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.FAILED;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.FILES_ASSIGNED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.compaction.core.job.status.CompactionJobStatusType.PENDING;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.UNCOMMITTED;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 public class CompactionJobStatusFurthestStatusTest {
-
-    @Test
-    void shouldReportJobCreated() {
-        // Given
-        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
-                .partitionId("partition1")
-                .inputFilesCount(11)
-                .build();
-
-        // When
-        CompactionJobStatus status = jobStatusFromUpdates(created);
-
-        // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(CREATED);
-    }
 
     @Test
     void shouldReportJobAssignedToInputFiles() {
@@ -79,7 +62,7 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(created, filesAssigned);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(FILES_ASSIGNED);
+        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
     }
 
     @Test

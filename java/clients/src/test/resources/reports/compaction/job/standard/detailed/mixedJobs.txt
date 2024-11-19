@@ -77,13 +77,13 @@ Start update time: 2022-09-18T13:34:12.123Z
 Not finished
 --------------------------
 Details for job job22222-2222-2222-2222-222222222222:
-State: FILES_ASSIGNED
+State: PENDING
 Creation time: 2022-09-17T13:33:12.001Z
 Input files assigned to job at time: 2022-09-17T13:33:13.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------
 Details for job job11111-1111-1111-1111-111111111111:
-State: CREATED
+State: PENDING
 Creation time: 2022-09-16T13:33:12.001Z
 Input files not yet assigned to job
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
