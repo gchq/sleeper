@@ -50,6 +50,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
@@ -223,6 +224,19 @@ public class SystemTestInstanceContext {
     public String getTestTableName(TableProperties tableProperties) {
         return Optional.ofNullable(testNameByTableId.get(tableProperties.get(TABLE_ID)))
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));
+    }
+
+    public void takeTestTablesOfflineIfConnected() {
+        if (currentTables == null) {
+            return;
+        }
+        DeployedSleeperInstance instance = currentInstance();
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        currentTables.streamTableProperties().forEach(table -> {
+            table.set(TABLE_ONLINE, "false");
+            tablesDriver.saveTableProperties(instanceProperties, table);
+        });
     }
 
     private DeployedSleeperInstance currentInstance() {
