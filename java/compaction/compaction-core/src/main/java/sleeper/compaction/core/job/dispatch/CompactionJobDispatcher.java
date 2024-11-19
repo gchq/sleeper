@@ -16,7 +16,6 @@
 package sleeper.compaction.core.job.dispatch;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -37,7 +36,6 @@ public class CompactionJobDispatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ReadBatch readBatch;
-    private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
     private final Supplier<Instant> timeSupplier;
@@ -45,14 +43,12 @@ public class CompactionJobDispatcher {
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ReadBatch readBatch,
-            CompactionJobStatusStore statusStore, SendJob sendJob,
-            ReturnRequestToPendingQueue returnToPendingQueue,
+            SendJob sendJob, ReturnRequestToPendingQueue returnToPendingQueue,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.readBatch = readBatch;
-        this.statusStore = statusStore;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
         this.timeSupplier = timeSupplier;
@@ -62,7 +58,6 @@ public class CompactionJobDispatcher {
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
-                statusStore.jobCreated(job);
                 sendJob.send(job);
             }
         } else {
