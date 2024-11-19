@@ -265,7 +265,7 @@ public class CompactionJobStatus {
             return false;
         }
         CompactionJobStatus other = (CompactionJobStatus) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && inputFilesCount == other.inputFilesCount
+        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFilesCount, other.inputFilesCount)
                 && Objects.equals(createUpdateTime, other.createUpdateTime) && Objects.equals(jobRuns, other.jobRuns);
     }
 
