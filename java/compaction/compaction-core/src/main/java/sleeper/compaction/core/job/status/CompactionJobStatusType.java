@@ -60,7 +60,7 @@ public enum CompactionJobStatusType {
      * @return     the status type
      */
     public static CompactionJobStatusType statusTypeOfJobRun(ProcessRun run) {
-        return CompactionJobUpdateType.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
+        return CompactionJobUpdateTypeInRun.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
     }
 
     /**
