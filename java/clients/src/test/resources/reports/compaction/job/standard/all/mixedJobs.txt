@@ -11,8 +11,6 @@ Runs awaiting commit: 1
 Jobs finished successfully: 2
 Jobs finished successfully with more than one run: 0
 Average compaction rate: 10.00 read/s, 5.00 write/s
-Statistics for delay between creation and input files assignment time:
-  avg: 1s, min: 1s, 99%: 1s, 99.9%: 1s, max: 1s, std dev: 0s
 Statistics for delay between finish and commit time:
   avg: 1m 0s, min: 1m 0s, 99%: 1m 0s, 99.9%: 1m 0s, max: 1m 0s, std dev: 0s
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
