@@ -52,7 +52,6 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 class InMemoryCompactionJobStatusStoreTest {
 
@@ -499,8 +498,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
-        store.jobInputFilesAssigned(tableId, List.of(
-                assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        store.jobInputFilesAssigned(tableId, List.of(job.createAssignJobIdRequest()));
         return job;
     }
 

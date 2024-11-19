@@ -38,7 +38,6 @@ import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.comp
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -255,7 +254,7 @@ public class WaitForJobsStatusTest {
     private void jobInputFilesAssigned(CompactionJob... jobs) {
         store.jobInputFilesAssigned(table.getTableUniqueId(),
                 Stream.of(jobs)
-                        .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                        .map(CompactionJob::createAssignJobIdRequest)
                         .collect(toUnmodifiableList()));
     }
 

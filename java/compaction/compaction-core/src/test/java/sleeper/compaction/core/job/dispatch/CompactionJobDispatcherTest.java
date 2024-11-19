@@ -46,7 +46,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TI
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
@@ -165,7 +164,7 @@ public class CompactionJobDispatcherTest {
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
         for (CompactionJob job : jobs) {
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
         }
     }
 
