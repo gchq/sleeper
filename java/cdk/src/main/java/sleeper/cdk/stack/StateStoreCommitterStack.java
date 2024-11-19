@@ -112,6 +112,7 @@ public class StateStoreCommitterStack extends NestedStack {
         instanceProperties.set(STATESTORE_COMMITTER_DLQ_ARN, deadLetterQueue.getQueueArn());
 
         queue.grantSendMessages(policiesStack.getDirectIngestPolicyForGrants());
+        queue.grantPurge(policiesStack.getPurgeQueuesPolicyForGrants());
         createAlarmForDlq(this, "StateStoreCommitterAlarm",
                 "Alarms if there are any messages on the dead letter queue for the state store committer lambda",
                 deadLetterQueue, topic);
