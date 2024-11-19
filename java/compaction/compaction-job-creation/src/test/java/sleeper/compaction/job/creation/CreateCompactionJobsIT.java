@@ -57,7 +57,6 @@ import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -169,11 +168,8 @@ public class CreateCompactionJobsIT {
     }
 
     private CompactionJob readJobMessage(Message message) {
-        try {
-            return CompactionJobSerDe.deserialiseFromString(message.getBody());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new CompactionJobSerDe().fromJson(message.getBody());
+
     }
 
     private List<CompactionJobIdAssignmentCommitRequest> receiveJobIdAssignmentRequests() {

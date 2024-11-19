@@ -65,7 +65,7 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         } else {
             Message message = receiveMessageResult.getMessages().get(0);
             LOGGER.info("Received message: {}", message);
-            CompactionJob compactionJob = CompactionJobSerDe.deserialiseFromString(message.getBody());
+            CompactionJob compactionJob = new CompactionJobSerDe().fromJson(message.getBody());
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                     "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
 

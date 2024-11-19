@@ -1,0 +1,5 @@
+{
+  "tableId": "test-table",
+  "batchKey": "s3a://test-bucket/test-table/compactions/test-batch.json",
+  "expiryTime": 1731931350000
+}

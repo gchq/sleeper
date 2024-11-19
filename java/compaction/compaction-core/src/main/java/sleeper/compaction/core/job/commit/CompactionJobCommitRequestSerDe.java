@@ -18,8 +18,6 @@ package sleeper.compaction.core.job.commit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobJsonSerDe;
 import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.util.GsonConfig;
 
@@ -29,9 +27,7 @@ public class CompactionJobCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public CompactionJobCommitRequestSerDe() {
-        GsonBuilder builder = GsonConfig.standardBuilder()
-                .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
-                .serializeNulls();
+        GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }

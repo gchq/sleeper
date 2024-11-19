@@ -1,0 +1,21 @@
+{
+  "type": "COMPACTION_FINISHED",
+  "request": {
+    "job": {
+      "tableId": "test-table",
+      "jobId": "test-job",
+      "inputFiles": [
+        "file1.parquet",
+        "file2.parquet"
+      ],
+      "outputFile": "test-output.parquet",
+      "partitionId": "test-partition-id"
+    },
+    "taskId": "test-task",
+    "jobRunId": "test-job-run",
+    "startTime": 1714561080000,
+    "finishTime": 1714561140000,
+    "recordsRead": 120,
+    "recordsWritten": 100
+  }
+}
