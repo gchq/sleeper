@@ -125,7 +125,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
         for (AssignJobIdRequest request : requests) {
             try {
-                save(createFilesAssignedUpdate(jobUpdateBuilder(tableId, request.getJobId())));
+                save(createFilesAssignedUpdate(request, jobUpdateBuilder(tableId, request.getJobId())));
             } catch (RuntimeException e) {
                 throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + request.getJobId(), e);
             }

@@ -86,7 +86,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         for (AssignJobIdRequest request : requests) {
             add(tableId, ProcessStatusUpdateRecord.builder()
                     .jobId(request.getJobId())
-                    .statusUpdate(new CompactionJobInputFilesAssignedStatus(assignedTime))
+                    .statusUpdate(CompactionJobInputFilesAssignedStatus.from(request, assignedTime))
                     .build());
         }
     }

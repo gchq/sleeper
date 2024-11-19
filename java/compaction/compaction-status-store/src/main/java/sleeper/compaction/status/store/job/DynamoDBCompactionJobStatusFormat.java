@@ -37,6 +37,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -96,8 +97,10 @@ class DynamoDBCompactionJobStatusFormat {
     }
 
     public static Map<String, AttributeValue> createFilesAssignedUpdate(
-            DynamoDBRecordBuilder builder) {
-        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED);
+            AssignJobIdRequest request, DynamoDBRecordBuilder builder) {
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED)
+                .string(PARTITION_ID, request.getPartitionId())
+                .number(INPUT_FILES_COUNT, request.getFilenames().size());
         return builder.build();
     }
 
@@ -191,8 +194,11 @@ class DynamoDBCompactionJobStatusFormat {
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
             case UPDATE_TYPE_INPUT_FILES_ASSIGNED:
-                return new CompactionJobInputFilesAssignedStatus(
-                        getInstantAttribute(item, UPDATE_TIME));
+                return CompactionJobInputFilesAssignedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .partitionId(getStringAttribute(item, PARTITION_ID))
+                        .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
+                        .build();
             case UPDATE_TYPE_STARTED:
                 return CompactionJobStartedStatus.startAndUpdateTime(
                         getInstantAttribute(item, START_TIME),

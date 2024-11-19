@@ -69,8 +69,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, filesAssigned);
@@ -87,8 +90,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
 
@@ -107,8 +113,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(
@@ -129,8 +138,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(
@@ -153,8 +165,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
         ProcessFailedStatus failed = failedStatus(started, Duration.ofSeconds(30), List.of("Some failure"));
@@ -174,8 +189,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(
@@ -201,8 +219,11 @@ public class CompactionJobStatusFurthestStatusTest {
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
-        CompactionJobInputFilesAssignedStatus filesAssigned = new CompactionJobInputFilesAssignedStatus(
-                Instant.parse("2023-03-22T15:36:02Z"));
+        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
         ProcessFailedStatus failed = failedStatus(started1, Duration.ofSeconds(30), List.of("Some failure"));
