@@ -44,7 +44,7 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final String partitionId;
-    private final int inputFilesCount;
+    private final Integer inputFilesCount;
     private final Instant createUpdateTime;
     private final ProcessRuns jobRuns;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
@@ -57,10 +57,14 @@ public class CompactionJobStatus {
             partitionId = builder.filesAssignedStatus.getPartitionId();
             inputFilesCount = builder.filesAssignedStatus.getInputFilesCount();
             createUpdateTime = builder.filesAssignedStatus.getUpdateTime();
-        } else {
+        } else if (builder.createdStatus != null) {
             partitionId = builder.createdStatus.getPartitionId();
             inputFilesCount = builder.createdStatus.getInputFilesCount();
             createUpdateTime = builder.createdStatus.getUpdateTime();
+        } else {
+            partitionId = null;
+            inputFilesCount = null;
+            createUpdateTime = null;
         }
         jobRuns = builder.jobRuns;
         runsByStatusType = jobRuns.getRunsLatestFirst().stream()
@@ -79,20 +83,17 @@ public class CompactionJobStatus {
 
     public static Stream<CompactionJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
-                .map(CompactionJobStatus::from)
-                .filter(Optional::isPresent)
-                .map(Optional::get);
+                .map(CompactionJobStatus::from);
     }
 
-    private static Optional<CompactionJobStatus> from(JobStatusUpdates updates) {
-        return updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class)
-                .map(createdStatus -> builder()
-                        .jobId(updates.getJobId())
-                        .createdStatus(createdStatus)
-                        .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
-                        .jobRuns(updates.getRuns())
-                        .expiryDate(updates.getFirstRecord().getExpiryDate())
-                        .build());
+    private static CompactionJobStatus from(JobStatusUpdates updates) {
+        return builder()
+                .jobId(updates.getJobId())
+                .createdStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
+                .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
+                .jobRuns(updates.getRuns())
+                .expiryDate(updates.getFirstRecord().getExpiryDate())
+                .build();
     }
 
     public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
@@ -108,7 +109,7 @@ public class CompactionJobStatus {
         return partitionId;
     }
 
-    public int getInputFilesCount() {
+    public Integer getInputFilesCount() {
         return inputFilesCount;
     }
 

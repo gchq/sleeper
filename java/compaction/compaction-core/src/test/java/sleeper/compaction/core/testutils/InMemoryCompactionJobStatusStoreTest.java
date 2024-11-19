@@ -38,7 +38,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
@@ -68,26 +67,14 @@ class InMemoryCompactionJobStatusStoreTest {
     class StoreStatusUpdates {
 
         @Test
-        void shouldStoreCreatedJob() {
-            // Given
-            Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
-            CompactionJob job = addCreatedJob(storeTime);
-
-            // When / Then
-            assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobCreated(job, storeTime));
-        }
-
-        @Test
         void shouldStoreInputFilesAssigned() {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
-            Instant assignedTime = Instant.parse("2023-03-29T12:27:43Z");
-            CompactionJob job = addFilesAssignedJob(createdTime, assignedTime);
+            CompactionJob job = addCreatedJob(createdTime);
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobFilesAssigned(job, createdTime, assignedTime));
+                    .containsExactly(jobCreated(job, createdTime));
         }
 
         @Test
@@ -512,15 +499,6 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
-        store.jobCreated(job);
-        return job;
-    }
-
-    private CompactionJob addFilesAssignedJob(Instant createdTime, Instant assignedTime) {
-        CompactionJob job = dataHelper.singleFileCompaction();
-        store.fixUpdateTime(createdTime);
-        store.jobCreated(job);
-        store.fixUpdateTime(assignedTime);
         store.jobInputFilesAssigned(tableId, List.of(
                 assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
         return job;

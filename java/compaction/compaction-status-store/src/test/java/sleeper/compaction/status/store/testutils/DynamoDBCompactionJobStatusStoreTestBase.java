@@ -64,7 +64,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("createdStatus.updateTime", "expiryDate")
+            .withIgnoredFields("createUpdateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_TIME = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
