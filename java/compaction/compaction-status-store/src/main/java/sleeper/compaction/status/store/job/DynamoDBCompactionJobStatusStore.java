@@ -27,7 +27,6 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
@@ -202,10 +201,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 getStringAttribute(statusUpdate, JOB_ID),
                 result.getConsumedCapacity().getCapacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
-    }
-
-    private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {
-        return jobUpdateBuilder(job.getTableId(), job.getId());
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {
