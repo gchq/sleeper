@@ -89,7 +89,6 @@ public class CompactionJobStatus {
     private static CompactionJobStatus from(JobStatusUpdates updates) {
         return builder()
                 .jobId(updates.getJobId())
-                .createdStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
                 .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
                 .jobRuns(updates.getRuns())
                 .expiryDate(updates.getFirstRecord().getExpiryDate())
