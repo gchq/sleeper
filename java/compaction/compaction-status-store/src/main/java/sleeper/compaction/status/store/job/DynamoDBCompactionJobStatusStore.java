@@ -51,7 +51,6 @@ import java.util.stream.Stream;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createFilesAssignedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobStartedUpdate;
@@ -110,15 +109,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     public static String jobLookupTableName(String instanceId) {
         return instanceTableName(instanceId, "compaction-job-lookup");
-    }
-
-    @Override
-    public void jobCreated(CompactionJob job) {
-        try {
-            save(createJobCreatedUpdate(job, jobUpdateBuilder(job)));
-        } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving created event for job " + job.getId(), e);
-        }
     }
 
     @Override

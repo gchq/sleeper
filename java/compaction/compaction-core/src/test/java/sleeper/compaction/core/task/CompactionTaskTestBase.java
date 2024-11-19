@@ -214,7 +214,7 @@ public class CompactionTaskTestBase {
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
+        jobStore.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()), DEFAULT_CREATED_TIME);
         return job;
     }
 
