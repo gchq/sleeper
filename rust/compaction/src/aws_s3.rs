@@ -90,6 +90,8 @@ pub trait ExtendedObjectStore: ObjectStore {
     /// Get the number of bytes read in requests.
     fn get_bytes_read(&self) -> Option<usize>;
 
+    fn set_total_predicted(&mut self, prediction: Option<usize>);
+
     /// Trait upcasting.
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
 }
@@ -196,6 +198,7 @@ pub async fn default_s3_config() -> color_eyre::Result<AmazonS3Builder> {
 pub struct LoggingObjectStore {
     store: Arc<dyn ObjectStore>,
     get_count: Mutex<usize>,
+    total_predicted: Option<usize>,
     get_bytes_read: Mutex<usize>,
     capacity: Mutex<usize>,
 }
@@ -205,6 +208,7 @@ impl LoggingObjectStore {
         Self {
             store: inner,
             get_count: Mutex::new(0),
+            total_predicted: None,
             get_bytes_read: Mutex::new(0),
             capacity: Mutex::new(MULTIPART_BUF_SIZE),
         }
@@ -277,6 +281,10 @@ impl ObjectStore for LoggingObjectStore {
             *self.get_bytes_read.lock().unwrap() += range.len();
         }
         *self.get_count.lock().unwrap() += 1;
+        if let Some(total) = self.total_predicted {
+            let percentComplete: <usize as Div<f64>>::Output =
+                *self.get_count.lock().unwrap() / (total as f64);
+        }
         self.store.get_opts(location, options)
     }
 
@@ -431,6 +439,12 @@ impl ExtendedObjectStore for LoggingObjectStore {
 
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
         self
+    }
+
+    fn set_total_predicted(&mut self, prediction: Option<usize>) {
+        if let Some(value) = prediction {
+            self.total_predicted = Some(value);
+        }
     }
 }
 
