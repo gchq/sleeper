@@ -7,7 +7,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-09-20T13:33:13.001Z"
+      "updateTime": "2022-09-20T13:33:13.001Z",
+      "partitionId": "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
@@ -48,7 +50,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-09-19T13:33:13.001Z"
+      "updateTime": "2022-09-19T13:33:13.001Z",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
@@ -85,7 +89,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-09-18T13:33:13.001Z"
+      "updateTime": "2022-09-18T13:33:13.001Z",
+      "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
@@ -108,7 +114,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-09-17T13:33:13.001Z"
+      "updateTime": "2022-09-17T13:33:13.001Z",
+      "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
+      "inputFilesCount": 1
     },
     "jobRuns": []
   },

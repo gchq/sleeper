@@ -7,7 +7,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-10-13T12:01:05Z"
+      "updateTime": "2022-10-13T12:01:05Z",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
@@ -53,7 +55,9 @@
       "inputFilesCount": 1
     },
     "filesAssignedStatus": {
-      "updateTime": "2022-10-13T12:00:01.123Z"
+      "updateTime": "2022-10-13T12:00:01.123Z",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+      "inputFilesCount": 1
     },
     "jobRuns": [
       {
