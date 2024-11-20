@@ -61,7 +61,7 @@ stack.
   size or it can use EMR managed scaling.
 - EMR Serverless Bulk Import stack: Similar to the above 2 stacks in behaviour. This stack is created at Sleeper 
   instance deployment. It is the default way in which the bulk imports are run and provides benefit by the fact that 
-  when no bulk import jobs are 
+  when no bulk import jobs are present, no computing resources are used.
 - Dashboard stack: This displays properties of the system in a Cloudwatch dashboard.
 
 The following functionality is experimental:
