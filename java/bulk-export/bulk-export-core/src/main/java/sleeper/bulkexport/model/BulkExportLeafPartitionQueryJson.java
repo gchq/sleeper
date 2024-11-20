@@ -19,7 +19,7 @@ package sleeper.bulkexport.model;
 import java.util.List;
 
 /**
- * A JSON representation of a request for a bulk export.
+ * A JSON representation of a request for a bulk export leaf partition query.
  */
 class BulkExportLeafPartitionQueryJson {
     private final String tableId;
@@ -61,7 +61,7 @@ class BulkExportLeafPartitionQueryJson {
     }
 
     /**
-     * Builder class for BulkExportQueryJson.
+     * Builder class for BulkExportLeafPartitionQueryJson.
      */
     private static final class Builder {
         private String tableId;

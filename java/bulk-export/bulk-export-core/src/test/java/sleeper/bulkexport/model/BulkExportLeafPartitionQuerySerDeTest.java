@@ -27,7 +27,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
     private final BulkExportLeafPartitionQuerySerDe querySerDe = new BulkExportLeafPartitionQuerySerDe();
 
     @Test
-    public void shouldSerDeBulkExportQuery() {
+    public void shouldSerDeBulkExportLeafPartitionQuery() {
         // Given
         BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery.builder()
                 .tableId("t1")
