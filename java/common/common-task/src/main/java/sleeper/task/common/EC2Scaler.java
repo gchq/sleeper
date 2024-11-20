@@ -45,7 +45,7 @@ public class EC2Scaler {
 
     private final CheckAutoScalingGroup asgQuery;
     private final SetDesiredInstances asgUpdate;
-    private final AmazonEC2 ec2Client;
+    private final CheckEc2InstanceType ec2Query;
     /**
      * The name of the EC2 Auto Scaling group instances belong to.
      */
@@ -76,41 +76,21 @@ public class EC2Scaler {
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return new EC2Scaler(autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
                 (autoScalingGroup, desiredSize) -> setClusterDesiredSize(asClient, autoScalingGroup, desiredSize),
-                ec2Client, asScalingGroup, ec2InstanceType, requirements.getCpu(), requirements.getMemoryLimitMiB());
+                instanceType -> getEc2InstanceType(ec2Client, instanceType),
+                asScalingGroup, ec2InstanceType, requirements.getCpu(), requirements.getMemoryLimitMiB());
     }
 
-    public EC2Scaler(CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, AmazonEC2 ec2Client, String asGroupName, String ec2InstanceType, int cpuReservation, int memoryReservation) {
+    public EC2Scaler(CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, CheckEc2InstanceType ec2Query, String asGroupName, String ec2InstanceType, int cpuReservation,
+            int memoryReservation) {
         this.asgQuery = asgQuery;
         this.asgUpdate = asgUpdate;
-        this.ec2Client = ec2Client;
+        this.ec2Query = ec2Query;
         this.asGroupName = asGroupName;
         this.ec2InstanceType = ec2InstanceType;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
         LOGGER.debug("Scaler constraints: CPU reservation {} Memory reservation {}",
                 this.cpuReservation, this.memoryReservation);
-    }
-
-    /**
-     * Find the details of a given EC2 auto scaling group.
-     *
-     * @param  groupName the name of the auto scaling group
-     * @param  client    the client object
-     * @return           group data
-     */
-    public static int getAutoScalingGroupMaxSize(String groupName, AmazonAutoScaling client) {
-        DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
-                .withAutoScalingGroupNames(groupName)
-                .withMaxRecords(1);
-        DescribeAutoScalingGroupsResult result = client.describeAutoScalingGroups(req);
-        if (result.getAutoScalingGroups().size() != 1) {
-            throw new IllegalStateException("instead of 1, received " + result.getAutoScalingGroups().size()
-                    + " records for describe_auto_scaling_groups on group name " + groupName);
-        }
-        AutoScalingGroup group = result.getAutoScalingGroups().get(0);
-        LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}",
-                group.getMinSize(), group.getDesiredCapacity(), group.getMaxSize());
-        return group.getMaxSize();
     }
 
     /**
@@ -156,27 +136,21 @@ public class EC2Scaler {
         }
 
         try {
-            // Lookup instance type against AWS EC2
-            DescribeInstanceTypesRequest request = new DescribeInstanceTypesRequest().withInstanceTypes(ec2InstanceType);
-            DescribeInstanceTypesResult result = ec2Client.describeInstanceTypes(request);
-            if (result.getInstanceTypes().size() != 1) {
-                throw new IllegalStateException("got more than 1 result for DescribeInstanceTypes for type " + ec2InstanceType);
-            }
-            InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
+            Ec2InstanceType instanceType = ec2Query.getEc2InstanceTypeInfo(ec2InstanceType);
             // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
-            int vCPUCount = typeInfo.getVCpuInfo().getDefaultVCpus() * 1024;
+            int cpuAvailable = instanceType.defaultVCpus() * 1024;
             // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
             // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
             // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
             // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
             // single instance.
-            long memoryMiB = (long) (typeInfo.getMemoryInfo().getSizeInMiB() * 0.9);
-            this.cachedContainersPerInstance = Math.min(vCPUCount / this.cpuReservation,
+            long memoryMiB = (long) (instanceType.memoryMiB() * 0.9);
+            this.cachedContainersPerInstance = Math.min(cpuAvailable / this.cpuReservation,
                     (int) (memoryMiB / this.memoryReservation));
             if (cachedContainersPerInstance < 1) {
                 throw new IllegalStateException(
                         "Can't fit any containers on to EC2 type " + this.ec2InstanceType + ". Container CPU reservation: " + this.cpuReservation + " memory: " + this.memoryReservation
-                                + ". EC2 CPU: " + vCPUCount + " memory: " + memoryMiB);
+                                + ". EC2 CPU: " + cpuAvailable + " memory: " + memoryMiB);
             }
 
         } catch (AmazonClientException e) {
@@ -194,11 +168,45 @@ public class EC2Scaler {
     }
 
     /**
+     * Find the details of a given EC2 auto scaling group.
+     *
+     * @param  groupName the name of the auto scaling group
+     * @param  client    the client object
+     * @return           group data
+     */
+    private static int getAutoScalingGroupMaxSize(String groupName, AmazonAutoScaling client) {
+        DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
+                .withAutoScalingGroupNames(groupName)
+                .withMaxRecords(1);
+        DescribeAutoScalingGroupsResult result = client.describeAutoScalingGroups(req);
+        if (result.getAutoScalingGroups().size() != 1) {
+            throw new IllegalStateException("instead of 1, received " + result.getAutoScalingGroups().size()
+                    + " records for describe_auto_scaling_groups on group name " + groupName);
+        }
+        AutoScalingGroup group = result.getAutoScalingGroups().get(0);
+        LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}",
+                group.getMinSize(), group.getDesiredCapacity(), group.getMaxSize());
+        return group.getMaxSize();
+    }
+
+    private static Ec2InstanceType getEc2InstanceType(AmazonEC2 ec2Client, String instanceType) {
+        DescribeInstanceTypesRequest request = new DescribeInstanceTypesRequest().withInstanceTypes(instanceType);
+        DescribeInstanceTypesResult result = ec2Client.describeInstanceTypes(request);
+        if (result.getInstanceTypes().size() != 1) {
+            throw new IllegalStateException("got more than 1 result for DescribeInstanceTypes for type " + instanceType);
+        }
+        InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
+        return new Ec2InstanceType(
+                typeInfo.getVCpuInfo().getDefaultVCpus(),
+                typeInfo.getMemoryInfo().getSizeInMiB());
+    }
+
+    /**
      * Sets the desired size on the auto scaling group.
      *
      * @param newClusterSize new desired size to set
      */
-    public static void setClusterDesiredSize(AmazonAutoScaling asClient, String asGroupName, int newClusterSize) {
+    private static void setClusterDesiredSize(AmazonAutoScaling asClient, String asGroupName, int newClusterSize) {
         LOGGER.info("Setting auto scaling group {} desired size to {}", asGroupName, newClusterSize);
         SetDesiredCapacityRequest req = new SetDesiredCapacityRequest()
                 .withAutoScalingGroupName(asGroupName)
@@ -212,5 +220,12 @@ public class EC2Scaler {
 
     public interface SetDesiredInstances {
         void setClusterDesiredSize(String autoScalingGroup, int desiredSize);
+    }
+
+    public interface CheckEc2InstanceType {
+        Ec2InstanceType getEc2InstanceTypeInfo(String instanceType);
+    }
+
+    public record Ec2InstanceType(int defaultVCpus, long memoryMiB) {
     }
 }
