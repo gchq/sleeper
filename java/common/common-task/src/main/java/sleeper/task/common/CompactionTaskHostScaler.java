@@ -28,25 +28,26 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 
 /**
  * Autoscaler to scale EC2 instances for the desired number of compaction tasks. This makes decisions on how many
  * instances to start and stop based on the amount of work there is to do.
  */
-public class CompactionTaskScaler {
+public class CompactionTaskHostScaler {
 
     private final InstanceProperties instanceProperties;
     private final CheckAutoScalingGroup asgQuery;
     private final SetDesiredInstances asgUpdate;
-    private final CheckEc2InstanceType ec2Query;
+    private final CheckInstanceType ec2Query;
     private final Map<String, InstanceType> instanceTypeCache = new HashMap<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
 
-    public CompactionTaskScaler(
+    public CompactionTaskHostScaler(
             InstanceProperties instanceProperties,
-            CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, CheckEc2InstanceType ec2Query) {
+            CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, CheckInstanceType ec2Query) {
         this.instanceProperties = instanceProperties;
         this.asgQuery = asgQuery;
         this.asgUpdate = asgUpdate;
@@ -61,6 +62,11 @@ public class CompactionTaskScaler {
      * @param numberOfTasks total number of tasks to provide capacity for
      */
     public void scaleTo(int numberOfTasks) {
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        // Only need scaler for EC2
+        if (!launchType.equalsIgnoreCase("EC2")) {
+            return;
+        }
         int containersPerInstance = lookupInstanceType()
                 .map(this::computeContainersPerInstance)
                 .orElse(1);
@@ -127,7 +133,7 @@ public class CompactionTaskScaler {
         void setClusterDesiredSize(String autoScalingGroup, int desiredSize);
     }
 
-    public interface CheckEc2InstanceType {
+    public interface CheckInstanceType {
         InstanceType getEc2InstanceTypeInfo(String instanceType);
     }
 

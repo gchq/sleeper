@@ -21,30 +21,40 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.RunCompactionTasks.HostScaler;
+import sleeper.task.common.CompactionTaskHostScaler.CheckAutoScalingGroup;
+import sleeper.task.common.CompactionTaskHostScaler.CheckInstanceType;
+import sleeper.task.common.CompactionTaskHostScaler.InstanceType;
+import sleeper.task.common.CompactionTaskHostScaler.SetDesiredInstances;
 import sleeper.task.common.RunCompactionTasks.TaskCounts;
 import sleeper.task.common.RunCompactionTasks.TaskLauncher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class RunCompactionTasksTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final List<Integer> scaleToHostsRequests = new ArrayList<>();
+    private final Map<String, InstanceType> instanceTypes = new HashMap<>();
+    private final Map<String, FakeAutoScalingGroup> autoScalingGroupByName = new HashMap<>();
     private final List<Integer> launchTasksRequests = new ArrayList<>();
-    private final HostScaler scaler = scaleToHostsRequests::add;
-    private final TaskLauncher taskLauncher = (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
+    private final List<Integer> scaleToHostsRequests = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "test-compaction-job-queue");
+        instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+        instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "test-scaling-group");
+        setScalingGroupMaxSize(10);
     }
 
     @DisplayName("Launch tasks using queue")
@@ -270,7 +280,30 @@ public class RunCompactionTasksTest {
     }
 
     private RunCompactionTasks taskRunner(TaskCounts taskCounts) {
-        return new RunCompactionTasks(instanceProperties, taskCounts, scaler, taskLauncher);
+        return new RunCompactionTasks(instanceProperties, taskCounts, hostScaler(), taskLauncher());
+    }
+
+    private CompactionTaskHostScaler hostScaler() {
+        return new CompactionTaskHostScaler(instanceProperties, checkAutoScalingGroup(), setDesiredInstances(), checkInstanceType());
+    }
+
+    private TaskLauncher taskLauncher() {
+        return (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
+    }
+
+    private CheckAutoScalingGroup checkAutoScalingGroup() {
+        return groupName -> autoScalingGroupByName.get(groupName).maxSize();
+    }
+
+    private SetDesiredInstances setDesiredInstances() {
+        return (groupName, desiredSize) -> {
+            autoScalingGroupByName.compute(groupName, (name, group) -> group.withDesiredSize(desiredSize));
+            scaleToHostsRequests.add(desiredSize);
+        };
+    }
+
+    private CheckInstanceType checkInstanceType() {
+        return instanceTypes::get;
     }
 
     private static TaskCounts noExistingTasks() {
@@ -291,4 +324,25 @@ public class RunCompactionTasksTest {
                         approximateNumberVisibleAndNotVisible(messageCount, 0)));
     }
 
+    private void setScalingGroupMaxSize(int maxSize) {
+        autoScalingGroupByName.compute(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP),
+                (name, group) -> Optional.ofNullable(group)
+                        .map(g -> g.withMaxSize(maxSize))
+                        .orElseGet(() -> new FakeAutoScalingGroup(maxSize)));
+    }
+
+    private record FakeAutoScalingGroup(int maxSize, int desiredSize) {
+
+        FakeAutoScalingGroup(int maxSize) {
+            this(maxSize, 0);
+        }
+
+        public FakeAutoScalingGroup withMaxSize(int maxSize) {
+            return new FakeAutoScalingGroup(maxSize, desiredSize);
+        }
+
+        public FakeAutoScalingGroup withDesiredSize(int desiredSize) {
+            return new FakeAutoScalingGroup(maxSize, desiredSize);
+        }
+    }
 }

@@ -40,8 +40,8 @@ public class EC2Scaler {
     private EC2Scaler() {
     }
 
-    public static CompactionTaskScaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
-        return new CompactionTaskScaler(instanceProperties,
+    public static CompactionTaskHostScaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
+        return new CompactionTaskHostScaler(instanceProperties,
                 autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
                 (autoScalingGroup, desiredSize) -> setClusterDesiredSize(asClient, autoScalingGroup, desiredSize),
                 instanceType -> getEc2InstanceType(ec2Client, instanceType));
@@ -69,7 +69,7 @@ public class EC2Scaler {
         return group.getMaxSize();
     }
 
-    private static CompactionTaskScaler.InstanceType getEc2InstanceType(AmazonEC2 ec2Client, String instanceType) {
+    private static CompactionTaskHostScaler.InstanceType getEc2InstanceType(AmazonEC2 ec2Client, String instanceType) {
         DescribeInstanceTypesRequest request = new DescribeInstanceTypesRequest().withInstanceTypes(instanceType);
         DescribeInstanceTypesResult result = ec2Client.describeInstanceTypes(request);
         if (result.getInstanceTypes().size() != 1) {
@@ -77,7 +77,7 @@ public class EC2Scaler {
         }
         InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
         LOGGER.info("EC2 instance type info: {}", typeInfo);
-        return new CompactionTaskScaler.InstanceType(
+        return new CompactionTaskHostScaler.InstanceType(
                 typeInfo.getVCpuInfo().getDefaultVCpus(),
                 typeInfo.getMemoryInfo().getSizeInMiB());
     }
