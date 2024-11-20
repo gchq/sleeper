@@ -57,10 +57,6 @@ public class CompactionJobStatus {
             partitionId = builder.filesAssignedStatus.getPartitionId();
             inputFilesCount = builder.filesAssignedStatus.getInputFilesCount();
             createUpdateTime = builder.filesAssignedStatus.getUpdateTime();
-        } else if (builder.createdStatus != null) {
-            partitionId = builder.createdStatus.getPartitionId();
-            inputFilesCount = builder.createdStatus.getInputFilesCount();
-            createUpdateTime = builder.createdStatus.getUpdateTime();
         } else {
             partitionId = null;
             inputFilesCount = null;
@@ -89,7 +85,6 @@ public class CompactionJobStatus {
     private static CompactionJobStatus from(JobStatusUpdates updates) {
         return builder()
                 .jobId(updates.getJobId())
-                .createdStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
                 .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
                 .jobRuns(updates.getRuns())
                 .expiryDate(updates.getFirstRecord().getExpiryDate())
@@ -210,7 +205,6 @@ public class CompactionJobStatus {
 
     public static final class Builder {
         private String jobId;
-        private CompactionJobCreatedStatus createdStatus;
         private CompactionJobInputFilesAssignedStatus filesAssignedStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
@@ -220,11 +214,6 @@ public class CompactionJobStatus {
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
-            this.createdStatus = createdStatus;
             return this;
         }
 

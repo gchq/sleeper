@@ -136,6 +136,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
     }
 
+    protected void storeJobCreated(CompactionJobStatusStore store, CompactionJob job) {
+        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+    }
+
     protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
         storeWithUpdateTime(updateTime).jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
     }
