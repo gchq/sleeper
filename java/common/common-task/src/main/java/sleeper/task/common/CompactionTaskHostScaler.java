@@ -114,8 +114,8 @@ public class CompactionTaskHostScaler {
         if (tasksPerInstance < 1) {
             throw new IllegalArgumentException("" +
                     "Instance type does not fit a single compaction task with the configured requirements. " +
-                    "CPU required " + requirements.getCpu() + " of " + cpuAvailable + "." +
-                    "Memory MiB required " + requirements.getMemoryLimitMiB() + " of " + memoryMiB + ".");
+                    "CPU required " + requirements.getCpu() + ", found " + cpuAvailable + ". " +
+                    "Memory MiB required " + requirements.getMemoryLimitMiB() + ", found " + memoryMiB + ".");
         }
         return tasksPerInstance;
     }

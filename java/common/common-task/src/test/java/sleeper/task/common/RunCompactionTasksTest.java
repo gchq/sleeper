@@ -336,7 +336,9 @@ public class RunCompactionTasksTest {
 
             // When / Then
             assertThatThrownBy(() -> runTasks(jobsOnQueue(5), noExistingTasks()))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Instance type does not fit a single compaction task with the configured requirements. " +
+                            "CPU required 1024, found 1024. Memory MiB required 1024, found 921.");
             assertThat(scaleToHostsRequests).isEmpty();
             assertThat(launchTasksRequests).isEmpty();
         }
