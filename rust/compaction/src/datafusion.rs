@@ -88,8 +88,9 @@ pub async fn compact(
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
         crate::aws_s3::MULTIPART_BUF_SIZE,
-        input_size.unwrap_or_default() / 5000,
+        input_size.as_ref().unwrap_or(&0) / 5000,
     );
+    store.set_total_predicted(input_size.ok());
 
     store_factory
         .get_object_store(output_path)

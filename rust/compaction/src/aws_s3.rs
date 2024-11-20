@@ -23,6 +23,7 @@ use std::{
     ops::Range,
     pin::Pin,
     sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
 use aws_config::{BehaviorVersion, Region};
@@ -43,6 +44,7 @@ use object_store::{
 use url::Url;
 
 pub const MULTIPART_BUF_SIZE: usize = 50 * 1024 * 1024;
+const UPDATE_DURATION: Duration = Duration::from_secs(20);
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -90,7 +92,9 @@ pub trait ExtendedObjectStore: ObjectStore {
     /// Get the number of bytes read in requests.
     fn get_bytes_read(&self) -> Option<usize>;
 
-    fn set_total_predicted(&mut self, prediction: Option<usize>);
+    /// Specifies the total number of bytes that are predicted to be read for life
+    /// of this store.
+    fn set_total_predicted(&self, prediction: Option<usize>);
 
     /// Trait upcasting.
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
@@ -191,26 +195,45 @@ pub async fn default_s3_config() -> color_eyre::Result<AmazonS3Builder> {
     Ok(s3_config(&creds, region))
 }
 
+#[derive(Debug)]
+struct LoggingStats {
+    get_count: usize,
+    total_predicted: Option<usize>,
+    last_get_time: Instant,
+    last_byte_read_count: usize,
+    last_measured_speed: usize,
+    get_bytes_read: usize,
+    capacity: usize,
+}
+
+impl LoggingStats {
+    pub fn new() -> Self {
+        Self {
+            get_count: 0,
+            total_predicted: None,
+            last_get_time: Instant::now(),
+            last_byte_read_count: 0,
+            last_measured_speed: 0,
+            get_bytes_read: 0,
+            capacity: MULTIPART_BUF_SIZE,
+        }
+    }
+}
+
 /// An [`ObjectStore`] wrapper that logs every HEAD and GET request
 /// the underlying store makes. The number of GETs can be retrieved
 /// by using the `get_count` method.
 #[derive(Debug)]
 pub struct LoggingObjectStore {
     store: Arc<dyn ObjectStore>,
-    get_count: Mutex<usize>,
-    total_predicted: Option<usize>,
-    get_bytes_read: Mutex<usize>,
-    capacity: Mutex<usize>,
+    stats: Mutex<LoggingStats>,
 }
 
 impl LoggingObjectStore {
     pub fn new(inner: Arc<dyn ObjectStore>) -> Self {
         Self {
             store: inner,
-            get_count: Mutex::new(0),
-            total_predicted: None,
-            get_bytes_read: Mutex::new(0),
-            capacity: Mutex::new(MULTIPART_BUF_SIZE),
+            stats: Mutex::new(LoggingStats::new()),
         }
     }
 }
@@ -270,6 +293,8 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
         Self: 'async_trait,
     {
+        let stats = &mut *self.stats.lock().unwrap();
+        stats.get_count += 1;
         if let Some(ref get_range) = options.range {
             let range = to_range(get_range);
             info!(
@@ -278,13 +303,27 @@ impl ObjectStore for LoggingObjectStore {
                 range.end.to_formatted_string(&Locale::en),
                 range.len().to_formatted_string(&Locale::en)
             );
-            *self.get_bytes_read.lock().unwrap() += range.len();
+            stats.get_bytes_read += range.len();
         }
-        *self.get_count.lock().unwrap() += 1;
-        if let Some(total) = self.total_predicted {
-            let percentComplete: <usize as Div<f64>>::Output =
-                *self.get_count.lock().unwrap() / (total as f64);
+        let now = Instant::now();
+        if now.duration_since(stats.last_get_time) > UPDATE_DURATION {
+            stats.last_measured_speed = (stats.get_bytes_read - stats.last_byte_read_count)
+                / std::cmp::max(
+                    1,
+                    now.duration_since(stats.last_get_time).as_secs() as usize,
+                );
+            stats.last_byte_read_count = stats.get_bytes_read;
+            stats.last_get_time = now;
         }
+        let percent_complete = match stats.total_predicted {
+            Some(total) => (stats.get_bytes_read as f64 / (total as f64)) * 100f64,
+            None => 0f64,
+        };
+        info!(
+            "Current bytes read speed is {} Bytes/second {:.2}% complete",
+            stats.last_measured_speed.to_formatted_string(&Locale::en),
+            percent_complete
+        );
         self.store.get_opts(location, options)
     }
 
@@ -410,7 +449,7 @@ impl ObjectStore for LoggingObjectStore {
         'life1: 'async_trait,
     {
         Box::pin(async move {
-            let part_size = *self.capacity.lock().unwrap();
+            let part_size = self.stats.lock().unwrap().capacity;
             info!(
                 "PUT MULTIPART request to {}, part size {}",
                 location,
@@ -426,25 +465,23 @@ impl ObjectStore for LoggingObjectStore {
 
 impl ExtendedObjectStore for LoggingObjectStore {
     fn set_multipart_size_hint(&self, capacity: usize) {
-        *self.capacity.lock().unwrap() = capacity;
+        self.stats.lock().unwrap().capacity = capacity;
     }
 
     fn get_count(&self) -> Option<usize> {
-        Some(*self.get_count.lock().unwrap())
+        Some(self.stats.lock().unwrap().get_count)
     }
 
     fn get_bytes_read(&self) -> Option<usize> {
-        Some(*self.get_bytes_read.lock().unwrap())
+        Some(self.stats.lock().unwrap().get_bytes_read)
     }
 
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
         self
     }
 
-    fn set_total_predicted(&mut self, prediction: Option<usize>) {
-        if let Some(value) = prediction {
-            self.total_predicted = Some(value);
-        }
+    fn set_total_predicted(&self, prediction: Option<usize>) {
+        self.stats.lock().unwrap().total_predicted = prediction;
     }
 }
 
