@@ -67,7 +67,7 @@ public class ExportSplitPoints {
         this.schema = schema;
     }
 
-    public List<Object> getSplitPoints() throws StateStoreException {
+    public List<Object> getSplitPoints() {
         Type rowKey0Type = schema.getRowKeyTypes().get(0);
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         SortedSet<Comparable<?>> splitPoints = new TreeSet<>();

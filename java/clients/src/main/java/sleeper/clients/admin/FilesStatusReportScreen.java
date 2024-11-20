@@ -22,7 +22,6 @@ import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
@@ -61,11 +60,8 @@ public class FilesStatusReportScreen {
             }
         }
         boolean verbose = in.promptLine("Run report in verbose mode? (y/N): ").equalsIgnoreCase("y");
-        try {
-            new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles, verbose,
-                    new StandardFileStatusReporter(out.printStream())).run();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+
+        new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles, verbose,
+                new StandardFileStatusReporter(out.printStream())).run();
     }
 }

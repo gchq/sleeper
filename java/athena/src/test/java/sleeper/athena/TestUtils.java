@@ -86,12 +86,8 @@ public class TestUtils {
         tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         S3TableProperties.createStore(instance, s3Client, dynamoDB).save(tableProperties);
 
-        try {
-            StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
-            stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
 
         return tableProperties;
     }
