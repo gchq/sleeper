@@ -22,7 +22,6 @@ import java.util.List;
  * A JSON representation of a request for a bulk export.
  */
 class BulkExportLeafPartitionQueryJson {
-    private final String tableName;
     private final String tableId;
     private final String exportId;
     private final String subExportId;
@@ -30,7 +29,6 @@ class BulkExportLeafPartitionQueryJson {
     private final List<String> files;
 
     private BulkExportLeafPartitionQueryJson(Builder builder) {
-        tableName = builder.tableName;
         tableId = builder.tableId;
         exportId = builder.exportQueryId;
         subExportId = builder.subExportQueryId;
@@ -66,7 +64,6 @@ class BulkExportLeafPartitionQueryJson {
      * Builder class for BulkExportQueryJson.
      */
     private static final class Builder {
-        private String tableName;
         private String tableId;
         private String exportQueryId;
         private String subExportQueryId;
@@ -74,11 +71,6 @@ class BulkExportLeafPartitionQueryJson {
         private List<String> files;
 
         private Builder() {
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
-            return this;
         }
 
         public Builder tableId(String tableId) {

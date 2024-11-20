@@ -32,6 +32,7 @@ class BulkExportQueryJson {
 
     static BulkExportQueryJson from(BulkExportQuery query) {
         return builder()
+                .tableId(query.getTableId())
                 .tableName(query.getTableName())
                 .exportQueryId(query.getExportId())
                 .build();

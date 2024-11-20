@@ -28,18 +28,17 @@ import java.util.Objects;
 public class BulkExportLeafPartitionQuery {
 
     private final String tableId;
-
     private final String exportId;
     private final String subExportId;
     private final String leafPartitionId;
     private final List<String> files;
 
     private BulkExportLeafPartitionQuery(Builder builder) {
-        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
-        exportId = Objects.requireNonNull(builder.exportId, "exportId must not be null");
-        subExportId = Objects.requireNonNull(builder.subExportId, "subExportId must not be null");
-        leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
-        files = Objects.requireNonNull(builder.files, "files must not be null");
+        tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
+        exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
+        subExportId = requireNonNull(builder.subExportId, builder, "subExportId field must be provided");
+        leafPartitionId = requireNonNull(builder.leafPartitionId, builder, "leafPartitionId field must be provided");
+        files = requireNonNull(builder.files, builder, "files field must be provided");
     }
 
     public static Builder builder() {
@@ -96,6 +95,13 @@ public class BulkExportLeafPartitionQuery {
                 ", leafPartitionId='" + leafPartitionId + '\'' +
                 ", files=" + files +
                 '}';
+    }
+
+    private static <T> T requireNonNull(T obj, Builder builder, String message) {
+        if (obj == null) {
+            throw new BulkExportQueryValidationException(builder.exportId, message);
+        }
+        return obj;
     }
 
     /**
