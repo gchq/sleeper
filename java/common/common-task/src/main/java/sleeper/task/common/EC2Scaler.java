@@ -43,7 +43,8 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
  */
 public class EC2Scaler {
 
-    private final AmazonAutoScaling asClient;
+    private final CheckAutoScalingGroup asgQuery;
+    private final SetDesiredInstances asgUpdate;
     private final AmazonEC2 ec2Client;
     /**
      * The name of the EC2 Auto Scaling group instances belong to.
@@ -73,11 +74,14 @@ public class EC2Scaler {
         String asScalingGroup = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
         String ec2InstanceType = instanceProperties.get(COMPACTION_EC2_TYPE).toLowerCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        return new EC2Scaler(asClient, ec2Client, asScalingGroup, ec2InstanceType, requirements.getCpu(), requirements.getMemoryLimitMiB());
+        return new EC2Scaler(autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
+                (autoScalingGroup, desiredSize) -> setClusterDesiredSize(asClient, autoScalingGroup, desiredSize),
+                ec2Client, asScalingGroup, ec2InstanceType, requirements.getCpu(), requirements.getMemoryLimitMiB());
     }
 
-    public EC2Scaler(AmazonAutoScaling asClient, AmazonEC2 ec2Client, String asGroupName, String ec2InstanceType, int cpuReservation, int memoryReservation) {
-        this.asClient = asClient;
+    public EC2Scaler(CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, AmazonEC2 ec2Client, String asGroupName, String ec2InstanceType, int cpuReservation, int memoryReservation) {
+        this.asgQuery = asgQuery;
+        this.asgUpdate = asgUpdate;
         this.ec2Client = ec2Client;
         this.asGroupName = asGroupName;
         this.ec2InstanceType = ec2InstanceType;
@@ -127,7 +131,7 @@ public class EC2Scaler {
         int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedContainersPerInstance : 1;
 
         // Retrieve the details of the scaling group
-        int maxInstances = getAutoScalingGroupMaxSize(asGroupName, asClient);
+        int maxInstances = asgQuery.getAutoScalingGroupMaxSize(asGroupName);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, maxInstances);
@@ -135,8 +139,7 @@ public class EC2Scaler {
                 "so total instances wanted {}, limited to {} by ASG maximum size limit", numberContainers, containersPerInstance,
                 instancesDesired, newClusterSize);
 
-        // Set the new desired size on the cluster
-        setClusterDesiredSize(newClusterSize);
+        asgUpdate.setClusterDesiredSize(asGroupName, newClusterSize);
     }
 
     /**
@@ -195,11 +198,19 @@ public class EC2Scaler {
      *
      * @param newClusterSize new desired size to set
      */
-    public void setClusterDesiredSize(int newClusterSize) {
-        LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
+    public static void setClusterDesiredSize(AmazonAutoScaling asClient, String asGroupName, int newClusterSize) {
+        LOGGER.info("Setting auto scaling group {} desired size to {}", asGroupName, newClusterSize);
         SetDesiredCapacityRequest req = new SetDesiredCapacityRequest()
                 .withAutoScalingGroupName(asGroupName)
                 .withDesiredCapacity(newClusterSize);
         asClient.setDesiredCapacity(req);
+    }
+
+    public interface CheckAutoScalingGroup {
+        int getAutoScalingGroupMaxSize(String autoScalingGroup);
+    }
+
+    public interface SetDesiredInstances {
+        void setClusterDesiredSize(String autoScalingGroup, int desiredSize);
     }
 }
