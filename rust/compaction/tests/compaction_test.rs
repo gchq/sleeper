@@ -102,8 +102,8 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     ]));
     let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 2, 3], vec![11, 12, 13]])?;
     let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 3, 4], vec![22, 23, 24]])?;
-    write_file(&file_1, data_1)?;
-    write_file(&file_2, data_2)?;
+    write_file(&file_1, &data_1)?;
+    write_file(&file_2, &data_2)?;
 
     let input = CompactionInput {
         input_files: Vec::from([file_1, file_2]),
