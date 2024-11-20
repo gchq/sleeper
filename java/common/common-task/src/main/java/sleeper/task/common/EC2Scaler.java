@@ -15,7 +15,6 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
@@ -31,7 +30,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
@@ -43,54 +45,28 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
  */
 public class EC2Scaler {
 
+    private final InstanceProperties instanceProperties;
     private final CheckAutoScalingGroup asgQuery;
     private final SetDesiredInstances asgUpdate;
     private final CheckEc2InstanceType ec2Query;
-    /**
-     * The name of the EC2 Auto Scaling group instances belong to.
-     */
-    private final String asGroupName;
-    /**
-     * The number of containers each EC2 instance can host. -1 means we haven't found out yet.
-     */
-    private int cachedContainersPerInstance = -1;
-    /**
-     * The EC2 instance type being used.
-     */
-    private final String ec2InstanceType;
-    /**
-     * The CPU reservation for tasks.
-     */
-    private final int cpuReservation;
-    /**
-     * The memory reservation for tasks.
-     */
-    private final long memoryReservation;
+    private final Map<String, Ec2InstanceType> instanceTypeCache = new HashMap<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
 
     public static EC2Scaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        String asScalingGroup = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
-        String ec2InstanceType = instanceProperties.get(COMPACTION_EC2_TYPE).toLowerCase(Locale.ROOT);
-        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        return new EC2Scaler(autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
+        return new EC2Scaler(instanceProperties,
+                autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
                 (autoScalingGroup, desiredSize) -> setClusterDesiredSize(asClient, autoScalingGroup, desiredSize),
-                instanceType -> getEc2InstanceType(ec2Client, instanceType),
-                asScalingGroup, ec2InstanceType, requirements.getCpu(), requirements.getMemoryLimitMiB());
+                instanceType -> getEc2InstanceType(ec2Client, instanceType));
     }
 
-    public EC2Scaler(CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, CheckEc2InstanceType ec2Query, String asGroupName, String ec2InstanceType, int cpuReservation,
-            int memoryReservation) {
+    public EC2Scaler(
+            InstanceProperties instanceProperties,
+            CheckAutoScalingGroup asgQuery, SetDesiredInstances asgUpdate, CheckEc2InstanceType ec2Query) {
+        this.instanceProperties = instanceProperties;
         this.asgQuery = asgQuery;
         this.asgUpdate = asgUpdate;
         this.ec2Query = ec2Query;
-        this.asGroupName = asGroupName;
-        this.ec2InstanceType = ec2InstanceType;
-        this.cpuReservation = cpuReservation;
-        this.memoryReservation = memoryReservation;
-        LOGGER.debug("Scaler constraints: CPU reservation {} Memory reservation {}",
-                this.cpuReservation, this.memoryReservation);
     }
 
     /**
@@ -101,17 +77,11 @@ public class EC2Scaler {
      * @param numberContainers total number of containers to be run at the moment
      */
     public void scaleTo(int numberContainers) {
-        scaleTo(asGroupName, numberContainers);
-    }
-
-    public void scaleTo(String asGroupName, int numberContainers) {
-        // If we have any information set the number of containers per instance
-        checkContainersPerInstance();
-
-        int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedContainersPerInstance : 1;
-
-        // Retrieve the details of the scaling group
-        int maxInstances = asgQuery.getAutoScalingGroupMaxSize(asGroupName);
+        int containersPerInstance = lookupInstanceType()
+                .map(this::computeContainersPerInstance)
+                .orElse(1);
+        String asScalingGroup = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
+        int maxInstances = asgQuery.getAutoScalingGroupMaxSize(asScalingGroup);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, maxInstances);
@@ -119,52 +89,50 @@ public class EC2Scaler {
                 "so total instances wanted {}, limited to {} by ASG maximum size limit", numberContainers, containersPerInstance,
                 instancesDesired, newClusterSize);
 
-        asgUpdate.setClusterDesiredSize(asGroupName, newClusterSize);
+        asgUpdate.setClusterDesiredSize(asScalingGroup, newClusterSize);
     }
 
-    /**
-     * If the containers per EC2 instance has not been set, then make a request to AWS via EC2 service
-     * describeInstanceTypes to find the size of the EC2 instance used for scaling. The amount of CPU and memory is then
-     * used to work out how many containers per instance can fit.
-     *
-     * @throws IllegalStateException if more than one result is returned from AWS for describeInstanceTypes
-     * @throws IllegalStateException if no containers at all can fit on the EC2 instance type set
-     */
-    private void checkContainersPerInstance() {
-        if (containerPerInstanceKnown()) {
-            return;
-        }
-
+    private Optional<Ec2InstanceType> lookupInstanceType() {
+        String ec2InstanceType = instanceProperties.get(COMPACTION_EC2_TYPE).toLowerCase(Locale.ROOT);
         try {
-            Ec2InstanceType instanceType = ec2Query.getEc2InstanceTypeInfo(ec2InstanceType);
-            // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
-            int cpuAvailable = instanceType.defaultVCpus() * 1024;
-            // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
-            // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
-            // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
-            // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
-            // single instance.
-            long memoryMiB = (long) (instanceType.memoryMiB() * 0.9);
-            this.cachedContainersPerInstance = Math.min(cpuAvailable / this.cpuReservation,
-                    (int) (memoryMiB / this.memoryReservation));
-            if (cachedContainersPerInstance < 1) {
-                throw new IllegalStateException(
-                        "Can't fit any containers on to EC2 type " + this.ec2InstanceType + ". Container CPU reservation: " + this.cpuReservation + " memory: " + this.memoryReservation
-                                + ". EC2 CPU: " + cpuAvailable + " memory: " + memoryMiB);
-            }
-
-        } catch (AmazonClientException e) {
-            LOGGER.error("couldn't lookup EC2 type information for type " + this.ec2InstanceType, e);
+            return Optional.of(instanceTypeCache.computeIfAbsent(ec2InstanceType,
+                    type -> ec2Query.getEc2InstanceTypeInfo(type)));
+        } catch (RuntimeException e) {
+            LOGGER.error("Couldn't lookup EC2 type information for type " + ec2InstanceType, e);
+            return Optional.empty();
         }
     }
 
-    /**
-     * Whether we know how many containers can fit into an instance.
-     *
-     * @return true if the value is known
-     */
-    private boolean containerPerInstanceKnown() {
-        return this.cachedContainersPerInstance != -1;
+    private int computeContainersPerInstance(Ec2InstanceType instanceType) {
+        // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
+        int cpuAvailable = instanceType.defaultVCpus() * 1024;
+        // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
+        // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
+        // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
+        // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
+        // single instance.
+        long memoryMiB = (long) (instanceType.memoryMiB() * 0.9);
+        LOGGER.debug("Computed availability per instance: {} CPU, {} memory MiB", cpuAvailable, memoryMiB);
+
+        CompactionTaskRequirements requirements = getTaskRequirements();
+        LOGGER.debug("Task requirements: {} CPU, {} memory MiB", requirements.getCpu(), requirements.getMemoryLimitMiB());
+
+        int taskPerInstanceCpu = cpuAvailable / requirements.getCpu();
+        int taskPerInstanceMemory = (int) (memoryMiB / requirements.getMemoryLimitMiB());
+        int tasksPerInstance = Math.min(taskPerInstanceCpu, taskPerInstanceMemory);
+        LOGGER.debug("Tasks per instance: {}", tasksPerInstance);
+        if (tasksPerInstance < 1) {
+            throw new IllegalArgumentException("" +
+                    "Instance type does not fit a single compaction task with the configured requirements. " +
+                    "CPU required " + requirements.getCpu() + " of " + cpuAvailable + "." +
+                    "Memory MiB required " + requirements.getMemoryLimitMiB() + " of " + memoryMiB + ".");
+        }
+        return tasksPerInstance;
+    }
+
+    private CompactionTaskRequirements getTaskRequirements() {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        return CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
     }
 
     /**
@@ -196,6 +164,7 @@ public class EC2Scaler {
             throw new IllegalStateException("got more than 1 result for DescribeInstanceTypes for type " + instanceType);
         }
         InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
+        LOGGER.info("EC2 instance type info: {}", typeInfo);
         return new Ec2InstanceType(
                 typeInfo.getVCpuInfo().getDefaultVCpus(),
                 typeInfo.getMemoryInfo().getSizeInMiB());
