@@ -21,8 +21,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -86,7 +88,6 @@ public class CompactionJobsDispatchLambdaIT {
     StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
     @Test
-    @Disabled("TODO")
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
 
         // Given
@@ -156,10 +157,15 @@ public class CompactionJobsDispatchLambdaIT {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return CompactionJobDispatchLambda.dispatcher(s3, dynamoDB, conf, instanceProperties.get(CONFIG_BUCKET), times.iterator()::next);
+        return CompactionJobDispatchLambda.dispatcher(s3, dynamoDB, sqs, conf, instanceProperties.get(CONFIG_BUCKET), times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
-        return null;
+        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(new CompactionJobSerDe()::fromJson).toList();
     }
 }
