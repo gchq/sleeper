@@ -187,11 +187,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileReference>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileReferenceList -> {
-                            try {
-                                addFilesToStateStore.addFiles(fileReferenceList);
-                            } catch (StateStoreException e) {
-                                throw new RuntimeException(e);
-                            }
+                            addFilesToStateStore.addFiles(fileReferenceList);
                             return fileReferenceList;
                         });
                 ingestFutures.add(consumedFuture);

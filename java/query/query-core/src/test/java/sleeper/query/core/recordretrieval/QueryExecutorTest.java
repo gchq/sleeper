@@ -37,7 +37,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
@@ -331,11 +330,7 @@ public class QueryExecutorTest {
     }
 
     private void addFileMetadata(FileReference fileReference) {
-        try {
-            stateStore.addFile(fileReference);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.addFile(fileReference);
     }
 
     private QueryExecutor executor() throws Exception {
@@ -395,11 +390,7 @@ public class QueryExecutorTest {
     }
 
     private PartitionTree partitionTree() {
-        try {
-            return new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return new PartitionTree(stateStore.getAllPartitions());
     }
 
     private FileReferenceFactory fileReferenceFactory() {

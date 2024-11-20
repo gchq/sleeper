@@ -659,11 +659,7 @@ public class StateStoreCommitterTest {
 
     private void createTable(TableProperties tableProperties) {
         propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
-        try {
-            stateStore(tableProperties).initialise(partitions.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore(tableProperties).initialise(partitions.getAllPartitions());
     }
 
     private StateStore stateStore(TableProperties tableProperties) {

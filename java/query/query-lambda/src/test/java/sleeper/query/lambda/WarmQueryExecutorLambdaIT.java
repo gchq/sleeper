@@ -47,7 +47,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
@@ -186,10 +185,6 @@ public class WarmQueryExecutorLambdaIT {
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
-        try {
-            stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());
     }
 }

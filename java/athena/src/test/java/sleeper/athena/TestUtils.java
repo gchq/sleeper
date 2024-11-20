@@ -32,7 +32,6 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -104,7 +103,7 @@ public class TestUtils {
                     .instanceProperties(instanceProperties)
                     .build();
             factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
-        } catch (IOException | StateStoreException | IteratorCreationException e) {
+        } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }

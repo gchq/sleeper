@@ -256,13 +256,7 @@ public class S3StateStoreDataFileTest {
     }
 
     private Consumer<S3RevisionId> setData(Object data) {
-        return revisionId -> {
-            try {
-                dataFiles.write(data, buildPathFromRevisionId(revisionId));
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return revisionId -> dataFiles.write(data, buildPathFromRevisionId(revisionId));
     }
 
     private Object loadCurrentData() throws Exception {

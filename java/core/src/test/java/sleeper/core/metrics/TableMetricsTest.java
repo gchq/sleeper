@@ -25,7 +25,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
@@ -281,10 +280,6 @@ public class TableMetricsTest {
     }
 
     private TableMetrics tableMetrics() {
-        try {
-            return TableMetrics.from(instanceId, table, stateStore);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return TableMetrics.from(instanceId, table, stateStore);
     }
 }

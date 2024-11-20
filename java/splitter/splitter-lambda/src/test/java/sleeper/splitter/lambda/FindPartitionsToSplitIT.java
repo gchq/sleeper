@@ -39,7 +39,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -97,7 +96,7 @@ public class FindPartitionsToSplitIT {
     }
 
     @Test
-    public void shouldPutMessagesOnAQueueIfAPartitionSizeGoesBeyondThreshold() throws StateStoreException, IOException {
+    public void shouldPutMessagesOnAQueueIfAPartitionSizeGoesBeyondThreshold() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
@@ -119,7 +118,7 @@ public class FindPartitionsToSplitIT {
     }
 
     @Test
-    public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws StateStoreException, IOException {
+    public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
@@ -133,7 +132,7 @@ public class FindPartitionsToSplitIT {
     }
 
     @Test
-    public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException, StateStoreException {
+    public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
@@ -155,7 +154,7 @@ public class FindPartitionsToSplitIT {
     }
 
     @Test
-    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws StateStoreException, IOException {
+    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);

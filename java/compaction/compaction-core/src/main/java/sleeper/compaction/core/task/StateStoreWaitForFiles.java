@@ -24,7 +24,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -135,7 +134,7 @@ public class StateStoreWaitForFiles {
             this.allFilesAssigned = allFilesAssigned;
         }
 
-        boolean get() throws StateStoreException {
+        boolean get() {
             return allFilesAssigned;
         }
     }

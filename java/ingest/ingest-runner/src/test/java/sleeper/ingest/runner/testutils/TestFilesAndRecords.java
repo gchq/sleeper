@@ -22,7 +22,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 import java.util.Map;
@@ -45,15 +44,11 @@ public class TestFilesAndRecords {
 
     public static TestFilesAndRecords loadActiveFiles(
             StateStore stateStore, Schema schema, Configuration configuration) {
-        try {
-            List<FileReference> fileReferences = stateStore.getFileReferences();
-            Map<String, List<Record>> recordsByFilename = fileReferences.stream()
-                    .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            return new TestFilesAndRecords(fileReferences, recordsByFilename);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        Map<String, List<Record>> recordsByFilename = fileReferences.stream()
+                .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return new TestFilesAndRecords(fileReferences, recordsByFilename);
     }
 
     public List<FileReference> getFiles() {
