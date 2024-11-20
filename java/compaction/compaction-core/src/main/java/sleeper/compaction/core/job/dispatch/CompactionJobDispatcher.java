@@ -22,12 +22,14 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 
 public class CompactionJobDispatcher {
 
@@ -60,10 +62,11 @@ public class CompactionJobDispatcher {
                 sendJob.send(job);
             }
         } else {
-            if (timeSupplier.get().isAfter(request.getExpiryTime())) {
-                throw new CompactionJobBatchExpiredException(request);
-            }
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+            Instant expiryTime = generateExpiryTime(tableProperties, request.getCreateTime());
+            if (timeSupplier.get().isAfter(expiryTime)) {
+                throw new CompactionJobBatchExpiredException(request, expiryTime);
+            }
             returnToPendingQueue.sendWithDelay(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
         }
     }
@@ -73,6 +76,10 @@ public class CompactionJobDispatcher {
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
                 .toList());
+    }
+
+    private Instant generateExpiryTime(TableProperties tableProperties, Instant createTime) {
+        return createTime.plus(Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
     }
 
     @FunctionalInterface
