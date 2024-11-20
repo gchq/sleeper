@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
@@ -37,10 +36,10 @@ public class CompactionJobDispatchLambda {
     public static CompactionJobDispatcher dispatcher(
             AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration conf, String configBucket, Supplier<Instant> timeSupplier) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, configBucket);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf);
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
-                stateStoreProvider, null, null, null, timeSupplier);
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
+                null, null, null, timeSupplier);
     }
 
 }
