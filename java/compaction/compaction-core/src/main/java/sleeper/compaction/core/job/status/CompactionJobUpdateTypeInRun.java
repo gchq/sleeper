@@ -20,21 +20,20 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 /**
- * Defines the types of updates during a compaction job. Can also find the furthest update in a run of a compaction job,
- * where a job may be run multiple times. Uses an order to find which update is the furthest, where a failure supersedes
- * any other update.
+ * Defines the types of updates during a run of a compaction job. A job may be run multiple times. Can also find the
+ * furthest update in a run. Uses an order to find which update is the furthest, where a failure supersedes any other
+ * update.
  */
-public enum CompactionJobUpdateType {
-    CREATED(1, CompactionJobStatusType.CREATED),
-    STARTED(2, CompactionJobStatusType.IN_PROGRESS),
-    FINISHED_WHEN_COMMITTED(3, CompactionJobStatusType.UNCOMMITTED),
-    COMMITTED(4, CompactionJobStatusType.FINISHED),
-    FAILED(5, CompactionJobStatusType.FAILED);
+public enum CompactionJobUpdateTypeInRun {
+    STARTED(1, CompactionJobStatusType.IN_PROGRESS),
+    FINISHED_WHEN_COMMITTED(2, CompactionJobStatusType.UNCOMMITTED),
+    COMMITTED(3, CompactionJobStatusType.FINISHED),
+    FAILED(4, CompactionJobStatusType.FAILED);
 
     private final int order;
     private final CompactionJobStatusType jobStatusTypeAfterUpdate;
 
-    CompactionJobUpdateType(int order, CompactionJobStatusType jobStatusTypeAfterUpdate) {
+    CompactionJobUpdateTypeInRun(int order, CompactionJobStatusType jobStatusTypeAfterUpdate) {
         this.order = order;
         this.jobStatusTypeAfterUpdate = jobStatusTypeAfterUpdate;
     }
@@ -45,18 +44,16 @@ public enum CompactionJobUpdateType {
      * @param  run the run
      * @return     the update type
      */
-    public static CompactionJobUpdateType typeOfFurthestUpdateInRun(ProcessRun run) {
+    public static CompactionJobUpdateTypeInRun typeOfFurthestUpdateInRun(ProcessRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
         for (ProcessStatusUpdate update : run.getStatusUpdates()) {
-            furthestUpdate.setIfFurther(typeOfUpdate(update));
+            furthestUpdate.setIfFurther(typeOfUpdateInRun(update));
         }
         return furthestUpdate.get();
     }
 
-    public static CompactionJobUpdateType typeOfUpdate(ProcessStatusUpdate update) {
-        if (update instanceof CompactionJobCreatedStatus) {
-            return CREATED;
-        } else if (update instanceof CompactionJobStartedStatus) {
+    public static CompactionJobUpdateTypeInRun typeOfUpdateInRun(ProcessStatusUpdate update) {
+        if (update instanceof CompactionJobStartedStatus) {
             return STARTED;
         } else if (update instanceof CompactionJobFinishedStatus) {
             return FINISHED_WHEN_COMMITTED;
@@ -77,15 +74,15 @@ public enum CompactionJobUpdateType {
      * Tracks the furthest update in a run. A failure will supersede any other update.
      */
     private static class FurthestUpdateTracker {
-        private CompactionJobUpdateType furthestType;
+        private CompactionJobUpdateTypeInRun furthestType;
 
-        public void setIfFurther(CompactionJobUpdateType newType) {
+        public void setIfFurther(CompactionJobUpdateTypeInRun newType) {
             if (furthestType == null || furthestType.order < newType.order) {
                 furthestType = newType;
             }
         }
 
-        public CompactionJobUpdateType get() {
+        public CompactionJobUpdateTypeInRun get() {
             return furthestType;
         }
     }

@@ -57,7 +57,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
@@ -209,10 +208,6 @@ public class CreateCompactionJobs {
 
     private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
         for (CompactionJob compactionJob : compactionJobs) {
-            // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
-            // task trying to record that the job was started.
-            jobStatusStore.jobCreated(compactionJob);
-
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
@@ -221,7 +216,7 @@ public class CreateCompactionJobs {
         // Update the statuses of these files to record that a compaction job is in progress
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .map(CompactionJob::createAssignJobIdRequest)
                 .collect(Collectors.toList()), table);
     }
 

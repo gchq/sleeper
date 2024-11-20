@@ -19,7 +19,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
@@ -66,18 +65,6 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobCreated(CompactionJob job) {
-        jobCreated(job, getUpdateTimeOrDefault(Instant::now));
-    }
-
-    public void jobCreated(CompactionJob job, Instant createdTime) {
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId())
-                .statusUpdate(CompactionJobCreatedStatus.from(job, createdTime))
-                .build());
-    }
-
-    @Override
     public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
         jobInputFilesAssigned(tableId, requests, getUpdateTimeOrDefault(Instant::now));
     }
@@ -86,7 +73,7 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
         for (AssignJobIdRequest request : requests) {
             add(tableId, ProcessStatusUpdateRecord.builder()
                     .jobId(request.getJobId())
-                    .statusUpdate(new CompactionJobInputFilesAssignedStatus(assignedTime))
+                    .statusUpdate(CompactionJobInputFilesAssignedStatus.from(request, assignedTime))
                     .build());
         }
     }

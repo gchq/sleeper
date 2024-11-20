@@ -64,7 +64,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("createdStatus.updateTime", "expiryDate")
+            .withIgnoredFields("createUpdateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_TIME = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
@@ -124,6 +124,24 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected CompactionJobFactory jobFactoryForOtherTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected void storeJobsCreated(CompactionJob... jobs) {
+        for (CompactionJob job : jobs) {
+            storeJobCreated(job);
+        }
+    }
+
+    protected void storeJobCreated(CompactionJob job) {
+        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+    }
+
+    protected void storeJobCreated(CompactionJobStatusStore store, CompactionJob job) {
+        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+    }
+
+    protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
+        storeWithUpdateTime(updateTime).jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
     }
 
     protected static Instant ignoredUpdateTime() {

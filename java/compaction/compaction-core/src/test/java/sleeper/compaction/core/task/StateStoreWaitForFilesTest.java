@@ -51,7 +51,6 @@ import static sleeper.compaction.core.task.StateStoreWaitForFiles.JOB_ASSIGNMENT
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 
@@ -71,7 +70,7 @@ public class StateStoreWaitForFilesTest {
         FileReference file = factory.rootFile("test.parquet", 123L);
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         // When
         waitForFilesWithAttempts(2, job);
@@ -87,7 +86,7 @@ public class StateStoreWaitForFilesTest {
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
         actionAfterWait(() -> {
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
         });
 
         // When
@@ -167,7 +166,7 @@ public class StateStoreWaitForFilesTest {
         FileReference file = factory.rootFile("test.parquet", 123L);
         stateStore.addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
         throttlingException.setErrorCode("ThrottlingException");

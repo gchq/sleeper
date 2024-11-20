@@ -32,9 +32,6 @@ public interface CompactionJobStatusStore {
     CompactionJobStatusStore NONE = new CompactionJobStatusStore() {
     };
 
-    default void jobCreated(CompactionJob job) {
-    }
-
     default void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
     }
 

@@ -1,14 +1,9 @@
 [
   {
     "jobId": "job22222-2222-2222-2222-222222222222",
-    "createdStatus": {
-      "updateTime": "2022-10-13T12:01:00Z",
-      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-13T12:01:05Z"
-    },
+    "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-13T12:01:00Z",
     "jobRuns": [
       {
         "taskId": "task-id",
@@ -47,14 +42,9 @@
   },
   {
     "jobId": "job11111-1111-1111-1111-111111111111",
-    "createdStatus": {
-      "updateTime": "2022-10-13T12:00:00Z",
-      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-13T12:00:01.123Z"
-    },
+    "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-13T12:00:00Z",
     "jobRuns": [
       {
         "taskId": "task-id",
