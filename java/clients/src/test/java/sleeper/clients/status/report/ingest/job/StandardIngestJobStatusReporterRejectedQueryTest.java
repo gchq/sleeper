@@ -19,7 +19,7 @@ package sleeper.clients.status.report.ingest.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.util.Collections;
 import java.util.List;

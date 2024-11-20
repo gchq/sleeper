@@ -15,14 +15,15 @@
  */
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -30,6 +31,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -37,6 +39,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
@@ -52,6 +55,11 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THR
 @Execution(SAME_THREAD)
 public class StateStoreCommitterThroughputST {
 
+    @BeforeEach
+    void setUp(AfterTestPurgeQueues purgeQueues) {
+        purgeQueues.purgeIfTestFailed(STATESTORE_COMMITTER_QUEUE_URL);
+    }
+
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
         // Given
@@ -65,7 +73,7 @@ public class StateStoreCommitterThroughputST {
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
@@ -86,12 +94,35 @@ public class StateStoreCommitterThroughputST {
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFileWithJob))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), partitions);
+        sleeper.stateStore().fakeCommits()
+                .sendBatched(IntStream.rangeClosed(1, 100)
+                        .mapToObj(i -> IntStream.rangeClosed(1, 10_000)
+                                .mapToObj(j -> fileFactory.rootFile(UUID.randomUUID().toString(), 123_456))
+                                .toList())
+                        .map(StateStoreCommitMessage::addFiles))
+                .waitForCommitLogs();
+
+        // Then
+        assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
     }
 
     @Test
@@ -108,7 +139,7 @@ public class StateStoreCommitterThroughputST {
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                         .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())
@@ -138,7 +169,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root", List.of(filename(i)))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -175,7 +206,7 @@ public class StateStoreCommitterThroughputST {
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
                                 jobId(i), "root", List.of(filename(i), filename(i + 1000)),
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -218,7 +249,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000)))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
@@ -252,7 +283,7 @@ public class StateStoreCommitterThroughputST {
                                         jobId(i), "root", List.of(filename(i), filename(i + 1000)),
                                         "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2)),
                                 factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
-                .waitForCommitLogs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(3)));
+                .waitForCommitLogs();
 
         // Then
         assertThat(sleeper.tableFiles().referencesByTable())
@@ -293,6 +324,14 @@ public class StateStoreCommitterThroughputST {
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(20.0);
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {
+        return commitsPerSecond -> {
+            double filesPerSecond = commitsPerSecond * 10_000;
+            assertThat(filesPerSecond)
+                    .isGreaterThan(300.0);
+        };
     }
 
 }

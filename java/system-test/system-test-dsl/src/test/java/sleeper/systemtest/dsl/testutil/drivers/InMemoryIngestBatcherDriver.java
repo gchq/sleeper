@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcher;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcher;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

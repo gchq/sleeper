@@ -21,15 +21,19 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
 public class StateStoreFilesArrowFormatTest {
@@ -78,7 +82,7 @@ public class StateStoreFilesArrowFormatTest {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        AllReferencesToAFile file = AllReferencesToAFile.fileWithOneReference(reference, updateTime);
+        AllReferencesToAFile file = fileWithOneReference(reference, updateTime);
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -99,7 +103,7 @@ public class StateStoreFilesArrowFormatTest {
                 .onlyContainsDataForThisPartition(true)
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
-        AllReferencesToAFile file = AllReferencesToAFile.fileWithOneReference(reference, updateTime);
+        AllReferencesToAFile file = fileWithOneReference(reference, updateTime);
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -152,11 +156,14 @@ public class StateStoreFilesArrowFormatTest {
     }
 
     private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
-        StateStoreFilesArrowFormat.write(files, allocator, Channels.newChannel(stream));
+        StateStoreFiles state = new StateStoreFiles();
+        files.forEach(file -> state.add(StateStoreFile.from(file)));
+        StateStoreFilesArrowFormat.write(state, allocator, Channels.newChannel(stream));
     }
 
-    private List<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
+    private Stream<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
         return StateStoreFilesArrowFormat.read(allocator,
-                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())))
+                .referencedAndUnreferenced().stream().map(StateStoreFile::toModel);
     }
 }

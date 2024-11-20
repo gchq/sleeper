@@ -34,8 +34,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QuerySerDe;
 
 import java.time.Instant;
 import java.util.List;

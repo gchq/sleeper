@@ -33,15 +33,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -53,11 +51,12 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
+import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
+import static sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
@@ -169,11 +168,8 @@ public class CreateCompactionJobsIT {
     }
 
     private CompactionJob readJobMessage(Message message) {
-        try {
-            return CompactionJobSerDe.deserialiseFromString(message.getBody());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new CompactionJobSerDe().fromJson(message.getBody());
+
     }
 
     private List<CompactionJobIdAssignmentCommitRequest> receiveJobIdAssignmentRequests() {
@@ -226,7 +222,7 @@ public class CreateCompactionJobsIT {
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
+        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE, Mode.STRATEGY,

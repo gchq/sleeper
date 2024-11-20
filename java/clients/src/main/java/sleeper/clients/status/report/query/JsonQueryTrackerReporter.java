@@ -23,7 +23,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.io.PrintStream;
 import java.time.Instant;

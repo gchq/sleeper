@@ -27,8 +27,8 @@ import java.util.List;
 public interface BulkImportProperty {
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
             .description("The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is an " +
-                    "alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).")
-            .defaultValue("sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver")
+                    "alternative option that uses RDDs (sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver).")
+            .defaultValue("sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec")
             .description("The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.\n" +

@@ -16,8 +16,6 @@
 package sleeper.cdk.stack;
 
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.CustomResourceProps;
 import software.amazon.awscdk.NestedStack;
@@ -41,20 +39,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.REGION;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class VpcStack extends NestedStack {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
 
     public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack logging) {
         super(scope, id);
-
-        if (!instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
-                    + "in very significant NAT charges.");
-            return;
-        }
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());

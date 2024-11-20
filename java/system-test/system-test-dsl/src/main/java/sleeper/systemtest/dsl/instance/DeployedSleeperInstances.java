@@ -16,10 +16,13 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
@@ -46,22 +49,34 @@ public class DeployedSleeperInstances {
             throw new InstanceDidNotDeployException(instanceShortName, failureById.get(instanceShortName));
         }
         try {
-            DeployedSleeperInstance instance = instanceByShortName.computeIfAbsent(instanceShortName,
-                    name -> createInstanceIfMissing(name, configuration));
-            instance.resetInstanceProperties(instanceDriver);
-            instance.getInstanceAdminDrivers().tables(parameters)
-                    .deleteAllTables(instance.getInstanceProperties());
-            return instance;
+            return instanceByShortName.computeIfAbsent(instanceShortName,
+                    name -> firstConnectInstance(name, configuration));
         } catch (RuntimeException e) {
             failureById.put(instanceShortName, e);
             throw e;
         }
     }
 
-    private DeployedSleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
+    private DeployedSleeperInstance firstConnectInstance(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        return DeployedSleeperInstance.loadOrDeployIfNeeded(
+        DeployedSleeperInstance instance = loadOrDeployAtFirstConnect(instanceId, configuration);
+        takeAllTablesOffline(instance);
+        return instance;
+    }
+
+    private DeployedSleeperInstance loadOrDeployAtFirstConnect(String instanceId, SystemTestInstanceConfiguration configuration) {
+        return DeployedSleeperInstance.loadOrDeployAtFirstConnect(
                 instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, snapshotsDriver);
+    }
+
+    private void takeAllTablesOffline(DeployedSleeperInstance instance) {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        tablesDriver.createTablePropertiesProvider(instanceProperties)
+                .streamOnlineTables().forEach(table -> {
+                    table.set(TABLE_ONLINE, "false");
+                    tablesDriver.saveTableProperties(instanceProperties, table);
+                });
     }
 }

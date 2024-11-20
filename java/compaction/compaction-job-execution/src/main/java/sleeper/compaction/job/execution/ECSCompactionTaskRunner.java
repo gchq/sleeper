@@ -27,17 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.StateStoreWaitForFiles;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
@@ -46,8 +45,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.job.common.EC2ContainerMetadata;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -97,7 +98,7 @@ public class ECSCompactionTaskRunner {
                     instanceProperties);
             String taskId = UUID.randomUUID().toString();
 
-            ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
 
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));

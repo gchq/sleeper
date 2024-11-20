@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.compaction;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
 public interface CompactionDriver {

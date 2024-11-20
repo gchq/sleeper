@@ -188,8 +188,7 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.table("A").tableProperties().get(TABLE_NAME))
-                    .startsWith("A-")
-                    .hasSize(38);
+                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForTableDefinedInTest-A-");
         }
 
         @Test
@@ -199,8 +198,7 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
-                    .startsWith("predefined-test-table-")
-                    .hasSize(58);
+                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForPredefinedTable-predefined-test-table-");
         }
 
         @Test

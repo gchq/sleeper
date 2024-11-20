@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -24,6 +23,7 @@ import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -53,7 +53,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (ReplaceFileReferencesRequest job : jobs) {
             for (String filename : job.getInputFiles()) {
-                AllReferencesToAFile file = stateStoreFiles.file(filename)
+                StateStoreFile file = stateStoreFiles.file(filename)
                         .orElseThrow(() -> new FileNotFoundException(filename));
                 FileReference reference = file.getReferenceForPartitionId(job.getPartitionId())
                         .orElseThrow(() -> new FileReferenceNotFoundException(filename, job.getPartitionId()));
@@ -73,7 +73,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             for (String filename : job.getInputFiles()) {
                 stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(job.getPartitionId(), updateTime));
             }
-            stateStoreFiles.add(AllReferencesToAFile.fileWithOneReference(job.getNewReference(), updateTime));
+            stateStoreFiles.add(StateStoreFile.newFile(updateTime, job.getNewReference()));
         }
     }
 

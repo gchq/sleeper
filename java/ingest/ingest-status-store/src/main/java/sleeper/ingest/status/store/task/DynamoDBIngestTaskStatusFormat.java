@@ -21,9 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.task.IngestTaskFinishedStatus;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.ingest.task.IngestTaskStatusesBuilder;
+import sleeper.ingest.core.task.IngestTaskFinishedStatus;
+import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.ingest.core.task.IngestTaskStatusesBuilder;
 
 import java.time.Duration;
 import java.time.Instant;

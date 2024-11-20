@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
-import sleeper.ingest.batcher.IngestBatcherStore;
-import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.BATCHER_QUERY_ALL_OPTION;

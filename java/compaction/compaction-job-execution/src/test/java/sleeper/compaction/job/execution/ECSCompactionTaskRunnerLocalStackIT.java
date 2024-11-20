@@ -41,20 +41,19 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
-import sleeper.compaction.task.CompactionTask;
-import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.compaction.task.StateStoreWaitForFiles;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -71,6 +70,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.CheckFileAssignmentsRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
@@ -78,9 +78,10 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.IngestFactory;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -125,7 +126,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.io.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class ECSCompactionTaskRunnerLocalStackIT {
@@ -200,16 +201,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
             CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
             assignJobIdsToInputFiles(stateStore, job1, job2);
-            String job1Json = CompactionJobSerDe.serialiseToString(job1);
-            String job2Json = CompactionJobSerDe.serialiseToString(job2);
-            SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job1Json);
-            sqs.sendMessage(sendMessageRequest);
-            sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                    .withMessageBody(job2Json);
-            sqs.sendMessage(sendMessageRequest);
+            sendJob(job1);
+            sendJob(job2);
 
             // When
             createTask("task-id").run();
@@ -276,7 +269,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+            when(stateStore.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "job1", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "root"))))
                     .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
@@ -301,7 +295,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.isPartitionFilesAssignedToJob("root", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "job1"))
+            when(stateStore.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "job1", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "root"))))
                     .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
@@ -332,10 +327,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMessageBody(CompactionJobSerDe.serialiseToString(job));
-        sqs.sendMessage(sendMessageRequest);
+        sendJob(job);
         Queue<Instant> times = new LinkedList<>(List.of(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
@@ -502,17 +494,17 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {
-        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
+        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList())));
     }
 
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, String... inputFilenames) throws IOException {
-        return sendJobForFilesGetJson(compactionJobForFiles(jobId, outputFilename, List.of(inputFilenames)));
+        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(inputFilenames)));
     }
 
-    private String sendJobForFilesGetJson(CompactionJob job) throws IOException {
-        String jobJson = CompactionJobSerDe.serialiseToString(job);
+    private String sendJob(CompactionJob job) throws IOException {
+        String jobJson = new CompactionJobSerDe().toJson(job);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(jobJson);

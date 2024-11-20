@@ -47,12 +47,10 @@ class TransactionLogSnapshotSerDe {
     }
 
     void saveFiles(TransactionLogSnapshotMetadata snapshot, StateStoreFiles state) throws IOException {
-        dataStore.saveFiles(snapshot.getPath(), state.referencedAndUnreferenced());
+        dataStore.saveFiles(snapshot.getPath(), state);
     }
 
     StateStoreFiles loadFiles(TransactionLogSnapshotMetadata snapshot) throws IOException {
-        StateStoreFiles files = new StateStoreFiles();
-        dataStore.loadFiles(snapshot.getPath()).forEach(files::add);
-        return files;
+        return dataStore.loadFiles(snapshot.getPath());
     }
 }

@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -34,7 +33,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.IngestFactory;
+import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 

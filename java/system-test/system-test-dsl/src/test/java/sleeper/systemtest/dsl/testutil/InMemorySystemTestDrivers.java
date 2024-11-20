@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.ingest.batcher.testutil.InMemoryIngestBatcherStore;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
@@ -71,7 +71,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
-    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(data);
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);

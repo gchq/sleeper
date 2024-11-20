@@ -21,8 +21,8 @@ import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class SendCompactionJobToSqs {
     }
 
     public void send(CompactionJob compactionJob) throws IOException {
-        String serialisedJobDefinition = CompactionJobSerDe.serialiseToString(compactionJob);
+        String serialisedJobDefinition = new CompactionJobSerDe().toJson(compactionJob);
         LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))

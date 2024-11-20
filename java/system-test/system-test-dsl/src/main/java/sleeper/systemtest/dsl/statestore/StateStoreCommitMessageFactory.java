@@ -15,12 +15,12 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -28,9 +28,9 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
-import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
+import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.time.Instant;
 import java.util.List;

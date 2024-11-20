@@ -26,8 +26,6 @@ public interface SleeperTablesDriver {
 
     void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties);
 
-    void deleteAllTables(InstanceProperties instanceProperties);
-
     void addTable(InstanceProperties instanceProperties, TableProperties properties);
 
     TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties);

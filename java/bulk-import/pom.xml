@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.26.0-SNAPSHOT</version>
+        <version>0.27.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -27,7 +27,7 @@
     <artifactId>bulk-import</artifactId>
 
     <modules>
-        <module>bulk-import-common</module>
+        <module>bulk-import-core</module>
         <module>bulk-import-runner</module>
         <module>bulk-import-starter</module>
         <module>bulk-import-eks</module>

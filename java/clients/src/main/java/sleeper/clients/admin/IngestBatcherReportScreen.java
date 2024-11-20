@@ -27,7 +27,7 @@ import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 
 import java.util.Optional;
 

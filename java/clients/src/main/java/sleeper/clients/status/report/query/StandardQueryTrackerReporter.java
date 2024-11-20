@@ -19,8 +19,8 @@ package sleeper.clients.status.report.query;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.query.tracker.QueryState;
-import sleeper.query.tracker.TrackedQuery;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.io.PrintStream;
 import java.time.Instant;

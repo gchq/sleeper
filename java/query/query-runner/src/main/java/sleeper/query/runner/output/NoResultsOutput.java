@@ -17,11 +17,11 @@ package sleeper.query.runner.output;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.query.model.QueryOrLeafPartitionQuery;
-import sleeper.query.output.ResultsOutput;
-import sleeper.query.output.ResultsOutputConstants;
-import sleeper.query.output.ResultsOutputInfo;
-import sleeper.query.output.ResultsOutputLocation;
+import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +38,7 @@ public class NoResultsOutput implements ResultsOutput {
 
     @Override
     public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query,
-        CloseableIterator<Record> results) {
+            CloseableIterator<Record> results) {
         return new ResultsOutputInfo(0, outputLocations);
     }
 }

@@ -16,8 +16,8 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 

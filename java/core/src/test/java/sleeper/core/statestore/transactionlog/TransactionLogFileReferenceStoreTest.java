@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.CheckFileAssignmentsRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
@@ -597,7 +598,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.addFiles(List.of(file1, file2));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isFalse();
         }
 
@@ -610,7 +612,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isTrue();
         }
 
@@ -623,7 +626,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isFalse();
         }
 
@@ -641,16 +645,19 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("R", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "R"))))
                     .isFalse();
-            assertThat(store.isPartitionFilesAssignedToJob("L", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "L"))))
                     .isTrue();
         }
 
         @Test
         void shouldFailIfFileDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file"), "root"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
@@ -661,7 +668,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.addFile(factory.partitionFile("L", "file", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("R", List.of("file"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file"), "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
@@ -672,7 +680,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "B"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "B", List.of("file"), "root"))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
         }
 
@@ -682,7 +691,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.addFile(factory.rootFile("file1", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
     }

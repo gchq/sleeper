@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.emr.model.InstanceRoleType;
 import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 import software.amazon.awssdk.services.emr.model.MarketType;
 
-import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;

@@ -23,6 +23,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.TestContext;
 
 /**
  * Tracks the context of a single running system test that will use the DSL. This is anything that needs to be
@@ -38,11 +39,13 @@ public class SystemTestContext {
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reporting;
 
-    public SystemTestContext(SystemTestParameters parameters, SystemTestDrivers drivers,
-            DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances) {
+    public SystemTestContext(
+            SystemTestParameters parameters, SystemTestDrivers drivers,
+            DeployedSystemTestResources systemTestResources, DeployedSleeperInstances deployedInstances,
+            TestContext testContext) {
         this.parameters = parameters;
         this.systemTestResources = systemTestResources;
-        instance = new SystemTestInstanceContext(parameters, deployedInstances, drivers.instance(parameters));
+        instance = new SystemTestInstanceContext(parameters, deployedInstances, drivers.instance(parameters), testContext);
         sourceFiles = new IngestSourceFilesContext(systemTestResources, instance);
         reporting = new ReportingContext(parameters);
     }

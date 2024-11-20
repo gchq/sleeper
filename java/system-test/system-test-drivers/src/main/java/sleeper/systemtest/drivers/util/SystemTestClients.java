@@ -53,7 +53,7 @@ import sleeper.clients.util.AssumeSleeperRoleV1;
 import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.io.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;

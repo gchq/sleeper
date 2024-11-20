@@ -16,15 +16,19 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.core.table.TableFilePaths;
+import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
+import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryPartitionFileWriter implements PartitionFileWriter {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionFileWriter.class);
 
     private final InMemoryDataStore dataStore;
     private final InMemorySketchesStore sketchesStore;
@@ -57,11 +62,11 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
 
     public static PartitionFileWriterFactory factory(
             InMemoryDataStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
-        String filePathPrefix = instanceProperties.get(FILE_SYSTEM)
+        TableFilePaths filePaths = TableFilePaths.fromPrefix(instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TABLE_ID);
+                + tableProperties.get(TABLE_ID));
         return partition -> new InMemoryPartitionFileWriter(
-                data, sketches, partition, filePathPrefix + "/" + UUID.randomUUID() + ".parquet", tableProperties.getSchema());
+                data, sketches, partition, filePaths.constructPartitionParquetFilePath(partition, UUID.randomUUID().toString()), tableProperties.getSchema());
     }
 
     @Override
@@ -74,6 +79,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     public CompletableFuture<FileReference> close() {
         dataStore.addFile(filename, records);
         sketchesStore.addSketchForFile(filename, sketches);
+        LOGGER.info("Wrote file with {} records: {}", records.size(), filename);
         return CompletableFuture.completedFuture(FileReference.builder()
                 .filename(filename)
                 .partitionId(partition.getId())

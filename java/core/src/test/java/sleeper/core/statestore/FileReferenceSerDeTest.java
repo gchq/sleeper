@@ -96,7 +96,10 @@ public class FileReferenceSerDeTest {
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
         FileReference reference = fileReferenceFactory.rootFile("test.parquet", 100);
-        AllReferencesToAFile file = AllReferencesToAFile.fileWithOneReference(reference, null);
+        AllReferencesToAFile file = AllReferencesToAFile.builder()
+                .filename("test.parquet")
+                .references(List.of(reference))
+                .build();
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
         // When

@@ -15,11 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
 import java.time.Instant;
@@ -40,10 +40,10 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (String filename : filenames) {
-            AllReferencesToAFile file = stateStoreFiles.file(filename)
+            StateStoreFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));
-            if (file.getReferenceCount() > 0) {
-                throw new FileHasReferencesException(file);
+            if (!file.getReferences().isEmpty()) {
+                throw new FileHasReferencesException(file.toModel());
             }
         }
     }

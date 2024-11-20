@@ -40,7 +40,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
